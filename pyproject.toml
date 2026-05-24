@@ -1,0 +1,15 @@
+[project]
+name = "edge"
+version = "0.1.0"
+description = "Edge Processing Tier μ-com project."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.4.6",
+    "opencv-python>=4.13.0.92",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
