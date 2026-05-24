@@ -13,3 +13,8 @@ dependencies = [
 dev = [
     "pytest>=9.0.3",
 ]
+
+# Trick to make the project into a local package.
+[build-system]
+requires = ["uv-build<1.0.0"]
+build-backend = "uv_build"
