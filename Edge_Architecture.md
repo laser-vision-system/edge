@@ -10,13 +10,13 @@ If we find that python is too resource intensive, we can go with a lower-level a
 
 ### OpenCV
 
-https://opencv.org/ 
+https://opencv.org/
 
 Very promising machining vision library with image processing capabilities.
 
 ### NumPy
 
-https://pypi.org/project/numpy/ 
+https://pypi.org/project/numpy/
 
 Allows faster processing of information when compared to python list or array, as it provides an N-dimensional array pre complied with no interpreter overhead to slow down the code.
 
@@ -24,7 +24,7 @@ Allows faster processing of information when compared to python list or array, a
 
 https://fastapi.tiangolo.com/
 
-For receiving and sending output and input to the server. 
+For receiving and sending output and input to the server.
 
 ## Data Recording
 
@@ -32,8 +32,4 @@ For data recording we use json files as the data is being read by machines and n
 
 ## Camera Video Formats
 
-Ideally, we can use either YUV or YUV2 for our video format, which most cameras we looked at had the option for. If that option for some reason is not available RBG565 is a solid low bandwidth alternative. 
-
-
-
-
+Ideally, we can use either YUV or YUV2 for our video format, which most cameras we looked at had the option for. If that option for some reason is not available RBG565 is a solid low bandwidth alternative.
