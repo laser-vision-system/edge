@@ -1,6 +1,8 @@
 """A wrapper class for OpenCV for reading a video input.
 
 Can read from either a webcam or video file.
+
+Not intended for deployment, only as reference.
 """
 
 from pathlib import Path as _Path
