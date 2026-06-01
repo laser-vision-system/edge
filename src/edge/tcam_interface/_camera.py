@@ -93,3 +93,9 @@ class Camera:
 			raise RuntimeError("Frame capture failed.")
 
 		return frame
+
+	def detect_configurations(self):
+		raise NotImplementedError
+
+	def apply_configurations(self):
+		raise NotImplementedError
