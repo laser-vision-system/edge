@@ -6,6 +6,7 @@ This module is not meant to be imported directly.
 from pathlib import Path
 
 import cv2
+import time
 
 from edge.typing import Frame
 
@@ -42,7 +43,7 @@ class Camera:
 
 		if isinstance(capture_location, int):  # Webcam input
 			if capture_location < 0:
-				raise ValueError("Integer input must be a positive number.")
+				raise ValueError("Integer input must be a natural number.")
 		else:  # Filepath input
 			# Convert string to Path object for easier operation.
 			if isinstance(capture_location, str):
@@ -50,6 +51,8 @@ class Camera:
 
 			if not capture_location.exists() or capture_location.is_dir():
 				raise FileNotFoundError("No file was found at this location.")
+			
+		self.capture_location = capture_location
 
 		self.capture = cv2.VideoCapture(capture_location)
 
@@ -66,7 +69,30 @@ class Camera:
 
 		self.capture.release()
 
-	def get_frame(self) -> Frame:
+	def reconnect(self, attempts: int = 5, delay: float = 2.0) -> bool:
+		"""Attempts to reconnect if the camera has disconnected.
+
+		Parameters
+		-------
+		attempts : int, default = 5
+			The number of reconnect attempts to be made
+
+		delay : float, default = 2.0
+			The time between reconnection attempts in seconds
+
+		Returns
+		-------
+		bool: True if the camera connection is able to be restablished, false if not
+		"""
+		self.capture.release()
+		for _ in range(attempts):
+			self.capture = cv2.VideoCapture(self.capture_location)
+			if self.capture.isOpened():
+				return True
+			time.sleep(delay)
+		return False
+
+	def get_frame(self, retries: int = 3) -> Frame:
 		"""Retrieves the most recent frame from the camera.
 
 		Returns
@@ -77,20 +103,33 @@ class Camera:
 		Raises
 		------
 		RuntimeError
-			If the capture failed to read.
+			- If the camera diconnected
+			- If the capture failed to read
 
 		Notes
 		-----
 		We need to handle a disconnected camera gracefully.
 		"""
 
-		flag: bool
+		if not self.capture.isOpened():
+			if not self.reconnect():
+				raise RuntimeError("Camera disconnected and could not reconnect.")
+		
+		ret: bool
 		frame: Frame
-		flag, frame = self.capture.read()
 
-		# TODO Review if this is acceptable.
-		if not flag:
+		for _ in range(retries):
+			ret, frame = self.capture.read()
+			if ret and frame is not None and frame.size > 0:
+				return frame
+			
+		raise RuntimeError(f"Frame capture failed after {retries} attempts.")
+
+		"""
+		TODO Review if this is acceptable.
+		if not ret:
 			raise RuntimeError("Frame capture failed.")
+		"""
 
 		return frame
 
