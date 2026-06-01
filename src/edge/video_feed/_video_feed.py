@@ -5,9 +5,9 @@ Can read from either a webcam or video file.
 Not intended for deployment, only as reference.
 """
 
-from pathlib import Path as _Path
+from pathlib import Path
 
-import cv2 as _cv2
+import cv2
 
 from edge.typing import Frame, ProcessFrameCallback
 
@@ -43,7 +43,7 @@ class VideoFeed:
 
 	def __init__(
 		self,
-		capture_location: int | str | _Path,
+		capture_location: int | str | Path,
 		callback: ProcessFrameCallback | None = None,
 		frametime: float = 1.0 / 30.0,
 	) -> None:
@@ -55,12 +55,12 @@ class VideoFeed:
 		else:  # Filepath input
 			# Convert string to Path object for easier operation.
 			if isinstance(capture_location, str):
-				capture_location = _Path(capture_location)
+				capture_location = Path(capture_location)
 
 			if not capture_location.exists() or capture_location.is_dir():
 				raise FileNotFoundError("No file was found at this location.")
 
-		self.vid_cap = _cv2.VideoCapture(capture_location)
+		self.vid_cap = cv2.VideoCapture(capture_location)
 
 		if not self.vid_cap.isOpened():
 			raise Exception("Failed to open video capture.")

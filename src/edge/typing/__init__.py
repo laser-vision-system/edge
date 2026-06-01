@@ -2,5 +2,5 @@
 
 from ._types import (
 	Frame as Frame,
-	ProcessFrameCallback as ProcessFrameCallback
+	ProcessFrameCallback as ProcessFrameCallback,
 )
