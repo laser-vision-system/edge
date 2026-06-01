@@ -10,14 +10,20 @@ You will need to download and install UV yourself.
 
 We are using Python 3.13, UV will handle this for you.
 
-## Setup
+## Usage
+
+### Setup
 
 Run `uv sync`.
 
-## Start
+### Start
 
 Run `uv run python -m edge`.
 
-## Tests
+### Tests
 
 Run `uv run pytest`.
+
+## Development
+
+See [CONTRIBUTING](docs/CONTRIBUTING.md).
