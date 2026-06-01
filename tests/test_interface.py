@@ -101,6 +101,11 @@ class IEdgeCases(BaseInterface):
 	def abstract_static(x: int, /) -> int:
 		raise NotImplementedError
 
+	@classmethod
+	@abstractmethod
+	def abstract_class(cls, x: int, /) -> int:
+		raise NotImplementedError
+
 	@property
 	@abstractmethod
 	def abstract_prop(self) -> str:
@@ -125,6 +130,10 @@ class EdgeCaseImplementer(IEdgeCases):
 
 	@staticmethod
 	def abstract_static(x: int, /) -> int:
+		return x
+
+	@classmethod
+	def abstract_class(cls, x: int, /) -> int:
 		return x
 
 	@property
@@ -273,6 +282,7 @@ class TestInterfaceArchitecture:
 		function correctly under the interface."""
 		assert isinstance(imp := EdgeCaseImplementer(), IEdgeCases)
 		assert EdgeCaseImplementer.abstract_static(x := 5) == x
+		assert EdgeCaseImplementer.abstract_class(x := 5) == x
 		assert imp.abstract_prop == "property"
 		imp.abstract_prop = (new_text := "other")
 		assert imp.abstract_prop == new_text
