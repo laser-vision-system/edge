@@ -44,7 +44,6 @@ class UserInterface:
 
 		self.window.geometry(f"{width}x{height}")
 
-		# --- Main frame ---
 		self.mainframe = ttk.Frame(self.window)
 		self.mainframe.pack(expand=True, fill=tk.BOTH)
 
@@ -52,22 +51,21 @@ class UserInterface:
 		self.mainframe.columnconfigure(index=0, weight=1)
 		self.mainframe.columnconfigure(index=1, weight=0)
 
-		# --- Video ---
 		self.video_container = ttk.Frame(self.mainframe)
 		self.video_container.grid(row=0, column=0, sticky="news")
 		self.video_container.pack_propagate(False)
 
-		# --- Input panel ---
-		self.input_panel = ttk.Frame(master=self.mainframe, padding=10)
-		self.input_panel.grid(row=0, column=1, sticky="ns")
+		self.control_panel = ttk.Frame(master=self.mainframe, padding=10)
+		self.control_panel.grid(row=0, column=1, sticky="ns")
 
-		# --- Title ---
 		self.title_label = ttk.Label(
-			master=self.input_panel,
+			master=self.control_panel,
 			text="Controls",
 			font=("Arial", 14, "bold"),
 		)
 		self.title_label.grid(row=0, column=0, pady=10)
+
+		self.displays: list[ttk.Label] = []
 
 		if video_feed is not None:
 			autostart: bool = SETTINGS.INPUT_SOURCE == SETTINGS.InputType.WEBCAM
@@ -86,14 +84,23 @@ class UserInterface:
 
 		if SETTINGS.INPUT_SOURCE == SETTINGS.InputType.VIDEO:
 			self.restart_button: Button = Button(
-				input_panel=self.input_panel,
+				input_panel=self.control_panel,
 				label="Start",
-				order=5,
+				order=10,
 				command=self.video_widget.restart_video,
 			)
 
 		if auto_start:
 			self.video_widget.start_playback()
+
+	def add_display(self, id: int = 0) -> ttk.Label:
+		BASE_ID = 0
+		row: int = BASE_ID + id
+		display = ttk.Label(master=self.control_panel, text="")
+		display.grid(row=row, column=0, sticky="news", padx=5, pady=5)
+		self.control_panel.rowconfigure(index=row, weight=0)
+		self.displays.append(display)
+		return display
 
 	def start(self) -> None:
 		self.window.mainloop()
