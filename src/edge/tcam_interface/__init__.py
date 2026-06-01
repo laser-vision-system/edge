@@ -1,3 +1,3 @@
-"""Provide configuration for connected cameras."""
+"""Provide connection and configuration for connected cameras."""
 
-from camera import Camera
+from ._camera import Camera as Camera

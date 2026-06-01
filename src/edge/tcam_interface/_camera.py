@@ -12,6 +12,7 @@ Functions:
 
 import cv2
 
+
 class Camera:
 	# Index is the index of the camera, defaults to 0
 	def __init__(self, index=0):
@@ -27,9 +28,9 @@ class Camera:
 
 		if not self.capture.isOpened():
 			raise RuntimeError("Failed to open camera")
-		
+
 		return self
-	
+
 	# Function: close()
 	# No params
 	# Releases the camera
@@ -46,10 +47,10 @@ class Camera:
 	def get_frame(self):
 		if not self.capture.isOpened():
 			raise RuntimeError("Camera is not open")
-		
+
 		flag, frame = self.caption.read()
-		
+
 		if not flag:
 			raise RuntimeError("Frame capture failed")
-		
+
 		return frame
