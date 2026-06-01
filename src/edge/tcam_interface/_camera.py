@@ -1,56 +1,75 @@
-'''
-This document provides the functions for a camera to:
-- Read a frame
-- Retrieve current settings
-- Write settings
+"""This modules provides the :func:`Camera` class.
 
-Functions:
-- open()
-- close()
-- get_frame()
-'''
+This module is not meant to be imported directly.
+"""
 
 import cv2
 
+from edge.typing import Frame
+
 
 class Camera:
-	# Index is the index of the camera, defaults to 0
-	def __init__(self, index=0):
-		self.index = index
-		self.capture = None
+	"""Representational object for a single camera.
 
-	# Function: open()
-	# No params
-	# Directly accesses the camera
-	# Returns self for easy chaining
-	def open(self):
+	Parameters
+	----------
+	index : int
+		The camera index on the execution hardware.
+
+		This should increment for each camera connected, up from 0.
+
+	Notes
+	-----
+	For testing purposes, being able to supply a video file could be useful.
+	"""
+
+	def __init__(self, index: int = 0) -> None:
+		"""Initialiser dunder.
+
+		Calls when a new instance is constructed.
+		"""
+
+		if index < 0:
+			raise ValueError("Index must be a positive number.")
+
+		self.index: int = index
 		self.capture = cv2.VideoCapture(self.index)
 
 		if not self.capture.isOpened():
 			raise RuntimeError("Failed to open camera")
 
-		return self
+	def __del__(self) -> None:
+		"""Deletion dunder.
 
-	# Function: close()
-	# No params
-	# Releases the camera
-	# Void
-	def close(self):
-		if self.capture:
-			self.capture.release()
-			self.capture = None
+		Called when an instance is deleted.
+		"""
 
-	# Function: get_frame()
-	# No params
-	# Retrieves the most recent frame from the camera
-	# Returns an array (image)
-	def get_frame(self):
-		if not self.capture.isOpened():
-			raise RuntimeError("Camera is not open")
+		self.capture.release()
 
-		flag, frame = self.caption.read()
+	def get_frame(self) -> Frame:
+		"""Retrieves the most recent frame from the camera.
 
+		Returns
+		-------
+		:func:`Frame`
+			The current image from the capture.
+
+		Raises
+		------
+		RuntimeError
+			If the capture failed to read.
+
+		Notes
+		-----
+		We need to handle a disconnected camera gracefully.
+		"""
+
+		flag: bool
+		frame: Frame
+		flag, frame = self.capture.read()
+
+		# TODO Review if this is acceptable.
 		if not flag:
-			raise RuntimeError("Frame capture failed")
+			raise RuntimeError("Frame capture failed.")
 
 		return frame
