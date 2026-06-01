@@ -3,6 +3,8 @@
 This module is not meant to be imported directly.
 """
 
+from pathlib import Path
+
 import cv2
 
 from edge.typing import Frame
@@ -13,30 +15,48 @@ class Camera:
 
 	Parameters
 	----------
-	index : int
-		The camera index on the execution hardware.
+	capture_location : int | str | Path
+		What the video source is. The intended use is with a webcam input,
+		however a video file input can be supplied for testing.
 
-		This should increment for each camera connected, up from 0.
+		- For a webcam input, use an `int`, 0 is the default webcam.
+		- For a video file, pass in a file location either as `str` or `Path`
+		(preferred).
 
-	Notes
-	-----
-	For testing purposes, being able to supply a video file could be useful.
+	frametime : float, default=1.0/30.0
+		In seconds, how long between each frame. Use `1 / fps` if you want to pass in
+		a framerate.
+
+		NOTE This may need to change when we know more about configuration.
 	"""
 
-	def __init__(self, index: int = 0) -> None:
+	def __init__(
+		self,
+		capture_location: int | str | Path,
+		frametime: float = 1.0 / 30.0,
+	) -> None:
 		"""Initialiser dunder.
 
 		Calls when a new instance is constructed.
 		"""
 
-		if index < 0:
-			raise ValueError("Index must be a positive number.")
+		if isinstance(capture_location, int):  # Webcam input
+			if capture_location < 0:
+				raise ValueError("Integer input must be a positive number.")
+		else:  # Filepath input
+			# Convert string to Path object for easier operation.
+			if isinstance(capture_location, str):
+				capture_location = Path(capture_location)
 
-		self.index: int = index
-		self.capture = cv2.VideoCapture(self.index)
+			if not capture_location.exists() or capture_location.is_dir():
+				raise FileNotFoundError("No file was found at this location.")
+
+		self.capture = cv2.VideoCapture(capture_location)
 
 		if not self.capture.isOpened():
 			raise RuntimeError("Failed to open camera")
+
+		self.frametime: float = frametime
 
 	def __del__(self) -> None:
 		"""Deletion dunder.
