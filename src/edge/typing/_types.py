@@ -13,3 +13,6 @@ type ProcessFrameCallback = Callable[[Frame], Frame | None]
 """A function that is called on a frame input for processing of some kind.
 
 Can return a modified result."""
+
+type ButtonCommand = Callable[[], Any]
+"""The function signature of the command called when a button is pressed."""

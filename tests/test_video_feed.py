@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from src.edge.video_feed import VideoFeed
 from src.edge.settings import SETTINGS
+from testing.video_feed import VideoFeed
 
 
 def test_example_video():

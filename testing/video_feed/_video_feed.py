@@ -60,16 +60,16 @@ class VideoFeed:
 			if not capture_location.exists() or capture_location.is_dir():
 				raise FileNotFoundError("No file was found at this location.")
 
-		self.vid_cap = cv2.VideoCapture(capture_location)
+		self.capture = cv2.VideoCapture(capture_location)
 
-		if not self.vid_cap.isOpened():
+		if not self.capture.isOpened():
 			raise Exception("Failed to open video capture.")
 
 		self.callback: ProcessFrameCallback | None = callback
 		self.frametime: float = frametime
 
 	def __del__(self) -> None:
-		self.vid_cap.release()
+		self.capture.release()
 
 	def process_frame(self) -> Frame:
 		"""Read from the video input and apply the callback to it.
@@ -81,7 +81,7 @@ class VideoFeed:
 		"""
 		ret: bool
 		frame: Frame
-		ret, frame = self.vid_cap.read()
+		ret, frame = self.capture.read()
 
 		if not ret:
 			raise ValueError
