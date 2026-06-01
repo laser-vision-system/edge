@@ -7,11 +7,9 @@ and validates an implementation's correctness.
 # TODO Look into static error checking.
 
 from abc import ABCMeta
-from inspect import Signature, signature
+from collections.abc import Callable
+from inspect import Signature, getattr_static, signature
 from typing import Any, NoReturn
-
-
-# Cannot use typing.Self in a metaclass.
 
 
 _ABSTRACTMETHOD_DUNDER = "__isabstractmethod__"
@@ -128,10 +126,11 @@ def _validate_implementation(cls: type, /) -> None:
 		If any signature detail does not match.
 	"""
 
-	# TODO Define object level fields.
+	# Object level field.
+	cls_name: str = cls.__name__
 
 	def _raise_signature_violation(
-		reason: str, cls_name: str, attr_name: str, expected: Any, provided: Any
+		reason: str, attr_name: str, expected: Any, provided: Any
 	) -> NoReturn:
 		"""Raise a TypeError with a predefined structure.
 
@@ -162,7 +161,7 @@ def _validate_implementation(cls: type, /) -> None:
 		)
 
 	def _compare_signatures(
-		intrfc_sig: Signature, impl_sig: Signature, cls_name: str, attr_name: str
+		intrfc_sig: Signature, impl_sig: Signature, attr_name: str
 	) -> None:
 		"""Validates that the implementer matches the interface mandate exactly.
 
@@ -189,7 +188,6 @@ def _validate_implementation(cls: type, /) -> None:
 		if intrfc_sig.return_annotation != impl_sig.return_annotation:
 			_raise_signature_violation(
 				reason="Return type mismatch",
-				cls_name=cls_name,
 				attr_name=attr_name,
 				expected=intrfc_sig.return_annotation,
 				provided=impl_sig.return_annotation,
@@ -199,7 +197,6 @@ def _validate_implementation(cls: type, /) -> None:
 		if len(intrfc_sig.parameters) != len(impl_sig.parameters):
 			_raise_signature_violation(
 				reason="Parameter count mismatch",
-				cls_name=cls_name,
 				attr_name=attr_name,
 				expected=len(intrfc_sig.parameters),
 				provided=len(impl_sig.parameters),
@@ -212,7 +209,6 @@ def _validate_implementation(cls: type, /) -> None:
 			if intrfc_p.annotation != impl_p.annotation:
 				_raise_signature_violation(
 					reason=f"Parameter '{intrfc_p.name}' type mismatch",
-					cls_name=cls_name,
 					attr_name=attr_name,
 					expected=intrfc_p.annotation,
 					provided=impl_p.annotation,
@@ -222,14 +218,13 @@ def _validate_implementation(cls: type, /) -> None:
 			if intrfc_p.kind != impl_p.kind:
 				_raise_signature_violation(
 					reason=f"Parameter '{intrfc_p.name}' kind mismatch",
-					cls_name=cls_name,
 					attr_name=attr_name,
 					expected=intrfc_p.kind,
 					provided=impl_p.kind,
 				)
 
 	def _validate_property_signatures(
-		intrfc_prop: property, impl_prop: property, cls_name: str, attr_name: str
+		intrfc_prop: property, impl_prop: property, attr_name: str
 	) -> None:
 		"""Validate an implementation's property.
 
@@ -294,7 +289,6 @@ def _validate_implementation(cls: type, /) -> None:
 			_compare_signatures(
 				intrfc_sig=int_sig,
 				impl_sig=imp_sig,
-				cls_name=cls_name,
 				attr_name=f"{attr_name} ({accessor_type})",
 			)
 
@@ -314,6 +308,42 @@ def _validate_implementation(cls: type, /) -> None:
 			impl_access_func=impl_prop.fdel,
 			accessor_type="deleter",
 		)
+
+	def _get_safe_signature(func: Any, error_msg: str) -> Signature:
+		"""Safely attempts to extract an inspect.Signature."""
+
+		try:
+			return signature(func)
+		except (ValueError, TypeError) as e:
+			raise TypeError(f"{error_msg} {e}")
+
+	def _unwrap_descriptor_callables(
+		attr_name: str, intrfc_val: Any, impl_val: Any
+	) -> tuple[Any, Any]:
+		"""Ensures that the implementation respects the @classmethod or @staticmethod
+		mandates of the interface, and returns the unwrapped underlying functions.
+		"""
+
+		if isinstance(intrfc_val, classmethod):
+			if not isinstance(impl_val, classmethod):
+				raise TypeError(
+					f"Implementation error in '{cls_name}.{attr_name}': "
+					f"Interface mandates a classmethod, but implementor provided "
+					f"'{type(impl_val).__name__}'."
+				)
+			return intrfc_val.__func__, impl_val.__func__
+
+		if isinstance(intrfc_val, staticmethod):
+			if not isinstance(impl_val, staticmethod):
+				raise TypeError(
+					f"Implementation error in '{cls_name}.{attr_name}': "
+					f"Interface mandates a staticmethod, but implementor provided "
+					f"'{type(impl_val).__name__}'."
+				)
+			return intrfc_val.__func__, impl_val.__func__
+
+		# If it is a standard method, return them as-is.
+		return intrfc_val, impl_val
 
 	def _validate_attribute(
 		cls: type, intrfc_attr_name: str, intrfc_attr_val: Any, intrfc_name: str
@@ -344,60 +374,67 @@ def _validate_implementation(cls: type, /) -> None:
 		if not _getattr(intrfc_attr_val):
 			return
 
-		impl_attr_val: Any | None = _getattr(
-			cls, attr_name=intrfc_attr_name, default=None
-		)
-
-		# If the implementer hasn't overridden it yet, it remains abstract.
-		# Skip signature validation and let ABC block instantiation later.
-		if impl_attr_val is None or _getattr(impl_attr_val):
+		try:
+			# Bypass the descriptor protocol (__get__) to get raw attributes.
+			impl_attr_raw = getattr_static(cls, intrfc_attr_name)
+		except AttributeError:
+			# Missing entirely, ABC Meta will block instantiation later.
 			return
 
-		# Handle properties explicitly.
+		# If the implementer hasn't overridden it yet, it remains abstract.
+		# Will also be blocked by ABC Meta.
+		if _getattr(impl_attr_raw):
+			return
+
+		# Handle properties.
 		if isinstance(intrfc_attr_val, property):
-			if not isinstance(impl_attr_val, property):
+			if not isinstance(impl_attr_raw, property):
 				raise TypeError(
-					f"Implementation error in '{cls.__name__}.{intrfc_attr_name}': "
+					f"Implementation error in '{cls_name}.{intrfc_attr_name}': "
 					f"Interface mandates a property, but implementor provided "
-					f"'{type(impl_attr_val).__name__}'."
+					f"'{type(impl_attr_raw).__name__}'."
 				)
 
 			_validate_property_signatures(
 				intrfc_prop=intrfc_attr_val,
-				impl_prop=impl_attr_val,
-				cls_name=cls.__name__,
+				impl_prop=impl_attr_raw,
 				attr_name=intrfc_attr_name,
 			)
 			return
 
+		intrfc_func: Callable
+		impl_func: Callable
+		intrfc_func, impl_func = _unwrap_descriptor_callables(
+			attr_name=intrfc_attr_name,
+			intrfc_val=intrfc_attr_val,
+			impl_val=impl_attr_raw,
+		)
+
 		# Validate the Interface Signature.
-		try:
-			intrfc_sig: Signature = signature(intrfc_attr_val)
-		except (ValueError, TypeError) as e:
-			raise TypeError(
-				f"Interface definition error: '{intrfc_name}.{intrfc_attr_name}' "
-				f"is un-inspectable. {e}"
-			)
+		intrfc_sig: Signature = _get_safe_signature(
+			func=intrfc_func,
+			error_msg=f"Interface definition error: '{intrfc_name}.{intrfc_attr_name}' "
+			f"is un-inspectable.",
+		)
 
 		# Validate the Implementation Signature.
-		try:
-			impl_sig: Signature = signature(impl_attr_val)
-		except (ValueError, TypeError) as e:
-			raise TypeError(
-				f"Implementation error: '{cls.__name__}.{intrfc_attr_name}': "
-				f"is un-inspectable and cannot be validated against the interface.\n"
-				f"Ensure you are not directly assigning C-bindings "
-				f"or using broken decorators. {e}"
-			)
+		impl_sig: Signature = _get_safe_signature(
+			func=impl_func,
+			error_msg=f"Implementation error: '{cls_name}.{intrfc_attr_name}': "
+			f"is un-inspectable and cannot be validated against the interface.\n"
+			f"Ensure you are not directly assigning C-bindings "
+			f"or using broken decorators.",
+		)
 
 		_compare_signatures(
 			intrfc_sig=intrfc_sig,
 			impl_sig=impl_sig,
-			cls_name=cls.__name__,
 			attr_name=intrfc_attr_name,
 		)
 
+	# ===================================
 	# _validate_implementation execution.
+	# ===================================
 	for interface in [
 		base for base in cls.__mro__ if _getattr(base, attr_name=_INTERFACE_ATTR)
 	]:
@@ -418,6 +455,8 @@ class _InterfaceMeta(ABCMeta):
 
 	Prefer to subclass :func:`BaseInterface`.
 	"""
+
+	# Cannot use typing.Self in a metaclass.
 
 	def __new__(
 		mcls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs
