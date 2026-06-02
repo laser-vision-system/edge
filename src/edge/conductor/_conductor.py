@@ -55,6 +55,7 @@ def run() -> None:
 
 	finally:
 		print("Done.")
+		del cam0
 
 	# Close camera.
 	# Close client.
