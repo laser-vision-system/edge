@@ -9,7 +9,7 @@ from ._client import EdgeClient
 from ._models import CameraConfig, CameraInfo, Image, Setpoint
 
 
-def camera_info_post(camera_info: CameraInfo) -> None:
+def camera_info_post(camera_info: CameraInfo, /) -> None:
 	endpoint: str = "/camera_info"
 	try:
 		EdgeClient.post(endpoint=endpoint, payload=camera_info)
@@ -19,7 +19,7 @@ def camera_info_post(camera_info: CameraInfo) -> None:
 		print(f"An unexpected error occurred: {err}")
 
 
-def configuration_post(camera_config: CameraConfig) -> None:
+def configuration_post(camera_config: CameraConfig, /) -> None:
 	endpoint: str = "/configuration"
 	try:
 		EdgeClient.post(endpoint=endpoint, payload=camera_config)
@@ -53,7 +53,7 @@ def setpoint_get() -> bool | None:
 		print(f"An unexpected error occurred: {err}")
 
 
-def image_put(image: Image) -> None:
+def image_put(image: Image, /) -> None:
 	endpoint: str = "/image"
 	try:
 		EdgeClient.put(endpoint=endpoint, payload=image)
