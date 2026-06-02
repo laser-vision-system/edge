@@ -3,10 +3,10 @@
 This module is not meant to be imported directly.
 """
 
+import time
 from pathlib import Path
 
 import cv2
-import time
 
 from edge.typing import Frame
 
@@ -51,7 +51,7 @@ class Camera:
 
 			if not capture_location.exists() or capture_location.is_dir():
 				raise FileNotFoundError("No file was found at this location.")
-			
+
 		self.capture_location = capture_location
 
 		self.capture = cv2.VideoCapture(capture_location)
@@ -114,7 +114,7 @@ class Camera:
 		if not self.capture.isOpened():
 			if not self.reconnect():
 				raise RuntimeError("Camera disconnected and could not reconnect.")
-		
+
 		ret: bool
 		frame: Frame
 
@@ -122,16 +122,8 @@ class Camera:
 			ret, frame = self.capture.read()
 			if ret and frame is not None and frame.size > 0:
 				return frame
-			
+
 		raise RuntimeError(f"Frame capture failed after {retries} attempts.")
-
-		"""
-		TODO Review if this is acceptable.
-		if not ret:
-			raise RuntimeError("Frame capture failed.")
-		"""
-
-		return frame
 
 	def detect_configurations(self):
 		raise NotImplementedError
