@@ -5,6 +5,7 @@ description = "Edge Processing Tier μ-com project."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "httpx>=0.28.1",
     "numpy>=2.4.6",
     "opencv-python>=4.13.0.92",
     "pydantic-settings>=2.14.1",
