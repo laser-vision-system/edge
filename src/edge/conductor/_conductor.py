@@ -5,6 +5,7 @@ This module is not meant to be imported directly.
 
 import time
 
+from edge.exceptions import FrameReadError, InitialisationError
 from edge.settings import SETTINGS
 from edge.tcam_interface import Camera
 from edge.typing import Frame
@@ -31,7 +32,7 @@ class Conductor:
 	@classmethod
 	def _has_initialised(cls, func, /):
 		if cls.__has_initialised is False:
-			raise RuntimeError(
+			raise InitialisationError(
 				f"{cls.__name__}.{cls._initialise.__name__} not called "
 				f"before {func} was called."
 			)
@@ -59,7 +60,7 @@ class Conductor:
 		# Remove.
 		print(
 			f"Perceived lightness: {value} "
-			f"Read: {frame_t:.4f}, Process: {process_t:.4f} "
+			f"| Read: {frame_t:.4f}, Process: {process_t:.4f} "
 			f"| Press Ctrl+C to stop."
 		)
 
@@ -80,14 +81,19 @@ class Conductor:
 	@classmethod
 	def run(cls) -> None:
 		cls._initialise()
+
 		try:
 			while True:
 				cls._loop()
-		except KeyboardInterrupt:
-			print("\nInterrupting... ")
 
-		except RuntimeError:
-			print("\nVideo input stopped... ")
+		except KeyboardInterrupt:
+			print("\nInterrupting... ", end="")
+
+		except FrameReadError:
+			if SETTINGS.INPUT_SOURCE == SETTINGS.InputType.VIDEO:
+				print("\nVideo input stopped... ", end="")
+			else:
+				raise
 
 		finally:
 			cls._terminate()

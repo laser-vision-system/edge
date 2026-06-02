@@ -8,6 +8,7 @@ from pathlib import Path
 
 import cv2
 
+from edge.exceptions import CaptureOpenError, FrameReadError
 from edge.typing import Frame
 
 
@@ -54,7 +55,7 @@ class Camera:
 
 		self.capture = cv2.VideoCapture(capture_location)
 		if not self.capture.isOpened():
-			raise RuntimeError("Failed to open camera")
+			raise CaptureOpenError("Failed to open camera.")
 
 		self.capture_location: int | Path = capture_location
 		self.frametime: float = frametime
@@ -111,7 +112,7 @@ class Camera:
 
 		if not self.capture.isOpened():
 			if not self.reconnect():
-				raise RuntimeError("Camera disconnected and could not reconnect.")
+				raise CaptureOpenError("Camera disconnected and could not reconnect.")
 
 		ret: bool
 		frame: Frame
@@ -121,7 +122,7 @@ class Camera:
 			if ret and frame is not None and frame.size > 0:
 				return frame
 
-		raise RuntimeError(f"Frame capture failed after {retries} attempts.")
+		raise FrameReadError(f"Frame capture failed after {retries} attempts.")
 
 	def detect_configurations(self):
 		raise NotImplementedError
