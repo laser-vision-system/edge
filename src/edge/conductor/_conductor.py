@@ -16,16 +16,26 @@ def run() -> None:
 
 	delta_t: float = 1.0 / SETTINGS.FRAMERATE
 
+	# Send configuration.
+
 	try:
 		while True:
 			start_t: float = time.time()
 
+			# Check configuration.
+
 			frame: Frame = cam0.get_frame()
 			frame_t: float = time.time() - start_t
+
+			# Check setpoint.
 
 			value: float = process_frame(frame)
 			process_t: float = time.time() - start_t
 
+			# Send image.
+			# Send camera info.
+
+			# Remove.
 			print(
 				f"Perceived lightness: {value} "
 				f"| Read: {frame_t:.4f}, Process: {process_t:.4f} "
@@ -45,3 +55,6 @@ def run() -> None:
 
 	finally:
 		print("Done.")
+
+	# Close camera.
+	# Close client.
