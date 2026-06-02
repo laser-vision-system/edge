@@ -52,13 +52,11 @@ class Camera:
 			if not capture_location.exists() or capture_location.is_dir():
 				raise FileNotFoundError("No file was found at this location.")
 
-		self.capture_location = capture_location
-
 		self.capture = cv2.VideoCapture(capture_location)
-
 		if not self.capture.isOpened():
 			raise RuntimeError("Failed to open camera")
 
+		self.capture_location: int | Path = capture_location
 		self.frametime: float = frametime
 
 	def __del__(self) -> None:
@@ -86,7 +84,7 @@ class Camera:
 		"""
 		self.capture.release()
 		for _ in range(attempts):
-			self.capture = cv2.VideoCapture(self.capture_location)
+			self.capture.open(self.capture_location)
 			if self.capture.isOpened():
 				return True
 			time.sleep(delay)
