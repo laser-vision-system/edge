@@ -8,13 +8,13 @@ import time
 from edge.settings import SETTINGS
 from edge.tcam_interface import Camera
 from edge.typing import Frame
-from edge.vision_processor import Demonstration
+from edge.vision_processor import process_frame
 
 
 def run() -> None:
-	cam0 = Camera(SETTINGS.input_source())
+	cam0 = Camera(capture_location=SETTINGS.input_source())
 
-	delta_t = 1.0 / SETTINGS.FRAMERATE
+	delta_t: float = 1.0 / SETTINGS.FRAMERATE
 
 	try:
 		while True:
@@ -23,7 +23,7 @@ def run() -> None:
 			frame: Frame = cam0.get_frame()
 			frame_t: float = time.time() - start_t
 
-			value = Demonstration.process_frame(frame)
+			value: float = process_frame(frame)
 			process_t: float = time.time() - start_t
 
 			print(
