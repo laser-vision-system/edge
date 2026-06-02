@@ -1,3 +1,10 @@
+"""This module provides the :func:`process_frame` function.
+
+This module is not meant to be imported directly.
+
+The plan is to allow for the specific vision implementation to be swapped out during
+runtime.
+"""
 
 from io import BytesIO
 
