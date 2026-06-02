@@ -52,6 +52,15 @@ class _Settings(BaseSettings):
 	The actual framerate may be lower due to peformance overhead.
 	"""
 
+	SERVER_ADDRESS: Annotated[str | None, Field(frozen=True)] = None
+	"""The IP or DNS address of the server."""
+
+	SERVER_PORT: Annotated[int | None, Field(frozen=True)] = None
+	"""The port on the server used for the connection."""
+
+	TIMEOUT: Annotated[float, Field(frozen=True)] = 1.0
+	"""The maximum time in seconds to wait for a response from the server."""
+
 	WINDOW_WIDTH: Annotated[int, Field(frozen=True, gt=1)] = 1000
 	"""The starting width of the window."""
 
