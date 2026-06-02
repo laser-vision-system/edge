@@ -2,3 +2,5 @@
 
 For production it will be loaded into a Docker image.
 """
+
+from .conductor import Conductor as Conductor

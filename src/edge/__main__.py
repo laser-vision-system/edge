@@ -2,7 +2,7 @@
 # Keep this as simple as possible.
 # This file lets us run the project as a module: `uv run python -m edge`.
 
-from .conductor import run
+from edge import Conductor
 
 
-run()
+Conductor.run()
