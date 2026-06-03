@@ -15,8 +15,10 @@ display: Label
 
 
 def apply_demonstratation(frame: Frame) -> Frame:
-	val: float = Demonstration.process_frame(frame)
-	display.configure(text=str(val))
+	results: tuple[float, float] = Demonstration.process_frame(
+		frame=frame, setpoint=False
+	)
+	display.configure(text=str(results))
 	return frame
 
 

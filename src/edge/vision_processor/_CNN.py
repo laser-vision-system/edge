@@ -15,5 +15,5 @@ class CNN(VisionInterface):
 
 	@override
 	@classmethod
-	def process_frame(cls, frame: Frame, /) -> float:
+	def process_frame(cls, frame: Frame, setpoint: bool) -> tuple[float, float]:
 		raise NotImplementedError

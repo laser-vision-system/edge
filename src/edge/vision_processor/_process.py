@@ -39,7 +39,7 @@ def _send_image(frame: Frame, /) -> None:
 	img_bytes.close()
 
 
-def _send_info(value: float, /) -> None:
+def _send_info(value: float, deviation: float) -> None:
 	"""Send the calculation info to the server.
 
 	Parameters
@@ -48,11 +48,11 @@ def _send_info(value: float, /) -> None:
 		The calculate value.
 	"""
 
-	info = CameraInfoModel(intensity=value, deviation=0)
+	info = CameraInfoModel(intensity=value, deviation=deviation)
 	EndpointCameraInfo.post(info)
 
 
-def process_frame(frame: Frame, /) -> float:
+def process_frame(frame: Frame, setpoint: bool = False) -> tuple[float, float]:
 	"""Apply the currently selected vision implementation to the frame.
 
 	Parameters
@@ -66,8 +66,11 @@ def process_frame(frame: Frame, /) -> float:
 		The calculated value for this frame.
 	"""
 
-	perceived_lightness: float = Demonstration.process_frame(frame)
+	results: tuple[float, float] = Demonstration.process_frame(
+		frame=frame, setpoint=setpoint
+	)
+
 	# Do after processing to reduce delay.
 	_send_image(frame)
-	_send_info(perceived_lightness)
-	return perceived_lightness
+	_send_info(*results)
+	return results
