@@ -64,7 +64,9 @@ class EndpointConfiguration:
 
 		endpoint: str = "/configuration"
 		try:
-			return EdgeClient.get_json(endpoint=endpoint, response_model=ConfigurationModel)
+			return EdgeClient.get_json(
+				endpoint=endpoint, response_model=ConfigurationModel
+			)
 		except httpx.HTTPError as http_err:
 			print(f"HTTP error occurred while connecting to server: {http_err}")
 		except Exception as err:
