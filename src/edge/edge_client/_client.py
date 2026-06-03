@@ -3,6 +3,8 @@
 This module is not meant to be imported directly.
 """
 
+from io import BytesIO
+
 import httpx
 from pydantic import BaseModel
 
@@ -30,9 +32,7 @@ class EdgeClient:
 	)
 
 	@classmethod
-	def get[T: BaseModel](
-		cls, endpoint: str, response_model: type[T]
-	) -> T:
+	def get_json[T: BaseModel](cls, endpoint: str, response_model: type[T]) -> T:
 		"""Executes a HTTP GET request and validates the JSON response.
 
 		Parameters
@@ -63,9 +63,7 @@ class EdgeClient:
 		return response_model.model_validate(response.json())
 
 	@classmethod
-	def post(
-		cls, endpoint: str, payload: BaseModel
-	) -> None:
+	def post_json(cls, endpoint: str, payload: BaseModel) -> None:
 		"""Executes a HTTP POST request with a Pydantic model payload.
 
 		Parameters
@@ -85,20 +83,22 @@ class EdgeClient:
 
 		json_data: dict = payload.model_dump(mode="json")
 		response: httpx.Response = cls._client.post(
-			endpoint, json=json_data, timeout=SETTINGS.TIMEOUT
+			url=endpoint,
+			json=json_data,
+			timeout=SETTINGS.TIMEOUT,
 		)
 		response.raise_for_status()
 
 	@classmethod
-	def put(cls, endpoint: str, payload: BaseModel) -> None:
+	def put_file(cls, endpoint: str, payload: BytesIO) -> None:
 		"""Executes a HTTP PUT request with a Pydantic model payload.
 
 		Parameters
 		----------
 		endpoint : str
 			The API endpoint path.
-		payload : T
-			The Pydantic model instance containing the request body.
+		payload : BytesIO
+			The file that needs to be sent.
 		timeout : float, optional
 			The maximum time in seconds to wait for a response.
 
@@ -108,8 +108,9 @@ class EdgeClient:
 			If the HTTP request fails or returns an error status code.
 		"""
 
-		json_data: dict = payload.model_dump(mode="json")
 		response: httpx.Response = cls._client.put(
-			endpoint, json=json_data, timeout=SETTINGS.TIMEOUT
+			url=endpoint,
+			files={"upload-file": payload},
+			timeout=SETTINGS.TIMEOUT,
 		)
 		response.raise_for_status()

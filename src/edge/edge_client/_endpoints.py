@@ -3,10 +3,12 @@
 This module is not meant to be imported directly.
 """
 
+from io import BytesIO
+
 import httpx
 
 from ._client import EdgeClient
-from ._models import CameraInfoModel, ConfigurationModel, GUIUpdateModel, ImageModel
+from ._models import CameraInfoModel, ConfigurationModel, GUIUpdateModel
 
 
 class EndpointCameraInfo:
@@ -22,7 +24,7 @@ class EndpointCameraInfo:
 
 		endpoint: str = "/camera_info"
 		try:
-			EdgeClient.post(endpoint=endpoint, payload=camera_info)
+			EdgeClient.post_json(endpoint=endpoint, payload=camera_info)
 		except httpx.HTTPError as http_err:
 			print(f"HTTP error occurred while connecting to server: {http_err}")
 		except Exception as err:
@@ -42,7 +44,7 @@ class EndpointConfiguration:
 
 		endpoint: str = "/configuration"
 		try:
-			EdgeClient.post(endpoint=endpoint, payload=camera_config)
+			EdgeClient.post_json(endpoint=endpoint, payload=camera_config)
 		except httpx.HTTPError as http_err:
 			print(f"HTTP error occurred while connecting to server: {http_err}")
 		except Exception as err:
@@ -62,7 +64,7 @@ class EndpointConfiguration:
 
 		endpoint: str = "/configuration"
 		try:
-			return EdgeClient.get(endpoint=endpoint, response_model=ConfigurationModel)
+			return EdgeClient.get_json(endpoint=endpoint, response_model=ConfigurationModel)
 		except httpx.HTTPError as http_err:
 			print(f"HTTP error occurred while connecting to server: {http_err}")
 		except Exception as err:
@@ -84,7 +86,7 @@ class EndpointGUIUpdate:
 
 		endpoint: str = "/gui_update"
 		try:
-			return EdgeClient.get(endpoint=endpoint, response_model=GUIUpdateModel)
+			return EdgeClient.get_json(endpoint=endpoint, response_model=GUIUpdateModel)
 		except httpx.HTTPError as http_err:
 			print(f"HTTP error occurred while connecting to server: {http_err}")
 		except Exception as err:
@@ -93,18 +95,18 @@ class EndpointGUIUpdate:
 
 class EndpointImage:
 	@staticmethod
-	def put(image: ImageModel, /) -> None:
+	def put(image: BytesIO, /) -> None:
 		"""Send an image to the server.
 
 		Parameters
 		----------
-		image : Image
-			The image to be sent, expected to be the frame.
+		image : BytesIO
+			The image to be sent to the server.
 		"""
 
 		endpoint: str = "/image"
 		try:
-			EdgeClient.put(endpoint=endpoint, payload=image)
+			EdgeClient.put_file(endpoint=endpoint, payload=image)
 		except httpx.HTTPError as http_err:
 			print(f"HTTP error occurred while connecting to server: {http_err}")
 		except Exception as err:

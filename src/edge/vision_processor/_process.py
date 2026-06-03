@@ -15,7 +15,6 @@ from edge.edge_client import (
 	CameraInfoModel,
 	EndpointCameraInfo,
 	EndpointImage,
-	ImageModel as Edge_Image,
 )
 from edge.typing import Frame
 
@@ -34,8 +33,7 @@ def _send_image(frame: Frame, /) -> None:
 	img_pil: PIL_Image = fromarray(obj=cvtColor(src=frame, code=COLOR_BGR2RGB))
 	img_bytes = BytesIO()
 	img_pil.save(fp=img_bytes, format="png")
-	img_pydantic: Edge_Image = Edge_Image(image=img_bytes.read())
-	EndpointImage.put(img_pydantic)
+	EndpointImage.put(img_bytes)
 	img_bytes.close()
 
 
