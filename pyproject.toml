@@ -14,6 +14,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pillow>=12.2.0",
+    "poethepoet>=0.46.0",
     "pytest>=9.0.3",
 ]
 
@@ -21,3 +22,6 @@ dev = [
 [build-system]
 requires = ["uv-build<1.0.0"]
 build-backend = "uv_build"
+
+[tool.poe.tasks]
+manage = "uv run scripts/docker/manage.py"
