@@ -110,7 +110,7 @@ class EdgeClient:
 
 		response: httpx.Response = cls._client.put(
 			url=endpoint,
-			files={"upload-file": payload},
+			files={"file": payload},
 			timeout=SETTINGS.TIMEOUT,
 		)
 		response.raise_for_status()
