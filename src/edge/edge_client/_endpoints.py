@@ -7,8 +7,9 @@ from io import BytesIO
 
 import httpx
 
+from edge.models import CameraInfoModel, ConfigurationModel, GUIUpdateModel
+
 from ._client import EdgeClient
-from ._models import CameraInfoModel, ConfigurationModel, GUIUpdateModel
 
 
 class EndpointCameraInfo:

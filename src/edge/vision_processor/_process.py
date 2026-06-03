@@ -11,11 +11,8 @@ from io import BytesIO
 from cv2 import COLOR_BGR2RGB, cvtColor
 from PIL.Image import Image as PIL_Image, fromarray
 
-from edge.edge_client import (
-	CameraInfoModel,
-	EndpointCameraInfo,
-	EndpointImage,
-)
+from edge.edge_client import EndpointCameraInfo, EndpointImage
+from edge.models import CameraInfoModel
 from edge.typing import Frame
 
 from ._demonstration import Demonstration

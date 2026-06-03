@@ -5,13 +5,9 @@ This module is not meant to be imported directly.
 
 import time
 
-from edge.edge_client import (
-	ConfigurationModel,
-	EndpointConfiguration,
-	EndpointGUIUpdate,
-	GUIUpdateModel,
-)
+from edge.edge_client import EndpointConfiguration, EndpointGUIUpdate
 from edge.exceptions import FrameReadError, InitialisationError
+from edge.models import ConfigurationModel, GUIUpdateModel
 from edge.settings import SETTINGS
 from edge.tcam_interface import Camera
 from edge.typing import Frame
@@ -76,8 +72,8 @@ class Conductor:
 
 		if SETTINGS.DEBUG:
 			print(
-				f"Perceived lightness: {results[0]} "
-				f"| Deviation: {results[1]}"
+				f"Perceived lightness: {results[0]:.4f} "
+				f"| Deviation: {results[1]:.4f}"
 				f"| Read: {frame_t:.4f}, Process: {process_t:.4f} "
 				f"| Press Ctrl+C to stop."
 			)
