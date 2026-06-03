@@ -1,7 +1,7 @@
 """Connection interface between the edge and a server."""
 
 from ._client import EdgeClient as EdgeClient
-from ._functions import (
+from ._endpoints import (
 	camera_info_post as camera_info_post,
 	configuration_get as configuration_get,
 	configuration_post as configuration_post,
