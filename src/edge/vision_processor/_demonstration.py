@@ -70,7 +70,7 @@ class Demonstration(VisionInterface):
 			cls.setpoint = lightness
 
 		deviation: float = 0
-		if cls.setpoint >= 0:
-			deviation = lightness / setpoint
+		if cls.setpoint > 0:
+			deviation = lightness / cls.setpoint
 
 		return lightness, deviation
