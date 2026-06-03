@@ -6,20 +6,20 @@ This module is not meant to be imported directly.
 from pydantic import BaseModel
 
 
-class CameraInfo(BaseModel):
+class CameraInfoModel(BaseModel):
 	intensity: float
 	deviation: float
 
 
-class CameraConfig(BaseModel):
+class ConfigurationModel(BaseModel):
 	brightness: float
 	framerate: float
 
 
-class Setpoint(BaseModel):
-	should: bool
+class GUIUpdateModel(BaseModel):
+	setpoint: bool
+	config: bool
 
 
-class Image(BaseModel):
-	# TODO Check type.
+class ImageModel(BaseModel):
 	image: bytes
