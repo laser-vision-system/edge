@@ -19,9 +19,11 @@ class Demonstration(VisionInterface):
 	"""A \"machine vison implementation\" that just outputs the average perceived
 	lightness."""
 
+	setpoint: float = -1
+
 	@override
 	@classmethod
-	def process_frame(cls, frame: Frame, /) -> float:
+	def process_frame(cls, frame: Frame, setpoint: bool) -> tuple[float, float]:
 		"""Calculate the average perceived lightness of a given frame.
 
 		Parameters
@@ -63,4 +65,12 @@ class Demonstration(VisionInterface):
 		# Convert BGR to CIELAB colour space.
 		lab_frame: Frame = cv2.cvtColor(src=frame_norm, code=cv2.COLOR_BGR2Lab)
 		l_star: Frame = lab_frame[..., 0]
-		return float(np.average(l_star))
+		lightness = float(np.average(l_star))
+		if setpoint:
+			cls.setpoint = lightness
+
+		deviation: float = 0
+		if cls.setpoint >= 0:
+			deviation = lightness / setpoint
+
+		return lightness, deviation

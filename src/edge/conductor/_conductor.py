@@ -5,6 +5,12 @@ This module is not meant to be imported directly.
 
 import time
 
+from edge.edge_client import (
+	ConfigurationModel,
+	EndpointConfiguration,
+	EndpointGUIUpdate,
+	GUIUpdateModel,
+)
 from edge.exceptions import FrameReadError, InitialisationError
 from edge.settings import SETTINGS
 from edge.tcam_interface import Camera
@@ -23,11 +29,14 @@ class Conductor:
 
 	@classmethod
 	def _initialise(cls) -> None:
-		cls.cam0 = Camera(capture_location=SETTINGS.input_source())
-		# TODO use config option
-		cls.delta_t: float = 1.0 / SETTINGS.FRAMERATE
+		cls.cam0 = Camera(
+			capture_location=SETTINGS.input_source(), frametime=1.0 / SETTINGS.FRAMERATE
+		)
 		print("Intialised.")
-		# Send configuration.
+		# TODO Update.
+		EndpointConfiguration.post(
+			ConfigurationModel(brightness=1.0, framerate=SETTINGS.FRAMERATE)
+		)
 		cls.__has_initialised = True
 
 	@classmethod
@@ -45,28 +54,31 @@ class Conductor:
 
 		start_t: float = time.time()
 
-		# Check configuration.
+		gui_update: GUIUpdateModel | None = EndpointGUIUpdate.get()
+
+		# Apply camera configuration.
+		if gui_update is not None and gui_update.config:
+			config: ConfigurationModel | None = EndpointConfiguration.get()
+			if config is not None:
+				cls.cam0.frametime = 1.0 / config.framerate
 
 		frame: Frame = cls.cam0.get_frame()
 		frame_t: float = time.time() - start_t
 
-		# Check setpoint.
-
-		value: float = process_frame(frame)
+		setpoint: bool = gui_update.setpoint if gui_update is not None else False
+		results: tuple[float, float] = process_frame(frame=frame, setpoint=setpoint)
 		process_t: float = time.time() - start_t
-
-		# Send image.
-		# Send camera info.
 
 		# Remove.
 		print(
-			f"Perceived lightness: {value} "
+			f"Perceived lightness: {results[0]} "
+			f"| Deviation: {results[1]}"
 			f"| Read: {frame_t:.4f}, Process: {process_t:.4f} "
 			f"| Press Ctrl+C to stop."
 		)
 
 		cls.elapsed_t = time.time() - start_t
-		wait_t: float = cls.delta_t - cls.elapsed_t
+		wait_t: float = cls.cam0.frametime - cls.elapsed_t
 		if wait_t > 0:
 			time.sleep(wait_t)
 
@@ -74,9 +86,7 @@ class Conductor:
 	def _terminate(cls) -> None:
 		cls._has_initialised(cls._terminate.__name__)
 
-		# Close camera.
 		del cls.cam0
-		# Close client.
 		print("Terminated.")
 
 	@classmethod
