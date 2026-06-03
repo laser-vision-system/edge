@@ -30,6 +30,9 @@ class _Settings(BaseSettings):
 		WEBCAM = "webcam"
 		VIDEO = "video"
 
+	DEBUG: Annotated[bool, Field(frozen=True)] = False
+	"""Enable debug mode for printing."""
+
 	INPUT_SOURCE: Annotated[InputType, Field(frozen=True)] = InputType.WEBCAM
 	"""What input source to use.
 

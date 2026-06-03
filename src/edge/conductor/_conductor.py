@@ -32,11 +32,15 @@ class Conductor:
 		cls.cam0 = Camera(
 			capture_location=SETTINGS.input_source(), frametime=1.0 / SETTINGS.FRAMERATE
 		)
-		print("Intialised.")
+
+		if SETTINGS.DEBUG:
+			print("Intialised.")
+
 		# TODO Update.
 		EndpointConfiguration.post(
 			ConfigurationModel(brightness=1.0, framerate=SETTINGS.FRAMERATE)
 		)
+
 		cls.__has_initialised = True
 
 	@classmethod
@@ -50,7 +54,8 @@ class Conductor:
 	@classmethod
 	def _loop(cls) -> None:
 		cls._has_initialised(cls._loop.__name__)
-		print(f"Previous frametime: {cls.elapsed_t:.4f} | ", end="")
+		if SETTINGS.DEBUG:
+			print(f"Previous frametime: {cls.elapsed_t:.4f} | ", end="")
 
 		start_t: float = time.time()
 
@@ -69,13 +74,13 @@ class Conductor:
 		results: tuple[float, float] = process_frame(frame=frame, setpoint=setpoint)
 		process_t: float = time.time() - start_t
 
-		# Remove.
-		print(
-			f"Perceived lightness: {results[0]} "
-			f"| Deviation: {results[1]}"
-			f"| Read: {frame_t:.4f}, Process: {process_t:.4f} "
-			f"| Press Ctrl+C to stop."
-		)
+		if SETTINGS.DEBUG:
+			print(
+				f"Perceived lightness: {results[0]} "
+				f"| Deviation: {results[1]}"
+				f"| Read: {frame_t:.4f}, Process: {process_t:.4f} "
+				f"| Press Ctrl+C to stop."
+			)
 
 		cls.elapsed_t = time.time() - start_t
 		wait_t: float = cls.cam0.frametime - cls.elapsed_t
@@ -87,7 +92,8 @@ class Conductor:
 		cls._has_initialised(cls._terminate.__name__)
 
 		del cls.cam0
-		print("Terminated.")
+		if SETTINGS.DEBUG:
+			print("Terminated.")
 
 	@classmethod
 	def run(cls) -> None:
