@@ -19,7 +19,3 @@ class ConfigurationModel(BaseModel):
 class GUIUpdateModel(BaseModel):
 	setpoint: bool
 	config: bool
-
-
-class ImageModel(BaseModel):
-	image: bytes
