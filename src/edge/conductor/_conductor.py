@@ -24,6 +24,7 @@ class Conductor:
 	@classmethod
 	def _initialise(cls) -> None:
 		cls.cam0 = Camera(capture_location=SETTINGS.input_source())
+		# TODO use config option
 		cls.delta_t: float = 1.0 / SETTINGS.FRAMERATE
 		print("Intialised.")
 		# Send configuration.

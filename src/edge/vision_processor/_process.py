@@ -12,10 +12,10 @@ from cv2 import COLOR_BGR2RGB, cvtColor
 from PIL.Image import Image as PIL_Image, fromarray
 
 from edge.edge_client import (
-	CameraInfo,
-	Image as Edge_Image,
-	camera_info_post,
-	image_put,
+	CameraInfoModel,
+	EndpointCameraInfo,
+	EndpointImage,
+	ImageModel as Edge_Image,
 )
 from edge.typing import Frame
 
@@ -35,8 +35,9 @@ def _send_image(frame: Frame, /) -> None:
 	img_bytes = BytesIO()
 	img_pil.save(fp=img_bytes, format="png")
 	img_pydantic: Edge_Image = Edge_Image(image=img_bytes.read())
-	image_put(img_pydantic)
+	EndpointImage.put(img_pydantic)
 	img_bytes.close()
+
 
 def _send_info(value: float, /) -> None:
 	"""Send the calculation info to the server.
@@ -47,8 +48,9 @@ def _send_info(value: float, /) -> None:
 		The calculate value.
 	"""
 
-	info = CameraInfo(intensity=value, deviation=0)
-	camera_info_post(info)
+	info = CameraInfoModel(intensity=value, deviation=0)
+	EndpointCameraInfo.post(info)
+
 
 def process_frame(frame: Frame, /) -> float:
 	"""Apply the currently selected vision implementation to the frame.
