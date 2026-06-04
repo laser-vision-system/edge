@@ -7,11 +7,11 @@ import time
 from pathlib import Path
 
 import cv2
-from linuxpy.video.device import Device, MenuControl, BooleanControl, IntegerControl
+from linuxpy.video.device import BooleanControl, Device, IntegerControl, MenuControl
 
 from edge.exceptions import CaptureOpenError, FrameReadError
-from edge.typing import Frame
 from edge.models import ConfigurationModel
+from edge.typing import Frame
 
 
 class Camera:
@@ -125,8 +125,8 @@ class Camera:
 				return frame
 
 		raise FrameReadError(f"Frame capture failed after {retries} attempts.")
-	
-	def detect_configurations(self):
+
+	def detect_configurations(self) -> ConfigurationModel:
 		"""
 		Retrieves the writable configurations of a camera.
 
@@ -136,7 +136,8 @@ class Camera:
 			A dictionary of the writable controls of the camera, with the control
 			name as the key and a dictionary of the control properties as the value.
 
-			The control property can be on of three types: bool, int, or enumerate. Each type has different properties:
+			The control property can be on of three types: bool, int, or enumerate.
+			Each type has different properties:
 
 			bool
 				- value: The current value of the control
@@ -145,107 +146,120 @@ class Camera:
 
 
 			int
-			    - min: The minimum value of the control
-			    - max: The maximum value of the control
-			    - step: The step size of the control
-			    - value: The current value of the control
-			    - default: The default value of the control
+				- min: The minimum value of the control
+				- max: The maximum value of the control
+				- step: The step size of the control
+				- value: The current value of the control
+				- default: The default value of the control
 				- inactive: Whether the control is currently inactive (true or false)
 
 
 			enumerate
-			    - items: A dictionary of the possible values of the control, with the index as the key and the name as the value
-			    - value: The current value of the control
-			    - default: The default value of the control
+				- items: A dictionary of the possible values of the control, with the
+				index as the key and the name as the value
+				- value: The current value of the control
+				- default: The default value of the control
 				- inactive: Whether the control is currently inactive (true or false)
 		"""
 		if self.capture_location is not int:
-			raise RuntimeWarning("Could not probe camera: Camera location was not an integer.")
-			return {}
+			# raise RuntimeWarning(
+			# "Could not probe camera: Camera location was not an integer."
+			# )
+			print("Could not probe camera: Camera location was not an integer.")
+			return ConfigurationModel(
+				framerate=1.0 / self.frametime, brightness=-1, hue=-1, saturation=-1
+			)
 
 		with Device.from_id(self.capture_location) as cam:
 			if cam is None:
 				raise CaptureOpenError("Camera could not be found.")
-			
+
 			if cam.controls is None:
 				print("Camera has no accessible controls.")
-				return {}
-			
+				return ConfigurationModel(
+					framerate=1.0 / self.frametime, brightness=-1, hue=-1, saturation=-1
+				)
+
 			try:
 				ctrls = []
 				for c in list(cam.controls.values()):
 					ctrls.append(c)
 
+				controls: dict[str, dict] = {}
+				for c in ctrls:
+					inactive = False
+					if c.flags == 16:
+						"""This is a bit of a hack, but it seems that when a control is
+						inactive, it has a flag value of 16.
+						There may be other flags but I haven't come across any yet."""
+						inactive = True
+
+					# TODO perhaps put these below three functions into a helper function
+					if isinstance(c, BooleanControl):
+						print(f"Name: {c.name} - default = {c.default}")
+						controls[c.name] = {
+							"type": bool,
+							"value": c.value,
+							"default": c.default,
+						}
+						controls[c.name]["inactive"] = inactive
+
+					if isinstance(c, IntegerControl):
+						print(
+							f"Name: {c.name} - Min = {c.minimum} - Max = {c.maximum})"
+							f" - Step size = {c.step} - default = {c.default}"
+						)
+						controls[c.name] = {
+							"type": int,
+							"min": c.minimum,
+							"max": c.maximum,
+							"step": c.step,
+							"value": c.value,
+							"default": c.default,
+						}
+						controls[c.name]["inactive"] = inactive
+
+					if isinstance(c, MenuControl):
+						items = {}
+						for index, name in c.items():
+							items[index] = name
+
+						controls[c.name] = {
+							"type": enumerate,
+							"items": items,
+							"value": c.value,
+							"default": c.default,
+						}
+						controls[c.name]["inactive"] = inactive
+
 			except Exception as e:
 				print(f"Could not read controls: {e}")
-				
-			
-			controls = {}
-			for c in ctrls:
-				inactive = False
-				if c.flags == 16:
-					"""This is a bit of a hack, but it seems that when a control is inactive, it has a flag value of 16.
-					There may be other flags but I haven't come across any yet."""
-					inactive = True
-
-				#TODO perhaps put these below three functions into a helper function
-				if isinstance(c, BooleanControl):
-					print(f"Name: {c.name} - default = {c.default}")
-					controls[c.name] = {
-						"type": bool,
-						"value": c.value,
-						"default": c.default
-					}
-					controls[c.name]["inactive"] = inactive
-				
-				if isinstance(c, IntegerControl):
-					print(f"Name: {c.name} - Min = {c.minimum} - Max = {c.maximum}) - Step size = {c.step} - default = {c.default}")
-					controls[c.name] = {
-						"type": int,
-						"min": c.minimum,
-						"max": c.maximum,
-						"step": c.step,
-						"value": c.value,
-						"default": c.default
-					}
-					controls[c.name]["inactive"] = inactive
-				
-				if isinstance(c, MenuControl):
-					items = {}
-					for (index, name) in c.items():
-						items[index] = name
-
-					controls[c.name] = {
-						"type": enumerate,
-						"items": items,
-						"value": c.value,
-						"default": c.default
-					}
-					controls[c.name]["inactive"] = inactive
-
+				return ConfigurationModel(
+					framerate=1.0 / self.frametime, brightness=-1, hue=-1, saturation=-1
+				)
 
 		"""Code for MVP demonstration purposes"""
-		demo_controls = ConfigurationModel(
+		return ConfigurationModel(
+			framerate=1.0 / self.frametime,
 			brightness=controls["Brightness"]["value"],
 			hue=controls["Hue"]["value"],
-			saturation=controls["Saturation"]["value"]
+			saturation=controls["Saturation"]["value"],
 		)
 
-		return demo_controls
-	
-	def apply_configurations(self, configs: ConfigurationModel) -> None:
+	def apply_configurations(self, configs: ConfigurationModel, /) -> None:
 		if self.capture_location is not int:
-			raise RuntimeWarning("Could not probe camera: Camera location was not an integer.")
-			return {}
-		
+			raise RuntimeWarning(
+				"Could not probe camera: Camera location was not an integer."
+			)
+
 		with Device.from_id(self.capture_location) as cam:
 			if cam is None:
 				raise CaptureOpenError("Camera could not be found.")
-			
+
 			if cam.controls is None:
 				print("Could not access camera controls.")
 				return
-			
+
 			for config_name, config_value in configs.model_dump().items():
 				try:
 					cam.controls[config_name].value = config_value

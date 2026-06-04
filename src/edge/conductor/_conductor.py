@@ -33,14 +33,9 @@ class Conductor:
 		if SETTINGS.DEBUG:
 			print("Intialised.")
 
-		"""TODO Update.
-		Commented out because camera iniialises with default values.
-
-		TODO Allow user to save preferred settings and apply them on startup, but this is not a priority for the MVP.
-		"""
-		# EndpointConfiguration.post(
-		# 	ConfigurationModel(brightness=1.0, framerate=SETTINGS.FRAMERATE)
-		# )
+		EndpointConfiguration.post(
+			cls.cam0.detect_configurations()
+		)
 
 		cls.__has_initialised = True
 
@@ -65,9 +60,9 @@ class Conductor:
 		# Apply camera configuration.
 		if gui_update is not None and gui_update.config:
 			config: ConfigurationModel | None = EndpointConfiguration.get()
-			"""Commented out because framerate is not currently in camera config"""
-			# if config is not None:
-				# cls.cam0.frametime = 1.0 / config.framerate
+			if config is not None:
+				cls.cam0.frametime = 1.0 / config.framerate
+				cls.cam0.apply_configurations(config)
 
 		frame: Frame = cls.cam0.get_frame()
 		frame_t: float = time.time() - start_t
@@ -79,7 +74,7 @@ class Conductor:
 		if SETTINGS.DEBUG:
 			print(
 				f"Perceived lightness: {results[0]:.4f} "
-				f"| Deviation: {results[1]:.4f}"
+				f"| Deviation: {results[1]:.4f} "
 				f"| Read: {frame_t:.4f}, Process: {process_t:.4f} "
 				f"| Press Ctrl+C to stop."
 			)
