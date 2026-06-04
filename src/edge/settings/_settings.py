@@ -23,7 +23,7 @@ class _Settings(BaseSettings):
 		case_sensitive=False,
 		env_ignore_empty=True,
 		extra="ignore",
-		ignored_types=(),
+		alias_generator=lambda field_name: field_name.lower().split("_")[-1],
 	)
 
 	class InputType(StrEnum):
@@ -55,7 +55,7 @@ class _Settings(BaseSettings):
 	The actual framerate may be lower due to peformance overhead.
 	"""
 
-	SERVER_ADDRESS: Annotated[str | None, Field(frozen=True)] = None
+	SERVER_ADDRESS: Annotated[str | None, Field(frozen=True, alias="addr")] = None
 	"""The IP or DNS address of the server."""
 
 	SERVER_PORT: Annotated[int | None, Field(frozen=True)] = None
@@ -111,3 +111,6 @@ if SETTINGS.INPUT_SOURCE == SETTINGS.InputType.VIDEO:
 		raise ValueError("`TESTING_VID` setting not set.")
 	if not SETTINGS.TESTING_VID.exists():
 		raise ValueError(f"File not found: {SETTINGS.TESTING_VID}")
+
+if SETTINGS.DEBUG:
+	print(f"Using settings: {SETTINGS.model_dump_json(by_alias=True)}")
