@@ -2,13 +2,19 @@
 
 from tkinter.ttk import Label
 
+##from edge.tcam_interface import Camera
 from edge.settings import SETTINGS
-from edge.tcam_interface import Camera
 from edge.typing import Frame
 from edge.vision_processor import Demonstration
 
 from ..video_feed import VideoFeed
 from ._user_interface import UserInterface
+
+
+WINDOW_WIDTH = 1000
+"""The starting width of the window."""
+WINDOW_HEIGHT = 500
+"""The starting height of the window."""
 
 
 display: Label
@@ -29,8 +35,8 @@ video_feed = VideoFeed(
 )
 
 app = UserInterface(
-	width=SETTINGS.WINDOW_WIDTH,
-	height=SETTINGS.WINDOW_HEIGHT,
+	width=WINDOW_WIDTH,
+	height=WINDOW_HEIGHT,
 	title="Testing Display",
 	video_feed=video_feed,
 )
