@@ -9,12 +9,12 @@ dependencies = [
     "linuxpy>=0.24.0",
     "numpy>=2.4.6",
     "opencv-python>=4.13.0.92",
+    "pillow>=12.2.0",
     "pydantic-settings>=2.14.1",
 ]
 
 [dependency-groups]
 dev = [
-    "pillow>=12.2.0",
     "poethepoet>=0.46.0",
     "pytest>=9.0.3",
 ]

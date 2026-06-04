@@ -54,12 +54,12 @@ dependencies = [
     { name = "linuxpy" },
     { name = "numpy" },
     { name = "opencv-python" },
+    { name = "pillow" },
     { name = "pydantic-settings" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "pillow" },
     { name = "poethepoet" },
     { name = "pytest" },
 ]
@@ -70,12 +70,12 @@ requires-dist = [
     { name = "linuxpy", specifier = ">=0.24.0" },
     { name = "numpy", specifier = ">=2.4.6" },
     { name = "opencv-python", specifier = ">=4.13.0.92" },
+    { name = "pillow", specifier = ">=12.2.0" },
     { name = "pydantic-settings", specifier = ">=2.14.1" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pillow", specifier = ">=12.2.0" },
     { name = "poethepoet", specifier = ">=0.46.0" },
     { name = "pytest", specifier = ">=9.0.3" },
 ]
