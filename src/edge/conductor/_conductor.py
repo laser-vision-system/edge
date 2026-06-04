@@ -26,7 +26,8 @@ class Conductor:
 	@classmethod
 	def _initialise(cls) -> None:
 		cls.cam0 = Camera(
-			capture_location=SETTINGS.input_source(), frametime=1.0 / SETTINGS.FRAMERATE
+			capture_location=SETTINGS.get_input_source(),
+			frametime=1.0 / SETTINGS.FRAMERATE,
 		)
 
 		if SETTINGS.DEBUG:

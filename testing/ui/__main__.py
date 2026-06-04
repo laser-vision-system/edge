@@ -29,7 +29,7 @@ def apply_demonstratation(frame: Frame) -> Frame:
 
 
 video_feed = VideoFeed(
-	capture_location=SETTINGS.input_source(),
+	capture_location=SETTINGS.get_input_source(),
 	callback=apply_demonstratation,
 	frametime=1.0 / 60,
 )
