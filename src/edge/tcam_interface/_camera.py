@@ -7,10 +7,11 @@ import time
 from pathlib import Path
 
 import cv2
-from linuxpy.video.device import Device, ControlFlag, MenuControl, BooleanControl, IntegerControl
+from linuxpy.video.device import Device, MenuControl, BooleanControl, IntegerControl
 
 from edge.exceptions import CaptureOpenError, FrameReadError
 from edge.typing import Frame
+from edge.models import ConfigurationModel
 
 
 class Camera:
@@ -171,16 +172,16 @@ class Camera:
 				return {}
 			
 			try:
-				controls = []
+				ctrls = []
 				for c in list(cam.controls.values()):
-					controls.append(c)
+					ctrls.append(c)
 
 			except Exception as e:
 				print(f"Could not read controls: {e}")
 				
 			
-			ctrls = {}
-			for c in controls:
+			controls = {}
+			for c in ctrls:
 				inactive = False
 				if c.flags == 16:
 					print(f"Warning: {c.name} is currently inactive.")
@@ -188,22 +189,21 @@ class Camera:
 
 				added = False
 
+				#TODO perhaps put these below three functions into a helper function
 				if isinstance(c, BooleanControl):
 					print(f"Name: {c.name} - default = {c.default}")
-					ctrls[c.name] = {
+					controls[c.name] = {
 						"type": bool,
 						"value": c.value,
 						"default": c.default
 					}
-					if inactive:
-						ctrls[c.name]["inactive"] = True
-					else:
-						ctrls[c.name]["inactive"] = False
+					controls[c.name]["inactive"] = inactive
+
 					added = True
 				
 				if isinstance(c, IntegerControl):
 					print(f"Name: {c.name} - Min = {c.minimum} - Max = {c.maximum}) - Step size = {c.step} - default = {c.default}")
-					ctrls[c.name] = {
+					controls[c.name] = {
 						"type": int,
 						"min": c.minimum,
 						"max": c.maximum,
@@ -211,10 +211,7 @@ class Camera:
 						"value": c.value,
 						"default": c.default
 					}
-					if inactive:
-						ctrls[c.name]["inactive"] = True
-					else:
-						ctrls[c.name]["inactive"] = False
+					controls[c.name]["inactive"] = inactive
 					added = True
 				
 				if isinstance(c, MenuControl):
@@ -222,16 +219,13 @@ class Camera:
 					for (index, name) in c.items():
 						items[index] = name
 
-					ctrls[c.name] = {
+					controls[c.name] = {
 						"type": enumerate,
 						"items": items,
 						"value": c.value,
 						"default": c.default
 					}
-					if inactive:
-						ctrls[c.name]["inactive"] = True
-					else:
-						ctrls[c.name]["inactive"] = False
+					controls[c.name]["inactive"] = inactive
 					added = True
 
 				if added:
@@ -240,7 +234,31 @@ class Camera:
 					print(f"NOT ADDED: {c.name}")
 
 
-		return ctrls
+		"""Code for MVP demonstration purposes"""
+		demo_controls = ConfigurationModel(
+			Brightness=controls["Brightness"]["value"],
+			Contrast=controls["Contrast"]["value"],
+			Saturation=controls["Saturation"]["value"]
+		)
+
+		return demo_controls
 	
-	def apply_configurations(self):
-		raise NotImplementedError
+	def apply_configurations(self, configs: ConfigurationModel) -> None:
+		if self.capture_location is not int:
+			raise RuntimeWarning("Could not probe camera: Camera location was not an integer.")
+			return {}
+		
+		with Device.from_id(self.capture_location) as cam:
+			if cam is None:
+				raise CaptureOpenError("Camera could not be found.")
+			
+			if cam.controls is None:
+				print("Could not access camera controls.")
+				return
+			
+			for config_name, config_value in configs.model_dump().items():
+				try:
+					cam.controls[config_name].value = config_value
+					print(f"Set {config_name} to {config_value}")
+				except Exception as e:
+					print(f"Could not set {config_name} to {config_value}: {e}")

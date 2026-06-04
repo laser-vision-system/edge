@@ -18,7 +18,8 @@ class GUIUpdateModel(BaseModel):
 
 class CameraControlModel(BaseModel):
 	type: type
-	inactive: bool 
+	inactive: bool
+	value: int | bool
 
 
 class IntegerControlModel(CameraControlModel):
@@ -41,6 +42,9 @@ class MenuControlModel(CameraControlModel):
 
 
 class ConfigurationModel(BaseModel):
-	# brightness: float
-	# framerate: float
-	controls: dict[str, CameraControlModel]
+	Brightness: int
+	Contrast: int
+	Saturation: int
+
+	# Stashed comment for future a sprint
+	# controls: dict[str, CameraControlModel]
