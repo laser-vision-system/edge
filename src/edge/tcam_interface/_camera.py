@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 import cv2
+from linuxpy.video.device import Device, ControlFlag, MenuControl, BooleanControl, IntegerControl
 
 from edge.exceptions import CaptureOpenError, FrameReadError
 from edge.typing import Frame
@@ -123,9 +124,123 @@ class Camera:
 				return frame
 
 		raise FrameReadError(f"Frame capture failed after {retries} attempts.")
-
+	
 	def detect_configurations(self):
-		raise NotImplementedError
+		"""
+		Retrieves the writable configurations of a camera.
 
+		Returns
+		-------
+		dict
+			A dictionary of the writable controls of the camera, with the control
+			name as the key and a dictionary of the control properties as the value.
+
+			The control property can be on of three types: bool, int, or enumerate. Each type has different properties:
+
+			bool
+				- value: The current value of the control
+				- default: The default value of the control
+				- inactive: Whether the control is currently inactive (true or false)
+
+
+			int
+			    - min: The minimum value of the control
+			    - max: The maximum value of the control
+			    - step: The step size of the control
+			    - value: The current value of the control
+			    - default: The default value of the control
+				- inactive: Whether the control is currently inactive (true or false)
+
+
+			enumerate
+			    - items: A dictionary of the possible values of the control, with the index as the key and the name as the value
+			    - value: The current value of the control
+			    - default: The default value of the control
+				- inactive: Whether the control is currently inactive (true or false)
+		"""
+		if self.capture_location is not int:
+			raise RuntimeWarning("Could not probe camera: Camera location was not an integer.")
+			return {}
+
+		with Device.from_id(self.capture_location) as cam:
+			if cam is None:
+				raise CaptureOpenError("Camera could not be found.")
+			
+			if cam.controls is None:
+				print("Camera has no accessible controls.")
+				return {}
+			
+			try:
+				controls = []
+				for c in list(cam.controls.values()):
+					controls.append(c)
+
+			except Exception as e:
+				print(f"Could not read controls: {e}")
+				
+			
+			ctrls = {}
+			for c in controls:
+				inactive = False
+				if c.flags == 16:
+					print(f"Warning: {c.name} is currently inactive.")
+					inactive = True
+
+				added = False
+
+				if isinstance(c, BooleanControl):
+					print(f"Name: {c.name} - default = {c.default}")
+					ctrls[c.name] = {
+						"type": bool,
+						"value": c.value,
+						"default": c.default
+					}
+					if inactive:
+						ctrls[c.name]["inactive"] = True
+					else:
+						ctrls[c.name]["inactive"] = False
+					added = True
+				
+				if isinstance(c, IntegerControl):
+					print(f"Name: {c.name} - Min = {c.minimum} - Max = {c.maximum}) - Step size = {c.step} - default = {c.default}")
+					ctrls[c.name] = {
+						"type": int,
+						"min": c.minimum,
+						"max": c.maximum,
+						"step": c.step,
+						"value": c.value,
+						"default": c.default
+					}
+					if inactive:
+						ctrls[c.name]["inactive"] = True
+					else:
+						ctrls[c.name]["inactive"] = False
+					added = True
+				
+				if isinstance(c, MenuControl):
+					items = {}
+					for (index, name) in c.items():
+						items[index] = name
+
+					ctrls[c.name] = {
+						"type": enumerate,
+						"items": items,
+						"value": c.value,
+						"default": c.default
+					}
+					if inactive:
+						ctrls[c.name]["inactive"] = True
+					else:
+						ctrls[c.name]["inactive"] = False
+					added = True
+
+				if added:
+					print(f"ADDED: {c.name}")
+				else:
+					print(f"NOT ADDED: {c.name}")
+
+
+		return ctrls
+	
 	def apply_configurations(self):
 		raise NotImplementedError
