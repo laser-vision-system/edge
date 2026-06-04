@@ -1,8 +1,11 @@
 from tkinter import ttk as ttk
 from typing import Self as Self
 
-from edge.settings import SETTINGS
 from edge.typing import ButtonCommand
+
+
+INPUT_BUTTON_WIDTH = 30
+"""The width to use for the input button."""
 
 
 class Button:
@@ -42,7 +45,7 @@ class Button:
 			master=input_panel,
 			text=label,
 			command=command,
-			width=SETTINGS.INPUT_BUTTON_WIDTH,
+			width=INPUT_BUTTON_WIDTH,
 		)
 		self.order = order
 		input_panel.rowconfigure(index=order, weight=0)

@@ -64,15 +64,6 @@ class _Settings(BaseSettings):
 	TIMEOUT: Annotated[float, Field(frozen=True)] = 1.0
 	"""The maximum time in seconds to wait for a response from the server."""
 
-	WINDOW_WIDTH: Annotated[int, Field(frozen=True, gt=1)] = 1000
-	"""The starting width of the window."""
-
-	WINDOW_HEIGHT: Annotated[int, Field(frozen=True, gt=1)] = 500
-	"""The starting height of the window."""
-
-	INPUT_BUTTON_WIDTH: Annotated[int, Field(frozen=True, gt=0, lt=WINDOW_WIDTH)] = 30
-	"""The width to use for the input button."""
-
 	def input_source(self) -> int | Path:
 		"""Util function to parse and validate the input source.
 
