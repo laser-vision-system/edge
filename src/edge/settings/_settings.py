@@ -64,7 +64,7 @@ class _Settings(BaseSettings):
 	TIMEOUT: Annotated[float, Field(frozen=True)] = 1.0
 	"""The maximum time in seconds to wait for a response from the server."""
 
-	def input_source(self) -> int | Path:
+	def get_input_source(self) -> int | Path:
 		"""Util function to parse and validate the input source.
 
 		Returns
