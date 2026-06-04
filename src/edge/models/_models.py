@@ -42,9 +42,9 @@ class MenuControlModel(CameraControlModel):
 
 
 class ConfigurationModel(BaseModel):
-	Brightness: int
-	Contrast: int
-	Saturation: int
+	brightness: int
+	hue: int
+	saturation: int
 
 	# Stashed comment for future a sprint
 	# controls: dict[str, CameraControlModel]

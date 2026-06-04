@@ -64,7 +64,7 @@ class Conductor:
 		# Apply camera configuration.
 		if gui_update is not None and gui_update.config:
 			config: ConfigurationModel | None = EndpointConfiguration.get()
-			# Commented out because framerate is not currently in camera config
+			"""Commented out because framerate is not currently in camera config"""
 			# if config is not None:
 				# cls.cam0.frametime = 1.0 / config.framerate
 

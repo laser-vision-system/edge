@@ -184,10 +184,9 @@ class Camera:
 			for c in ctrls:
 				inactive = False
 				if c.flags == 16:
-					print(f"Warning: {c.name} is currently inactive.")
+					"""This is a bit of a hack, but it seems that when a control is inactive, it has a flag value of 16.
+					There may be other flags but I haven't come across any yet."""
 					inactive = True
-
-				added = False
 
 				#TODO perhaps put these below three functions into a helper function
 				if isinstance(c, BooleanControl):
@@ -198,8 +197,6 @@ class Camera:
 						"default": c.default
 					}
 					controls[c.name]["inactive"] = inactive
-
-					added = True
 				
 				if isinstance(c, IntegerControl):
 					print(f"Name: {c.name} - Min = {c.minimum} - Max = {c.maximum}) - Step size = {c.step} - default = {c.default}")
@@ -212,7 +209,6 @@ class Camera:
 						"default": c.default
 					}
 					controls[c.name]["inactive"] = inactive
-					added = True
 				
 				if isinstance(c, MenuControl):
 					items = {}
@@ -226,19 +222,13 @@ class Camera:
 						"default": c.default
 					}
 					controls[c.name]["inactive"] = inactive
-					added = True
-
-				if added:
-					print(f"ADDED: {c.name}")
-				else:
-					print(f"NOT ADDED: {c.name}")
 
 
 		"""Code for MVP demonstration purposes"""
 		demo_controls = ConfigurationModel(
-			Brightness=controls["Brightness"]["value"],
-			Contrast=controls["Contrast"]["value"],
-			Saturation=controls["Saturation"]["value"]
+			brightness=controls["Brightness"]["value"],
+			hue=controls["Hue"]["value"],
+			saturation=controls["Saturation"]["value"]
 		)
 
 		return demo_controls
