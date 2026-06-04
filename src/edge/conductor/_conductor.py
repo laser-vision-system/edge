@@ -32,10 +32,14 @@ class Conductor:
 		if SETTINGS.DEBUG:
 			print("Intialised.")
 
-		# TODO Update.
-		EndpointConfiguration.post(
-			ConfigurationModel(brightness=1.0, framerate=SETTINGS.FRAMERATE)
-		)
+		"""TODO Update.
+		Commented out because default values are hardcoded onto the camera.
+
+		Future plans to save preferred settings and apply them on startup, but this is not a priority for the MVP.
+		"""
+		# EndpointConfiguration.post(
+		# 	ConfigurationModel(brightness=1.0, framerate=SETTINGS.FRAMERATE)
+		# )
 
 		cls.__has_initialised = True
 
