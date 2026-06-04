@@ -33,9 +33,9 @@ class Conductor:
 			print("Intialised.")
 
 		"""TODO Update.
-		Commented out because default values are hardcoded onto the camera.
+		Commented out because camera iniialises with default values.
 
-		Future plans to save preferred settings and apply them on startup, but this is not a priority for the MVP.
+		TODO Allow user to save preferred settings and apply them on startup, but this is not a priority for the MVP.
 		"""
 		# EndpointConfiguration.post(
 		# 	ConfigurationModel(brightness=1.0, framerate=SETTINGS.FRAMERATE)
@@ -64,8 +64,9 @@ class Conductor:
 		# Apply camera configuration.
 		if gui_update is not None and gui_update.config:
 			config: ConfigurationModel | None = EndpointConfiguration.get()
-			if config is not None:
-				cls.cam0.frametime = 1.0 / config.framerate
+			# Commented out because framerate is not currently in camera config
+			# if config is not None:
+				# cls.cam0.frametime = 1.0 / config.framerate
 
 		frame: Frame = cls.cam0.get_frame()
 		frame_t: float = time.time() - start_t
