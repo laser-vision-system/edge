@@ -15,3 +15,6 @@ wheels/
 
 # Visual studio code's folder
 .vscode/
+
+# Defensively adding this in case of Mac developers
+.DS_Store

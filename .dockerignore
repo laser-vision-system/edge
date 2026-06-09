@@ -1,0 +1,33 @@
+# Python-generated files
+**/__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment variables files
+.env
+.env.*
+
+# Visual studio code's folder
+.vscode/
+
+# Defensively adding this in case of Mac developers
+.DS_Store
+
+# Git files
+.git/
+.gitignore
+
+# Docker scripts
+scripts/docker/
+
+# Additional stuff
+data/
+docs/
+notes/
+Edge_Architecture.md
