@@ -1,0 +1,78 @@
+use std::{env, error::Error, thread};
+
+use image::RgbImage;
+use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
+
+use edge::tcam_interface::TcamInterface;
+
+#[derive(Clone)]
+struct Context {
+	rec: RecordingStream,
+}
+
+impl Context {
+	fn new() -> Result<Self, Box<dyn Error>> {
+		let rec: RecordingStream = RecordingStreamBuilder::new("webcam_test_harness").spawn()?;
+		Ok(Context { rec })
+	}
+
+	pub fn send_image(&self, path: &str, image: &Image) {
+		self.rec.log(path, image).unwrap();
+	}
+}
+
+fn log_frame(context: &Context, path: &str, frame: &RgbImage) {
+	let w = frame.width();
+	let h = frame.height();
+	let expected_len = (w * h * 3) as usize;
+
+	let raw_bytes = frame.as_raw();
+	let exact_bytes = &raw_bytes[..expected_len];
+
+	let rerun_image = Image::from_elements(exact_bytes, [w, h], ColorModel::RGB);
+	context.send_image(path, &rerun_image);
+}
+
+enum RunMode {
+	Polling,
+	Callback,
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+	let mut args = env::args().skip(1);
+	let mode = match args.next().unwrap().to_lowercase().as_str() {
+		"callback" => Ok(RunMode::Callback),
+		"polling" => Ok(RunMode::Polling),
+		unknown => Err(format!(
+			"Unknown mode: '{unknown}'. Expected 'polling' or 'callback'."
+		)),
+	}?;
+
+	let context = Context::new()?;
+
+	match mode {
+		RunMode::Polling => {
+			println!("Starting in POLLING mode. Press Ctrl+C to stop.");
+			let mut camera = TcamInterface::new_polling(0)?;
+
+			loop {
+				let frame = camera.get_frame()?;
+				log_frame(&context, "camera/live_feed", &frame);
+			}
+		},
+		RunMode::Callback => {
+			println!("Starting in CALLBACK mode. Press Ctrl+C to stop.");
+			let ctx_for_callback = context.clone();
+
+			let callback = move |frame: RgbImage| {
+				log_frame(&ctx_for_callback, "camera/live_feed", &frame);
+			};
+
+			// Bind the camera and then park the main thread so the callback can operate on its own thread.
+			let _camera = TcamInterface::new_callback(0, callback)?;
+			loop {
+				thread::park();
+			}
+		},
+	}
+}

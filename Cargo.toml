@@ -12,3 +12,7 @@ features = ["input-native", "output-threaded"]
 version = "0.25"
 default-features = false
 features = ["rayon", "jpeg", "png"]
+
+[dev-dependencies.rerun]
+version = "0.33"
+features = ["image"]
