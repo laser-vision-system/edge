@@ -4,7 +4,7 @@ use image::RgbImage;
 use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
 
 use edge::demonstration::Demonstration;
-use edge::tcam_interface::TcamInterface;
+use edge::TcamInterface;
 
 #[derive(Clone)]
 struct Context {
