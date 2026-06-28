@@ -58,6 +58,9 @@ fn nokhwa_threaded_example() {
 
 	let mut threaded = CallbackCamera::new(first_camera.index().clone(), format, callback).unwrap();
 
+	let path = format!("data/output/");
+	std::fs::create_dir_all(path).unwrap();
+
 	threaded.open_stream().unwrap();
 
 	for i in 0..5 {
