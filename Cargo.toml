@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 lab = "0.11"
 rayon = "1.12"
+serde = "1.0"
 
 [dependencies.nokhwa]
 version = "0.10"
@@ -16,6 +17,14 @@ features = ["input-native", "output-threaded"]
 version = "0.25"
 default-features = false
 features = ["rayon", "jpeg", "png"]
+
+[dependencies.tokio]
+version = "1.52"
+features = ["full"]
+
+[dependencies.reqwest]
+version = "0.13"
+features = ["json", "multipart"]
 
 [dev-dependencies.rerun]
 version = "0.33"
