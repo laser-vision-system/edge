@@ -3,8 +3,8 @@ use std::{env, error::Error, thread};
 use image::RgbImage;
 use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
 
-use edge::demonstration::Demonstration;
 use edge::TcamInterface;
+use edge::vision_processor::Demonstration;
 
 #[derive(Clone)]
 struct Context {
