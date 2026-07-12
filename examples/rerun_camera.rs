@@ -3,7 +3,7 @@ use std::{env, error::Error, thread};
 use image::RgbImage;
 use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
 
-use edge::TcamInterface;
+use edge::Camera;
 use edge::vision_processor::Demonstration;
 
 #[derive(Clone)]
@@ -63,7 +63,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	match mode {
 		RunMode::Polling => {
 			println!("Starting in POLLING mode. Press Ctrl+C to stop.");
-			let mut camera = TcamInterface::new_polling(0)?;
+			let mut camera = Camera::new_polling(0)?;
 
 			loop {
 				let frame = camera.get_frame()?;
@@ -79,7 +79,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 			};
 
 			// Bind the camera and then park the main thread so the callback can operate on its own thread.
-			let _camera = TcamInterface::new_callback(0, callback)?;
+			let _camera = Camera::new_callback(0, callback)?;
 			loop {
 				thread::park();
 			}

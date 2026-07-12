@@ -4,4 +4,5 @@ pub mod settings;
 pub mod tcam_interface;
 pub mod vision_processor;
 
-pub use tcam_interface::TcamInterface;
+// Re-exporting for easy access.
+pub use tcam_interface::camera::Camera;
