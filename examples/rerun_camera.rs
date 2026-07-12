@@ -4,7 +4,7 @@ use image::RgbImage;
 use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
 
 use edge::Camera;
-use edge::vision_processor::Demonstration;
+use edge::Demonstration;
 
 #[derive(Clone)]
 struct Context {

@@ -6,3 +6,4 @@ pub mod vision_processor;
 
 // Re-exporting for easy access.
 pub use tcam_interface::camera::Camera;
+pub use vision_processor::Demonstration;
