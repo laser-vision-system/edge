@@ -15,11 +15,10 @@ use nokhwa::{
 };
 
 /// An abstraction over the camera provided by Nokhwa.
+#[must_use]
 pub struct Camera(Option<nokhwa::Camera>);
 
 impl Camera {
-	#[must_use]
-	#[inline]
 	pub fn new(index: u32) -> Result<Self, NokhwaError> {
 		let format = RequestedFormat::new::<pixel_format::RgbFormat>(
 			RequestedFormatType::AbsoluteHighestFrameRate,
@@ -33,8 +32,6 @@ impl Camera {
 	}
 
 	/// Request an image of the current camera frame.
-	#[must_use]
-	#[inline]
 	pub fn get_image(&mut self) -> Result<RgbImage, NokhwaError> {
 		let Some(cam) = self.0.as_mut() else {
 			// HACK: Temporarily use nokhwa's error type.
