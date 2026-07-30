@@ -18,3 +18,6 @@ wheels/
 
 # Defensively adding this in case of Mac developers
 .DS_Store
+
+# Folder for temporary files
+temp/
