@@ -28,7 +28,7 @@ impl Camera {
 		let mut camera = nokhwa::Camera::new(CameraIndex::Index(index), format)?;
 		camera.open_stream()?;
 
-		Ok(Camera(Some(camera)))
+		Ok(Self(Some(camera)))
 	}
 
 	/// Request an image of the current camera frame.
