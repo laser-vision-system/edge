@@ -6,16 +6,35 @@ use serde::{Deserialize, Serialize};
 
 use crate::settings::*;
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Serialize, Debug)]
 pub struct CameraReadings {
 	intensity: f32,
 	deviation: f32,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+impl CameraReadings {
+	pub fn new(intensity: f32, deviation: f32) -> Self {
+		Self {
+			intensity,
+			deviation,
+		}
+	}
+}
+
+#[derive(Deserialize, Debug)]
 pub struct GuiUpdate {
 	setpoint: bool,
 	config: bool,
+}
+
+impl GuiUpdate {
+	pub fn setpoint(&self) -> bool {
+		self.setpoint
+	}
+
+	pub fn config(&self) -> bool {
+		self.config
+	}
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -24,6 +43,33 @@ pub struct CameraConfig {
 	brightness: i32,
 	hue: i32,
 	saturation: i32,
+}
+
+impl CameraConfig {
+	pub fn new(framerate: f32, brightness: i32, hue: i32, saturation: i32) -> Self {
+		Self {
+			framerate,
+			brightness,
+			hue,
+			saturation,
+		}
+	}
+
+	pub fn framerate(&self) -> f32 {
+		self.framerate
+	}
+
+	pub fn brightness(&self) -> i32 {
+		self.brightness
+	}
+
+	pub fn hue(&self) -> i32 {
+		self.hue
+	}
+
+	pub fn saturation(&self) -> i32 {
+		self.saturation
+	}
 }
 
 // TODO: Look into making this a singleton or global.
