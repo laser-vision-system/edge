@@ -27,14 +27,7 @@ impl Context {
 }
 
 fn log_frame(context: &Context, path: &str, frame: &RgbImage) {
-	let w = frame.width();
-	let h = frame.height();
-	let expected_len = (w * h * 3) as usize;
-
-	let raw_bytes = frame.as_raw();
-	let exact_bytes = &raw_bytes[..expected_len];
-
-	let rerun_image = Image::from_elements(exact_bytes, [w, h], ColorModel::RGB);
+	let rerun_image = Image::from_elements(frame, [frame.width(), frame.height()], ColorModel::RGB);
 	context.send_image(path, &rerun_image);
 
 	let lightness = Demonstration::average_lightness(frame);
@@ -50,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut camera = Camera::new(0)?;
 
 	loop {
-		let frame = camera.get_image()?;
+		let frame = camera.get_image_shrink()?;
 		log_frame(&context, "camera/live_feed", &frame);
 	}
 }

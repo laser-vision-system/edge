@@ -8,7 +8,7 @@
 //!
 //! The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
 
-use image::RgbImage;
+use image::{DynamicImage, RgbImage};
 use nokhwa::{
 	self, NokhwaError, pixel_format,
 	utils::{CameraIndex, RequestedFormat, RequestedFormatType},
@@ -43,6 +43,14 @@ impl Camera {
 		let frame = cam.frame()?;
 		let decoded = frame.decode_image::<pixel_format::RgbFormat>()?;
 		Ok(decoded)
+	}
+
+	pub fn get_image_shrink(&mut self) -> Result<RgbImage, NokhwaError> {
+		let frame = DynamicImage::ImageRgb8(self.get_image()?);
+		let new = frame
+			.crop_imm(0, 0, frame.width(), frame.height())
+			.into_rgb8();
+		Ok(new)
 	}
 
 	// report configurations
