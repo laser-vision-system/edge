@@ -1,14 +1,13 @@
-//pub struct Settings;
+//! # Settings
+//!
+//! A collection of constant variables.
+//!
+//! TODO: The ability to change settings with environment variables.
 
-//impl Settings {
-//	pub fn address() -> &'static str {
-//		"127.0.0.1"
-//	}
-
-//	pub fn port() -> &'static str {
-//		"8080"
-//	}
-//}
-
-pub const ADDRESS: &str = "127.0.0.1";
+pub const HOST: &str = "127.0.0.1";
 pub const PORT: &str = "8080";
+
+pub const ENDPOINT_CAMERA_READINGS: &str = "camera_info";
+pub const ENDPOINT_CAMERA_CONFIG: &str = "configuration";
+pub const ENDPOINT_GUI_UPDATE: &str = "gui_update";
+pub const ENDPOINT_IMAGE: &str = "image";

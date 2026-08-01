@@ -18,20 +18,20 @@ nokhwa = { version = "0.10", default-features = false, features = [
 	"output-threaded"
 ] }
 rayon = "1"
+reqwest = { version = "0.13", features = [
+	"json",
+	"multipart"
+] }
+serde = "1"
 
 # Dependencies only needed for tests, examples, or benchmarks.
 [dev-dependencies]
 tokio = { version = "1", features = [
 	"full"
 ] }
-reqwest = { version = "0.13", features = [
-	"json",
-	"multipart"
-] }
 rerun = { version = "0.34", features = [
 	"image"
 ] }
-serde = "1"
 
 [lints.rust]
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.
