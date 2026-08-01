@@ -3,6 +3,10 @@
 //! A collection of constant variables.
 //!
 //! TODO: The ability to change settings with environment variables.
+use std::time::Duration;
+
+pub const UPDATE_DELAY: Duration = Duration::from_millis(1000);
+pub const PRINT_RESULTS: bool = true;
 
 pub const HOST: &str = "127.0.0.1";
 pub const PORT: &str = "8080";
