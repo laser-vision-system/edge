@@ -3,11 +3,15 @@ use lab::Lab;
 use rayon::prelude::*;
 
 pub struct Demonstration {
-	//pub setpoint: f32,
+	setpoint: f32,
 }
 
 impl Demonstration {
-	pub fn average_lightness(frame: &RgbImage) -> f32 {
+	pub fn new() -> Self {
+		Self { setpoint: -1.0 }
+	}
+
+	pub fn average_lightness(&mut self, frame: &RgbImage, setpoint: bool) -> (f32, f32) {
 		let raw_bytes = frame.as_raw();
 		let pixel_count = (raw_bytes.len() / 3) as f32;
 
@@ -20,6 +24,17 @@ impl Demonstration {
 			})
 			.sum();
 
-		total_lightness / pixel_count
+		let lightness = total_lightness / pixel_count;
+
+		if setpoint {
+			self.setpoint = lightness;
+		}
+
+		let mut deviation = 0.0;
+		if self.setpoint > 0.0 {
+			deviation = lightness / self.setpoint;
+		}
+
+		(lightness, deviation)
 	}
 }
