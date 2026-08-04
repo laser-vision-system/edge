@@ -60,7 +60,7 @@ impl Conductor {
 			if PRINT_RESULTS {
 				println!(
 					"Percieved lightness: {lightness:.4} | Deviation: {deviation:.4} | Press Ctrl+C to stop."
-				)
+				);
 			}
 
 			thread::sleep(UPDATE_DELAY);

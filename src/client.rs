@@ -4,8 +4,12 @@ use image::ImageBuffer;
 use reqwest;
 use serde::{Deserialize, Serialize};
 
-use crate::settings::*;
+use crate::settings::{
+	ENDPOINT_CAMERA_CONFIG, ENDPOINT_CAMERA_READINGS, ENDPOINT_GUI_UPDATE, ENDPOINT_IMAGE, HOST,
+	PORT,
+};
 
+#[must_use]
 #[derive(Serialize, Debug)]
 pub struct CameraReadings {
 	intensity: f32,
@@ -21,6 +25,7 @@ impl CameraReadings {
 	}
 }
 
+#[must_use]
 #[derive(Deserialize, Debug)]
 pub struct GuiUpdate {
 	setpoint: bool,
@@ -37,6 +42,7 @@ impl GuiUpdate {
 	}
 }
 
+#[must_use]
 #[derive(Deserialize, Serialize, Debug)]
 pub struct CameraConfig {
 	framerate: f32,
@@ -73,7 +79,14 @@ impl CameraConfig {
 }
 
 // TODO: Look into making this a singleton or global.
+#[must_use]
 pub struct Client(reqwest::Client);
+
+impl Default for Client {
+	fn default() -> Self {
+		Self::new()
+	}
+}
 
 impl Client {
 	pub fn new() -> Self {
@@ -116,13 +129,13 @@ impl Client {
 	/// Get configuration: `/configuration`
 	pub async fn get_camera_config(&self) -> Result<CameraConfig, reqwest::Error> {
 		let url = Self::url_from_endpoint(ENDPOINT_CAMERA_CONFIG);
-		Ok(self.0.get(url).send().await?.json::<CameraConfig>().await?)
+		self.0.get(url).send().await?.json::<CameraConfig>().await
 	}
 
 	/// Get GUI update: `/gui_update`
 	pub async fn get_gui_update(&self) -> Result<GuiUpdate, reqwest::Error> {
 		let url = Self::url_from_endpoint(ENDPOINT_GUI_UPDATE);
-		Ok(self.0.get(url).send().await?.json::<GuiUpdate>().await?)
+		self.0.get(url).send().await?.json::<GuiUpdate>().await
 	}
 
 	/// Put image: `/image`

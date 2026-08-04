@@ -44,13 +44,17 @@ broken_intra_doc_links = "warn"
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1} # This should be upgraded to forbid in the future.
+# Lints from the pedantic group:
+missing_errors_doc = "allow" # Consider upgrading in the future.
+missing_panics_doc = "allow" # Consider upgrading in the future.
+duration_suboptimal_units = "allow"
 
 # Lints from the restriction group:
 else_if_without_else = "warn"
 empty_structs_with_brackets = "allow" # This should be upgraded to warn in the future.
 indexing_slicing = "warn" # This may be upgraded to forbid in the future.
 missing_asserts_for_indexing = "warn" # Contention with the above.
-must_use_candidate = "warn"
+must_use_candidate = "allow" # Consider upgrading in the future.
 pattern_type_mismatch = "allow" # Consider upgrading in the future.
 print_stderr = "allow" # This should be upgraded to forbid in the future.
 unwrap_used = "warn" # This should be upgraded to forbid in the future.
