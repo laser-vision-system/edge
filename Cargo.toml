@@ -15,6 +15,7 @@ image = { version = "0.25", default-features = false, features = [
 lab = "0.11"
 nokhwa = { version = "0.10", default-features = false, features = [
 	"input-native",
+	"decoding",
 	"output-threaded"
 ] }
 rayon = "1"
