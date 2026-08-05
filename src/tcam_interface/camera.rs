@@ -122,7 +122,7 @@ mod nokhwa_test {
 	};
 
 	const POLL_INTERVAL: u64 = 400;
-	const OUTPUT_PATH: &str = "./data/nokhwa_test_output/";
+	const OUTPUT_PATH: &str = "./temp/nokhwa_test_output/";
 
 	#[test]
 	fn main() {
