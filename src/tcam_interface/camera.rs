@@ -1,7 +1,10 @@
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
 	self, NokhwaError, pixel_format,
-	utils::{CameraIndex, RequestedFormat, RequestedFormatType},
+	utils::{
+		CameraControl, CameraIndex, ControlValueSetter, KnownCameraControl, RequestedFormat,
+		RequestedFormatType,
+	},
 };
 
 /// # Camera
@@ -59,7 +62,25 @@ impl Camera {
 
 	// == Configurations ==
 
-	// TODO
+	/// Get a list of the camera controls
+	///
+	/// TODO: Is it a good idea to share this directly?
+	pub fn get_all_available_controls(&self) -> Vec<CameraControl> {
+		let Some(cam) = self.0.as_ref() else { todo!() };
+		cam.camera_controls().unwrap()
+	}
+
+	/// Set a camera control
+	///
+	/// Wrapper around the internal nokhwa camera function.
+	pub fn set_control(
+		&mut self,
+		id: KnownCameraControl,
+		value: ControlValueSetter,
+	) -> Result<(), NokhwaError> {
+		let Some(cam) = self.0.as_mut() else { todo!() };
+		cam.set_camera_control(id, value)
+	}
 }
 
 #[cfg(test)]
@@ -91,6 +112,29 @@ mod tests {
 	fn get_image_shrink() {
 		let mut cam = Camera::new(0).unwrap();
 		let _ = cam.get_image_shrink().unwrap();
+	}
+
+	#[test]
+	fn get_all_available_controls() {
+		let cam = Camera::new(0).unwrap();
+		let c = cam.get_all_available_controls();
+		println!("{c:#?}");
+	}
+
+	#[test]
+	fn set_control() -> Result<(), NokhwaError> {
+		let mut cam = Camera::new(0).unwrap();
+		let id = KnownCameraControl::Brightness;
+		let value = ControlValueSetter::Integer(50);
+		cam.set_control(id, value)?;
+		let ctrl_res = cam.0.as_ref().unwrap().camera_control(id)?;
+		println!("{}", ctrl_res.value());
+
+		let value = ControlValueSetter::Integer(0);
+		cam.set_control(id, value)?;
+		let ctrl_res = cam.0.as_ref().unwrap().camera_control(id)?;
+		println!("{}", ctrl_res.value());
+		Ok(())
 	}
 }
 
