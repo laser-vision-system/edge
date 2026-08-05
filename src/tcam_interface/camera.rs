@@ -65,6 +65,38 @@ impl Camera {
 }
 
 #[cfg(test)]
+mod tests {
+	use std::process::{ExitCode, Termination};
+
+	use super::*;
+
+	impl Termination for Camera {
+		fn report(self) -> ExitCode {
+			ExitCode::SUCCESS
+		}
+	}
+
+	#[test]
+	fn new() -> Result<Camera, NokhwaError> {
+		Camera::new(0)
+	}
+
+	// Can't implement `Termination` for `RgbImage`.
+
+	#[test]
+	fn get_image() {
+		let mut cam = Camera::new(0).unwrap();
+		let _ = cam.get_image().unwrap();
+	}
+
+	#[test]
+	fn get_image_shrink() {
+		let mut cam = Camera::new(0).unwrap();
+		let _ = cam.get_image_shrink().unwrap();
+	}
+}
+
+#[cfg(test)]
 mod nokhwa_test {
 	//! # Nokhwa Test
 	//!
