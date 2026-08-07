@@ -172,6 +172,22 @@ mod tests {
 		println!("{}", ctrl_res.value());
 		Ok(())
 	}
+
+	#[test]
+	fn set_control_exposure() -> Result<(), NokhwaError> {
+		let mut cam = Camera::new(0).unwrap();
+		let id = KnownCameraControl::Other(10094849);
+		let value = ControlValueSetter::Integer(1);
+		cam.set_control(id, value)?;
+		let ctrl_res = cam.0.as_ref().unwrap().camera_control(id)?;
+		println!("{}", ctrl_res.value());
+
+		let value = ControlValueSetter::Integer(3);
+		cam.set_control(id, value)?;
+		let ctrl_res = cam.0.as_ref().unwrap().camera_control(id)?;
+		println!("{}", ctrl_res.value());
+		Ok(())
+	}
 }
 
 #[cfg(test)]
