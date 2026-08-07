@@ -10,7 +10,7 @@ use crate::settings::{
 };
 
 #[must_use]
-#[derive(Serialize, Debug)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub struct CameraReadings {
 	intensity: f32,
 	deviation: f32,
@@ -23,16 +23,34 @@ impl CameraReadings {
 			deviation,
 		}
 	}
+
+	pub fn intensity(&self) -> f32 {
+		self.intensity
+	}
+
+	pub fn deviation(&self) -> f32 {
+		self.deviation
+	}
+}
+
+impl From<(f32, f32)> for CameraReadings {
+	fn from(value: (f32, f32)) -> Self {
+		Self::new(value.0, value.1)
+	}
 }
 
 #[must_use]
-#[derive(Deserialize, Debug)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub struct GuiUpdate {
 	setpoint: bool,
 	config: bool,
 }
 
 impl GuiUpdate {
+	pub fn new(setpoint: bool, config: bool) -> Self {
+		Self { setpoint, config }
+	}
+
 	pub fn setpoint(&self) -> bool {
 		self.setpoint
 	}
@@ -42,8 +60,14 @@ impl GuiUpdate {
 	}
 }
 
+impl From<(bool, bool)> for GuiUpdate {
+	fn from(value: (bool, bool)) -> Self {
+		Self::new(value.0, value.1)
+	}
+}
+
 #[must_use]
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub struct CameraConfig {
 	framerate: f32,
 	brightness: i32,
@@ -75,6 +99,12 @@ impl CameraConfig {
 
 	pub fn saturation(&self) -> i32 {
 		self.saturation
+	}
+}
+
+impl From<(f32, i32, i32, i32)> for CameraConfig {
+	fn from(value: (f32, i32, i32, i32)) -> Self {
+		Self::new(value.0, value.1, value.2, value.3)
 	}
 }
 
@@ -167,28 +197,6 @@ mod tests {
 
 	use super::*;
 
-	#[tokio::test]
-	async fn post_readings() -> Result<(), reqwest::Error> {
-		let client = Client::new();
-		let reading = CameraReadings {
-			intensity: 72.2,
-			deviation: 0.21,
-		};
-		client.post_readings(reading).await
-	}
-
-	#[tokio::test]
-	async fn post_camera_config() -> Result<(), reqwest::Error> {
-		let client = Client::new();
-		let config = CameraConfig {
-			framerate: 30.0,
-			brightness: 100,
-			hue: 0,
-			saturation: 100,
-		};
-		client.post_camera_config(config).await
-	}
-
 	// A test returning a `CameraConfig` always counts as a success.
 	impl Termination for CameraConfig {
 		fn report(self) -> std::process::ExitCode {
@@ -196,17 +204,31 @@ mod tests {
 		}
 	}
 
-	#[tokio::test]
-	async fn get_camera_config() -> Result<CameraConfig, reqwest::Error> {
-		let client = Client::new();
-		client.get_camera_config().await
-	}
-
 	// A test returning a `GuiUpdate` always counts as a success.
 	impl Termination for GuiUpdate {
 		fn report(self) -> std::process::ExitCode {
 			std::process::ExitCode::SUCCESS
 		}
+	}
+
+	#[tokio::test]
+	async fn post_readings() -> Result<(), reqwest::Error> {
+		let client = Client::new();
+		let reading = CameraReadings::new(72.2, 0.21);
+		client.post_readings(reading).await
+	}
+
+	#[tokio::test]
+	async fn post_camera_config() -> Result<(), reqwest::Error> {
+		let client = Client::new();
+		let config = CameraConfig::new(30.0, 100, 0, 100);
+		client.post_camera_config(config).await
+	}
+
+	#[tokio::test]
+	async fn get_camera_config() -> Result<CameraConfig, reqwest::Error> {
+		let client = Client::new();
+		client.get_camera_config().await
 	}
 
 	#[tokio::test]
