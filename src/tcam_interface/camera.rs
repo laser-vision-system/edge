@@ -1,22 +1,20 @@
-//! # Camera
-//!
-//! An abstraction over the nokhwa camera objects.
-//!
-//! Nokhwa's callback camera literally just wraps the regular camera and executes a loop on a spawned thread. There seems to be no benefit to using it.
-//!
-//! ## TODO
-//!
-//! The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
-
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
 	self, NokhwaError, pixel_format,
 	utils::{CameraIndex, RequestedFormat, RequestedFormatType},
 };
 
-/// An abstraction over the camera provided by Nokhwa.
+/// # Camera
 ///
-// NOTE: Uses optional so that errors can he handled by dropping the camera object. I don't know if this is the best idea, we will discuss this during the logic brainstorming.
+/// An abstraction over the nokhwa camera objects.
+///
+/// Nokhwa's callback camera literally just wraps the regular camera and executes a /loop on a spawned thread. There seems to be no benefit to using it.
+///
+/// NOTE: Uses optional so that errors can he handled by dropping the camera object. I don't know if this is the best idea, we will discuss this during the logic brainstorming.
+///
+/// ## TODO
+///
+/// The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
 #[must_use]
 pub struct Camera(Option<nokhwa::Camera>);
 
