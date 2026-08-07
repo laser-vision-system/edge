@@ -8,4 +8,4 @@ pub mod vision_processor;
 pub use client::Client;
 pub use conductor::Conductor;
 pub use tcam_interface::camera::Camera;
-pub use vision_processor::Demonstration;
+pub use vision_processor::demonstration::Demonstration;

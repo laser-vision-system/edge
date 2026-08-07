@@ -1,10 +1,8 @@
 use std::error::Error;
 
+use edge::{Camera, Demonstration, vision_processor::VisionInterface};
 use image::RgbImage;
 use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
-
-use edge::Camera;
-use edge::Demonstration;
 
 struct Context {
 	rec: RecordingStream,
@@ -31,13 +29,13 @@ impl Context {
 			Image::from_elements(frame, [frame.width(), frame.height()], ColorModel::RGB);
 		self.send_image(path, &rerun_image);
 
-		let (lightness, deviation) = self.demo.average_lightness(frame, false);
+		let readings = self.demo.process_frame(frame, false);
 
 		let lightness_path = format!("{path}/lightness");
-		self.send_scalar(&lightness_path, lightness as f64);
+		self.send_scalar(&lightness_path, readings.intensity() as f64);
 
 		let deviation_path = format!("{path}/deviation");
-		self.send_scalar(&deviation_path, deviation as f64);
+		self.send_scalar(&deviation_path, readings.deviation() as f64);
 	}
 }
 

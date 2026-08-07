@@ -2,6 +2,8 @@ use image::RgbImage;
 use lab::Lab;
 use rayon::prelude::*;
 
+use super::{CameraReadings, VisionInterface};
+
 #[must_use]
 pub struct Demonstration {
 	setpoint: f32,
@@ -18,7 +20,7 @@ impl Demonstration {
 	#[allow(clippy::missing_asserts_for_indexing)]
 	#[allow(clippy::indexing_slicing)]
 	#[allow(clippy::cast_precision_loss)]
-	pub fn average_lightness(&mut self, frame: &RgbImage, setpoint: bool) -> (f32, f32) {
+	fn average_lightness(&mut self, frame: &RgbImage, setpoint: bool) -> (f32, f32) {
 		let raw_bytes = frame.as_raw();
 		let pixel_count = raw_bytes.len() as f32 / 3.0;
 
@@ -43,5 +45,11 @@ impl Demonstration {
 		}
 
 		(lightness, deviation)
+	}
+}
+
+impl VisionInterface for Demonstration {
+	fn process_frame(&mut self, frame: &RgbImage, setpoint: bool) -> CameraReadings {
+		self.average_lightness(frame, setpoint).into()
 	}
 }

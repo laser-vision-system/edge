@@ -1,11 +1,10 @@
 use std::thread;
 
 use crate::{
-	Camera, Client,
+	Camera, Client, Demonstration,
 	client::CameraConfig,
-	client::CameraReadings,
 	settings::{PRINT_RESULTS, UPDATE_DELAY},
-	vision_processor::Demonstration,
+	vision_processor::VisionInterface,
 };
 
 /// # Conductor
@@ -47,19 +46,16 @@ impl Conductor {
 			}
 
 			let frame = self.camera.get_image_shrink().unwrap();
+			let readings = self.demo.process_frame(&frame, gui_update.setpoint());
 
-			let (lightness, deviation) = self.demo.average_lightness(&frame, gui_update.setpoint());
-
-			self.client
-				.post_readings(CameraReadings::new(lightness, deviation))
-				.await
-				.unwrap();
-
+			self.client.post_readings(readings).await.unwrap();
 			self.client.put_image(frame).await.unwrap();
 
 			if PRINT_RESULTS {
 				println!(
-					"Percieved lightness: {lightness:.4} | Deviation: {deviation:.4} | Press Ctrl+C to stop."
+					"Percieved lightness: {:.4} | Deviation: {:.4} | Press Ctrl+C to stop.",
+					readings.intensity(),
+					readings.deviation()
 				);
 			}
 

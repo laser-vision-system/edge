@@ -4,40 +4,13 @@ use image::ImageBuffer;
 use reqwest;
 use serde::{Deserialize, Serialize};
 
-use crate::settings::{
-	ENDPOINT_CAMERA_CONFIG, ENDPOINT_CAMERA_READINGS, ENDPOINT_GUI_UPDATE, ENDPOINT_IMAGE, HOST,
-	PORT,
+use crate::{
+	settings::{
+		ENDPOINT_CAMERA_CONFIG, ENDPOINT_CAMERA_READINGS, ENDPOINT_GUI_UPDATE, ENDPOINT_IMAGE,
+		HOST, PORT,
+	},
+	vision_processor::CameraReadings,
 };
-
-#[must_use]
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-pub struct CameraReadings {
-	intensity: f32,
-	deviation: f32,
-}
-
-impl CameraReadings {
-	pub fn new(intensity: f32, deviation: f32) -> Self {
-		Self {
-			intensity,
-			deviation,
-		}
-	}
-
-	pub fn intensity(&self) -> f32 {
-		self.intensity
-	}
-
-	pub fn deviation(&self) -> f32 {
-		self.deviation
-	}
-}
-
-impl From<(f32, f32)> for CameraReadings {
-	fn from(value: (f32, f32)) -> Self {
-		Self::new(value.0, value.1)
-	}
-}
 
 #[must_use]
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
