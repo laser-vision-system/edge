@@ -24,7 +24,7 @@ impl Conductor {
 	pub async fn new() -> Self {
 		let camera = Camera::new(0).unwrap();
 		let client = Client::new();
-		let demo = Demonstration::new();
+		let demo = Demonstration::default();
 
 		let dummy_config = CameraConfig::new(30.0, 50, 0, 50);
 		client.post_camera_config(dummy_config).await.unwrap();

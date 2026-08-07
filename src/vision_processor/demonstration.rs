@@ -9,15 +9,11 @@ pub struct Demonstration {
 
 impl Default for Demonstration {
 	fn default() -> Self {
-		Self::new()
+		Self { setpoint: -1.0 }
 	}
 }
 
 impl Demonstration {
-	pub fn new() -> Self {
-		Self { setpoint: -1.0 }
-	}
-
 	// NOTE: Clippy complains about indexing the slice without asserting, but the par_chunk_exact guarantees this won't panic.
 	#[allow(clippy::missing_asserts_for_indexing)]
 	#[allow(clippy::indexing_slicing)]

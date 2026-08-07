@@ -14,7 +14,7 @@ struct Context {
 impl Context {
 	fn new() -> Result<Self, Box<dyn Error>> {
 		let rec: RecordingStream = RecordingStreamBuilder::new("cam_test_harness").spawn()?;
-		let demo = Demonstration::new();
+		let demo = Demonstration::default();
 		Ok(Context { rec, demo })
 	}
 
