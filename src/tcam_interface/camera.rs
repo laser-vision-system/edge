@@ -85,7 +85,10 @@ impl Camera {
 
 #[cfg(test)]
 mod tests {
-	use std::process::{ExitCode, Termination};
+	use std::{
+		cmp::Ordering,
+		process::{ExitCode, Termination},
+	};
 
 	use super::*;
 
@@ -93,6 +96,39 @@ mod tests {
 		fn report(self) -> ExitCode {
 			ExitCode::SUCCESS
 		}
+	}
+
+	#[test]
+	fn print_devices() {
+		let mut cameras = nokhwa::query(nokhwa::utils::ApiBackend::Auto)
+			.expect("at least one camera should be connected");
+		cameras.sort_by(|a, b| -> Ordering {
+			let a_ind = a.index().as_index().unwrap_or(u32::MAX);
+			let b_ind = b.index().as_index().unwrap_or(u32::MAX);
+			if a_ind == u32::MAX && b_ind == u32::MAX {
+				Ordering::Equal
+			} else if a_ind < b_ind {
+				Ordering::Less
+			} else {
+				Ordering::Greater
+			}
+		});
+
+		print!("Available devices: [\n");
+		for cam in cameras {
+			print!(
+				"\t{}:\n\t\t{}\n\t\t{}",
+				cam.index().as_string(),
+				cam.human_name(),
+				cam.description(),
+			);
+			let misc = cam.misc();
+			if !misc.is_empty() {
+				print!("\n\t\t{misc:?}");
+			}
+			println!();
+		}
+		println!("]");
 	}
 
 	#[test]
