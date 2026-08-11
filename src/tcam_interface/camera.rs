@@ -19,7 +19,7 @@ use nokhwa::{
 ///
 /// The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
 #[must_use]
-pub struct Camera(Option<nokhwa::Camera>);
+pub struct Camera(nokhwa::Camera);
 
 impl Camera {
 	pub fn new(index: u32) -> Result<Self, NokhwaError> {
@@ -31,7 +31,7 @@ impl Camera {
 		let mut camera = nokhwa::Camera::new(CameraIndex::Index(index), format)?;
 		camera.open_stream()?;
 
-		Ok(Self(Some(camera)))
+		Ok(Self(camera))
 	}
 
 	// == Images ==
@@ -40,14 +40,8 @@ impl Camera {
 	///
 	/// There seems to be a 2 frame latency.
 	pub fn get_image(&mut self) -> Result<RgbImage, NokhwaError> {
-		let Some(cam) = self.0.as_mut() else {
-			// HACK: Temporarily use nokhwa's error type.
-			return Err(NokhwaError::GeneralError(String::from(
-				"camera doesn't exist",
-			)));
-		};
 		// TODO: Handle potential error cases.
-		let frame = cam.frame()?;
+		let frame = self.0.frame()?;
 		let decoded = frame.decode_image::<pixel_format::RgbFormat>()?;
 		Ok(decoded)
 	}
@@ -66,8 +60,7 @@ impl Camera {
 	///
 	/// TODO: Is it a good idea to share this directly?
 	pub fn get_all_available_controls(&self) -> Vec<CameraControl> {
-		let Some(cam) = self.0.as_ref() else { todo!() };
-		cam.camera_controls().unwrap()
+		self.0.camera_controls().unwrap()
 	}
 
 	/// Set a camera control
@@ -78,8 +71,7 @@ impl Camera {
 		id: KnownCameraControl,
 		value: ControlValueSetter,
 	) -> Result<(), NokhwaError> {
-		let Some(cam) = self.0.as_mut() else { todo!() };
-		cam.set_camera_control(id, value)
+		self.0.set_camera_control(id, value)
 	}
 }
 
@@ -163,12 +155,12 @@ mod tests {
 		let id = KnownCameraControl::Brightness;
 		let value = ControlValueSetter::Integer(50);
 		cam.set_control(id, value)?;
-		let ctrl_res = cam.0.as_ref().unwrap().camera_control(id)?;
+		let ctrl_res = cam.0.camera_control(id)?;
 		println!("{}", ctrl_res.value());
 
 		let value = ControlValueSetter::Integer(0);
 		cam.set_control(id, value)?;
-		let ctrl_res = cam.0.as_ref().unwrap().camera_control(id)?;
+		let ctrl_res = cam.0.camera_control(id)?;
 		println!("{}", ctrl_res.value());
 		Ok(())
 	}
@@ -179,12 +171,12 @@ mod tests {
 		let id = KnownCameraControl::Other(10094849);
 		let value = ControlValueSetter::Integer(1);
 		cam.set_control(id, value)?;
-		let ctrl_res = cam.0.as_ref().unwrap().camera_control(id)?;
+		let ctrl_res = cam.0.camera_control(id)?;
 		println!("{}", ctrl_res.value());
 
 		let value = ControlValueSetter::Integer(3);
 		cam.set_control(id, value)?;
-		let ctrl_res = cam.0.as_ref().unwrap().camera_control(id)?;
+		let ctrl_res = cam.0.camera_control(id)?;
 		println!("{}", ctrl_res.value());
 		Ok(())
 	}
