@@ -56,11 +56,23 @@ impl Camera {
 
 	// == Configurations ==
 
+	/// Get the IDs of all supported controls.
+	pub fn get_all_supported_controls(&self) -> Vec<KnownCameraControl> {
+		self.0.supported_camera_controls().unwrap()
+	}
+
 	/// Get a list of the camera controls
 	///
 	/// TODO: Is it a good idea to share this directly?
 	pub fn get_all_available_controls(&self) -> Vec<CameraControl> {
 		self.0.camera_controls().unwrap()
+	}
+
+	/// Get a camera control by ID
+	///
+	/// Will panic if you use an ID not supported by the camera.
+	pub fn get_control(&self, id: KnownCameraControl) -> CameraControl {
+		self.0.camera_control(id).unwrap()
 	}
 
 	/// Set a camera control
