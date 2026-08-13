@@ -1,9 +1,11 @@
+use std::cmp::Ordering;
+
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
 	self, NokhwaError, pixel_format,
 	utils::{
-		CameraControl, CameraIndex, ControlValueSetter, KnownCameraControl, RequestedFormat,
-		RequestedFormatType,
+		CameraControl, CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl,
+		RequestedFormat, RequestedFormatType,
 	},
 };
 
@@ -91,27 +93,10 @@ impl Camera {
 	) -> Result<(), NokhwaError> {
 		self.inner.set_camera_control(id, value)
 	}
-}
 
-#[cfg(test)]
-mod tests {
-	use std::{
-		cmp::Ordering,
-		process::{ExitCode, Termination},
-	};
-
-	use super::*;
-
-	impl Termination for Camera {
-		fn report(self) -> ExitCode {
-			ExitCode::SUCCESS
-		}
-	}
-
-	#[test]
-	fn print_devices() {
-		let mut cameras = nokhwa::query(nokhwa::utils::ApiBackend::Auto)
-			.expect("at least one camera should be connected");
+	/// Query [`nokhwa`] for all available cameras and then sort them by their index.
+	pub fn query_for_available_cameras() -> Vec<CameraInfo> {
+		let mut cameras = nokhwa::query(nokhwa::utils::ApiBackend::Auto).unwrap();
 		cameras.sort_by(|a, b| -> Ordering {
 			let a_ind = a.index().as_index().unwrap_or(u32::MAX);
 			let b_ind = b.index().as_index().unwrap_or(u32::MAX);
@@ -123,6 +108,25 @@ mod tests {
 				Ordering::Greater
 			}
 		});
+		cameras
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use std::process::{ExitCode, Termination};
+
+	use super::*;
+
+	impl Termination for Camera {
+		fn report(self) -> ExitCode {
+			ExitCode::SUCCESS
+		}
+	}
+
+	#[test]
+	fn print_devices() {
+		let cameras = Camera::query_for_available_cameras();
 
 		print!("Available devices: [\n");
 		for cam in cameras {
@@ -231,7 +235,7 @@ mod nokhwa_test {
 	#[test]
 	fn main() {
 		println!("\t==== NOKHWA TEST ====");
-		let cameras = get_all_cameras();
+		let cameras = Camera::get_available_devices();
 		print_available_camera_info(&cameras);
 		let first_camera = cameras.first().unwrap();
 		print_camera_details(first_camera);
@@ -240,24 +244,6 @@ mod nokhwa_test {
 		nokhwa_polling_example(camera_index.clone());
 		println!("\n\t==== Nokhwa Callback Example ====");
 		nokhwa_callback_example(camera_index);
-	}
-
-	/// Query [`nokhwa`] for all available cameras and then sort them by their index.
-	fn get_all_cameras() -> Vec<CameraInfo> {
-		let mut cameras =
-			nokhwa::query(ApiBackend::Auto).expect("at least one camera should be connected");
-		cameras.sort_by(|a, b| -> Ordering {
-			let a_ind = a.index().as_index().unwrap_or(u32::MAX);
-			let b_ind = b.index().as_index().unwrap_or(u32::MAX);
-			if a_ind == u32::MAX && b_ind == u32::MAX {
-				Ordering::Equal
-			} else if a_ind < b_ind {
-				Ordering::Less
-			} else {
-				Ordering::Greater
-			}
-		});
-		return cameras;
 	}
 
 	/// List the details from a supplied [`Vec`] of [`CameraInfo`].
