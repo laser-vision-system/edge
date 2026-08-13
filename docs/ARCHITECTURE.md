@@ -1,5 +1,7 @@
 # Edge Architecture
 
+<!--TODO: Update this for Rust. -->
+
 ## Programming Language for video processing and analysis
 
 For a programming language, we can use Python with OpenCV and NumPy for quick image processing and machine vision. As well as FastAPI for communication with the server.
