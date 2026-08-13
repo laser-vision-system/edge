@@ -177,12 +177,12 @@ mod tests {
 		let id = KnownCameraControl::Brightness;
 		let value = ControlValueSetter::Integer(50);
 		cam.set_control(id, value)?;
-		let ctrl_res = cam.0.camera_control(id)?;
+		let ctrl_res = cam.inner.camera_control(id)?;
 		println!("{}", ctrl_res.value());
 
 		let value = ControlValueSetter::Integer(0);
 		cam.set_control(id, value)?;
-		let ctrl_res = cam.0.camera_control(id)?;
+		let ctrl_res = cam.inner.camera_control(id)?;
 		println!("{}", ctrl_res.value());
 		Ok(())
 	}
@@ -193,12 +193,12 @@ mod tests {
 		let id = KnownCameraControl::Other(10094849);
 		let value = ControlValueSetter::Integer(1);
 		cam.set_control(id, value)?;
-		let ctrl_res = cam.0.camera_control(id)?;
+		let ctrl_res = cam.inner.camera_control(id)?;
 		println!("{}", ctrl_res.value());
 
 		let value = ControlValueSetter::Integer(3);
 		cam.set_control(id, value)?;
-		let ctrl_res = cam.0.camera_control(id)?;
+		let ctrl_res = cam.inner.camera_control(id)?;
 		println!("{}", ctrl_res.value());
 		Ok(())
 	}
