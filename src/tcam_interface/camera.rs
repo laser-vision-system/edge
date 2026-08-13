@@ -215,7 +215,6 @@ mod nokhwa_test {
 	//! - Creates a polled camera, accessing 5 frames and printing image dimensions
 	//! - Creates a callback camera, printing image dimensions. Simultaneously polls the camera 5 times and saves the images.
 	use std::{
-		cmp::Ordering,
 		fs::{self, OpenOptions},
 		io::Write,
 		path::Path,
@@ -226,7 +225,7 @@ mod nokhwa_test {
 	use nokhwa::{
 		self, Buffer, CallbackCamera, Camera,
 		pixel_format::{RgbAFormat, RgbFormat},
-		utils::{ApiBackend, CameraIndex, CameraInfo, RequestedFormat, RequestedFormatType},
+		utils::{CameraIndex, CameraInfo, RequestedFormat, RequestedFormatType},
 	};
 
 	const POLL_INTERVAL: u64 = 400;
@@ -235,7 +234,7 @@ mod nokhwa_test {
 	#[test]
 	fn main() {
 		println!("\t==== NOKHWA TEST ====");
-		let cameras = Camera::get_available_devices();
+		let cameras = super::Camera::query_for_available_cameras();
 		print_available_camera_info(&cameras);
 		let first_camera = cameras.first().unwrap();
 		print_camera_details(first_camera);
