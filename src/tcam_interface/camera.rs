@@ -7,22 +7,21 @@ use nokhwa::{
 	},
 };
 
-/// # Camera
-///
 /// An abstraction over the nokhwa camera objects.
 ///
 /// Nokhwa's callback camera literally just wraps the regular camera and executes a /loop on a spawned thread. There seems to be no benefit to using it.
 ///
-/// NOTE: Uses optional so that errors can he handled by dropping the camera object. I don't know if this is the best idea, we will discuss this during the logic brainstorming.
-///
-/// ## TODO
-///
-/// The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
+/// TODO: The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
 #[must_use]
-pub struct Camera(nokhwa::Camera);
+pub struct Camera {
+	inner: nokhwa::Camera,
+	name: String,
+}
 
 impl Camera {
-	pub fn new(index: u32) -> Result<Self, NokhwaError> {
+	pub fn new(index: u32, name: Option<&str>) -> Result<Self, NokhwaError> {
+		let name = name.unwrap_or("camera").to_string();
+
 		let format = RequestedFormat::new::<pixel_format::RgbFormat>(
 			RequestedFormatType::AbsoluteHighestFrameRate,
 		);
@@ -31,7 +30,14 @@ impl Camera {
 		let mut camera = nokhwa::Camera::new(CameraIndex::Index(index), format)?;
 		camera.open_stream()?;
 
-		Ok(Self(camera))
+		Ok(Self {
+			inner: camera,
+			name,
+		})
+	}
+
+	pub fn name(&self) -> &str {
+		&self.name
 	}
 
 	// == Images ==
@@ -41,7 +47,7 @@ impl Camera {
 	/// There seems to be a 2 frame latency.
 	pub fn get_image(&mut self) -> Result<RgbImage, NokhwaError> {
 		// TODO: Handle potential error cases.
-		let frame = self.0.frame()?;
+		let frame = self.inner.frame()?;
 		let decoded = frame.decode_image::<pixel_format::RgbFormat>()?;
 		Ok(decoded)
 	}
@@ -58,21 +64,21 @@ impl Camera {
 
 	/// Get the IDs of all supported controls.
 	pub fn get_all_supported_controls(&self) -> Vec<KnownCameraControl> {
-		self.0.supported_camera_controls().unwrap()
+		self.inner.supported_camera_controls().unwrap()
 	}
 
 	/// Get a list of the camera controls
 	///
 	/// TODO: Is it a good idea to share this directly?
 	pub fn get_all_available_controls(&self) -> Vec<CameraControl> {
-		self.0.camera_controls().unwrap()
+		self.inner.camera_controls().unwrap()
 	}
 
 	/// Get a camera control by ID
 	///
 	/// Will panic if you use an ID not supported by the camera.
 	pub fn get_control(&self, id: KnownCameraControl) -> CameraControl {
-		self.0.camera_control(id).unwrap()
+		self.inner.camera_control(id).unwrap()
 	}
 
 	/// Set a camera control
@@ -83,7 +89,7 @@ impl Camera {
 		id: KnownCameraControl,
 		value: ControlValueSetter,
 	) -> Result<(), NokhwaError> {
-		self.0.set_camera_control(id, value)
+		self.inner.set_camera_control(id, value)
 	}
 }
 
@@ -137,33 +143,33 @@ mod tests {
 
 	#[test]
 	fn new() -> Result<Camera, NokhwaError> {
-		Camera::new(0)
+		Camera::new(0, None)
 	}
 
 	// Can't implement `Termination` for `RgbImage`.
 
 	#[test]
 	fn get_image() {
-		let mut cam = Camera::new(0).unwrap();
+		let mut cam = Camera::new(0, None).unwrap();
 		let _ = cam.get_image().unwrap();
 	}
 
 	#[test]
 	fn get_image_shrink() {
-		let mut cam = Camera::new(0).unwrap();
+		let mut cam = Camera::new(0, None).unwrap();
 		let _ = cam.get_image_shrink().unwrap();
 	}
 
 	#[test]
 	fn get_all_available_controls() {
-		let cam = Camera::new(0).unwrap();
+		let cam = Camera::new(0, None).unwrap();
 		let c = cam.get_all_available_controls();
 		println!("{c:#?}");
 	}
 
 	#[test]
 	fn set_control() -> Result<(), NokhwaError> {
-		let mut cam = Camera::new(0).unwrap();
+		let mut cam = Camera::new(0, None).unwrap();
 		let id = KnownCameraControl::Brightness;
 		let value = ControlValueSetter::Integer(50);
 		cam.set_control(id, value)?;
@@ -179,7 +185,7 @@ mod tests {
 
 	#[test]
 	fn set_control_exposure() -> Result<(), NokhwaError> {
-		let mut cam = Camera::new(0).unwrap();
+		let mut cam = Camera::new(0, None).unwrap();
 		let id = KnownCameraControl::Other(10094849);
 		let value = ControlValueSetter::Integer(1);
 		cam.set_control(id, value)?;
