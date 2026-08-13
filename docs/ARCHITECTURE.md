@@ -1,36 +1,45 @@
 # Edge Architecture
 
-<!--TODO: Update this for Rust. -->
+## Programming Language
 
-## Programming Language for video processing and analysis
+For the programming language, we are using Rust due to its performance and memory safety. This crucially adheres to the quality requirement of reliability.
 
-For a programming language, we can use Python with OpenCV and NumPy for quick image processing and machine vision. As well as FastAPI for communication with the server.
+## Rust libraries (crates)
 
-If we find that python is too resource intensive, we can go with a lower-level approach using Rust as it provides a better build system with cargo and has built in memory safety when compared to C++, it also has OpenCV bindings.
+### Image
 
-## Python Libraries Used
+https://crates.io/crates/image
 
-### OpenCV
+This crate provides methods to load, save, and manipulate image data.
 
-https://opencv.org/
+### Nokhwa
 
-Very promising machining vision library with image processing capabilities.
+https://crates.io/crates/nokhwa
 
-### NumPy
+This crates provides platform agnostic access to video input devices.
 
-https://pypi.org/project/numpy/
+### Reqwest
 
-Allows faster processing of information when compared to python list or array, as it provides an N-dimensional array pre complied with no interpreter overhead to slow down the code.
+https://crates.io/crates/reqwest
 
-### FastAPI
+This crate provides an implementation of a http client.
 
-https://fastapi.tiangolo.com/
+### Tungstenite
 
-For receiving and sending output and input to the server.
+https://crates.io/crates/tungstenite
 
-## Data Recording
+This crate provides an implementation of websockets.
 
-For data recording we use json files as the data is being read by machines and not humans.
+There are also asynchronous version:
+
+- https://crates.io/crates/tokio-tungstenite
+- https://crates.io/crates/async-tungstenite
+
+### Serde
+
+https://crates.io/crates/serde
+
+This crate provides simple and easy methods of serialising and deserialising data for transmission over the network.
 
 ## Camera Video Formats
 
