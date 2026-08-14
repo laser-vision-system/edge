@@ -30,4 +30,6 @@
 //!
 //! These can be called at startup.
 
+// Maybe private the mods and re-export the internals.
 pub mod camera;
+pub mod controls;
