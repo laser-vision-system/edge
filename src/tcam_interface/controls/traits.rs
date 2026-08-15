@@ -6,7 +6,7 @@ use std::hash::Hash;
 use std::fmt::Debug;
 
 use super::{
-	KeyValue, Point, RGB,
+	ControlTypeEnum, KeyValue, Point, RGB,
 	types::{
 		ControlTypeBool, ControlTypeBytes, ControlTypeFloat, ControlTypeInteger, ControlTypeString,
 	},
@@ -51,6 +51,18 @@ impl ValidControlValue for RGB {} // KeyValuePair
 //impl ValidControlValue for Option<String> {} // String: default
 //impl ValidControlValue for (i128, i128) {} // KeyValuePair: default
 
+pub trait ValidDefaultValue: Clone + Debug + PartialEq + PartialOrd {}
+
+impl<T> ValidDefaultValue for T where T: ValidControlValue {}
+
+impl ValidDefaultValue for Option<ControlTypeString> {}
+
+pub trait ValidPossibleValue: Clone + Debug + PartialEq + PartialOrd {}
+
+impl<T> ValidPossibleValue for T where T: ValidControlValue {}
+
+impl ValidPossibleValue for Vec<ControlTypeEnum> {}
+
 /// The type that is use to report the control's current value as well as apply a new value.
 ///
 /// Maps to [`nokhwa`]'s [`ControlValueSetter`].
@@ -65,7 +77,7 @@ pub trait ControlValue {
 /// Equal to [`ControlValue`].
 pub trait ControlMin: ControlValue {
 	//type MinType = Self::ValueType;
-	type MinType;
+	type MinType: ValidControlValue;
 
 	fn get_min(&self) -> Self::MinType;
 }
@@ -75,7 +87,7 @@ pub trait ControlMin: ControlValue {
 /// Equal to [`ControlValue`].
 pub trait ControlMax: ControlValue {
 	//type MaxType = Self::ValueType;
-	type MaxType;
+	type MaxType: ValidControlValue;
 
 	fn get_max(&self) -> Self::MaxType;
 }
@@ -85,7 +97,7 @@ pub trait ControlMax: ControlValue {
 /// Equal to [`ControlValue`].
 pub trait ControlStep: ControlValue {
 	//type StepType = Self::ValueType;
-	type StepType;
+	type StepType: ValidControlValue;
 
 	fn get_step(&self) -> Self::StepType;
 }
@@ -95,7 +107,7 @@ pub trait ControlStep: ControlValue {
 /// Bound by [`ControlValue`].
 pub trait ControlPossible: ControlValue {
 	//type PossibleType = Self::ValueType;
-	type PossibleType;
+	type PossibleType: ValidPossibleValue;
 
 	fn get_possible(&self) -> Self::PossibleType;
 }
@@ -105,7 +117,7 @@ pub trait ControlPossible: ControlValue {
 /// Bound by [`ControlValue`].
 pub trait ControlDefault: ControlValue {
 	//type DefaultType = Self::ValueType;
-	type DefaultType;
+	type DefaultType: ValidDefaultValue;
 
 	fn get_default(&self) -> Self::DefaultType;
 }
