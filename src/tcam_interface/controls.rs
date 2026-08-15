@@ -20,9 +20,9 @@
 use std::collections::HashMap;
 
 #[allow(unused_imports, reason = "Needed for module docstring")]
-use nokhwa::utils::{
-	CameraControl, ControlValueDescription, ControlValueSetter, KnownCameraControl,
-};
+use nokhwa::utils::ControlValueSetter;
+
+use nokhwa::utils::{CameraControl, ControlValueDescription, KnownCameraControl};
 
 pub mod traits;
 pub mod types;
