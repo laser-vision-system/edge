@@ -17,19 +17,63 @@
 //!
 //! - The only important mapping that needs to be sent back to [`nokhwa`] is [`ControlValue`] ([`ControlValueSetter`]).
 
-#[allow(unused_imports, reason = "These imports are needed for docstrings.")]
+use std::collections::HashMap;
+
+#[allow(unused_imports, reason = "Needed for module docstring")]
 use nokhwa::utils::{
 	CameraControl, ControlValueDescription, ControlValueSetter, KnownCameraControl,
 };
 
-pub mod extraction;
-pub mod types;
-use types::{
-	ControlDefault, ControlMax, ControlMin, ControlPossible, ControlStep, ControlValue, KeyValue,
+pub mod traits;
+pub mod values;
+
+use traits::{ControlDefault, ControlMax, ControlMin, ControlPossible, ControlStep, ControlValue};
+
+use values::{
+	ControlValueBoolean, ControlValueBytes, ControlValueEnum, ControlValueFloat,
+	ControlValueInteger, ControlValueKeyValue, ControlValuePoint, ControlValueRGB,
+	ControlValueString,
 };
+
+/// Convert a collection of [`nokhwa`] [`CameraControl`] into a custom type.
+pub fn extract_controls(
+	nokhwa_controls: Vec<CameraControl>,
+) -> HashMap<KnownCameraControl, CamControl> {
+	nokhwa_controls
+		.into_iter()
+		.map(|control| (control.control(), control.description().into()))
+		.collect::<HashMap<KnownCameraControl, CamControl>>()
+}
+
+/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
+pub fn extract_control(nokhwa_control: CameraControl) -> CamControl {
+	nokhwa_control.description().into()
+}
+
+/// Represents a key value use by [`ControlValueKeyValue`] and by extention, [`KeyValuePairControl`].
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct KeyValue(i128, i128);
+
+impl From<(i128, i128)> for KeyValue {
+	fn from(value: (i128, i128)) -> Self {
+		Self(value.0, value.1)
+	}
+}
+
+// ===== Field relationship bounds =====
+// (step, min, max, key): value
+// default: value
+// default: Option<value>
+// possible: Vec<value>
+// !!!default: (value, value)!!! Not anymore, see [`KeyValue`].
+
+//#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 
 // TODO: The inner types could be composed.
 // Control Value should be read-only and internally managed.
+/// Represents one type of camera control.
+///
+/// Maps to [`ControlValueDescription`].
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub enum CamControl {
 	#[default]
@@ -137,173 +181,18 @@ impl From<&ControlValueDescription> for CamControl {
 	}
 }
 
-//pub struct ControlValueNone;
-
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueInteger(i64);
-
-impl From<i64> for ControlValueInteger {
-	fn from(value: i64) -> Self {
-		Self(value)
-	}
-}
-
-impl ControlValue for ControlValueInteger {
-	type ValueType = i64;
-
-	fn get_value(&self) -> Self::ValueType {
-		self.0
-	}
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ControlValueFloat(f64);
-
-impl From<f64> for ControlValueFloat {
-	fn from(value: f64) -> Self {
-		Self(value)
-	}
-}
-
-impl ControlValue for ControlValueFloat {
-	type ValueType = f64;
-
-	fn get_value(&self) -> Self::ValueType {
-		self.0
-	}
-}
-
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueBoolean(bool);
-
-impl From<bool> for ControlValueBoolean {
-	fn from(value: bool) -> Self {
-		Self(value)
-	}
-}
-
-impl ControlValue for ControlValueBoolean {
-	type ValueType = bool;
-
-	fn get_value(&self) -> Self::ValueType {
-		self.0
-	}
-}
-
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueString(String);
-
-impl From<String> for ControlValueString {
-	fn from(value: String) -> Self {
-		Self(value)
-	}
-}
-
-impl ControlValue for ControlValueString {
-	type ValueType = String;
-
-	fn get_value(&self) -> Self::ValueType {
-		self.0.clone()
-	}
-}
-
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueBytes(Vec<u8>);
-
-impl From<Vec<u8>> for ControlValueBytes {
-	fn from(value: Vec<u8>) -> Self {
-		Self(value)
-	}
-}
-
-impl ControlValue for ControlValueBytes {
-	type ValueType = Vec<u8>;
-
-	fn get_value(&self) -> Self::ValueType {
-		self.0.clone()
-	}
-}
-
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueKeyValue(KeyValue);
-
-impl From<KeyValue> for ControlValueKeyValue {
-	fn from(value: KeyValue) -> Self {
-		Self(value)
-	}
-}
-
-impl ControlValue for ControlValueKeyValue {
-	type ValueType = KeyValue;
-
-	fn get_value(&self) -> Self::ValueType {
-		self.0
-	}
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ControlValuePoint(f64, f64);
-
-impl From<(f64, f64)> for ControlValuePoint {
-	fn from(value: (f64, f64)) -> Self {
-		Self(value.0, value.1)
-	}
-}
-
-impl ControlValue for ControlValuePoint {
-	type ValueType = (f64, f64);
-
-	fn get_value(&self) -> Self::ValueType {
-		(self.0, self.1)
-	}
-}
-
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueEnum(i64);
-
-impl From<i64> for ControlValueEnum {
-	fn from(value: i64) -> Self {
-		Self(value)
-	}
-}
-
-impl ControlValue for ControlValueEnum {
-	type ValueType = i64;
-
-	fn get_value(&self) -> Self::ValueType {
-		self.0
-	}
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ControlValueRGB(f64, f64, f64);
-
-impl From<(f64, f64, f64)> for ControlValueRGB {
-	fn from(value: (f64, f64, f64)) -> Self {
-		Self(value.0, value.1, value.2)
-	}
-}
-
-impl ControlValue for ControlValueRGB {
-	type ValueType = (f64, f64, f64);
-
-	fn get_value(&self) -> Self::ValueType {
-		(self.0, self.1, self.2)
-	}
-}
-
-// ===== ControlValueDescription Mappings =====
-
 // Every variant has a value and default.
 // There are no hard correllations for the other fields.
 
-// ControlValueDescription::None
-
+/// A camera control that consists of nothing.
+///
+/// Maps to [`ControlValueDescription::None`].
 //#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 //pub struct NoneControl;
 
-// ControlValueDescription::Integer
-
+/// A camera control that consists of a value, default, and step.
+///
+/// Maps to [`ControlValueDescription::Integer`]
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IntegerControl {
 	value: ControlValueInteger,
@@ -349,7 +238,9 @@ impl ControlStep for IntegerControl {
 	}
 }
 
-// ControlValueDescription::IntegerRange
+/// A camera control that consists of a value, default, step, min, and max.
+///
+/// Maps to [`ControlValueDescription::IntegerRange`]
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IntegerRangeControl {
@@ -418,7 +309,9 @@ impl ControlMax for IntegerRangeControl {
 	}
 }
 
-// ControlValueDescription::Float
+/// A camera control that consists of a value, default, and step.
+///
+/// Maps to [`ControlValueDescription::Float`]
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct FloatControl {
@@ -465,7 +358,9 @@ impl ControlStep for FloatControl {
 	}
 }
 
-// ControlValueDescription::FloatRange
+/// A camera control that consists of a value, default, step, min, and max.
+///
+/// Maps to [`ControlValueDescription::FloatRange`]
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct FloatRangeControl {
@@ -534,7 +429,9 @@ impl ControlMax for FloatRangeControl {
 	}
 }
 
-// ControlValueDescription::Boolean
+/// A camera control that consists of a value and default.
+///
+/// Maps to [`ControlValueDescription::Boolean`]
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BooleanControl {
@@ -567,7 +464,9 @@ impl ControlDefault for BooleanControl {
 	}
 }
 
-// ControlValueDescription::String
+/// A camera control that consists of a value and an optional default.
+///
+/// Maps to [`ControlValueDescription::String`]
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct StringControl {
@@ -600,7 +499,9 @@ impl ControlDefault for StringControl {
 	}
 }
 
-// ControlValueDescription::Bytes
+/// A camera control that consists of a value and default.
+///
+/// Maps to [`ControlValueDescription::Bytes`]
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BytesControl {
@@ -633,7 +534,9 @@ impl ControlDefault for BytesControl {
 	}
 }
 
-// ControlValueDescription::KeyValuePair
+/// A camera control that consists of a value and default.
+///
+/// Maps to [`ControlValueDescription::KeyValuePair`]
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyValuePairControl {
@@ -666,7 +569,9 @@ impl ControlDefault for KeyValuePairControl {
 	}
 }
 
-// ControlValueDescription::Point
+/// A camera control that consists of a value and default.
+///
+/// Maps to [`ControlValueDescription::Point`]
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct PointControl {
@@ -699,7 +604,9 @@ impl ControlDefault for PointControl {
 	}
 }
 
-// ControlValueDescription::Enum
+/// A camera control that consists of a value, default, and a vector of possible options.
+///
+/// Maps to [`ControlValueDescription::Enum`]
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EnumControl {
@@ -746,7 +653,11 @@ impl ControlPossible for EnumControl {
 	}
 }
 
-// ControlValueDescription::RGB
+/// A camera control that consists of a value, default, and max.
+///
+/// The assumption is that the min will always be 0.
+///
+/// Maps to [`ControlValueDescription::RGB`]
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct RGBControl {
