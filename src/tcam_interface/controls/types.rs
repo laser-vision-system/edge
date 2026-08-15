@@ -3,8 +3,8 @@ use std::{fmt::Debug, hash::Hash};
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyValue(i128, i128);
 
-impl KeyValue {
-	pub fn new(value: (i128, i128)) -> Self {
+impl From<(i128, i128)> for KeyValue {
+	fn from(value: (i128, i128)) -> Self {
 		Self(value.0, value.1)
 	}
 }
