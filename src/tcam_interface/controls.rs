@@ -47,13 +47,103 @@ pub enum CamControl {
 	RGB(RGBControl),
 }
 
+impl From<&ControlValueDescription> for CamControl {
+	fn from(value: &ControlValueDescription) -> Self {
+		match value {
+			ControlValueDescription::None => CamControl::None,
+			ControlValueDescription::Integer {
+				value,
+				default,
+				step,
+			} => CamControl::Integer(IntegerControl::new(
+				ControlValueInteger::from(*value),
+				*default,
+				*step,
+			)),
+			ControlValueDescription::IntegerRange {
+				min,
+				max,
+				value,
+				step,
+				default,
+			} => CamControl::IntegerRange(IntegerRangeControl::new(
+				ControlValueInteger::from(*value),
+				*default,
+				*step,
+				*min,
+				*max,
+			)),
+			ControlValueDescription::Float {
+				value,
+				default,
+				step,
+			} => CamControl::Float(FloatControl::new(
+				ControlValueFloat::from(*value),
+				*default,
+				*step,
+			)),
+			ControlValueDescription::FloatRange {
+				min,
+				max,
+				value,
+				step,
+				default,
+			} => CamControl::FloatRange(FloatRangeControl::new(
+				ControlValueFloat::from(*value),
+				*default,
+				*step,
+				*min,
+				*max,
+			)),
+			ControlValueDescription::Boolean { value, default } => CamControl::Boolean(
+				BooleanControl::new(ControlValueBoolean::from(*value), *default),
+			),
+			ControlValueDescription::String { value, default } => CamControl::String(
+				StringControl::new(ControlValueString::from(value.clone()), default.clone()),
+			),
+			ControlValueDescription::Bytes { value, default } => CamControl::Bytes(
+				BytesControl::new(ControlValueBytes::from(value.clone()), default.clone()),
+			),
+			ControlValueDescription::KeyValuePair {
+				key,
+				value,
+				default,
+			} => CamControl::KeyValuePair(KeyValuePairControl::new(
+				ControlValueKeyValue::from(KeyValue::from((*key, *value))),
+				(*default).into(),
+			)),
+			ControlValueDescription::Point { value, default } => {
+				CamControl::Point(PointControl::new(ControlValuePoint::from(*value), *default))
+			},
+			ControlValueDescription::Enum {
+				value,
+				possible,
+				default,
+			} => CamControl::Enum(EnumControl::new(
+				ControlValueEnum::from(*value),
+				*default,
+				possible.clone(),
+			)),
+			ControlValueDescription::RGB {
+				value,
+				max,
+				default,
+			} => CamControl::RGB(RGBControl::new(
+				ControlValueRGB::from(*value),
+				*default,
+				*max,
+			)),
+		}
+	}
+}
+
 //pub struct ControlValueNone;
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ControlValueInteger(i64);
 
-impl ControlValueInteger {
-	pub fn new(value: i64) -> Self {
+impl From<i64> for ControlValueInteger {
+	fn from(value: i64) -> Self {
 		Self(value)
 	}
 }
@@ -69,8 +159,8 @@ impl ControlValue for ControlValueInteger {
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ControlValueFloat(f64);
 
-impl ControlValueFloat {
-	pub fn new(value: f64) -> Self {
+impl From<f64> for ControlValueFloat {
+	fn from(value: f64) -> Self {
 		Self(value)
 	}
 }
@@ -86,8 +176,8 @@ impl ControlValue for ControlValueFloat {
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ControlValueBoolean(bool);
 
-impl ControlValueBoolean {
-	pub fn new(value: bool) -> Self {
+impl From<bool> for ControlValueBoolean {
+	fn from(value: bool) -> Self {
 		Self(value)
 	}
 }
@@ -103,8 +193,8 @@ impl ControlValue for ControlValueBoolean {
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ControlValueString(String);
 
-impl ControlValueString {
-	pub fn new(value: String) -> Self {
+impl From<String> for ControlValueString {
+	fn from(value: String) -> Self {
 		Self(value)
 	}
 }
@@ -120,8 +210,8 @@ impl ControlValue for ControlValueString {
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ControlValueBytes(Vec<u8>);
 
-impl ControlValueBytes {
-	pub fn new(value: Vec<u8>) -> Self {
+impl From<Vec<u8>> for ControlValueBytes {
+	fn from(value: Vec<u8>) -> Self {
 		Self(value)
 	}
 }
@@ -137,8 +227,8 @@ impl ControlValue for ControlValueBytes {
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ControlValueKeyValue(KeyValue);
 
-impl ControlValueKeyValue {
-	pub fn new(value: KeyValue) -> Self {
+impl From<KeyValue> for ControlValueKeyValue {
+	fn from(value: KeyValue) -> Self {
 		Self(value)
 	}
 }
@@ -154,8 +244,8 @@ impl ControlValue for ControlValueKeyValue {
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ControlValuePoint(f64, f64);
 
-impl ControlValuePoint {
-	pub fn new(value: (f64, f64)) -> Self {
+impl From<(f64, f64)> for ControlValuePoint {
+	fn from(value: (f64, f64)) -> Self {
 		Self(value.0, value.1)
 	}
 }
@@ -171,8 +261,8 @@ impl ControlValue for ControlValuePoint {
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ControlValueEnum(i64);
 
-impl ControlValueEnum {
-	pub fn new(value: i64) -> Self {
+impl From<i64> for ControlValueEnum {
+	fn from(value: i64) -> Self {
 		Self(value)
 	}
 }
@@ -188,8 +278,8 @@ impl ControlValue for ControlValueEnum {
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ControlValueRGB(f64, f64, f64);
 
-impl ControlValueRGB {
-	pub fn new(value: (f64, f64, f64)) -> Self {
+impl From<(f64, f64, f64)> for ControlValueRGB {
+	fn from(value: (f64, f64, f64)) -> Self {
 		Self(value.0, value.1, value.2)
 	}
 }
