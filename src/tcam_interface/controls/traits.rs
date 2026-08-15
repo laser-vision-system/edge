@@ -1,13 +1,11 @@
-use std::{fmt::Debug, hash::Hash};
+//! Core traits for camera controls.
 
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct KeyValue(i128, i128);
+#[allow(unused_imports, reason = "Needed for trait docstring")]
+use std::hash::Hash;
 
-impl From<(i128, i128)> for KeyValue {
-	fn from(value: (i128, i128)) -> Self {
-		Self(value.0, value.1)
-	}
-}
+use std::fmt::Debug;
+
+use super::KeyValue;
 
 /// A marker trait that determines what is acceptable to use within a [`ControlValue`].
 ///
@@ -46,17 +44,6 @@ impl ValidControlValue for (f64, f64, f64) {} // RGB
 //impl ValidControlValue for Option<String> {} // String: default
 //impl ValidControlValue for (i128, i128) {} // KeyValuePair: default
 
-// ===== Field relationship bounds =====
-// (step, min, max, key): value
-// default: value
-// default: Option<value>
-// possible: Vec<value>
-// !!!default: (value, value)!!! Not anymore, see [`KeyValue`].
-
-//#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-
-// ===== Control Value =====
-
 /// The type that is use to report the control's current value as well as apply a new value.
 ///
 /// Maps to [`nokhwa`]'s [`ControlValueSetter`].
@@ -66,55 +53,61 @@ pub trait ControlValue {
 	fn get_value(&self) -> Self::ValueType;
 }
 
-// ===== Control Min =====
-
-/// Type equal to [`ControlValue`].
+/// A type that supports the `min` field.
+///
+/// Equal to [`ControlValue`].
 pub trait ControlMin: ControlValue {
+	//type MinType = Self::ValueType;
 	type MinType;
 
 	fn get_min(&self) -> Self::MinType;
 }
 
-// ===== Control Max =====
-
-/// Type equal to [`ControlValue`].
+/// A type that supports the `max` field.
+///
+/// Equal to [`ControlValue`].
 pub trait ControlMax: ControlValue {
+	//type MaxType = Self::ValueType;
 	type MaxType;
 
 	fn get_max(&self) -> Self::MaxType;
 }
 
-// ===== Control Step =====
-
-/// Type equal to [`ControlValue`].
+/// A type that supports the `step` field.
+///
+/// Equal to [`ControlValue`].
 pub trait ControlStep: ControlValue {
+	//type StepType = Self::ValueType;
 	type StepType;
 
 	fn get_step(&self) -> Self::StepType;
 }
 
-// ===== Control Key =====
-
-/// Type equal to [`ControlValue`].
+/// A type that supports the `key` field.
+///
+/// Equal to [`ControlValue`].
 pub trait ControlKey: ControlValue {
+	//type KeyType = Self::ValueType;
 	type KeyType;
 
 	fn get_key(&self) -> Self::KeyType;
 }
 
-// ===== Control Possible =====
-
-/// Type bound by [`ControlValue`].
+/// A type that supports the `possible` field.
+///
+/// Bound by [`ControlValue`].
 pub trait ControlPossible: ControlValue {
+	//type PossibleType = Self::ValueType;
 	type PossibleType;
 
 	fn get_possible(&self) -> Self::PossibleType;
 }
 
-// ===== Control Default =====
-
-/// Type bound by [`ControlValue`].
+/// A type that supports the `default` field.
+///
+/// Bound by [`ControlValue`].
 pub trait ControlDefault: ControlValue {
+	//type DefaultType = Self::ValueType;
 	type DefaultType;
 
 	fn get_default(&self) -> Self::DefaultType;
