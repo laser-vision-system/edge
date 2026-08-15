@@ -25,14 +25,22 @@ use nokhwa::utils::{
 };
 
 pub mod traits;
+pub mod types;
 pub mod values;
 
 use traits::{ControlDefault, ControlMax, ControlMin, ControlPossible, ControlStep, ControlValue};
+
+use types::{KeyValue, Point, RGB};
 
 use values::{
 	ControlValueBoolean, ControlValueBytes, ControlValueEnum, ControlValueFloat,
 	ControlValueInteger, ControlValueKeyValue, ControlValuePoint, ControlValueRGB,
 	ControlValueString,
+};
+
+use self::types::{
+	ControlTypeBool, ControlTypeBytes, ControlTypeEnum, ControlTypeFloat, ControlTypeInteger,
+	ControlTypeString,
 };
 
 /// Convert a collection of [`nokhwa`] [`CameraControl`] into a custom type.
@@ -48,16 +56,6 @@ pub fn extract_controls(
 /// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
 pub fn extract_control(nokhwa_control: CameraControl) -> CamControl {
 	nokhwa_control.description().into()
-}
-
-/// Represents a key value use by [`ControlValueKeyValue`] and by extention, [`KeyValuePairControl`].
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct KeyValue(i128, i128);
-
-impl From<(i128, i128)> for KeyValue {
-	fn from(value: (i128, i128)) -> Self {
-		Self(value.0, value.1)
-	}
 }
 
 // ===== Field relationship bounds =====
@@ -157,7 +155,10 @@ impl From<&ControlValueDescription> for CamControl {
 				(*default).into(),
 			)),
 			ControlValueDescription::Point { value, default } => {
-				CamControl::Point(PointControl::new(ControlValuePoint::from(*value), *default))
+				CamControl::Point(PointControl::new(
+					ControlValuePoint::from(Point::from(*value)),
+					Point::from(*default),
+				))
 			},
 			ControlValueDescription::Enum {
 				value,
@@ -173,9 +174,9 @@ impl From<&ControlValueDescription> for CamControl {
 				max,
 				default,
 			} => CamControl::RGB(RGBControl::new(
-				ControlValueRGB::from(*value),
-				*default,
-				*max,
+				ControlValueRGB::from(RGB::from(*value)),
+				RGB::from(*default),
+				RGB::from(*max),
 			)),
 		}
 	}
@@ -215,7 +216,7 @@ impl IntegerControl {
 }
 
 impl ControlValue for IntegerControl {
-	type ValueType = i64;
+	type ValueType = ControlTypeInteger;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()
@@ -270,7 +271,7 @@ impl IntegerRangeControl {
 }
 
 impl ControlValue for IntegerRangeControl {
-	type ValueType = i64;
+	type ValueType = ControlTypeInteger;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()
@@ -335,7 +336,7 @@ impl FloatControl {
 }
 
 impl ControlValue for FloatControl {
-	type ValueType = f64;
+	type ValueType = ControlTypeFloat;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()
@@ -390,7 +391,7 @@ impl FloatRangeControl {
 }
 
 impl ControlValue for FloatRangeControl {
-	type ValueType = f64;
+	type ValueType = ControlTypeFloat;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()
@@ -449,7 +450,7 @@ impl BooleanControl {
 }
 
 impl ControlValue for BooleanControl {
-	type ValueType = bool;
+	type ValueType = ControlTypeBool;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()
@@ -484,7 +485,7 @@ impl StringControl {
 }
 
 impl ControlValue for StringControl {
-	type ValueType = String;
+	type ValueType = ControlTypeString;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()
@@ -519,7 +520,7 @@ impl BytesControl {
 }
 
 impl ControlValue for BytesControl {
-	type ValueType = Vec<u8>;
+	type ValueType = ControlTypeBytes;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()
@@ -589,7 +590,7 @@ impl PointControl {
 }
 
 impl ControlValue for PointControl {
-	type ValueType = (f64, f64);
+	type ValueType = Point;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()
@@ -630,7 +631,7 @@ impl EnumControl {
 }
 
 impl ControlValue for EnumControl {
-	type ValueType = i64;
+	type ValueType = ControlTypeEnum;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()
@@ -681,7 +682,7 @@ impl RGBControl {
 }
 
 impl ControlValue for RGBControl {
-	type ValueType = (f64, f64, f64);
+	type ValueType = RGB;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.value.get_value()

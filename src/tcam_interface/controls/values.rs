@@ -3,104 +3,110 @@
 #[allow(unused_imports, reason = "Needed for module docstring")]
 use nokhwa::utils::ControlValueSetter;
 
-use super::{KeyValue, traits::ControlValue};
+use super::{
+	traits::ControlValue,
+	types::{
+		ControlTypeBool, ControlTypeBytes, ControlTypeEnum, ControlTypeFloat, ControlTypeInteger,
+		ControlTypeString, KeyValue, Point, RGB,
+	},
+};
 
 //pub struct ControlValueNone;
 
-/// A control that has a value of the type [`i64`].
+/// A control that has a value of the type [`ControlTypeInteger`].
 ///
 /// Maps to [`ControlValueSetter::Integer`].
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueInteger(i64);
+pub struct ControlValueInteger(ControlTypeInteger);
 
-impl From<i64> for ControlValueInteger {
-	fn from(value: i64) -> Self {
+impl From<ControlTypeInteger> for ControlValueInteger {
+	fn from(value: ControlTypeInteger) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for ControlValueInteger {
-	type ValueType = i64;
+	type ValueType = ControlTypeInteger;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0
 	}
 }
 
-/// A control that has a value of the type [`f64`].
+/// A control that has a value of the type [`ControlTypeFloat`].
 ///
 /// Maps to [`ControlValueSetter::Float`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ControlValueFloat(f64);
+pub struct ControlValueFloat(ControlTypeFloat);
 
-impl From<f64> for ControlValueFloat {
-	fn from(value: f64) -> Self {
+impl From<ControlTypeFloat> for ControlValueFloat {
+	fn from(value: ControlTypeFloat) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for ControlValueFloat {
-	type ValueType = f64;
+	type ValueType = ControlTypeFloat;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0
 	}
 }
 
-/// A control that has a value of the type [`bool`].
+/// A control that has a value of the type [`ControlTypeBool`].
 ///
 /// Maps to [`ControlValueSetter::Boolean`].
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueBoolean(bool);
+pub struct ControlValueBoolean(ControlTypeBool);
 
-impl From<bool> for ControlValueBoolean {
-	fn from(value: bool) -> Self {
+impl From<ControlTypeBool> for ControlValueBoolean {
+	fn from(value: ControlTypeBool) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for ControlValueBoolean {
-	type ValueType = bool;
+	type ValueType = ControlTypeBool;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0
 	}
 }
 
-/// A control that has a value of the type [`String`].
+/// A control that has a value of the type [`ControlTypeString`].
 ///
 /// Maps to [`ControlValueSetter::String`].
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueString(String);
+pub struct ControlValueString(ControlTypeString);
 
-impl From<String> for ControlValueString {
-	fn from(value: String) -> Self {
+impl From<ControlTypeString> for ControlValueString {
+	fn from(value: ControlTypeString) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for ControlValueString {
-	type ValueType = String;
+	type ValueType = ControlTypeString;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0.clone()
 	}
 }
 
-/// A control that has a value of the type [`Vec<u8>`].
+/// A control that has a value of the type [`ControlTypeBytes`].
 ///
 /// Maps to [`ControlValueSetter::Bytes`].
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueBytes(Vec<u8>);
+pub struct ControlValueBytes(ControlTypeBytes);
 
-impl From<Vec<u8>> for ControlValueBytes {
-	fn from(value: Vec<u8>) -> Self {
+impl From<ControlTypeBytes> for ControlValueBytes {
+	fn from(value: ControlTypeBytes) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for ControlValueBytes {
-	type ValueType = Vec<u8>;
+	type ValueType = ControlTypeBytes;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0.clone()
@@ -127,62 +133,62 @@ impl ControlValue for ControlValueKeyValue {
 	}
 }
 
-/// A control that has a value of the type ([`f64`], [`f64`]).
+/// A control that has a value of the type [`Point`].
 ///
 /// Maps to [`ControlValueSetter::Point`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ControlValuePoint(f64, f64);
+pub struct ControlValuePoint(Point);
 
-impl From<(f64, f64)> for ControlValuePoint {
-	fn from(value: (f64, f64)) -> Self {
-		Self(value.0, value.1)
-	}
-}
-
-impl ControlValue for ControlValuePoint {
-	type ValueType = (f64, f64);
-
-	fn get_value(&self) -> Self::ValueType {
-		(self.0, self.1)
-	}
-}
-
-/// A control that has a value of the type [`i64`].
-///
-/// Maps to [`ControlValueSetter::EnumValue`].
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueEnum(i64);
-
-impl From<i64> for ControlValueEnum {
-	fn from(value: i64) -> Self {
+impl From<Point> for ControlValuePoint {
+	fn from(value: Point) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValueEnum {
-	type ValueType = i64;
+impl ControlValue for ControlValuePoint {
+	type ValueType = Point;
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0
 	}
 }
 
-/// A control that has a value of the type ([`f64`], [`f64`], [`f64`]).
+/// A control that has a value of the type [`ControlTypeEnum`].
+///
+/// Maps to [`ControlValueSetter::EnumValue`].
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ControlValueEnum(ControlTypeEnum);
+
+impl From<ControlTypeEnum> for ControlValueEnum {
+	fn from(value: ControlTypeEnum) -> Self {
+		Self(value)
+	}
+}
+
+impl ControlValue for ControlValueEnum {
+	type ValueType = ControlTypeEnum;
+
+	fn get_value(&self) -> Self::ValueType {
+		self.0
+	}
+}
+
+/// A control that has a value of the type [`RGB`].
 ///
 /// Maps to [`ControlValueSetter::RGB`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ControlValueRGB(f64, f64, f64);
+pub struct ControlValueRGB(RGB);
 
-impl From<(f64, f64, f64)> for ControlValueRGB {
-	fn from(value: (f64, f64, f64)) -> Self {
-		Self(value.0, value.1, value.2)
+impl From<RGB> for ControlValueRGB {
+	fn from(value: RGB) -> Self {
+		Self(value)
 	}
 }
 
 impl ControlValue for ControlValueRGB {
-	type ValueType = (f64, f64, f64);
+	type ValueType = RGB;
 
 	fn get_value(&self) -> Self::ValueType {
-		(self.0, self.1, self.2)
+		self.0
 	}
 }
