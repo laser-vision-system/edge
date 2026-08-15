@@ -43,14 +43,14 @@ use self::types::{
 	ControlTypeString,
 };
 
+pub type ControlMap = HashMap<KnownCameraControl, CamControl>;
+
 /// Convert a collection of [`nokhwa`] [`CameraControl`] into a custom type.
-pub fn extract_controls(
-	nokhwa_controls: Vec<CameraControl>,
-) -> HashMap<KnownCameraControl, CamControl> {
+pub fn extract_controls(nokhwa_controls: Vec<CameraControl>) -> ControlMap {
 	nokhwa_controls
 		.into_iter()
 		.map(|control| (control.control(), control.description().into()))
-		.collect::<HashMap<KnownCameraControl, CamControl>>()
+		.collect::<ControlMap>()
 }
 
 /// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
@@ -64,8 +64,6 @@ pub fn extract_control(nokhwa_control: CameraControl) -> CamControl {
 // default: Option<value>
 // possible: Vec<value>
 // !!!default: (value, value)!!! Not anymore, see [`KeyValue`].
-
-//#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 
 // TODO: The inner types could be composed.
 // Control Value should be read-only and internally managed.
