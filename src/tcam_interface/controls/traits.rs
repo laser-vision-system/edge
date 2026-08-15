@@ -5,7 +5,12 @@ use std::hash::Hash;
 
 use std::fmt::Debug;
 
-use super::KeyValue;
+use super::{
+	KeyValue, Point, RGB,
+	types::{
+		ControlTypeBool, ControlTypeBytes, ControlTypeFloat, ControlTypeInteger, ControlTypeString,
+	},
+};
 
 /// A marker trait that determines what is acceptable to use within a [`ControlValue`].
 ///
@@ -19,17 +24,19 @@ pub trait ValidControlValue: Clone + Debug + PartialEq + PartialOrd {}
 
 // ===== Value fields (used in ControlValueSetter) =====
 // ----- Explicit -----
-impl ValidControlValue for i64 {} // Integer, IntegerRange, Enum
-impl ValidControlValue for f64 {} // Float,  FloatRange
-impl ValidControlValue for bool {} // Boolean
-impl ValidControlValue for String {} // String
-impl ValidControlValue for Vec<u8> {} // Bytes
+impl ValidControlValue for ControlTypeInteger {} // Integer, IntegerRange, Enum
+impl ValidControlValue for ControlTypeFloat {} // Float,  FloatRange
+impl ValidControlValue for ControlTypeBool {} // Boolean
+impl ValidControlValue for ControlTypeString {} // String
+impl ValidControlValue for ControlTypeBytes {} // Bytes
 impl ValidControlValue for KeyValue {} // KeyValuePair
+impl ValidControlValue for Point {} // KeyValuePair
+impl ValidControlValue for RGB {} // KeyValuePair
 // TODO: Would these be better than the implicit?
 // TODO: Would it be better to use an array in either case?
-impl ValidControlValue for (f64, f64) {} // Point
+//impl ValidControlValue for (f64, f64) {} // Point
 //impl ValidControlValue for [f64; 2] {} // Point
-impl ValidControlValue for (f64, f64, f64) {} // RGB
+//impl ValidControlValue for (f64, f64, f64) {} // RGB
 //impl ValidControlValue for [f64; 3] {} // RGB
 
 // ----- Implicit -----
@@ -81,16 +88,6 @@ pub trait ControlStep: ControlValue {
 	type StepType;
 
 	fn get_step(&self) -> Self::StepType;
-}
-
-/// A type that supports the `key` field.
-///
-/// Equal to [`ControlValue`].
-pub trait ControlKey: ControlValue {
-	//type KeyType = Self::ValueType;
-	type KeyType;
-
-	fn get_key(&self) -> Self::KeyType;
 }
 
 /// A type that supports the `possible` field.
