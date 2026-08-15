@@ -13,7 +13,7 @@ use super::{
 	PointControl, RGBControl, StringControl,
 };
 
-/// Returns a collection of controls.
+/// Convert a collection of [`nokhwa`] [`CameraControl`] into a custom type.
 pub fn extract_controls(camera: Camera) -> HashMap<KnownCameraControl, CamControl> {
 	camera
 		.camera_controls()
@@ -27,9 +27,7 @@ pub fn extract_controls(camera: Camera) -> HashMap<KnownCameraControl, CamContro
 		.collect::<HashMap<KnownCameraControl, CamControl>>()
 }
 
-// The above function should iterate through the entries and called the below function.
-
-/// Maps the internal nokhwa control to a custom implementation.
+/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
 pub fn extract_control(nokhwa_control: &CameraControl) -> CamControl {
 	match nokhwa_control.description() {
 		ControlValueDescription::None => CamControl::None,
