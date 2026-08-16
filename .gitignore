@@ -1,14 +1,3 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
-
 # Environment variables files
 .env
 .env.*
@@ -18,3 +7,9 @@ wheels/
 
 # Defensively adding this in case of Mac developers
 .DS_Store
+
+# Folder for temporary files
+temp/
+
+# Added by cargo
+/target
