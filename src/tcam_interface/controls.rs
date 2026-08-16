@@ -19,7 +19,7 @@
 //!
 //! ## TODO: Oh god fix the naming of the types.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
 #[allow(unused_imports, reason = "Needed for module docstring")]
 use nokhwa::utils::ControlValueSetter;
@@ -76,7 +76,7 @@ pub fn extract_control(nokhwa_control: CameraControl) -> CamControl {
 /// Represents one type of camera control.
 ///
 /// Maps to [`ControlValueDescription`].
-#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CamControl {
 	#[default]
 	None, //None(NoneControl),
@@ -215,7 +215,7 @@ impl From<CameraControl> for CamControl {
 /// A camera control that consists of a value, default, and step.
 ///
 /// Maps to [`ControlValueDescription::Integer`]
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug)]
 pub struct IntegerControl {
 	control_type: KnownCameraControl,
 	value: ControlValueInteger,
@@ -291,7 +291,7 @@ impl ControlStep for IntegerControl {
 ///
 /// Maps to [`ControlValueDescription::IntegerRange`]
 
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug)]
 pub struct IntegerRangeControl {
 	control_type: KnownCameraControl,
 	value: ControlValueInteger,
@@ -392,7 +392,7 @@ impl ControlMax for IntegerRangeControl {
 ///
 /// Maps to [`ControlValueDescription::Float`]
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug)]
 pub struct FloatControl {
 	control_type: KnownCameraControl,
 	value: ControlValueFloat,
@@ -468,7 +468,7 @@ impl ControlStep for FloatControl {
 ///
 /// Maps to [`ControlValueDescription::FloatRange`]
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug)]
 pub struct FloatRangeControl {
 	control_type: KnownCameraControl,
 	value: ControlValueFloat,
@@ -569,7 +569,7 @@ impl ControlMax for FloatRangeControl {
 ///
 /// Maps to [`ControlValueDescription::Boolean`]
 
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug)]
 pub struct BooleanControl {
 	control_type: KnownCameraControl,
 	value: ControlValueBoolean,
@@ -624,7 +624,7 @@ impl ControlDefault for BooleanControl {
 ///
 /// Maps to [`ControlValueDescription::String`]
 
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug)]
 pub struct StringControl {
 	control_type: KnownCameraControl,
 	value: ControlValueString,
@@ -679,7 +679,7 @@ impl ControlDefault for StringControl {
 ///
 /// Maps to [`ControlValueDescription::Bytes`]
 
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug)]
 pub struct BytesControl {
 	control_type: KnownCameraControl,
 	value: ControlValueBytes,
@@ -734,7 +734,7 @@ impl ControlDefault for BytesControl {
 ///
 /// Maps to [`ControlValueDescription::KeyValuePair`]
 
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug)]
 pub struct KeyValuePairControl {
 	control_type: KnownCameraControl,
 	value: ControlValueKeyValue,
@@ -789,7 +789,7 @@ impl ControlDefault for KeyValuePairControl {
 ///
 /// Maps to [`ControlValueDescription::Point`]
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug)]
 pub struct PointControl {
 	control_type: KnownCameraControl,
 	value: ControlValuePoint,
@@ -844,7 +844,7 @@ impl ControlDefault for PointControl {
 ///
 /// Maps to [`ControlValueDescription::Enum`]
 
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug)]
 pub struct EnumControl {
 	control_type: KnownCameraControl,
 	value: ControlValueEnum,
@@ -920,7 +920,7 @@ impl ControlPossible for EnumControl {
 ///
 /// Maps to [`ControlValueDescription::RGB`]
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug)]
 pub struct RGBControl {
 	control_type: KnownCameraControl,
 	value: ControlValueRGB,
@@ -985,3 +985,46 @@ impl ControlMax for RGBControl {
 		self.max
 	}
 }
+
+/// Automatically implement [`Hash`], [`PartialEq`], [`Eq`], [`PartialOrd`], and [`Ord`] on a struct by its control id.
+macro_rules! impl_identifiable {
+	($type:ty) => {
+		impl Hash for $type {
+			fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+				self.get_id().hash(state);
+			}
+		}
+
+		impl PartialEq for $type {
+			fn eq(&self, other: &Self) -> bool {
+				self.get_id() == other.get_id()
+			}
+		}
+
+		impl Eq for $type {}
+
+		impl PartialOrd for $type {
+			fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+				self.get_id().partial_cmp(&other.get_id())
+			}
+		}
+
+		impl Ord for $type {
+			fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+				self.get_id().cmp(&other.get_id())
+			}
+		}
+	};
+}
+
+impl_identifiable!(IntegerControl);
+impl_identifiable!(IntegerRangeControl);
+impl_identifiable!(FloatControl);
+impl_identifiable!(FloatRangeControl);
+impl_identifiable!(BooleanControl);
+impl_identifiable!(StringControl);
+impl_identifiable!(BytesControl);
+impl_identifiable!(KeyValuePairControl);
+impl_identifiable!(PointControl);
+impl_identifiable!(EnumControl);
+impl_identifiable!(RGBControl);
