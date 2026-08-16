@@ -1,7 +1,9 @@
 //! Types that map to [`nokhwa`]'s [`ControlValueSetter`].
 
-#[allow(unused_imports, reason = "Needed for module docstring")]
-use nokhwa::utils::ControlValueSetter;
+use nokhwa::{
+	self,
+	utils::{ControlValueSetter, KnownCameraControl},
+};
 
 use super::{
 	traits::ControlValue,
@@ -10,6 +12,16 @@ use super::{
 		ControlTypeString, KeyValue, Point, RGB,
 	},
 };
+
+// ==================== READ HERE FIRST ====================
+//
+// It may seems silly to have `ControlValue...` over a
+// matching `ControlType...`, but this is so that the
+// underlying type matches in higher level implementations
+// as well as make it easier to switch to a different type
+// if necessary.
+//
+// ==================== ^^^^^^^^^^^^^^^ ====================
 
 //pub struct ControlValueNone;
 
@@ -31,6 +43,15 @@ impl ControlValue for ControlValueInteger {
 	fn get_value(&self) -> Self::ValueType {
 		self.0
 	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError> {
+		let value = ControlValueSetter::Integer(self.0);
+		cam.set_control(id, value)
+	}
 }
 
 /// A control that has a value of the type [`ControlTypeFloat`].
@@ -50,6 +71,15 @@ impl ControlValue for ControlValueFloat {
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0
+	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError> {
+		let value = ControlValueSetter::Float(self.0);
+		cam.set_control(id, value)
 	}
 }
 
@@ -71,6 +101,15 @@ impl ControlValue for ControlValueBoolean {
 	fn get_value(&self) -> Self::ValueType {
 		self.0
 	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError> {
+		let value = ControlValueSetter::Boolean(self.0);
+		cam.set_control(id, value)
+	}
 }
 
 /// A control that has a value of the type [`ControlTypeString`].
@@ -90,6 +129,15 @@ impl ControlValue for ControlValueString {
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0.clone()
+	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError> {
+		let value = ControlValueSetter::String(self.0.clone());
+		cam.set_control(id, value)
 	}
 }
 
@@ -111,6 +159,15 @@ impl ControlValue for ControlValueBytes {
 	fn get_value(&self) -> Self::ValueType {
 		self.0.clone()
 	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError> {
+		let value = ControlValueSetter::Bytes(self.0.clone());
+		cam.set_control(id, value)
+	}
 }
 
 /// A control that has a value of the type [`KeyValue`].
@@ -130,6 +187,15 @@ impl ControlValue for ControlValueKeyValue {
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0
+	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError> {
+		let value = ControlValueSetter::KeyValue(self.0.get_key(), self.0.get_value());
+		cam.set_control(id, value)
 	}
 }
 
@@ -151,6 +217,15 @@ impl ControlValue for ControlValuePoint {
 	fn get_value(&self) -> Self::ValueType {
 		self.0
 	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError> {
+		let value = ControlValueSetter::Point(self.0.get_x(), self.0.get_y());
+		cam.set_control(id, value)
+	}
 }
 
 /// A control that has a value of the type [`ControlTypeEnum`].
@@ -171,6 +246,15 @@ impl ControlValue for ControlValueEnum {
 	fn get_value(&self) -> Self::ValueType {
 		self.0
 	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError> {
+		let value = ControlValueSetter::EnumValue(self.0);
+		cam.set_control(id, value)
+	}
 }
 
 /// A control that has a value of the type [`RGB`].
@@ -190,5 +274,14 @@ impl ControlValue for ControlValueRGB {
 
 	fn get_value(&self) -> Self::ValueType {
 		self.0
+	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError> {
+		let value = ControlValueSetter::RGB(self.0.get_r(), self.0.get_g(), self.0.get_b());
+		cam.set_control(id, value)
 	}
 }
