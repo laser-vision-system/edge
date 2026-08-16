@@ -5,10 +5,13 @@ use std::hash::Hash;
 
 use std::fmt::Debug;
 
+use nokhwa::{self, utils::KnownCameraControl};
+
 use super::{
-	ControlTypeEnum, KeyValue, Point, RGB,
+	KeyValue, Point, RGB,
 	types::{
-		ControlTypeBool, ControlTypeBytes, ControlTypeFloat, ControlTypeInteger, ControlTypeString,
+		ControlTypeBool, ControlTypeBytes, ControlTypeEnum, ControlTypeFloat, ControlTypeInteger,
+		ControlTypeString,
 	},
 };
 
@@ -70,54 +73,86 @@ pub trait ControlValue {
 	type ValueType: ValidControlValue;
 
 	fn get_value(&self) -> Self::ValueType;
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<(), nokhwa::NokhwaError>;
 }
 
-/// A type that supports the `min` field.
-///
-/// Equal to [`ControlValue`].
-pub trait ControlMin: ControlValue {
-	//type MinType = Self::ValueType;
-	type MinType: ValidControlValue;
+/// A type that wraps a [`ControlValue`] with other control fields.
+pub trait ControlStruct {
+	type ControlValueType;
+	type ValueType: ValidControlValue;
 
-	fn get_min(&self) -> Self::MinType;
-}
-
-/// A type that supports the `max` field.
-///
-/// Equal to [`ControlValue`].
-pub trait ControlMax: ControlValue {
-	//type MaxType = Self::ValueType;
-	type MaxType: ValidControlValue;
-
-	fn get_max(&self) -> Self::MaxType;
-}
-
-/// A type that supports the `step` field.
-///
-/// Equal to [`ControlValue`].
-pub trait ControlStep: ControlValue {
-	//type StepType = Self::ValueType;
-	type StepType: ValidControlValue;
-
-	fn get_step(&self) -> Self::StepType;
-}
-
-/// A type that supports the `possible` field.
-///
-/// Bound by [`ControlValue`].
-pub trait ControlPossible: ControlValue {
-	//type PossibleType = Self::ValueType;
-	type PossibleType: ValidPossibleValue;
-
-	fn get_possible(&self) -> Self::PossibleType;
+	fn get_id(&self) -> KnownCameraControl;
+	fn get_value(&self) -> Self::ControlValueType;
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()>;
 }
 
 /// A type that supports the `default` field.
 ///
 /// Bound by [`ControlValue`].
-pub trait ControlDefault: ControlValue {
+pub trait ControlDefault: ControlStruct {
 	//type DefaultType = Self::ValueType;
 	type DefaultType: ValidDefaultValue;
 
 	fn get_default(&self) -> Self::DefaultType;
+	//fn reset_to_default(&mut self);
+}
+
+/// A type that supports the `min` field.
+///
+/// Equal to [`ControlValue`].
+pub trait ControlMin: ControlStruct {
+	//type MinType = Self::ValueType;
+	type MinType: ValidControlValue;
+
+	fn get_min(&self) -> Self::MinType;
+
+	fn valid(&self, value: Self::MinType) -> bool {
+		value >= self.get_min()
+	}
+}
+
+/// A type that supports the `max` field.
+///
+/// Equal to [`ControlValue`].
+pub trait ControlMax: ControlStruct {
+	//type MaxType = Self::ValueType;
+	type MaxType: ValidControlValue;
+
+	fn get_max(&self) -> Self::MaxType;
+
+	fn valid(&self, value: Self::MaxType) -> bool {
+		value <= self.get_max()
+	}
+}
+
+/// A type that supports the `step` field.
+///
+/// Equal to [`ControlValue`].
+pub trait ControlStep: ControlStruct {
+	//type StepType = Self::ValueType;
+	type StepType: ValidControlValue;
+
+	fn get_step(&self) -> Self::StepType;
+	// TODO: Default implementation.
+	fn valid(&self, value: Self::StepType) -> bool;
+}
+
+/// A type that supports the `possible` field.
+///
+/// Bound by [`ControlValue`].
+pub trait ControlPossible: ControlStruct {
+	//type PossibleType = Self::ValueType;
+	type PossibleType: ValidPossibleValue;
+
+	fn get_possible(&self) -> Self::PossibleType;
+	// TODO: Default implementation.
+	fn valid(&self, value: &Self::ValueType) -> bool;
 }

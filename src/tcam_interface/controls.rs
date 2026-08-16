@@ -16,6 +16,8 @@
 //! - What is stored in the collection either needs to be an enum or trait object.
 //!
 //! - The only important mapping that needs to be sent back to [`nokhwa`] is [`ControlValue`] ([`ControlValueSetter`]).
+//!
+//! ## TODO: Oh god fix the naming of the types.
 
 use std::collections::HashMap;
 
@@ -38,24 +40,28 @@ use values::{
 	ControlValueString,
 };
 
-use self::types::{
-	ControlTypeBool, ControlTypeBytes, ControlTypeEnum, ControlTypeFloat, ControlTypeInteger,
-	ControlTypeString,
+use self::{
+	traits::ControlStruct,
+	types::{
+		ControlTypeBool, ControlTypeBytes, ControlTypeEnum, ControlTypeFloat, ControlTypeInteger,
+		ControlTypeString,
+	},
 };
 
+// TODO: Maybe make this into a struct itself.
 pub type ControlMap = HashMap<KnownCameraControl, CamControl>;
 
 /// Convert a collection of [`nokhwa`] [`CameraControl`] into a custom type.
 pub fn extract_controls(nokhwa_controls: Vec<CameraControl>) -> ControlMap {
 	nokhwa_controls
 		.into_iter()
-		.map(|control| (control.control(), control.description().into()))
+		.map(|control| (control.control(), extract_control(control)))
 		.collect::<ControlMap>()
 }
 
 /// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
 pub fn extract_control(nokhwa_control: CameraControl) -> CamControl {
-	nokhwa_control.description().into()
+	nokhwa_control.into()
 }
 
 // ===== Field relationship bounds =====
@@ -87,15 +93,17 @@ pub enum CamControl {
 	RGB(RGBControl),
 }
 
-impl From<&ControlValueDescription> for CamControl {
-	fn from(value: &ControlValueDescription) -> Self {
-		match value {
+impl From<CameraControl> for CamControl {
+	fn from(value: CameraControl) -> Self {
+		let control_type = value.control();
+		match value.description() {
 			ControlValueDescription::None => CamControl::None,
 			ControlValueDescription::Integer {
 				value,
 				default,
 				step,
 			} => CamControl::Integer(IntegerControl::new(
+				control_type,
 				ControlValueInteger::from(*value),
 				*default,
 				*step,
@@ -107,6 +115,7 @@ impl From<&ControlValueDescription> for CamControl {
 				step,
 				default,
 			} => CamControl::IntegerRange(IntegerRangeControl::new(
+				control_type,
 				ControlValueInteger::from(*value),
 				*default,
 				*step,
@@ -118,6 +127,7 @@ impl From<&ControlValueDescription> for CamControl {
 				default,
 				step,
 			} => CamControl::Float(FloatControl::new(
+				control_type,
 				ControlValueFloat::from(*value),
 				*default,
 				*step,
@@ -129,6 +139,7 @@ impl From<&ControlValueDescription> for CamControl {
 				step,
 				default,
 			} => CamControl::FloatRange(FloatRangeControl::new(
+				control_type,
 				ControlValueFloat::from(*value),
 				*default,
 				*step,
@@ -136,24 +147,34 @@ impl From<&ControlValueDescription> for CamControl {
 				*max,
 			)),
 			ControlValueDescription::Boolean { value, default } => CamControl::Boolean(
-				BooleanControl::new(ControlValueBoolean::from(*value), *default),
+				BooleanControl::new(control_type, ControlValueBoolean::from(*value), *default),
 			),
-			ControlValueDescription::String { value, default } => CamControl::String(
-				StringControl::new(ControlValueString::from(value.clone()), default.clone()),
-			),
-			ControlValueDescription::Bytes { value, default } => CamControl::Bytes(
-				BytesControl::new(ControlValueBytes::from(value.clone()), default.clone()),
-			),
+			ControlValueDescription::String { value, default } => {
+				CamControl::String(StringControl::new(
+					control_type,
+					ControlValueString::from(value.clone()),
+					default.clone(),
+				))
+			},
+			ControlValueDescription::Bytes { value, default } => {
+				CamControl::Bytes(BytesControl::new(
+					control_type,
+					ControlValueBytes::from(value.clone()),
+					default.clone(),
+				))
+			},
 			ControlValueDescription::KeyValuePair {
 				key,
 				value,
 				default,
 			} => CamControl::KeyValuePair(KeyValuePairControl::new(
+				control_type,
 				ControlValueKeyValue::from(KeyValue::from((*key, *value))),
 				(*default).into(),
 			)),
 			ControlValueDescription::Point { value, default } => {
 				CamControl::Point(PointControl::new(
+					control_type,
 					ControlValuePoint::from(Point::from(*value)),
 					Point::from(*default),
 				))
@@ -163,6 +184,7 @@ impl From<&ControlValueDescription> for CamControl {
 				possible,
 				default,
 			} => CamControl::Enum(EnumControl::new(
+				control_type,
 				ControlValueEnum::from(*value),
 				*default,
 				possible.clone(),
@@ -172,6 +194,7 @@ impl From<&ControlValueDescription> for CamControl {
 				max,
 				default,
 			} => CamControl::RGB(RGBControl::new(
+				control_type,
 				ControlValueRGB::from(RGB::from(*value)),
 				RGB::from(*default),
 				RGB::from(*max),
@@ -194,6 +217,7 @@ impl From<&ControlValueDescription> for CamControl {
 /// Maps to [`ControlValueDescription::Integer`]
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IntegerControl {
+	control_type: KnownCameraControl,
 	value: ControlValueInteger,
 	default: <ControlValueInteger as ControlValue>::ValueType,
 	step: <ControlValueInteger as ControlValue>::ValueType,
@@ -201,11 +225,13 @@ pub struct IntegerControl {
 
 impl IntegerControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueInteger,
 		default: <ControlValueInteger as ControlValue>::ValueType,
 		step: <ControlValueInteger as ControlValue>::ValueType,
 	) -> Self {
 		Self {
+			control_type,
 			value,
 			default,
 			step,
@@ -213,11 +239,29 @@ impl IntegerControl {
 	}
 }
 
-impl ControlValue for IntegerControl {
+impl ControlStruct for IntegerControl {
+	type ControlValueType = ControlValueInteger;
 	type ValueType = ControlTypeInteger;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		if self.valid(value.get_value()) {
+			self.value = value;
+			Ok(self.value.set_value(self.get_id(), cam))
+		} else {
+			Err(())
+		}
 	}
 }
 
@@ -230,10 +274,16 @@ impl ControlDefault for IntegerControl {
 }
 
 impl ControlStep for IntegerControl {
+	// Default should be based on ValueType, so this makes sure they can be compared.
 	type StepType = Self::ValueType;
 
 	fn get_step(&self) -> Self::StepType {
 		self.step
+	}
+
+	fn valid(&self, value: Self::StepType) -> bool {
+		(value - self.get_default()).abs() % self.get_step() == 0
+			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0
 	}
 }
 
@@ -243,6 +293,7 @@ impl ControlStep for IntegerControl {
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IntegerRangeControl {
+	control_type: KnownCameraControl,
 	value: ControlValueInteger,
 	default: <ControlValueInteger as ControlValue>::ValueType,
 	step: <ControlValueInteger as ControlValue>::ValueType,
@@ -252,6 +303,7 @@ pub struct IntegerRangeControl {
 
 impl IntegerRangeControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueInteger,
 		default: <ControlValueInteger as ControlValue>::ValueType,
 		step: <ControlValueInteger as ControlValue>::ValueType,
@@ -259,6 +311,7 @@ impl IntegerRangeControl {
 		max: <ControlValueInteger as ControlValue>::ValueType,
 	) -> Self {
 		Self {
+			control_type,
 			value,
 			default,
 			step,
@@ -268,11 +321,32 @@ impl IntegerRangeControl {
 	}
 }
 
-impl ControlValue for IntegerRangeControl {
+impl ControlStruct for IntegerRangeControl {
+	type ControlValueType = ControlValueInteger;
 	type ValueType = ControlTypeInteger;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		if ControlMin::valid(self, value.get_value())
+			&& ControlMax::valid(self, value.get_value())
+			&& ControlStep::valid(self, value.get_value())
+		{
+			self.value = value;
+			Ok(self.value.set_value(self.get_id(), cam))
+		} else {
+			Err(())
+		}
 	}
 }
 
@@ -285,10 +359,16 @@ impl ControlDefault for IntegerRangeControl {
 }
 
 impl ControlStep for IntegerRangeControl {
+	// Default should be based on ValueType, so this makes sure they can be compared.
 	type StepType = Self::ValueType;
 
 	fn get_step(&self) -> Self::StepType {
 		self.step
+	}
+
+	fn valid(&self, value: Self::StepType) -> bool {
+		(value - self.get_default()).abs() % self.get_step() == 0
+			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0
 	}
 }
 
@@ -314,6 +394,7 @@ impl ControlMax for IntegerRangeControl {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct FloatControl {
+	control_type: KnownCameraControl,
 	value: ControlValueFloat,
 	default: <ControlValueFloat as ControlValue>::ValueType,
 	step: <ControlValueFloat as ControlValue>::ValueType,
@@ -321,11 +402,13 @@ pub struct FloatControl {
 
 impl FloatControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueFloat,
 		default: <ControlValueFloat as ControlValue>::ValueType,
 		step: <ControlValueFloat as ControlValue>::ValueType,
 	) -> Self {
 		Self {
+			control_type,
 			value,
 			default,
 			step,
@@ -333,11 +416,29 @@ impl FloatControl {
 	}
 }
 
-impl ControlValue for FloatControl {
+impl ControlStruct for FloatControl {
+	type ControlValueType = ControlValueFloat;
 	type ValueType = ControlTypeFloat;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		if self.valid(value.get_value()) {
+			self.value = value;
+			Ok(self.value.set_value(self.get_id(), cam))
+		} else {
+			Err(())
+		}
 	}
 }
 
@@ -350,10 +451,16 @@ impl ControlDefault for FloatControl {
 }
 
 impl ControlStep for FloatControl {
+	// Default should be based on ValueType, so this makes sure they can be compared.
 	type StepType = Self::ValueType;
 
 	fn get_step(&self) -> Self::StepType {
 		self.step
+	}
+
+	fn valid(&self, value: Self::StepType) -> bool {
+		(value - self.get_default()).abs() % self.get_step() == 0.0
+			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0.0
 	}
 }
 
@@ -363,6 +470,7 @@ impl ControlStep for FloatControl {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct FloatRangeControl {
+	control_type: KnownCameraControl,
 	value: ControlValueFloat,
 	default: <ControlValueFloat as ControlValue>::ValueType,
 	step: <ControlValueFloat as ControlValue>::ValueType,
@@ -372,6 +480,7 @@ pub struct FloatRangeControl {
 
 impl FloatRangeControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueFloat,
 		default: <ControlValueFloat as ControlValue>::ValueType,
 		step: <ControlValueFloat as ControlValue>::ValueType,
@@ -379,6 +488,7 @@ impl FloatRangeControl {
 		max: <ControlValueFloat as ControlValue>::ValueType,
 	) -> Self {
 		Self {
+			control_type,
 			value,
 			default,
 			step,
@@ -388,11 +498,32 @@ impl FloatRangeControl {
 	}
 }
 
-impl ControlValue for FloatRangeControl {
+impl ControlStruct for FloatRangeControl {
+	type ControlValueType = ControlValueFloat;
 	type ValueType = ControlTypeFloat;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		if ControlMin::valid(self, value.get_value())
+			&& ControlMax::valid(self, value.get_value())
+			&& ControlStep::valid(self, value.get_value())
+		{
+			self.value = value;
+			Ok(self.value.set_value(self.get_id(), cam))
+		} else {
+			Err(())
+		}
 	}
 }
 
@@ -405,10 +536,16 @@ impl ControlDefault for FloatRangeControl {
 }
 
 impl ControlStep for FloatRangeControl {
+	// Default should be based on ValueType, so this makes sure they can be compared.
 	type StepType = Self::ValueType;
 
 	fn get_step(&self) -> Self::StepType {
 		self.step
+	}
+
+	fn valid(&self, value: Self::StepType) -> bool {
+		(value - self.get_default()).abs() % self.get_step() == 0.0
+			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0.0
 	}
 }
 
@@ -434,24 +571,44 @@ impl ControlMax for FloatRangeControl {
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BooleanControl {
+	control_type: KnownCameraControl,
 	value: ControlValueBoolean,
 	default: <ControlValueBoolean as ControlValue>::ValueType,
 }
 
 impl BooleanControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueBoolean,
 		default: <ControlValueBoolean as ControlValue>::ValueType,
 	) -> Self {
-		Self { value, default }
+		Self {
+			control_type,
+			value,
+			default,
+		}
 	}
 }
 
-impl ControlValue for BooleanControl {
+impl ControlStruct for BooleanControl {
+	type ControlValueType = ControlValueBoolean;
 	type ValueType = ControlTypeBool;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		self.value = value;
+		Ok(self.value.set_value(self.get_id(), cam))
 	}
 }
 
@@ -469,24 +626,44 @@ impl ControlDefault for BooleanControl {
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct StringControl {
+	control_type: KnownCameraControl,
 	value: ControlValueString,
 	default: Option<<ControlValueString as ControlValue>::ValueType>,
 }
 
 impl StringControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueString,
 		default: Option<<ControlValueString as ControlValue>::ValueType>,
 	) -> Self {
-		Self { value, default }
+		Self {
+			control_type,
+			value,
+			default,
+		}
 	}
 }
 
-impl ControlValue for StringControl {
+impl ControlStruct for StringControl {
+	type ControlValueType = ControlValueString;
 	type ValueType = ControlTypeString;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value.clone()
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		self.value = value;
+		Ok(self.value.set_value(self.get_id(), cam))
 	}
 }
 
@@ -504,24 +681,44 @@ impl ControlDefault for StringControl {
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BytesControl {
+	control_type: KnownCameraControl,
 	value: ControlValueBytes,
 	default: <ControlValueBytes as ControlValue>::ValueType,
 }
 
 impl BytesControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueBytes,
 		default: <ControlValueBytes as ControlValue>::ValueType,
 	) -> Self {
-		Self { value, default }
+		Self {
+			control_type,
+			value,
+			default,
+		}
 	}
 }
 
-impl ControlValue for BytesControl {
+impl ControlStruct for BytesControl {
+	type ControlValueType = ControlValueBytes;
 	type ValueType = ControlTypeBytes;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value.clone()
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		self.value = value;
+		Ok(self.value.set_value(self.get_id(), cam))
 	}
 }
 
@@ -539,24 +736,44 @@ impl ControlDefault for BytesControl {
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct KeyValuePairControl {
+	control_type: KnownCameraControl,
 	value: ControlValueKeyValue,
 	default: <ControlValueKeyValue as ControlValue>::ValueType,
 }
 
 impl KeyValuePairControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueKeyValue,
 		default: <ControlValueKeyValue as ControlValue>::ValueType,
 	) -> Self {
-		Self { value, default }
+		Self {
+			control_type,
+			value,
+			default,
+		}
 	}
 }
 
-impl ControlValue for KeyValuePairControl {
+impl ControlStruct for KeyValuePairControl {
+	type ControlValueType = ControlValueKeyValue;
 	type ValueType = KeyValue;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		self.value = value;
+		Ok(self.value.set_value(self.get_id(), cam))
 	}
 }
 
@@ -574,24 +791,44 @@ impl ControlDefault for KeyValuePairControl {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct PointControl {
+	control_type: KnownCameraControl,
 	value: ControlValuePoint,
 	default: <ControlValuePoint as ControlValue>::ValueType,
 }
 
 impl PointControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValuePoint,
 		default: <ControlValuePoint as ControlValue>::ValueType,
 	) -> Self {
-		Self { value, default }
+		Self {
+			control_type,
+			value,
+			default,
+		}
 	}
 }
 
-impl ControlValue for PointControl {
+impl ControlStruct for PointControl {
+	type ControlValueType = ControlValuePoint;
 	type ValueType = Point;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		self.value = value;
+		Ok(self.value.set_value(self.get_id(), cam))
 	}
 }
 
@@ -609,6 +846,7 @@ impl ControlDefault for PointControl {
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EnumControl {
+	control_type: KnownCameraControl,
 	value: ControlValueEnum,
 	default: <ControlValueEnum as ControlValue>::ValueType,
 	possible: Vec<<ControlValueEnum as ControlValue>::ValueType>,
@@ -616,11 +854,13 @@ pub struct EnumControl {
 
 impl EnumControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueEnum,
 		default: <ControlValueEnum as ControlValue>::ValueType,
 		possible: Vec<<ControlValueEnum as ControlValue>::ValueType>,
 	) -> Self {
 		Self {
+			control_type,
 			value,
 			default,
 			possible,
@@ -628,11 +868,29 @@ impl EnumControl {
 	}
 }
 
-impl ControlValue for EnumControl {
+impl ControlStruct for EnumControl {
+	type ControlValueType = ControlValueEnum;
 	type ValueType = ControlTypeEnum;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		if self.valid(&value.get_value()) {
+			self.value = value;
+			Ok(self.value.set_value(self.get_id(), cam))
+		} else {
+			Err(())
+		}
 	}
 }
 
@@ -650,6 +908,10 @@ impl ControlPossible for EnumControl {
 	fn get_possible(&self) -> Self::PossibleType {
 		self.possible.clone()
 	}
+
+	fn valid(&self, value: &Self::ValueType) -> bool {
+		self.possible.contains(value)
+	}
 }
 
 /// A camera control that consists of a value, default, and max.
@@ -660,6 +922,7 @@ impl ControlPossible for EnumControl {
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct RGBControl {
+	control_type: KnownCameraControl,
 	value: ControlValueRGB,
 	default: <ControlValueRGB as ControlValue>::ValueType,
 	max: <ControlValueRGB as ControlValue>::ValueType,
@@ -667,11 +930,13 @@ pub struct RGBControl {
 
 impl RGBControl {
 	pub fn new(
+		control_type: KnownCameraControl,
 		value: ControlValueRGB,
 		default: <ControlValueRGB as ControlValue>::ValueType,
 		max: <ControlValueRGB as ControlValue>::ValueType,
 	) -> Self {
 		Self {
+			control_type,
 			value,
 			default,
 			max,
@@ -679,11 +944,29 @@ impl RGBControl {
 	}
 }
 
-impl ControlValue for RGBControl {
+impl ControlStruct for RGBControl {
+	type ControlValueType = ControlValueRGB;
 	type ValueType = RGB;
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.get_value()
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn get_value(&self) -> Self::ControlValueType {
+		self.value
+	}
+
+	fn set_value(
+		&mut self,
+		value: Self::ControlValueType,
+		cam: &mut nokhwa::StreamCamera,
+	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+		if self.valid(value.get_value()) {
+			self.value = value;
+			Ok(self.value.set_value(self.get_id(), cam))
+		} else {
+			Err(())
+		}
 	}
 }
 
