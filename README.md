@@ -4,20 +4,12 @@ Edge Processing Tier μ-com project.
 
 ## Details
 
-We are using UV for python version management, package/dependency management, and providing a build toolchain. You will need to download and install UV yourself.
+The Edge is the code that runs on the Raspberry Pi that ingests camera data, processes it to extract laser intensity and deviation, then sends that data to the server.
 
-We are using Python 3.13, UV will handle this for you.
+The project is written in Rust for performance and memory safety.
 
-Building and running is handled through Docker. You will also need to install it yourself.
+Rust projects are managed by `Cargo`; you will need to install this to begin development.
 
-## Setup
-
-Run `uv sync`.
-
-## Running
-
-See `uv run poe manage --help` for information.
-
-## Development
+Deployment is done through Docker. You will also need to install it yourself.
 
 See [CONTRIBUTING](docs/CONTRIBUTING.md).
