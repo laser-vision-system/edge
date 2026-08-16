@@ -6,6 +6,8 @@ use super::{
 	RGBControl,
 };
 
+// TODO: Use COW for String and Bytes.
+
 pub(super) type ControlTypeInteger = i64;
 pub(super) type ControlTypeFloat = f64;
 pub(super) type ControlTypeBool = bool;
@@ -37,6 +39,12 @@ impl From<(ControlTypeKeyValue, ControlTypeKeyValue)> for KeyValue {
 	}
 }
 
+impl From<KeyValue> for (ControlTypeKeyValue, ControlTypeKeyValue) {
+	fn from(value: KeyValue) -> Self {
+		(value.0, value.1)
+	}
+}
+
 /// Represents a point value use by [`ControlValuePoint`] and by extention, [`PointControl`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct Point(ControlTypePoint, ControlTypePoint);
@@ -54,6 +62,12 @@ impl Point {
 impl From<(ControlTypePoint, ControlTypePoint)> for Point {
 	fn from(value: (ControlTypePoint, ControlTypePoint)) -> Self {
 		Self(value.0, value.1)
+	}
+}
+
+impl From<Point> for (ControlTypePoint, ControlTypePoint) {
+	fn from(value: Point) -> Self {
+		(value.0, value.1)
 	}
 }
 
@@ -78,5 +92,11 @@ impl RGB {
 impl From<(ControlTypeRGB, ControlTypeRGB, ControlTypeRGB)> for RGB {
 	fn from(value: (ControlTypeRGB, ControlTypeRGB, ControlTypeRGB)) -> Self {
 		Self(value.0, value.1, value.2)
+	}
+}
+
+impl From<RGB> for (ControlTypeRGB, ControlTypeRGB, ControlTypeRGB) {
+	fn from(value: RGB) -> Self {
+		(value.0, value.1, value.2)
 	}
 }
