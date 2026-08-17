@@ -127,7 +127,7 @@ mod tests {
 	use std::process::{ExitCode, Termination};
 
 	use crate::tcam_interface::controls::traits::{
-		ControlDefault, ControlDescription, ControlMax, ControlStep, ControlValue,
+		ControlDefault, ControlDescription, ControlItems, ControlMax, ControlStep, ControlValue,
 	};
 
 	use super::*;
@@ -221,32 +221,44 @@ mod tests {
 	#[test]
 	fn set_control_exposure() -> Result<(), NokhwaError> {
 		let mut cam = Camera::new(0, None).unwrap();
-		let id = KnownCameraControl::Other(10094849);
+		let id = KnownCameraControl::AutoExposure;
 		let desired = 1;
 
 		// Assume it will always be this variant.
-		let CamControl::IntegerRange(mut control) = cam.get_control(id) else {
+		let CamControl::Menu(mut control) = cam.get_control(id) else {
 			panic!("unexpected control variant")
 		};
-		println!("Start: {}", control.get_value().get_value());
+		println!(
+			"Start: {}, {:?}",
+			control.get_value().get_value(),
+			control.get_items()
+		);
 
 		control
 			.set_value(desired.into())
 			.expect("new value should be valid");
 		cam.set_control(id, control.get_value().into())?;
 
-		let CamControl::IntegerRange(mut control) = cam.get_control(id) else {
+		let CamControl::Menu(mut control) = cam.get_control(id) else {
 			panic!("unexpected control variant")
 		};
-		println!("Modified: {}", control.get_value().get_value());
+		println!(
+			"Modified: {}, {:?}",
+			control.get_value().get_value(),
+			control.get_items()
+		);
 
 		control.reset_to_default();
 		cam.set_control(id, control.get_value().into())?;
 
-		let CamControl::IntegerRange(control) = cam.get_control(id) else {
+		let CamControl::Menu(control) = cam.get_control(id) else {
 			panic!("unexpected control variant")
 		};
-		println!("Default: {}", control.get_value().get_value());
+		println!(
+			"Default: {}, {:?}",
+			control.get_value().get_value(),
+			control.get_items()
+		);
 
 		Ok(())
 	}
