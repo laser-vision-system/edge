@@ -72,6 +72,7 @@ pub trait ControlValue {
 	type ConType: ValidControlValue;
 
 	fn get_value(&self) -> Self::ConType;
+	// TODO: Maybe make this hidden outside of the control description.
 	fn set_value(&mut self, value: Self::ConType);
 }
 
@@ -81,12 +82,8 @@ pub trait ControlDescription {
 	type ConType: ValidControlValue;
 
 	fn get_id(&self) -> KnownCameraControl;
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()>;
 	fn get_value(&self) -> Self::ValueType;
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()>;
 }
 
 /// A type that supports the `default` field.
@@ -97,7 +94,7 @@ pub trait ControlDefault: ControlDescription {
 	type DefaultType: ValidDefaultValue;
 
 	fn get_default(&self) -> Self::DefaultType;
-	//fn reset_to_default(&mut self);
+	fn reset_to_default(&mut self);
 }
 
 /// A type that supports the `min` field.

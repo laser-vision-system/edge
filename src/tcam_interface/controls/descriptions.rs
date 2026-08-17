@@ -200,21 +200,17 @@ impl ControlDescription for IntegerControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value
-	}
-
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
 		if self.valid(value.get_value()) {
 			self.value = value;
-			Ok(cam.set_control(self.get_id(), self.value.into()))
+			Ok(())
 		} else {
 			Err(())
 		}
+	}
+
+	fn get_value(&self) -> Self::ValueType {
+		self.value
 	}
 }
 
@@ -223,6 +219,11 @@ impl ControlDefault for IntegerControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -282,24 +283,20 @@ impl ControlDescription for IntegerRangeControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value
-	}
-
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
 		{
 			self.value = value;
-			Ok(cam.set_control(self.get_id(), self.value.into()))
+			Ok(())
 		} else {
 			Err(())
 		}
+	}
+
+	fn get_value(&self) -> Self::ValueType {
+		self.value
 	}
 }
 
@@ -308,6 +305,11 @@ impl ControlDefault for IntegerRangeControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -377,21 +379,17 @@ impl ControlDescription for FloatControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value
-	}
-
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
 		if self.valid(value.get_value()) {
 			self.value = value;
-			Ok(cam.set_control(self.get_id(), self.value.into()))
+			Ok(())
 		} else {
 			Err(())
 		}
+	}
+
+	fn get_value(&self) -> Self::ValueType {
+		self.value
 	}
 }
 
@@ -400,6 +398,11 @@ impl ControlDefault for FloatControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -459,24 +462,20 @@ impl ControlDescription for FloatRangeControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value
-	}
-
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
 		{
 			self.value = value;
-			Ok(cam.set_control(self.get_id(), self.value.into()))
+			Ok(())
 		} else {
 			Err(())
 		}
+	}
+
+	fn get_value(&self) -> Self::ValueType {
+		self.value
 	}
 }
 
@@ -485,6 +484,11 @@ impl ControlDefault for FloatRangeControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -551,17 +555,13 @@ impl ControlDescription for BooleanControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+		self.value = value;
+		Ok(())
 	}
 
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
-		self.value = value;
-		Ok(cam.set_control(self.get_id(), self.value.into()))
+	fn get_value(&self) -> Self::ValueType {
+		self.value
 	}
 }
 
@@ -570,6 +570,11 @@ impl ControlDefault for BooleanControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -606,17 +611,13 @@ impl ControlDescription for StringControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.clone()
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+		self.value = value;
+		Ok(())
 	}
 
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
-		self.value = value;
-		Ok(cam.set_control(self.get_id(), (&self.value).into()))
+	fn get_value(&self) -> Self::ValueType {
+		self.value.clone()
 	}
 }
 
@@ -625,6 +626,11 @@ impl ControlDefault for StringControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default.clone()
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().unwrap_or("".to_string()).into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -661,17 +667,13 @@ impl ControlDescription for BytesControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value.clone()
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+		self.value = value;
+		Ok(())
 	}
 
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
-		self.value = value;
-		Ok(cam.set_control(self.get_id(), (&self.value).into()))
+	fn get_value(&self) -> Self::ValueType {
+		self.value.clone()
 	}
 }
 
@@ -680,6 +682,11 @@ impl ControlDefault for BytesControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default.clone()
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -716,17 +723,13 @@ impl ControlDescription for KeyValuePairControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+		self.value = value;
+		Ok(())
 	}
 
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
-		self.value = value;
-		Ok(cam.set_control(self.get_id(), self.value.into()))
+	fn get_value(&self) -> Self::ValueType {
+		self.value
 	}
 }
 
@@ -735,6 +738,11 @@ impl ControlDefault for KeyValuePairControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -771,17 +779,13 @@ impl ControlDescription for PointControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+		self.value = value;
+		Ok(())
 	}
 
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
-		self.value = value;
-		Ok(cam.set_control(self.get_id(), self.value.into()))
+	fn get_value(&self) -> Self::ValueType {
+		self.value
 	}
 }
 
@@ -790,6 +794,11 @@ impl ControlDefault for PointControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -829,21 +838,13 @@ impl ControlDescription for EnumControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+		self.value = value;
+		Ok(())
 	}
 
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
-		if self.valid(&value.get_value()) {
-			self.value = value;
-			Ok(cam.set_control(self.get_id(), self.value.into()))
-		} else {
-			Err(())
-		}
+	fn get_value(&self) -> Self::ValueType {
+		self.value
 	}
 }
 
@@ -852,6 +853,11 @@ impl ControlDefault for EnumControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
@@ -905,21 +911,17 @@ impl ControlDescription for RGBControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ValueType {
-		self.value
-	}
-
-	fn apply(
-		&mut self,
-		value: Self::ValueType,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
 		if self.valid(value.get_value()) {
 			self.value = value;
-			Ok(cam.set_control(self.get_id(), self.value.into()))
+			Ok(())
 		} else {
 			Err(())
 		}
+	}
+
+	fn get_value(&self) -> Self::ValueType {
+		self.value
 	}
 }
 
@@ -928,6 +930,11 @@ impl ControlDefault for RGBControl {
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
 	}
 }
 
