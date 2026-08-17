@@ -1,9 +1,6 @@
 //! Types that map to [`nokhwa`]'s [`ControlValueSetter`].
 
-use nokhwa::{
-	self,
-	utils::{ControlValueSetter, KnownCameraControl},
-};
+use nokhwa::utils::ControlValueSetter;
 
 use super::{
 	traits::ControlValue,
@@ -15,11 +12,13 @@ use super::{
 
 // ==================== READ HERE FIRST ====================
 //
-// It may seems silly to have `ControlValue...` over a
-// matching `ControlType...`, but this is so that the
-// underlying type matches in higher level implementations
-// as well as make it easier to switch to a different type
-// if necessary.
+// This may seem like a needless middle layer between the
+// control types and the control descriptions, but it
+// provides an easy mapping to and from
+// `ControlValueSetter`.
+// Additionally, the lower-level type defines make it easy
+// to synchronise the types between this and higher-level
+// components.
 //
 // ==================== ^^^^^^^^^^^^^^^ ====================
 
@@ -44,13 +43,14 @@ impl ControlValue for ConValueInteger {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError> {
-		let value = ControlValueSetter::Integer(self.0);
-		cam.set_control(id, value)
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<ConValueInteger> for ControlValueSetter {
+	fn from(value: ConValueInteger) -> Self {
+		ControlValueSetter::Integer(value.0)
 	}
 }
 
@@ -73,13 +73,14 @@ impl ControlValue for ConValueFloat {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError> {
-		let value = ControlValueSetter::Float(self.0);
-		cam.set_control(id, value)
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<ConValueFloat> for ControlValueSetter {
+	fn from(value: ConValueFloat) -> Self {
+		ControlValueSetter::Float(value.0)
 	}
 }
 
@@ -102,13 +103,14 @@ impl ControlValue for ConValueBoolean {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError> {
-		let value = ControlValueSetter::Boolean(self.0);
-		cam.set_control(id, value)
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<ConValueBoolean> for ControlValueSetter {
+	fn from(value: ConValueBoolean) -> Self {
+		ControlValueSetter::Boolean(value.0)
 	}
 }
 
@@ -131,13 +133,14 @@ impl ControlValue for ConValueString {
 		self.0.clone()
 	}
 
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError> {
-		let value = ControlValueSetter::String(self.0.clone());
-		cam.set_control(id, value)
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<&ConValueString> for ControlValueSetter {
+	fn from(value: &ConValueString) -> Self {
+		ControlValueSetter::String(value.0.clone())
 	}
 }
 
@@ -160,13 +163,14 @@ impl ControlValue for ConValueBytes {
 		self.0.clone()
 	}
 
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError> {
-		let value = ControlValueSetter::Bytes(self.0.clone());
-		cam.set_control(id, value)
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<&ConValueBytes> for ControlValueSetter {
+	fn from(value: &ConValueBytes) -> Self {
+		ControlValueSetter::Bytes(value.0.clone())
 	}
 }
 
@@ -189,13 +193,14 @@ impl ControlValue for ConValueKeyValue {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError> {
-		let value = ControlValueSetter::KeyValue(self.0.get_key(), self.0.get_value());
-		cam.set_control(id, value)
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<ConValueKeyValue> for ControlValueSetter {
+	fn from(value: ConValueKeyValue) -> Self {
+		value.0.into()
 	}
 }
 
@@ -218,13 +223,14 @@ impl ControlValue for ConValuePoint {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError> {
-		let value = ControlValueSetter::Point(self.0.get_x(), self.0.get_y());
-		cam.set_control(id, value)
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<ConValuePoint> for ControlValueSetter {
+	fn from(value: ConValuePoint) -> Self {
+		value.0.into()
 	}
 }
 
@@ -247,13 +253,14 @@ impl ControlValue for ConValueEnum {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError> {
-		let value = ControlValueSetter::EnumValue(self.0);
-		cam.set_control(id, value)
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<ConValueEnum> for ControlValueSetter {
+	fn from(value: ConValueEnum) -> Self {
+		ControlValueSetter::EnumValue(value.0)
 	}
 }
 
@@ -276,12 +283,13 @@ impl ControlValue for ConValueRGB {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError> {
-		let value = ControlValueSetter::RGB(self.0.get_r(), self.0.get_g(), self.0.get_b());
-		cam.set_control(id, value)
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<ConValueRGB> for ControlValueSetter {
+	fn from(value: ConValueRGB) -> Self {
+		value.0.into()
 	}
 }

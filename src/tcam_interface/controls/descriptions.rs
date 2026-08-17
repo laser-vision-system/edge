@@ -204,14 +204,14 @@ impl ControlDescription for IntegerControl {
 		self.value
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if self.valid(value.get_value()) {
 			self.value = value;
-			Ok(self.value.set_value(self.get_id(), cam))
+			Ok(cam.set_control(self.get_id(), self.value.into()))
 		} else {
 			Err(())
 		}
@@ -286,7 +286,7 @@ impl ControlDescription for IntegerRangeControl {
 		self.value
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
@@ -296,7 +296,7 @@ impl ControlDescription for IntegerRangeControl {
 			&& ControlStep::valid(self, value.get_value())
 		{
 			self.value = value;
-			Ok(self.value.set_value(self.get_id(), cam))
+			Ok(cam.set_control(self.get_id(), self.value.into()))
 		} else {
 			Err(())
 		}
@@ -381,14 +381,14 @@ impl ControlDescription for FloatControl {
 		self.value
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if self.valid(value.get_value()) {
 			self.value = value;
-			Ok(self.value.set_value(self.get_id(), cam))
+			Ok(cam.set_control(self.get_id(), self.value.into()))
 		} else {
 			Err(())
 		}
@@ -463,7 +463,7 @@ impl ControlDescription for FloatRangeControl {
 		self.value
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
@@ -473,7 +473,7 @@ impl ControlDescription for FloatRangeControl {
 			&& ControlStep::valid(self, value.get_value())
 		{
 			self.value = value;
-			Ok(self.value.set_value(self.get_id(), cam))
+			Ok(cam.set_control(self.get_id(), self.value.into()))
 		} else {
 			Err(())
 		}
@@ -555,13 +555,13 @@ impl ControlDescription for BooleanControl {
 		self.value
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
-		Ok(self.value.set_value(self.get_id(), cam))
+		Ok(cam.set_control(self.get_id(), self.value.into()))
 	}
 }
 
@@ -610,13 +610,13 @@ impl ControlDescription for StringControl {
 		self.value.clone()
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
-		Ok(self.value.set_value(self.get_id(), cam))
+		Ok(cam.set_control(self.get_id(), (&self.value).into()))
 	}
 }
 
@@ -665,13 +665,13 @@ impl ControlDescription for BytesControl {
 		self.value.clone()
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
-		Ok(self.value.set_value(self.get_id(), cam))
+		Ok(cam.set_control(self.get_id(), (&self.value).into()))
 	}
 }
 
@@ -720,13 +720,13 @@ impl ControlDescription for KeyValuePairControl {
 		self.value
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
-		Ok(self.value.set_value(self.get_id(), cam))
+		Ok(cam.set_control(self.get_id(), self.value.into()))
 	}
 }
 
@@ -775,13 +775,13 @@ impl ControlDescription for PointControl {
 		self.value
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
-		Ok(self.value.set_value(self.get_id(), cam))
+		Ok(cam.set_control(self.get_id(), self.value.into()))
 	}
 }
 
@@ -833,14 +833,14 @@ impl ControlDescription for EnumControl {
 		self.value
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if self.valid(&value.get_value()) {
 			self.value = value;
-			Ok(self.value.set_value(self.get_id(), cam))
+			Ok(cam.set_control(self.get_id(), self.value.into()))
 		} else {
 			Err(())
 		}
@@ -909,14 +909,14 @@ impl ControlDescription for RGBControl {
 		self.value
 	}
 
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if self.valid(value.get_value()) {
 			self.value = value;
-			Ok(self.value.set_value(self.get_id(), cam))
+			Ok(cam.set_control(self.get_id(), self.value.into()))
 		} else {
 			Err(())
 		}
