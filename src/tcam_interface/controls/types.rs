@@ -1,5 +1,7 @@
 //! Low level and higher level types used for camera control values.
 
+use nokhwa::utils::ControlValueSetter;
+
 #[allow(unused_imports, reason = "Needed for docstring")]
 use super::{
 	descriptions::{KeyValuePairControl, PointControl, RGBControl},
@@ -45,6 +47,12 @@ impl From<ConTypeKeyValue> for (__ConTypeKeyValue, __ConTypeKeyValue) {
 	}
 }
 
+impl From<ConTypeKeyValue> for ControlValueSetter {
+	fn from(value: ConTypeKeyValue) -> Self {
+		ControlValueSetter::KeyValue(value.get_key(), value.get_value())
+	}
+}
+
 /// Represents a point value use by [`ConValuePoint`] and by extention, [`PointControl`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ConTypePoint(__ConTypePoint, __ConTypePoint);
@@ -68,6 +76,12 @@ impl From<(__ConTypePoint, __ConTypePoint)> for ConTypePoint {
 impl From<ConTypePoint> for (__ConTypePoint, __ConTypePoint) {
 	fn from(value: ConTypePoint) -> Self {
 		(value.0, value.1)
+	}
+}
+
+impl From<ConTypePoint> for ControlValueSetter {
+	fn from(value: ConTypePoint) -> Self {
+		ControlValueSetter::Point(value.get_x(), value.get_y())
 	}
 }
 
@@ -98,5 +112,11 @@ impl From<(__ConTypeRGB, __ConTypeRGB, __ConTypeRGB)> for ConTypeRGB {
 impl From<ConTypeRGB> for (__ConTypeRGB, __ConTypeRGB, __ConTypeRGB) {
 	fn from(value: ConTypeRGB) -> Self {
 		(value.0, value.1, value.2)
+	}
+}
+
+impl From<ConTypeRGB> for ControlValueSetter {
+	fn from(value: ConTypeRGB) -> Self {
+		ControlValueSetter::RGB(value.get_r(), value.get_g(), value.get_b())
 	}
 }

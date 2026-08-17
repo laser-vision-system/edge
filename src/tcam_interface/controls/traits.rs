@@ -1,6 +1,8 @@
 //! Core traits for camera controls.
 
 #[allow(unused_imports, reason = "Needed for trait docstring")]
+use nokhwa::utils::ControlValueSetter;
+#[allow(unused_imports, reason = "Needed for trait docstring")]
 use std::hash::Hash;
 
 use std::fmt::Debug;
@@ -70,11 +72,7 @@ pub trait ControlValue {
 	type ConType: ValidControlValue;
 
 	fn get_value(&self) -> Self::ConType;
-	fn set_value(
-		&mut self,
-		id: KnownCameraControl,
-		cam: &mut nokhwa::StreamCamera,
-	) -> Result<(), nokhwa::NokhwaError>;
+	fn set_value(&mut self, value: Self::ConType);
 }
 
 /// A type that wraps a [`ControlValue`] with other control fields.
@@ -84,7 +82,7 @@ pub trait ControlDescription {
 
 	fn get_id(&self) -> KnownCameraControl;
 	fn get_value(&self) -> Self::ValueType;
-	fn set_value(
+	fn apply(
 		&mut self,
 		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
