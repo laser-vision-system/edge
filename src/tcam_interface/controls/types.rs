@@ -2,101 +2,100 @@
 
 #[allow(unused_imports, reason = "Needed for docstring")]
 use super::{
-	ControlValueKeyValue, ControlValuePoint, ControlValueRGB, KeyValuePairControl, PointControl,
-	RGBControl,
+	ConValueKeyValue, ConValuePoint, ConValueRGB, KeyValuePairControl, PointControl, RGBControl,
 };
 
 // TODO: Use COW for String and Bytes.
 
-pub(super) type ControlTypeInteger = i64;
-pub(super) type ControlTypeFloat = f64;
-pub(super) type ControlTypeBool = bool;
-pub(super) type ControlTypeString = String;
-pub(super) type ControlTypeBytes = Vec<u8>;
-pub(super) type ControlTypeEnum = i64;
+pub(super) type ConTypeInt = i64;
+pub(super) type ConTypeFloat = f64;
+pub(super) type ConTypeBool = bool;
+pub(super) type ConTypeString = String;
+pub(super) type ConTypeBytes = Vec<u8>;
+pub(super) type ConTypeEnum = i64;
 
-type ControlTypeKeyValue = i128;
-type ControlTypePoint = f64;
-type ControlTypeRGB = f64;
+type __ConTypeKeyValue = i128;
+type __ConTypePoint = f64;
+type __ConTypeRGB = f64;
 
 /// Represents a key and value use by [`ControlValueKeyValue`] and by extention, [`KeyValuePairControl`].
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct KeyValue(ControlTypeKeyValue, ControlTypeKeyValue);
+pub struct ConTypeKeyValue(__ConTypeKeyValue, __ConTypeKeyValue);
 
-impl KeyValue {
-	pub fn get_key(&self) -> ControlTypeKeyValue {
+impl ConTypeKeyValue {
+	pub fn get_key(&self) -> __ConTypeKeyValue {
 		self.0
 	}
 
-	pub fn get_value(&self) -> ControlTypeKeyValue {
+	pub fn get_value(&self) -> __ConTypeKeyValue {
 		self.1
 	}
 }
 
-impl From<(ControlTypeKeyValue, ControlTypeKeyValue)> for KeyValue {
-	fn from(value: (ControlTypeKeyValue, ControlTypeKeyValue)) -> Self {
+impl From<(__ConTypeKeyValue, __ConTypeKeyValue)> for ConTypeKeyValue {
+	fn from(value: (__ConTypeKeyValue, __ConTypeKeyValue)) -> Self {
 		Self(value.0, value.1)
 	}
 }
 
-impl From<KeyValue> for (ControlTypeKeyValue, ControlTypeKeyValue) {
-	fn from(value: KeyValue) -> Self {
+impl From<ConTypeKeyValue> for (__ConTypeKeyValue, __ConTypeKeyValue) {
+	fn from(value: ConTypeKeyValue) -> Self {
 		(value.0, value.1)
 	}
 }
 
 /// Represents a point value use by [`ControlValuePoint`] and by extention, [`PointControl`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct Point(ControlTypePoint, ControlTypePoint);
+pub struct ConTypePoint(__ConTypePoint, __ConTypePoint);
 
-impl Point {
-	pub fn get_x(&self) -> ControlTypePoint {
+impl ConTypePoint {
+	pub fn get_x(&self) -> __ConTypePoint {
 		self.0
 	}
 
-	pub fn get_y(&self) -> ControlTypePoint {
+	pub fn get_y(&self) -> __ConTypePoint {
 		self.1
 	}
 }
 
-impl From<(ControlTypePoint, ControlTypePoint)> for Point {
-	fn from(value: (ControlTypePoint, ControlTypePoint)) -> Self {
+impl From<(__ConTypePoint, __ConTypePoint)> for ConTypePoint {
+	fn from(value: (__ConTypePoint, __ConTypePoint)) -> Self {
 		Self(value.0, value.1)
 	}
 }
 
-impl From<Point> for (ControlTypePoint, ControlTypePoint) {
-	fn from(value: Point) -> Self {
+impl From<ConTypePoint> for (__ConTypePoint, __ConTypePoint) {
+	fn from(value: ConTypePoint) -> Self {
 		(value.0, value.1)
 	}
 }
 
 /// Represents an RGB value use by [`ControlValueRGB`] and by extention, [`RGBControl`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct RGB(ControlTypeRGB, ControlTypeRGB, ControlTypeRGB);
+pub struct ConTypeRGB(__ConTypeRGB, __ConTypeRGB, __ConTypeRGB);
 
-impl RGB {
-	pub fn get_r(&self) -> ControlTypeRGB {
+impl ConTypeRGB {
+	pub fn get_r(&self) -> __ConTypeRGB {
 		self.0
 	}
 
-	pub fn get_g(&self) -> ControlTypeRGB {
+	pub fn get_g(&self) -> __ConTypeRGB {
 		self.1
 	}
 
-	pub fn get_b(&self) -> ControlTypeRGB {
+	pub fn get_b(&self) -> __ConTypeRGB {
 		self.2
 	}
 }
 
-impl From<(ControlTypeRGB, ControlTypeRGB, ControlTypeRGB)> for RGB {
-	fn from(value: (ControlTypeRGB, ControlTypeRGB, ControlTypeRGB)) -> Self {
+impl From<(__ConTypeRGB, __ConTypeRGB, __ConTypeRGB)> for ConTypeRGB {
+	fn from(value: (__ConTypeRGB, __ConTypeRGB, __ConTypeRGB)) -> Self {
 		Self(value.0, value.1, value.2)
 	}
 }
 
-impl From<RGB> for (ControlTypeRGB, ControlTypeRGB, ControlTypeRGB) {
-	fn from(value: RGB) -> Self {
+impl From<ConTypeRGB> for (__ConTypeRGB, __ConTypeRGB, __ConTypeRGB) {
+	fn from(value: ConTypeRGB) -> Self {
 		(value.0, value.1, value.2)
 	}
 }

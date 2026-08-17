@@ -8,8 +8,8 @@ use nokhwa::{
 use super::{
 	traits::ControlValue,
 	types::{
-		ControlTypeBool, ControlTypeBytes, ControlTypeEnum, ControlTypeFloat, ControlTypeInteger,
-		ControlTypeString, KeyValue, Point, RGB,
+		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue,
+		ConTypePoint, ConTypeRGB, ConTypeString,
 	},
 };
 
@@ -29,18 +29,18 @@ use super::{
 ///
 /// Maps to [`ControlValueSetter::Integer`].
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueInteger(ControlTypeInteger);
+pub struct ConValueInteger(ConTypeInt);
 
-impl From<ControlTypeInteger> for ControlValueInteger {
-	fn from(value: ControlTypeInteger) -> Self {
+impl From<ConTypeInt> for ConValueInteger {
+	fn from(value: ConTypeInt) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValueInteger {
-	type ValueType = ControlTypeInteger;
+impl ControlValue for ConValueInteger {
+	type ConType = ConTypeInt;
 
-	fn get_value(&self) -> Self::ValueType {
+	fn get_value(&self) -> Self::ConType {
 		self.0
 	}
 
@@ -58,18 +58,18 @@ impl ControlValue for ControlValueInteger {
 ///
 /// Maps to [`ControlValueSetter::Float`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ControlValueFloat(ControlTypeFloat);
+pub struct ConValueFloat(ConTypeFloat);
 
-impl From<ControlTypeFloat> for ControlValueFloat {
-	fn from(value: ControlTypeFloat) -> Self {
+impl From<ConTypeFloat> for ConValueFloat {
+	fn from(value: ConTypeFloat) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValueFloat {
-	type ValueType = ControlTypeFloat;
+impl ControlValue for ConValueFloat {
+	type ConType = ConTypeFloat;
 
-	fn get_value(&self) -> Self::ValueType {
+	fn get_value(&self) -> Self::ConType {
 		self.0
 	}
 
@@ -87,18 +87,18 @@ impl ControlValue for ControlValueFloat {
 ///
 /// Maps to [`ControlValueSetter::Boolean`].
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueBoolean(ControlTypeBool);
+pub struct ConValueBoolean(ConTypeBool);
 
-impl From<ControlTypeBool> for ControlValueBoolean {
-	fn from(value: ControlTypeBool) -> Self {
+impl From<ConTypeBool> for ConValueBoolean {
+	fn from(value: ConTypeBool) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValueBoolean {
-	type ValueType = ControlTypeBool;
+impl ControlValue for ConValueBoolean {
+	type ConType = ConTypeBool;
 
-	fn get_value(&self) -> Self::ValueType {
+	fn get_value(&self) -> Self::ConType {
 		self.0
 	}
 
@@ -116,18 +116,18 @@ impl ControlValue for ControlValueBoolean {
 ///
 /// Maps to [`ControlValueSetter::String`].
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueString(ControlTypeString);
+pub struct ConValueString(ConTypeString);
 
-impl From<ControlTypeString> for ControlValueString {
-	fn from(value: ControlTypeString) -> Self {
+impl From<ConTypeString> for ConValueString {
+	fn from(value: ConTypeString) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValueString {
-	type ValueType = ControlTypeString;
+impl ControlValue for ConValueString {
+	type ConType = ConTypeString;
 
-	fn get_value(&self) -> Self::ValueType {
+	fn get_value(&self) -> Self::ConType {
 		self.0.clone()
 	}
 
@@ -145,18 +145,18 @@ impl ControlValue for ControlValueString {
 ///
 /// Maps to [`ControlValueSetter::Bytes`].
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueBytes(ControlTypeBytes);
+pub struct ConValueBytes(ConTypeBytes);
 
-impl From<ControlTypeBytes> for ControlValueBytes {
-	fn from(value: ControlTypeBytes) -> Self {
+impl From<ConTypeBytes> for ConValueBytes {
+	fn from(value: ConTypeBytes) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValueBytes {
-	type ValueType = ControlTypeBytes;
+impl ControlValue for ConValueBytes {
+	type ConType = ConTypeBytes;
 
-	fn get_value(&self) -> Self::ValueType {
+	fn get_value(&self) -> Self::ConType {
 		self.0.clone()
 	}
 
@@ -174,18 +174,18 @@ impl ControlValue for ControlValueBytes {
 ///
 /// Maps to [`ControlValueSetter::KeyValue`].
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueKeyValue(KeyValue);
+pub struct ConValueKeyValue(ConTypeKeyValue);
 
-impl From<KeyValue> for ControlValueKeyValue {
-	fn from(value: KeyValue) -> Self {
+impl From<ConTypeKeyValue> for ConValueKeyValue {
+	fn from(value: ConTypeKeyValue) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValueKeyValue {
-	type ValueType = KeyValue;
+impl ControlValue for ConValueKeyValue {
+	type ConType = ConTypeKeyValue;
 
-	fn get_value(&self) -> Self::ValueType {
+	fn get_value(&self) -> Self::ConType {
 		self.0
 	}
 
@@ -203,18 +203,18 @@ impl ControlValue for ControlValueKeyValue {
 ///
 /// Maps to [`ControlValueSetter::Point`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ControlValuePoint(Point);
+pub struct ConValuePoint(ConTypePoint);
 
-impl From<Point> for ControlValuePoint {
-	fn from(value: Point) -> Self {
+impl From<ConTypePoint> for ConValuePoint {
+	fn from(value: ConTypePoint) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValuePoint {
-	type ValueType = Point;
+impl ControlValue for ConValuePoint {
+	type ConType = ConTypePoint;
 
-	fn get_value(&self) -> Self::ValueType {
+	fn get_value(&self) -> Self::ConType {
 		self.0
 	}
 
@@ -232,18 +232,18 @@ impl ControlValue for ControlValuePoint {
 ///
 /// Maps to [`ControlValueSetter::EnumValue`].
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ControlValueEnum(ControlTypeEnum);
+pub struct ConValueEnum(ConTypeEnum);
 
-impl From<ControlTypeEnum> for ControlValueEnum {
-	fn from(value: ControlTypeEnum) -> Self {
+impl From<ConTypeEnum> for ConValueEnum {
+	fn from(value: ConTypeEnum) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValueEnum {
-	type ValueType = ControlTypeEnum;
+impl ControlValue for ConValueEnum {
+	type ConType = ConTypeEnum;
 
-	fn get_value(&self) -> Self::ValueType {
+	fn get_value(&self) -> Self::ConType {
 		self.0
 	}
 
@@ -261,18 +261,18 @@ impl ControlValue for ControlValueEnum {
 ///
 /// Maps to [`ControlValueSetter::RGB`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ControlValueRGB(RGB);
+pub struct ConValueRGB(ConTypeRGB);
 
-impl From<RGB> for ControlValueRGB {
-	fn from(value: RGB) -> Self {
+impl From<ConTypeRGB> for ConValueRGB {
+	fn from(value: ConTypeRGB) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ControlValueRGB {
-	type ValueType = RGB;
+impl ControlValue for ConValueRGB {
+	type ConType = ConTypeRGB;
 
-	fn get_value(&self) -> Self::ValueType {
+	fn get_value(&self) -> Self::ConType {
 		self.0
 	}
 

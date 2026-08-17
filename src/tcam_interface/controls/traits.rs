@@ -8,11 +8,8 @@ use std::fmt::Debug;
 use nokhwa::{self, utils::KnownCameraControl};
 
 use super::{
-	KeyValue, Point, RGB,
-	types::{
-		ControlTypeBool, ControlTypeBytes, ControlTypeEnum, ControlTypeFloat, ControlTypeInteger,
-		ControlTypeString,
-	},
+	ConTypeKeyValue, ConTypePoint, ConTypeRGB,
+	types::{ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeString},
 };
 
 /// A marker trait that determines what is acceptable to use within a [`ControlValue`].
@@ -27,14 +24,14 @@ pub trait ValidControlValue: Clone + Debug + PartialEq + PartialOrd {}
 
 // ===== Value fields (used in ControlValueSetter) =====
 // ----- Explicit -----
-impl ValidControlValue for ControlTypeInteger {} // Integer, IntegerRange, Enum
-impl ValidControlValue for ControlTypeFloat {} // Float,  FloatRange
-impl ValidControlValue for ControlTypeBool {} // Boolean
-impl ValidControlValue for ControlTypeString {} // String
-impl ValidControlValue for ControlTypeBytes {} // Bytes
-impl ValidControlValue for KeyValue {} // KeyValuePair
-impl ValidControlValue for Point {} // KeyValuePair
-impl ValidControlValue for RGB {} // KeyValuePair
+impl ValidControlValue for ConTypeInt {} // Integer, IntegerRange, Enum
+impl ValidControlValue for ConTypeFloat {} // Float,  FloatRange
+impl ValidControlValue for ConTypeBool {} // Boolean
+impl ValidControlValue for ConTypeString {} // String
+impl ValidControlValue for ConTypeBytes {} // Bytes
+impl ValidControlValue for ConTypeKeyValue {} // KeyValuePair
+impl ValidControlValue for ConTypePoint {} // KeyValuePair
+impl ValidControlValue for ConTypeRGB {} // KeyValuePair
 // TODO: Would these be better than the implicit?
 // TODO: Would it be better to use an array in either case?
 //impl ValidControlValue for (f64, f64) {} // Point
@@ -58,21 +55,21 @@ pub trait ValidDefaultValue: Clone + Debug + PartialEq + PartialOrd {}
 
 impl<T> ValidDefaultValue for T where T: ValidControlValue {}
 
-impl ValidDefaultValue for Option<ControlTypeString> {}
+impl ValidDefaultValue for Option<ConTypeString> {}
 
 pub trait ValidPossibleValue: Clone + Debug + PartialEq + PartialOrd {}
 
 impl<T> ValidPossibleValue for T where T: ValidControlValue {}
 
-impl ValidPossibleValue for Vec<ControlTypeEnum> {}
+impl ValidPossibleValue for Vec<ConTypeEnum> {}
 
 /// The type that is use to report the control's current value as well as apply a new value.
 ///
 /// Maps to [`nokhwa`]'s [`ControlValueSetter`].
 pub trait ControlValue {
-	type ValueType: ValidControlValue;
+	type ConType: ValidControlValue;
 
-	fn get_value(&self) -> Self::ValueType;
+	fn get_value(&self) -> Self::ConType;
 	fn set_value(
 		&mut self,
 		id: KnownCameraControl,
@@ -81,15 +78,15 @@ pub trait ControlValue {
 }
 
 /// A type that wraps a [`ControlValue`] with other control fields.
-pub trait ControlStruct {
-	type ControlValueType;
-	type ValueType: ValidControlValue;
+pub trait ControlDescription {
+	type ValueType;
+	type ConType: ValidControlValue;
 
 	fn get_id(&self) -> KnownCameraControl;
-	fn get_value(&self) -> Self::ControlValueType;
+	fn get_value(&self) -> Self::ValueType;
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()>;
 }
@@ -97,7 +94,7 @@ pub trait ControlStruct {
 /// A type that supports the `default` field.
 ///
 /// Bound by [`ControlValue`].
-pub trait ControlDefault: ControlStruct {
+pub trait ControlDefault: ControlDescription {
 	//type DefaultType = Self::ValueType;
 	type DefaultType: ValidDefaultValue;
 
@@ -108,7 +105,7 @@ pub trait ControlDefault: ControlStruct {
 /// A type that supports the `min` field.
 ///
 /// Equal to [`ControlValue`].
-pub trait ControlMin: ControlStruct {
+pub trait ControlMin: ControlDescription {
 	//type MinType = Self::ValueType;
 	type MinType: ValidControlValue;
 
@@ -122,7 +119,7 @@ pub trait ControlMin: ControlStruct {
 /// A type that supports the `max` field.
 ///
 /// Equal to [`ControlValue`].
-pub trait ControlMax: ControlStruct {
+pub trait ControlMax: ControlDescription {
 	//type MaxType = Self::ValueType;
 	type MaxType: ValidControlValue;
 
@@ -136,7 +133,7 @@ pub trait ControlMax: ControlStruct {
 /// A type that supports the `step` field.
 ///
 /// Equal to [`ControlValue`].
-pub trait ControlStep: ControlStruct {
+pub trait ControlStep: ControlDescription {
 	//type StepType = Self::ValueType;
 	type StepType: ValidControlValue;
 
@@ -148,11 +145,11 @@ pub trait ControlStep: ControlStruct {
 /// A type that supports the `possible` field.
 ///
 /// Bound by [`ControlValue`].
-pub trait ControlPossible: ControlStruct {
+pub trait ControlPossible: ControlDescription {
 	//type PossibleType = Self::ValueType;
 	type PossibleType: ValidPossibleValue;
 
 	fn get_possible(&self) -> Self::PossibleType;
 	// TODO: Default implementation.
-	fn valid(&self, value: &Self::ValueType) -> bool;
+	fn valid(&self, value: &Self::ConType) -> bool;
 }
