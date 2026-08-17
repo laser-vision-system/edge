@@ -16,6 +16,7 @@ pub(super) type ConTypeBool = bool;
 pub(super) type ConTypeString = String;
 pub(super) type ConTypeBytes = Vec<u8>;
 pub(super) type ConTypeEnum = i64;
+pub(super) type ConTypeMenu = u32;
 
 type __ConTypeKeyValue = i128;
 type __ConTypePoint = f64;

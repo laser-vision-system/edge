@@ -1,19 +1,19 @@
 use std::hash::Hash;
 
-use nokhwa::utils::{CameraControl, ControlValueDescription, KnownCameraControl};
+use nokhwa::utils::{CameraControl, ControlValueDescription, KnownCameraControl, MenuEntry};
 
 use super::{
 	traits::{
-		ControlDefault, ControlDescription, ControlMax, ControlMin, ControlPossible, ControlStep,
-		ControlValue,
+		ControlDefault, ControlDescription, ControlItems, ControlMax, ControlMin, ControlPossible,
+		ControlStep, ControlValue,
 	},
 	types::{
 		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue,
-		ConTypePoint, ConTypeRGB, ConTypeString,
+		ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 	},
 	values::{
 		ConValueBoolean, ConValueBytes, ConValueEnum, ConValueFloat, ConValueInteger,
-		ConValueKeyValue, ConValuePoint, ConValueRGB, ConValueString,
+		ConValueKeyValue, ConValueMenu, ConValuePoint, ConValueRGB, ConValueString,
 	},
 };
 
@@ -44,6 +44,7 @@ pub enum CamControl {
 	Point(PointControl),
 	Enum(EnumControl),
 	RGB(RGBControl),
+	Menu(MenuControl),
 }
 
 impl From<CameraControl> for CamControl {
@@ -151,6 +152,16 @@ impl From<CameraControl> for CamControl {
 				ConValueRGB::from(ConTypeRGB::from(*value)),
 				ConTypeRGB::from(*default),
 				ConTypeRGB::from(*max),
+			)),
+			ControlValueDescription::Menu {
+				value,
+				items,
+				default,
+			} => CamControl::Menu(MenuControl::new(
+				control_type,
+				ConValueMenu::from(*value),
+				ConTypeMenu::from(*default),
+				items.clone(),
 			)),
 		}
 	}
@@ -946,6 +957,77 @@ impl ControlMax for RGBControl {
 	}
 }
 
+#[derive(Clone, Debug)]
+pub struct MenuControl {
+	control_type: KnownCameraControl,
+	value: ConValueMenu,
+	default: <ConValueMenu as ControlValue>::ConType,
+	items: Vec<MenuEntry>,
+}
+
+impl MenuControl {
+	pub fn new(
+		control_type: KnownCameraControl,
+		value: ConValueMenu,
+		default: <ConValueMenu as ControlValue>::ConType,
+		items: Vec<MenuEntry>,
+	) -> Self {
+		Self {
+			control_type,
+			value,
+			default,
+			items,
+		}
+	}
+}
+
+impl ControlDescription for MenuControl {
+	type ValueType = ConValueMenu;
+	type ConType = ConTypeMenu;
+
+	fn get_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+		if self.valid(value.get_value()) {
+			self.value = value;
+			Ok(())
+		} else {
+			Err(())
+		}
+	}
+
+	fn get_value(&self) -> Self::ValueType {
+		self.value
+	}
+}
+
+impl ControlDefault for MenuControl {
+	type DefaultType = Self::ConType;
+
+	fn get_default(&self) -> Self::DefaultType {
+		self.default
+	}
+
+	fn reset_to_default(&mut self) {
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid")
+	}
+}
+
+impl ControlItems for MenuControl {
+	type ItemType = Vec<MenuEntry>;
+
+	fn get_items(&self) -> Self::ItemType {
+		self.items.clone()
+	}
+
+	fn valid(&self, value: Self::ConType) -> bool {
+		self.items.iter().any(|entry| entry.get_id() == value)
+	}
+}
+
 /// Automatically implement [`Hash`], [`PartialEq`], [`Eq`], [`PartialOrd`], and [`Ord`] on a struct by its control id.
 macro_rules! impl_identifiable {
 	($type:ty) => {
@@ -988,3 +1070,4 @@ impl_identifiable!(KeyValuePairControl);
 impl_identifiable!(PointControl);
 impl_identifiable!(EnumControl);
 impl_identifiable!(RGBControl);
+impl_identifiable!(MenuControl);

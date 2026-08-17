@@ -7,10 +7,13 @@ use std::hash::Hash;
 
 use std::fmt::Debug;
 
-use nokhwa::{self, utils::KnownCameraControl};
+use nokhwa::{
+	self,
+	utils::{KnownCameraControl, MenuEntry},
+};
 
 use super::types::{
-	ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue,
+	ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue, ConTypeMenu,
 	ConTypePoint, ConTypeRGB, ConTypeString,
 };
 
@@ -34,6 +37,7 @@ impl ValidControlValue for ConTypeBytes {} // Bytes
 impl ValidControlValue for ConTypeKeyValue {} // KeyValuePair
 impl ValidControlValue for ConTypePoint {} // KeyValuePair
 impl ValidControlValue for ConTypeRGB {} // KeyValuePair
+impl ValidControlValue for ConTypeMenu {} // Menu
 // TODO: Would these be better than the implicit?
 // TODO: Would it be better to use an array in either case?
 //impl ValidControlValue for (f64, f64) {} // Point
@@ -64,6 +68,10 @@ pub trait ValidPossibleValue: Clone + Debug + PartialEq + PartialOrd {}
 impl<T> ValidPossibleValue for T where T: ValidControlValue {}
 
 impl ValidPossibleValue for Vec<ConTypeEnum> {}
+
+pub trait ValidItemValue: Clone + Debug + PartialEq + PartialOrd {}
+
+impl ValidItemValue for Vec<MenuEntry> {}
 
 /// The type that is use to report the control's current value as well as apply a new value.
 ///
@@ -147,4 +155,12 @@ pub trait ControlPossible: ControlDescription {
 	fn get_possible(&self) -> Self::PossibleType;
 	// TODO: Default implementation.
 	fn valid(&self, value: &Self::ConType) -> bool;
+}
+
+/// A type that supports the `items` field.
+pub trait ControlItems: ControlDescription {
+	type ItemType: ValidItemValue;
+
+	fn get_items(&self) -> Self::ItemType;
+	fn valid(&self, value: Self::ConType) -> bool;
 }

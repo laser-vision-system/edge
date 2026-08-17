@@ -6,7 +6,7 @@ use super::{
 	traits::ControlValue,
 	types::{
 		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue,
-		ConTypePoint, ConTypeRGB, ConTypeString,
+		ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 	},
 };
 
@@ -291,5 +291,32 @@ impl ControlValue for ConValueRGB {
 impl From<ConValueRGB> for ControlValueSetter {
 	fn from(value: ConValueRGB) -> Self {
 		value.0.into()
+	}
+}
+
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ConValueMenu(ConTypeMenu);
+
+impl From<ConTypeMenu> for ConValueMenu {
+	fn from(value: ConTypeMenu) -> Self {
+		Self(value)
+	}
+}
+
+impl ControlValue for ConValueMenu {
+	type ConType = ConTypeMenu;
+
+	fn get_value(&self) -> Self::ConType {
+		self.0
+	}
+
+	fn set_value(&mut self, value: Self::ConType) {
+		self.0 = value;
+	}
+}
+
+impl From<ConValueMenu> for ControlValueSetter {
+	fn from(value: ConValueMenu) -> Self {
+		ControlValueSetter::Menu(value.0)
 	}
 }
