@@ -32,20 +32,16 @@ pub mod values;
 
 use traits::{ControlDefault, ControlMax, ControlMin, ControlPossible, ControlStep, ControlValue};
 
-use types::{KeyValue, Point, RGB};
+use types::{ConTypeKeyValue, ConTypePoint, ConTypeRGB};
 
 use values::{
-	ControlValueBoolean, ControlValueBytes, ControlValueEnum, ControlValueFloat,
-	ControlValueInteger, ControlValueKeyValue, ControlValuePoint, ControlValueRGB,
-	ControlValueString,
+	ConValueBoolean, ConValueBytes, ConValueEnum, ConValueFloat, ConValueInteger, ConValueKeyValue,
+	ConValuePoint, ConValueRGB, ConValueString,
 };
 
 use self::{
-	traits::ControlStruct,
-	types::{
-		ControlTypeBool, ControlTypeBytes, ControlTypeEnum, ControlTypeFloat, ControlTypeInteger,
-		ControlTypeString,
-	},
+	traits::ControlDescription,
+	types::{ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeString},
 };
 
 // TODO: Maybe make this into a struct itself.
@@ -104,7 +100,7 @@ impl From<CameraControl> for CamControl {
 				step,
 			} => CamControl::Integer(IntegerControl::new(
 				control_type,
-				ControlValueInteger::from(*value),
+				ConValueInteger::from(*value),
 				*default,
 				*step,
 			)),
@@ -116,7 +112,7 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => CamControl::IntegerRange(IntegerRangeControl::new(
 				control_type,
-				ControlValueInteger::from(*value),
+				ConValueInteger::from(*value),
 				*default,
 				*step,
 				*min,
@@ -128,7 +124,7 @@ impl From<CameraControl> for CamControl {
 				step,
 			} => CamControl::Float(FloatControl::new(
 				control_type,
-				ControlValueFloat::from(*value),
+				ConValueFloat::from(*value),
 				*default,
 				*step,
 			)),
@@ -140,26 +136,26 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => CamControl::FloatRange(FloatRangeControl::new(
 				control_type,
-				ControlValueFloat::from(*value),
+				ConValueFloat::from(*value),
 				*default,
 				*step,
 				*min,
 				*max,
 			)),
 			ControlValueDescription::Boolean { value, default } => CamControl::Boolean(
-				BooleanControl::new(control_type, ControlValueBoolean::from(*value), *default),
+				BooleanControl::new(control_type, ConValueBoolean::from(*value), *default),
 			),
 			ControlValueDescription::String { value, default } => {
 				CamControl::String(StringControl::new(
 					control_type,
-					ControlValueString::from(value.clone()),
+					ConValueString::from(value.clone()),
 					default.clone(),
 				))
 			},
 			ControlValueDescription::Bytes { value, default } => {
 				CamControl::Bytes(BytesControl::new(
 					control_type,
-					ControlValueBytes::from(value.clone()),
+					ConValueBytes::from(value.clone()),
 					default.clone(),
 				))
 			},
@@ -169,14 +165,14 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => CamControl::KeyValuePair(KeyValuePairControl::new(
 				control_type,
-				ControlValueKeyValue::from(KeyValue::from((*key, *value))),
+				ConValueKeyValue::from(ConTypeKeyValue::from((*key, *value))),
 				(*default).into(),
 			)),
 			ControlValueDescription::Point { value, default } => {
 				CamControl::Point(PointControl::new(
 					control_type,
-					ControlValuePoint::from(Point::from(*value)),
-					Point::from(*default),
+					ConValuePoint::from(ConTypePoint::from(*value)),
+					ConTypePoint::from(*default),
 				))
 			},
 			ControlValueDescription::Enum {
@@ -185,7 +181,7 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => CamControl::Enum(EnumControl::new(
 				control_type,
-				ControlValueEnum::from(*value),
+				ConValueEnum::from(*value),
 				*default,
 				possible.clone(),
 			)),
@@ -195,9 +191,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => CamControl::RGB(RGBControl::new(
 				control_type,
-				ControlValueRGB::from(RGB::from(*value)),
-				RGB::from(*default),
-				RGB::from(*max),
+				ConValueRGB::from(ConTypeRGB::from(*value)),
+				ConTypeRGB::from(*default),
+				ConTypeRGB::from(*max),
 			)),
 		}
 	}
@@ -218,17 +214,17 @@ impl From<CameraControl> for CamControl {
 #[derive(Clone, Copy, Debug)]
 pub struct IntegerControl {
 	control_type: KnownCameraControl,
-	value: ControlValueInteger,
-	default: <ControlValueInteger as ControlValue>::ValueType,
-	step: <ControlValueInteger as ControlValue>::ValueType,
+	value: ConValueInteger,
+	default: <ConValueInteger as ControlValue>::ConType,
+	step: <ConValueInteger as ControlValue>::ConType,
 }
 
 impl IntegerControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueInteger,
-		default: <ControlValueInteger as ControlValue>::ValueType,
-		step: <ControlValueInteger as ControlValue>::ValueType,
+		value: ConValueInteger,
+		default: <ConValueInteger as ControlValue>::ConType,
+		step: <ConValueInteger as ControlValue>::ConType,
 	) -> Self {
 		Self {
 			control_type,
@@ -239,21 +235,21 @@ impl IntegerControl {
 	}
 }
 
-impl ControlStruct for IntegerControl {
-	type ControlValueType = ControlValueInteger;
-	type ValueType = ControlTypeInteger;
+impl ControlDescription for IntegerControl {
+	type ValueType = ConValueInteger;
+	type ConType = ConTypeInt;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if self.valid(value.get_value()) {
@@ -266,7 +262,7 @@ impl ControlStruct for IntegerControl {
 }
 
 impl ControlDefault for IntegerControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
@@ -275,7 +271,7 @@ impl ControlDefault for IntegerControl {
 
 impl ControlStep for IntegerControl {
 	// Default should be based on ValueType, so this makes sure they can be compared.
-	type StepType = Self::ValueType;
+	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
 		self.step
@@ -294,21 +290,21 @@ impl ControlStep for IntegerControl {
 #[derive(Clone, Copy, Debug)]
 pub struct IntegerRangeControl {
 	control_type: KnownCameraControl,
-	value: ControlValueInteger,
-	default: <ControlValueInteger as ControlValue>::ValueType,
-	step: <ControlValueInteger as ControlValue>::ValueType,
-	min: <ControlValueInteger as ControlValue>::ValueType,
-	max: <ControlValueInteger as ControlValue>::ValueType,
+	value: ConValueInteger,
+	default: <ConValueInteger as ControlValue>::ConType,
+	step: <ConValueInteger as ControlValue>::ConType,
+	min: <ConValueInteger as ControlValue>::ConType,
+	max: <ConValueInteger as ControlValue>::ConType,
 }
 
 impl IntegerRangeControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueInteger,
-		default: <ControlValueInteger as ControlValue>::ValueType,
-		step: <ControlValueInteger as ControlValue>::ValueType,
-		min: <ControlValueInteger as ControlValue>::ValueType,
-		max: <ControlValueInteger as ControlValue>::ValueType,
+		value: ConValueInteger,
+		default: <ConValueInteger as ControlValue>::ConType,
+		step: <ConValueInteger as ControlValue>::ConType,
+		min: <ConValueInteger as ControlValue>::ConType,
+		max: <ConValueInteger as ControlValue>::ConType,
 	) -> Self {
 		Self {
 			control_type,
@@ -321,21 +317,21 @@ impl IntegerRangeControl {
 	}
 }
 
-impl ControlStruct for IntegerRangeControl {
-	type ControlValueType = ControlValueInteger;
-	type ValueType = ControlTypeInteger;
+impl ControlDescription for IntegerRangeControl {
+	type ValueType = ConValueInteger;
+	type ConType = ConTypeInt;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if ControlMin::valid(self, value.get_value())
@@ -351,7 +347,7 @@ impl ControlStruct for IntegerRangeControl {
 }
 
 impl ControlDefault for IntegerRangeControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
@@ -360,7 +356,7 @@ impl ControlDefault for IntegerRangeControl {
 
 impl ControlStep for IntegerRangeControl {
 	// Default should be based on ValueType, so this makes sure they can be compared.
-	type StepType = Self::ValueType;
+	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
 		self.step
@@ -373,7 +369,7 @@ impl ControlStep for IntegerRangeControl {
 }
 
 impl ControlMin for IntegerRangeControl {
-	type MinType = Self::ValueType;
+	type MinType = Self::ConType;
 
 	fn get_min(&self) -> Self::MinType {
 		self.min
@@ -381,7 +377,7 @@ impl ControlMin for IntegerRangeControl {
 }
 
 impl ControlMax for IntegerRangeControl {
-	type MaxType = Self::ValueType;
+	type MaxType = Self::ConType;
 
 	fn get_max(&self) -> Self::MaxType {
 		self.max
@@ -395,17 +391,17 @@ impl ControlMax for IntegerRangeControl {
 #[derive(Clone, Copy, Debug)]
 pub struct FloatControl {
 	control_type: KnownCameraControl,
-	value: ControlValueFloat,
-	default: <ControlValueFloat as ControlValue>::ValueType,
-	step: <ControlValueFloat as ControlValue>::ValueType,
+	value: ConValueFloat,
+	default: <ConValueFloat as ControlValue>::ConType,
+	step: <ConValueFloat as ControlValue>::ConType,
 }
 
 impl FloatControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueFloat,
-		default: <ControlValueFloat as ControlValue>::ValueType,
-		step: <ControlValueFloat as ControlValue>::ValueType,
+		value: ConValueFloat,
+		default: <ConValueFloat as ControlValue>::ConType,
+		step: <ConValueFloat as ControlValue>::ConType,
 	) -> Self {
 		Self {
 			control_type,
@@ -416,21 +412,21 @@ impl FloatControl {
 	}
 }
 
-impl ControlStruct for FloatControl {
-	type ControlValueType = ControlValueFloat;
-	type ValueType = ControlTypeFloat;
+impl ControlDescription for FloatControl {
+	type ValueType = ConValueFloat;
+	type ConType = ConTypeFloat;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if self.valid(value.get_value()) {
@@ -443,7 +439,7 @@ impl ControlStruct for FloatControl {
 }
 
 impl ControlDefault for FloatControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
@@ -452,7 +448,7 @@ impl ControlDefault for FloatControl {
 
 impl ControlStep for FloatControl {
 	// Default should be based on ValueType, so this makes sure they can be compared.
-	type StepType = Self::ValueType;
+	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
 		self.step
@@ -471,21 +467,21 @@ impl ControlStep for FloatControl {
 #[derive(Clone, Copy, Debug)]
 pub struct FloatRangeControl {
 	control_type: KnownCameraControl,
-	value: ControlValueFloat,
-	default: <ControlValueFloat as ControlValue>::ValueType,
-	step: <ControlValueFloat as ControlValue>::ValueType,
-	min: <ControlValueFloat as ControlValue>::ValueType,
-	max: <ControlValueFloat as ControlValue>::ValueType,
+	value: ConValueFloat,
+	default: <ConValueFloat as ControlValue>::ConType,
+	step: <ConValueFloat as ControlValue>::ConType,
+	min: <ConValueFloat as ControlValue>::ConType,
+	max: <ConValueFloat as ControlValue>::ConType,
 }
 
 impl FloatRangeControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueFloat,
-		default: <ControlValueFloat as ControlValue>::ValueType,
-		step: <ControlValueFloat as ControlValue>::ValueType,
-		min: <ControlValueFloat as ControlValue>::ValueType,
-		max: <ControlValueFloat as ControlValue>::ValueType,
+		value: ConValueFloat,
+		default: <ConValueFloat as ControlValue>::ConType,
+		step: <ConValueFloat as ControlValue>::ConType,
+		min: <ConValueFloat as ControlValue>::ConType,
+		max: <ConValueFloat as ControlValue>::ConType,
 	) -> Self {
 		Self {
 			control_type,
@@ -498,21 +494,21 @@ impl FloatRangeControl {
 	}
 }
 
-impl ControlStruct for FloatRangeControl {
-	type ControlValueType = ControlValueFloat;
-	type ValueType = ControlTypeFloat;
+impl ControlDescription for FloatRangeControl {
+	type ValueType = ConValueFloat;
+	type ConType = ConTypeFloat;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if ControlMin::valid(self, value.get_value())
@@ -528,7 +524,7 @@ impl ControlStruct for FloatRangeControl {
 }
 
 impl ControlDefault for FloatRangeControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
@@ -537,7 +533,7 @@ impl ControlDefault for FloatRangeControl {
 
 impl ControlStep for FloatRangeControl {
 	// Default should be based on ValueType, so this makes sure they can be compared.
-	type StepType = Self::ValueType;
+	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
 		self.step
@@ -550,7 +546,7 @@ impl ControlStep for FloatRangeControl {
 }
 
 impl ControlMin for FloatRangeControl {
-	type MinType = Self::ValueType;
+	type MinType = Self::ConType;
 
 	fn get_min(&self) -> Self::MinType {
 		self.min
@@ -558,7 +554,7 @@ impl ControlMin for FloatRangeControl {
 }
 
 impl ControlMax for FloatRangeControl {
-	type MaxType = Self::ValueType;
+	type MaxType = Self::ConType;
 
 	fn get_max(&self) -> Self::MaxType {
 		self.max
@@ -572,15 +568,15 @@ impl ControlMax for FloatRangeControl {
 #[derive(Clone, Copy, Debug)]
 pub struct BooleanControl {
 	control_type: KnownCameraControl,
-	value: ControlValueBoolean,
-	default: <ControlValueBoolean as ControlValue>::ValueType,
+	value: ConValueBoolean,
+	default: <ConValueBoolean as ControlValue>::ConType,
 }
 
 impl BooleanControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueBoolean,
-		default: <ControlValueBoolean as ControlValue>::ValueType,
+		value: ConValueBoolean,
+		default: <ConValueBoolean as ControlValue>::ConType,
 	) -> Self {
 		Self {
 			control_type,
@@ -590,21 +586,21 @@ impl BooleanControl {
 	}
 }
 
-impl ControlStruct for BooleanControl {
-	type ControlValueType = ControlValueBoolean;
-	type ValueType = ControlTypeBool;
+impl ControlDescription for BooleanControl {
+	type ValueType = ConValueBoolean;
+	type ConType = ConTypeBool;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
@@ -613,7 +609,7 @@ impl ControlStruct for BooleanControl {
 }
 
 impl ControlDefault for BooleanControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
@@ -627,15 +623,15 @@ impl ControlDefault for BooleanControl {
 #[derive(Clone, Debug)]
 pub struct StringControl {
 	control_type: KnownCameraControl,
-	value: ControlValueString,
-	default: Option<<ControlValueString as ControlValue>::ValueType>,
+	value: ConValueString,
+	default: Option<<ConValueString as ControlValue>::ConType>,
 }
 
 impl StringControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueString,
-		default: Option<<ControlValueString as ControlValue>::ValueType>,
+		value: ConValueString,
+		default: Option<<ConValueString as ControlValue>::ConType>,
 	) -> Self {
 		Self {
 			control_type,
@@ -645,21 +641,21 @@ impl StringControl {
 	}
 }
 
-impl ControlStruct for StringControl {
-	type ControlValueType = ControlValueString;
-	type ValueType = ControlTypeString;
+impl ControlDescription for StringControl {
+	type ValueType = ConValueString;
+	type ConType = ConTypeString;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value.clone()
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
@@ -668,7 +664,7 @@ impl ControlStruct for StringControl {
 }
 
 impl ControlDefault for StringControl {
-	type DefaultType = Option<Self::ValueType>;
+	type DefaultType = Option<Self::ConType>;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default.clone()
@@ -682,15 +678,15 @@ impl ControlDefault for StringControl {
 #[derive(Clone, Debug)]
 pub struct BytesControl {
 	control_type: KnownCameraControl,
-	value: ControlValueBytes,
-	default: <ControlValueBytes as ControlValue>::ValueType,
+	value: ConValueBytes,
+	default: <ConValueBytes as ControlValue>::ConType,
 }
 
 impl BytesControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueBytes,
-		default: <ControlValueBytes as ControlValue>::ValueType,
+		value: ConValueBytes,
+		default: <ConValueBytes as ControlValue>::ConType,
 	) -> Self {
 		Self {
 			control_type,
@@ -700,21 +696,21 @@ impl BytesControl {
 	}
 }
 
-impl ControlStruct for BytesControl {
-	type ControlValueType = ControlValueBytes;
-	type ValueType = ControlTypeBytes;
+impl ControlDescription for BytesControl {
+	type ValueType = ConValueBytes;
+	type ConType = ConTypeBytes;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value.clone()
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
@@ -723,7 +719,7 @@ impl ControlStruct for BytesControl {
 }
 
 impl ControlDefault for BytesControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default.clone()
@@ -737,15 +733,15 @@ impl ControlDefault for BytesControl {
 #[derive(Clone, Copy, Debug)]
 pub struct KeyValuePairControl {
 	control_type: KnownCameraControl,
-	value: ControlValueKeyValue,
-	default: <ControlValueKeyValue as ControlValue>::ValueType,
+	value: ConValueKeyValue,
+	default: <ConValueKeyValue as ControlValue>::ConType,
 }
 
 impl KeyValuePairControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueKeyValue,
-		default: <ControlValueKeyValue as ControlValue>::ValueType,
+		value: ConValueKeyValue,
+		default: <ConValueKeyValue as ControlValue>::ConType,
 	) -> Self {
 		Self {
 			control_type,
@@ -755,21 +751,21 @@ impl KeyValuePairControl {
 	}
 }
 
-impl ControlStruct for KeyValuePairControl {
-	type ControlValueType = ControlValueKeyValue;
-	type ValueType = KeyValue;
+impl ControlDescription for KeyValuePairControl {
+	type ValueType = ConValueKeyValue;
+	type ConType = ConTypeKeyValue;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
@@ -778,7 +774,7 @@ impl ControlStruct for KeyValuePairControl {
 }
 
 impl ControlDefault for KeyValuePairControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
@@ -792,15 +788,15 @@ impl ControlDefault for KeyValuePairControl {
 #[derive(Clone, Copy, Debug)]
 pub struct PointControl {
 	control_type: KnownCameraControl,
-	value: ControlValuePoint,
-	default: <ControlValuePoint as ControlValue>::ValueType,
+	value: ConValuePoint,
+	default: <ConValuePoint as ControlValue>::ConType,
 }
 
 impl PointControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValuePoint,
-		default: <ControlValuePoint as ControlValue>::ValueType,
+		value: ConValuePoint,
+		default: <ConValuePoint as ControlValue>::ConType,
 	) -> Self {
 		Self {
 			control_type,
@@ -810,21 +806,21 @@ impl PointControl {
 	}
 }
 
-impl ControlStruct for PointControl {
-	type ControlValueType = ControlValuePoint;
-	type ValueType = Point;
+impl ControlDescription for PointControl {
+	type ValueType = ConValuePoint;
+	type ConType = ConTypePoint;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		self.value = value;
@@ -833,7 +829,7 @@ impl ControlStruct for PointControl {
 }
 
 impl ControlDefault for PointControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
@@ -847,17 +843,17 @@ impl ControlDefault for PointControl {
 #[derive(Clone, Debug)]
 pub struct EnumControl {
 	control_type: KnownCameraControl,
-	value: ControlValueEnum,
-	default: <ControlValueEnum as ControlValue>::ValueType,
-	possible: Vec<<ControlValueEnum as ControlValue>::ValueType>,
+	value: ConValueEnum,
+	default: <ConValueEnum as ControlValue>::ConType,
+	possible: Vec<<ConValueEnum as ControlValue>::ConType>,
 }
 
 impl EnumControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueEnum,
-		default: <ControlValueEnum as ControlValue>::ValueType,
-		possible: Vec<<ControlValueEnum as ControlValue>::ValueType>,
+		value: ConValueEnum,
+		default: <ConValueEnum as ControlValue>::ConType,
+		possible: Vec<<ConValueEnum as ControlValue>::ConType>,
 	) -> Self {
 		Self {
 			control_type,
@@ -868,21 +864,21 @@ impl EnumControl {
 	}
 }
 
-impl ControlStruct for EnumControl {
-	type ControlValueType = ControlValueEnum;
-	type ValueType = ControlTypeEnum;
+impl ControlDescription for EnumControl {
+	type ValueType = ConValueEnum;
+	type ConType = ConTypeEnum;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if self.valid(&value.get_value()) {
@@ -895,7 +891,7 @@ impl ControlStruct for EnumControl {
 }
 
 impl ControlDefault for EnumControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
@@ -903,13 +899,13 @@ impl ControlDefault for EnumControl {
 }
 
 impl ControlPossible for EnumControl {
-	type PossibleType = Vec<Self::ValueType>;
+	type PossibleType = Vec<Self::ConType>;
 
 	fn get_possible(&self) -> Self::PossibleType {
 		self.possible.clone()
 	}
 
-	fn valid(&self, value: &Self::ValueType) -> bool {
+	fn valid(&self, value: &Self::ConType) -> bool {
 		self.possible.contains(value)
 	}
 }
@@ -923,17 +919,17 @@ impl ControlPossible for EnumControl {
 #[derive(Clone, Copy, Debug)]
 pub struct RGBControl {
 	control_type: KnownCameraControl,
-	value: ControlValueRGB,
-	default: <ControlValueRGB as ControlValue>::ValueType,
-	max: <ControlValueRGB as ControlValue>::ValueType,
+	value: ConValueRGB,
+	default: <ConValueRGB as ControlValue>::ConType,
+	max: <ConValueRGB as ControlValue>::ConType,
 }
 
 impl RGBControl {
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ControlValueRGB,
-		default: <ControlValueRGB as ControlValue>::ValueType,
-		max: <ControlValueRGB as ControlValue>::ValueType,
+		value: ConValueRGB,
+		default: <ConValueRGB as ControlValue>::ConType,
+		max: <ConValueRGB as ControlValue>::ConType,
 	) -> Self {
 		Self {
 			control_type,
@@ -944,21 +940,21 @@ impl RGBControl {
 	}
 }
 
-impl ControlStruct for RGBControl {
-	type ControlValueType = ControlValueRGB;
-	type ValueType = RGB;
+impl ControlDescription for RGBControl {
+	type ValueType = ConValueRGB;
+	type ConType = ConTypeRGB;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn get_value(&self) -> Self::ControlValueType {
+	fn get_value(&self) -> Self::ValueType {
 		self.value
 	}
 
 	fn set_value(
 		&mut self,
-		value: Self::ControlValueType,
+		value: Self::ValueType,
 		cam: &mut nokhwa::StreamCamera,
 	) -> Result<Result<(), nokhwa::NokhwaError>, ()> {
 		if self.valid(value.get_value()) {
@@ -971,7 +967,7 @@ impl ControlStruct for RGBControl {
 }
 
 impl ControlDefault for RGBControl {
-	type DefaultType = Self::ValueType;
+	type DefaultType = Self::ConType;
 
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
@@ -979,7 +975,7 @@ impl ControlDefault for RGBControl {
 }
 
 impl ControlMax for RGBControl {
-	type MaxType = Self::ValueType;
+	type MaxType = Self::ConType;
 
 	fn get_max(&self) -> Self::MaxType {
 		self.max
