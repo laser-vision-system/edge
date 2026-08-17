@@ -7,9 +7,9 @@ use std::fmt::Debug;
 
 use nokhwa::{self, utils::KnownCameraControl};
 
-use super::{
-	ConTypeKeyValue, ConTypePoint, ConTypeRGB,
-	types::{ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeString},
+use super::types::{
+	ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue,
+	ConTypePoint, ConTypeRGB, ConTypeString,
 };
 
 /// A marker trait that determines what is acceptable to use within a [`ControlValue`].

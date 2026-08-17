@@ -2,7 +2,8 @@
 
 #[allow(unused_imports, reason = "Needed for docstring")]
 use super::{
-	ConValueKeyValue, ConValuePoint, ConValueRGB, KeyValuePairControl, PointControl, RGBControl,
+	descriptions::{KeyValuePairControl, PointControl, RGBControl},
+	values::{ConValueKeyValue, ConValuePoint, ConValueRGB},
 };
 
 // TODO: Use COW for String and Bytes.
@@ -18,7 +19,7 @@ type __ConTypeKeyValue = i128;
 type __ConTypePoint = f64;
 type __ConTypeRGB = f64;
 
-/// Represents a key and value use by [`ControlValueKeyValue`] and by extention, [`KeyValuePairControl`].
+/// Represents a key and value use by [`ConValueKeyValue`] and by extention, [`KeyValuePairControl`].
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ConTypeKeyValue(__ConTypeKeyValue, __ConTypeKeyValue);
 
@@ -44,7 +45,7 @@ impl From<ConTypeKeyValue> for (__ConTypeKeyValue, __ConTypeKeyValue) {
 	}
 }
 
-/// Represents a point value use by [`ControlValuePoint`] and by extention, [`PointControl`].
+/// Represents a point value use by [`ConValuePoint`] and by extention, [`PointControl`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ConTypePoint(__ConTypePoint, __ConTypePoint);
 
@@ -70,7 +71,7 @@ impl From<ConTypePoint> for (__ConTypePoint, __ConTypePoint) {
 	}
 }
 
-/// Represents an RGB value use by [`ControlValueRGB`] and by extention, [`RGBControl`].
+/// Represents an RGB value use by [`ConValueRGB`] and by extention, [`RGBControl`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ConTypeRGB(__ConTypeRGB, __ConTypeRGB, __ConTypeRGB);
 
