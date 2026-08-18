@@ -6,10 +6,15 @@ use nokhwa::{
 	format_types::Mjpeg,
 	frame::{Frame, IntoRgb},
 	open,
-	utils::{CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
+	utils::{CameraControl, CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
 
-use super::controls::{ControlMap, descriptions::CamControl, extract_control, extract_controls};
+use super::controls::{
+	ControlMap,
+	descriptions::CamControl,
+	extract_control, extract_controls,
+	traits::{ControlDefault, ControlDescription},
+};
 
 /// An abstraction over the nokhwa camera objects.
 ///
@@ -99,7 +104,87 @@ impl Camera {
 		id: KnownCameraControl,
 		value: ControlValueSetter,
 	) -> Result<(), NokhwaError> {
+		if match id {
+			KnownCameraControl::WhiteBalance | KnownCameraControl::ExposureAbsolute => true,
+			_ => false,
+		} {
+			// HACK: Cheekily skip controls that may be inactive/disabled.
+			return Ok(());
+		}
 		self.inner.set_control(id, value)
+	}
+
+	fn get_raw_controls(&self) -> Vec<CameraControl> {
+		self.inner.controls().unwrap()
+	}
+
+	/// Set every control on the camera back to its default value.
+	pub fn reset_controls_to_default(&mut self) {
+		for (_, control) in self.get_controls() {
+			match control {
+				CamControl::Integer(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::IntegerRange(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::Float(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::FloatRange(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::Boolean(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::String(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), (&control.get_value()).into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::Bytes(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), (&control.get_value()).into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::KeyValuePair(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::Point(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::Enum(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::RGB(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::Menu(mut control) => {
+					control.reset_to_default();
+					self.set_control(control.get_id(), control.get_value().into())
+						.expect("default controls should always be valid")
+				},
+				CamControl::None => (),
+			};
+		}
 	}
 
 	// The setting of camera controls is handled by the controls themselves.
@@ -176,6 +261,13 @@ mod tests {
 	fn get_image_shrink() {
 		let mut cam = Camera::new(0, None).unwrap();
 		let _ = cam.get_image_shrink().unwrap();
+	}
+
+	#[test]
+	fn get_raw_controls() {
+		let cam = Camera::new(0, None).unwrap();
+		let c = cam.get_raw_controls();
+		println!("{c:#?}");
 	}
 
 	#[test]
@@ -261,6 +353,12 @@ mod tests {
 		);
 
 		Ok(())
+	}
+
+	#[test]
+	fn reset_controls_to_default() {
+		let mut cam = Camera::new(0, None).unwrap();
+		cam.reset_controls_to_default();
 	}
 }
 
