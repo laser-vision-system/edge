@@ -12,22 +12,22 @@
 //! - Provide details about connected camera configurations.
 //! - Apply provided configurations.
 //!
-//! ## Expected sub-modules
+//! ## Sub-modules
 //!
-//! ### Camera
+//! ### [`camera`]
 //!
 //! A module containing a representational object for a single camera.
 //!
-//! ### Configurations
+//! ### [`controls`]
 //!
 //! A module containing configuration options available to the camera.
 //!
-//! Perhaps separated by the what types of cameras they can be applied to.
-//!
-//! ### Detection
+//! ### Detection - expected
 //!
 //! A module containing functions to detect newly connected cameras.
 //!
 //! These can be called at startup.
 
+// Maybe private the mods and re-export the internals.
 pub mod camera;
+pub mod controls;

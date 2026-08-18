@@ -6,8 +6,10 @@ use nokhwa::{
 	format_types::Mjpeg,
 	frame::{Frame, IntoRgb},
 	open,
-	utils::{CameraControl, CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
+	utils::{CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
+
+use super::controls::{ControlMap, descriptions::CamControl, extract_control, extract_controls};
 
 /// An abstraction over the nokhwa camera objects.
 ///
@@ -74,28 +76,24 @@ impl Camera {
 			.collect()
 	}
 
-	/// Get a list of the camera controls
-	///
-	/// TODO: Is it a good idea to share this directly?
-	pub fn get_all_available_controls(&self) -> Vec<CameraControl> {
-		self.inner.controls().unwrap()
+	/// Get a map of the camera controls
+	pub fn get_controls(&self) -> ControlMap {
+		extract_controls(self.inner.controls().unwrap())
 	}
 
 	/// Get a camera control by ID
-	///
-	/// Will panic if you use an ID not supported by the camera.
-	pub fn get_control(&self, id: KnownCameraControl) -> CameraControl {
-		self.inner
+	pub fn get_control(&self, id: KnownCameraControl) -> CamControl {
+		let nokhwa_control = self
+			.inner
 			.controls()
 			.unwrap()
 			.into_iter()
 			.find(|con| con.control() == id)
-			.unwrap()
+			.unwrap();
+		extract_control(nokhwa_control)
 	}
 
 	/// Set a camera control
-	///
-	/// Wrapper around the internal nokhwa camera function.
 	pub fn set_control(
 		&mut self,
 		id: KnownCameraControl,
@@ -103,6 +101,8 @@ impl Camera {
 	) -> Result<(), NokhwaError> {
 		self.inner.set_control(id, value)
 	}
+
+	// The setting of camera controls is handled by the controls themselves.
 
 	/// Query [`nokhwa`] for all available cameras and then sort them by their index.
 	pub fn query_for_available_cameras() -> Vec<CameraInfo> {
@@ -125,6 +125,10 @@ impl Camera {
 #[cfg(test)]
 mod tests {
 	use std::process::{ExitCode, Termination};
+
+	use crate::tcam_interface::controls::traits::{
+		ControlDefault, ControlDescription, ControlItems, ControlMax, ControlStep, ControlValue,
+	};
 
 	use super::*;
 
@@ -177,7 +181,7 @@ mod tests {
 	#[test]
 	fn get_all_available_controls() {
 		let cam = Camera::new(0, None).unwrap();
-		let c = cam.get_all_available_controls();
+		let c = cam.get_controls();
 		println!("{c:#?}");
 	}
 
@@ -185,31 +189,77 @@ mod tests {
 	fn set_control() -> Result<(), NokhwaError> {
 		let mut cam = Camera::new(0, None).unwrap();
 		let id = KnownCameraControl::Brightness;
-		let value = ControlValueSetter::Integer(50);
-		cam.set_control(id, value)?;
-		let ctrl_res = cam.get_control(id);
-		println!("{}", ctrl_res.value());
 
-		let value = ControlValueSetter::Integer(0);
-		cam.set_control(id, value)?;
-		let ctrl_res = cam.get_control(id);
-		println!("{}", ctrl_res.value());
+		// Assume it will always be this variant.
+		let CamControl::IntegerRange(mut control) = cam.get_control(id) else {
+			panic!("unexpected control variant")
+		};
+		println!("Start: {}", control.get_value().get_value());
+
+		let new = control.get_max() - (control.get_step() * 8);
+		control
+			.set_value(new.into())
+			.expect("new value should be valid");
+		cam.set_control(id, control.get_value().into())?;
+
+		let CamControl::IntegerRange(mut control) = cam.get_control(id) else {
+			panic!("unexpected control variant")
+		};
+		println!("Modified: {}", control.get_value().get_value());
+
+		control.reset_to_default();
+		cam.set_control(id, control.get_value().into())?;
+
+		let CamControl::IntegerRange(control) = cam.get_control(id) else {
+			panic!("unexpected control variant")
+		};
+		println!("Default: {}", control.get_value().get_value());
+
 		Ok(())
 	}
 
 	#[test]
 	fn set_control_exposure() -> Result<(), NokhwaError> {
 		let mut cam = Camera::new(0, None).unwrap();
-		let id = KnownCameraControl::Other(10094849);
-		let value = ControlValueSetter::Integer(1);
-		cam.set_control(id, value)?;
-		let ctrl_res = cam.get_control(id);
-		println!("{}", ctrl_res.value());
+		let id = KnownCameraControl::AutoExposure;
+		let desired = 1;
 
-		let value = ControlValueSetter::Integer(3);
-		cam.set_control(id, value)?;
-		let ctrl_res = cam.get_control(id);
-		println!("{}", ctrl_res.value());
+		// Assume it will always be this variant.
+		let CamControl::Menu(mut control) = cam.get_control(id) else {
+			panic!("unexpected control variant")
+		};
+		println!(
+			"Start: {}, {:?}",
+			control.get_value().get_value(),
+			control.get_items()
+		);
+
+		control
+			.set_value(desired.into())
+			.expect("new value should be valid");
+		cam.set_control(id, control.get_value().into())?;
+
+		let CamControl::Menu(mut control) = cam.get_control(id) else {
+			panic!("unexpected control variant")
+		};
+		println!(
+			"Modified: {}, {:?}",
+			control.get_value().get_value(),
+			control.get_items()
+		);
+
+		control.reset_to_default();
+		cam.set_control(id, control.get_value().into())?;
+
+		let CamControl::Menu(control) = cam.get_control(id) else {
+			panic!("unexpected control variant")
+		};
+		println!(
+			"Default: {}, {:?}",
+			control.get_value().get_value(),
+			control.get_items()
+		);
+
 		Ok(())
 	}
 }
