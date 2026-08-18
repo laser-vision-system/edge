@@ -114,6 +114,7 @@ impl Camera {
 		self.inner.set_control(id, value)
 	}
 
+	#[allow(dead_code)]
 	fn get_raw_controls(&self) -> Vec<CameraControl> {
 		self.inner.controls().unwrap()
 	}
