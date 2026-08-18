@@ -13,7 +13,7 @@ use super::controls::{
 	ControlMap,
 	descriptions::CamControl,
 	extract_control, extract_controls,
-	traits::{ControlDefault, ControlDescription},
+	traits::{ControlDefault, ControlDescription, ControlValue},
 };
 
 /// An abstraction over the nokhwa camera objects.
@@ -105,7 +105,7 @@ impl Camera {
 		value: ControlValueSetter,
 	) -> Result<(), NokhwaError> {
 		if match id {
-			KnownCameraControl::WhiteBalance | KnownCameraControl::ExposureAbsolute => true,
+			KnownCameraControl::WhiteBalance => true,
 			_ => false,
 		} {
 			// HACK: Cheekily skip controls that may be inactive/disabled.
@@ -121,7 +121,46 @@ impl Camera {
 
 	/// Set every control on the camera back to its default value.
 	pub fn reset_controls_to_default(&mut self) {
-		for (_, control) in self.get_controls() {
+		let mut controls = self.get_controls();
+		if let Some(control) = controls.get_mut(&KnownCameraControl::AutoExposure) {
+			let CamControl::Menu(control) = control else {
+				panic!("Sorry, I didn't hardcode this setting for your camera")
+			};
+
+			let mut value = control.get_value();
+			value.set_value(1);
+			self.set_control(KnownCameraControl::AutoExposure, value.into())
+				.unwrap();
+		}
+
+		if let Some(control) = controls.get_mut(&KnownCameraControl::ExposureAbsolute) {
+			let CamControl::IntegerRange(control) = control else {
+				panic!("Sorry, I didn't hardcode this setting for your camera")
+			};
+
+			control.reset_to_default();
+			self.set_control(
+				KnownCameraControl::ExposureAbsolute,
+				control.get_value().into(),
+			)
+			.unwrap();
+		}
+
+		if let Some(control) = controls.get_mut(&KnownCameraControl::AutoExposure) {
+			let CamControl::Menu(control) = control else {
+				panic!("Sorry, I didn't hardcode this setting for your camera")
+			};
+
+			let mut value = control.get_value();
+			value.set_value(3);
+			self.set_control(KnownCameraControl::AutoExposure, value.into())
+				.unwrap();
+		}
+
+		for (id, control) in self.get_controls() {
+			if id == KnownCameraControl::ExposureAbsolute {
+				continue;
+			}
 			match control {
 				CamControl::Integer(mut control) => {
 					control.reset_to_default();
