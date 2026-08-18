@@ -19,6 +19,8 @@ use super::{
 	},
 };
 
+use serde::{Deserialize, Serialize};
+
 // ===== Field relationship bounds =====
 // (step, min, max, key): value
 // default: value
@@ -31,7 +33,7 @@ use super::{
 /// Represents one type of camera control.
 ///
 /// Maps to [`ControlValueDescription`].
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum CamControl {
 	#[default]
 	None, //None(NoneControl),
@@ -181,7 +183,7 @@ impl From<CameraControl> for CamControl {
 /// A camera control that consists of a value, default, and step.
 ///
 /// Maps to [`ControlValueDescription::Integer`]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct IntegerControl {
 	control_type: KnownCameraControl,
 	value: ConValueInteger,
@@ -258,7 +260,7 @@ impl ControlStep for IntegerControl {
 ///
 /// Maps to [`ControlValueDescription::IntegerRange`]
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct IntegerRangeControl {
 	control_type: KnownCameraControl,
 	value: ConValueInteger,
@@ -360,7 +362,7 @@ impl ControlMax for IntegerRangeControl {
 ///
 /// Maps to [`ControlValueDescription::Float`]
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct FloatControl {
 	control_type: KnownCameraControl,
 	value: ConValueFloat,
@@ -437,7 +439,7 @@ impl ControlStep for FloatControl {
 ///
 /// Maps to [`ControlValueDescription::FloatRange`]
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct FloatRangeControl {
 	control_type: KnownCameraControl,
 	value: ConValueFloat,
@@ -539,7 +541,7 @@ impl ControlMax for FloatRangeControl {
 ///
 /// Maps to [`ControlValueDescription::Boolean`]
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct BooleanControl {
 	control_type: KnownCameraControl,
 	value: ConValueBoolean,
@@ -595,7 +597,7 @@ impl ControlDefault for BooleanControl {
 ///
 /// Maps to [`ControlValueDescription::String`]
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StringControl {
 	control_type: KnownCameraControl,
 	value: ConValueString,
@@ -651,7 +653,7 @@ impl ControlDefault for StringControl {
 ///
 /// Maps to [`ControlValueDescription::Bytes`]
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BytesControl {
 	control_type: KnownCameraControl,
 	value: ConValueBytes,
@@ -707,7 +709,7 @@ impl ControlDefault for BytesControl {
 ///
 /// Maps to [`ControlValueDescription::KeyValuePair`]
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct KeyValuePairControl {
 	control_type: KnownCameraControl,
 	value: ConValueKeyValue,
@@ -763,7 +765,7 @@ impl ControlDefault for KeyValuePairControl {
 ///
 /// Maps to [`ControlValueDescription::Point`]
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct PointControl {
 	control_type: KnownCameraControl,
 	value: ConValuePoint,
@@ -819,7 +821,7 @@ impl ControlDefault for PointControl {
 ///
 /// Maps to [`ControlValueDescription::Enum`]
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EnumControl {
 	control_type: KnownCameraControl,
 	value: ConValueEnum,
@@ -892,7 +894,7 @@ impl ControlPossible for EnumControl {
 ///
 /// Maps to [`ControlValueDescription::RGB`]
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct RGBControl {
 	control_type: KnownCameraControl,
 	value: ConValueRGB,
@@ -959,7 +961,7 @@ impl ControlMax for RGBControl {
 	}
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MenuControl {
 	control_type: KnownCameraControl,
 	value: ConValueMenu,

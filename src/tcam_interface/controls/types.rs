@@ -2,6 +2,8 @@
 
 use nokhwa::utils::ControlValueSetter;
 
+use serde::{Deserialize, Serialize};
+
 #[allow(unused_imports, reason = "Needed for docstring")]
 use super::{
 	descriptions::{KeyValuePairControl, PointControl, RGBControl},
@@ -23,7 +25,7 @@ type __ConTypePoint = f64;
 type __ConTypeRGB = f64;
 
 /// Represents a key and value use by [`ConValueKeyValue`] and by extention, [`KeyValuePairControl`].
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ConTypeKeyValue(__ConTypeKeyValue, __ConTypeKeyValue);
 
 impl ConTypeKeyValue {
@@ -55,7 +57,7 @@ impl From<ConTypeKeyValue> for ControlValueSetter {
 }
 
 /// Represents a point value use by [`ConValuePoint`] and by extention, [`PointControl`].
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct ConTypePoint(__ConTypePoint, __ConTypePoint);
 
 impl ConTypePoint {
@@ -87,7 +89,7 @@ impl From<ConTypePoint> for ControlValueSetter {
 }
 
 /// Represents an RGB value use by [`ConValueRGB`] and by extention, [`RGBControl`].
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct ConTypeRGB(__ConTypeRGB, __ConTypeRGB, __ConTypeRGB);
 
 impl ConTypeRGB {
