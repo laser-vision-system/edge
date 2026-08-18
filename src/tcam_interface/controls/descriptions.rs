@@ -12,8 +12,10 @@ use super::{
 		ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 	},
 	values::{
-		ConValueBoolean, ConValueBytes, ConValueEnum, ConValueFloat, ConValueInteger,
-		ConValueKeyValue, ConValueMenu, ConValuePoint, ConValueRGB, ConValueString,
+		ConValueBoolean, ConValueBooleanType, ConValueBytes, ConValueBytesType, ConValueEnum,
+		ConValueEnumType, ConValueFloat, ConValueFloatType, ConValueInteger, ConValueIntegerType,
+		ConValueKeyValue, ConValueKeyValueType, ConValueMenu, ConValueMenuType, ConValuePoint,
+		ConValuePointType, ConValueRGB, ConValueRGBType, ConValueString, ConValueStringType,
 	},
 };
 
@@ -183,16 +185,16 @@ impl From<CameraControl> for CamControl {
 pub struct IntegerControl {
 	control_type: KnownCameraControl,
 	value: ConValueInteger,
-	default: <ConValueInteger as ControlValue>::ConType,
-	step: <ConValueInteger as ControlValue>::ConType,
+	default: ConValueIntegerType,
+	step: ConValueIntegerType,
 }
 
 impl IntegerControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueInteger,
-		default: <ConValueInteger as ControlValue>::ConType,
-		step: <ConValueInteger as ControlValue>::ConType,
+		default: ConValueIntegerType,
+		step: ConValueIntegerType,
 	) -> Self {
 		Self {
 			control_type,
@@ -260,20 +262,20 @@ impl ControlStep for IntegerControl {
 pub struct IntegerRangeControl {
 	control_type: KnownCameraControl,
 	value: ConValueInteger,
-	default: <ConValueInteger as ControlValue>::ConType,
-	step: <ConValueInteger as ControlValue>::ConType,
-	min: <ConValueInteger as ControlValue>::ConType,
-	max: <ConValueInteger as ControlValue>::ConType,
+	default: ConValueIntegerType,
+	step: ConValueIntegerType,
+	min: ConValueIntegerType,
+	max: ConValueIntegerType,
 }
 
 impl IntegerRangeControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueInteger,
-		default: <ConValueInteger as ControlValue>::ConType,
-		step: <ConValueInteger as ControlValue>::ConType,
-		min: <ConValueInteger as ControlValue>::ConType,
-		max: <ConValueInteger as ControlValue>::ConType,
+		default: ConValueIntegerType,
+		step: ConValueIntegerType,
+		min: ConValueIntegerType,
+		max: ConValueIntegerType,
 	) -> Self {
 		Self {
 			control_type,
@@ -362,16 +364,16 @@ impl ControlMax for IntegerRangeControl {
 pub struct FloatControl {
 	control_type: KnownCameraControl,
 	value: ConValueFloat,
-	default: <ConValueFloat as ControlValue>::ConType,
-	step: <ConValueFloat as ControlValue>::ConType,
+	default: ConValueFloatType,
+	step: ConValueFloatType,
 }
 
 impl FloatControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueFloat,
-		default: <ConValueFloat as ControlValue>::ConType,
-		step: <ConValueFloat as ControlValue>::ConType,
+		default: ConValueFloatType,
+		step: ConValueFloatType,
 	) -> Self {
 		Self {
 			control_type,
@@ -439,20 +441,20 @@ impl ControlStep for FloatControl {
 pub struct FloatRangeControl {
 	control_type: KnownCameraControl,
 	value: ConValueFloat,
-	default: <ConValueFloat as ControlValue>::ConType,
-	step: <ConValueFloat as ControlValue>::ConType,
-	min: <ConValueFloat as ControlValue>::ConType,
-	max: <ConValueFloat as ControlValue>::ConType,
+	default: ConValueFloatType,
+	step: ConValueFloatType,
+	min: ConValueFloatType,
+	max: ConValueFloatType,
 }
 
 impl FloatRangeControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueFloat,
-		default: <ConValueFloat as ControlValue>::ConType,
-		step: <ConValueFloat as ControlValue>::ConType,
-		min: <ConValueFloat as ControlValue>::ConType,
-		max: <ConValueFloat as ControlValue>::ConType,
+		default: ConValueFloatType,
+		step: ConValueFloatType,
+		min: ConValueFloatType,
+		max: ConValueFloatType,
 	) -> Self {
 		Self {
 			control_type,
@@ -541,14 +543,14 @@ impl ControlMax for FloatRangeControl {
 pub struct BooleanControl {
 	control_type: KnownCameraControl,
 	value: ConValueBoolean,
-	default: <ConValueBoolean as ControlValue>::ConType,
+	default: ConValueBooleanType,
 }
 
 impl BooleanControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueBoolean,
-		default: <ConValueBoolean as ControlValue>::ConType,
+		default: ConValueBooleanType,
 	) -> Self {
 		Self {
 			control_type,
@@ -597,14 +599,14 @@ impl ControlDefault for BooleanControl {
 pub struct StringControl {
 	control_type: KnownCameraControl,
 	value: ConValueString,
-	default: Option<<ConValueString as ControlValue>::ConType>,
+	default: Option<ConValueStringType>,
 }
 
 impl StringControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueString,
-		default: Option<<ConValueString as ControlValue>::ConType>,
+		default: Option<ConValueStringType>,
 	) -> Self {
 		Self {
 			control_type,
@@ -653,14 +655,14 @@ impl ControlDefault for StringControl {
 pub struct BytesControl {
 	control_type: KnownCameraControl,
 	value: ConValueBytes,
-	default: <ConValueBytes as ControlValue>::ConType,
+	default: ConValueBytesType,
 }
 
 impl BytesControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueBytes,
-		default: <ConValueBytes as ControlValue>::ConType,
+		default: ConValueBytesType,
 	) -> Self {
 		Self {
 			control_type,
@@ -709,14 +711,14 @@ impl ControlDefault for BytesControl {
 pub struct KeyValuePairControl {
 	control_type: KnownCameraControl,
 	value: ConValueKeyValue,
-	default: <ConValueKeyValue as ControlValue>::ConType,
+	default: ConValueKeyValueType,
 }
 
 impl KeyValuePairControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueKeyValue,
-		default: <ConValueKeyValue as ControlValue>::ConType,
+		default: ConValueKeyValueType,
 	) -> Self {
 		Self {
 			control_type,
@@ -765,14 +767,14 @@ impl ControlDefault for KeyValuePairControl {
 pub struct PointControl {
 	control_type: KnownCameraControl,
 	value: ConValuePoint,
-	default: <ConValuePoint as ControlValue>::ConType,
+	default: ConValuePointType,
 }
 
 impl PointControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValuePoint,
-		default: <ConValuePoint as ControlValue>::ConType,
+		default: ConValuePointType,
 	) -> Self {
 		Self {
 			control_type,
@@ -821,16 +823,16 @@ impl ControlDefault for PointControl {
 pub struct EnumControl {
 	control_type: KnownCameraControl,
 	value: ConValueEnum,
-	default: <ConValueEnum as ControlValue>::ConType,
-	possible: Vec<<ConValueEnum as ControlValue>::ConType>,
+	default: ConValueEnumType,
+	possible: Vec<ConValueEnumType>,
 }
 
 impl EnumControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueEnum,
-		default: <ConValueEnum as ControlValue>::ConType,
-		possible: Vec<<ConValueEnum as ControlValue>::ConType>,
+		default: ConValueEnumType,
+		possible: Vec<ConValueEnumType>,
 	) -> Self {
 		Self {
 			control_type,
@@ -894,16 +896,16 @@ impl ControlPossible for EnumControl {
 pub struct RGBControl {
 	control_type: KnownCameraControl,
 	value: ConValueRGB,
-	default: <ConValueRGB as ControlValue>::ConType,
-	max: <ConValueRGB as ControlValue>::ConType,
+	default: ConValueRGBType,
+	max: ConValueRGBType,
 }
 
 impl RGBControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueRGB,
-		default: <ConValueRGB as ControlValue>::ConType,
-		max: <ConValueRGB as ControlValue>::ConType,
+		default: ConValueRGBType,
+		max: ConValueRGBType,
 	) -> Self {
 		Self {
 			control_type,
@@ -961,7 +963,7 @@ impl ControlMax for RGBControl {
 pub struct MenuControl {
 	control_type: KnownCameraControl,
 	value: ConValueMenu,
-	default: <ConValueMenu as ControlValue>::ConType,
+	default: ConValueMenuType,
 	items: Vec<MenuEntry>,
 }
 
@@ -969,7 +971,7 @@ impl MenuControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: ConValueMenu,
-		default: <ConValueMenu as ControlValue>::ConType,
+		default: ConValueMenuType,
 		items: Vec<MenuEntry>,
 	) -> Self {
 		Self {

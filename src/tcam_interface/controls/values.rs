@@ -1,5 +1,7 @@
 //! Types that map to [`nokhwa`]'s [`ControlValueSetter`].
 
+// TODO: Implement `Borrow` on everything.
+
 use nokhwa::utils::ControlValueSetter;
 
 use super::{
@@ -54,6 +56,8 @@ impl From<ConValueInteger> for ControlValueSetter {
 	}
 }
 
+pub type ConValueIntegerType = <ConValueInteger as ControlValue>::ConType;
+
 /// A control that has a value of the type [`ControlTypeFloat`].
 ///
 /// Maps to [`ControlValueSetter::Float`].
@@ -83,6 +87,8 @@ impl From<ConValueFloat> for ControlValueSetter {
 		ControlValueSetter::Float(value.0)
 	}
 }
+
+pub type ConValueFloatType = <ConValueFloat as ControlValue>::ConType;
 
 /// A control that has a value of the type [`ControlTypeBool`].
 ///
@@ -114,6 +120,8 @@ impl From<ConValueBoolean> for ControlValueSetter {
 	}
 }
 
+pub type ConValueBooleanType = <ConValueBoolean as ControlValue>::ConType;
+
 /// A control that has a value of the type [`ControlTypeString`].
 ///
 /// Maps to [`ControlValueSetter::String`].
@@ -143,6 +151,8 @@ impl From<&ConValueString> for ControlValueSetter {
 		ControlValueSetter::String(value.0.clone())
 	}
 }
+
+pub type ConValueStringType = <ConValueString as ControlValue>::ConType;
 
 /// A control that has a value of the type [`ControlTypeBytes`].
 ///
@@ -174,6 +184,8 @@ impl From<&ConValueBytes> for ControlValueSetter {
 	}
 }
 
+pub type ConValueBytesType = <ConValueBytes as ControlValue>::ConType;
+
 /// A control that has a value of the type [`KeyValue`].
 ///
 /// Maps to [`ControlValueSetter::KeyValue`].
@@ -203,6 +215,8 @@ impl From<ConValueKeyValue> for ControlValueSetter {
 		value.0.into()
 	}
 }
+
+pub type ConValueKeyValueType = <ConValueKeyValue as ControlValue>::ConType;
 
 /// A control that has a value of the type [`Point`].
 ///
@@ -234,6 +248,8 @@ impl From<ConValuePoint> for ControlValueSetter {
 	}
 }
 
+pub type ConValuePointType = <ConValuePoint as ControlValue>::ConType;
+
 /// A control that has a value of the type [`ControlTypeEnum`].
 ///
 /// Maps to [`ControlValueSetter::EnumValue`].
@@ -263,6 +279,8 @@ impl From<ConValueEnum> for ControlValueSetter {
 		ControlValueSetter::EnumValue(value.0)
 	}
 }
+
+pub type ConValueEnumType = <ConValueEnum as ControlValue>::ConType;
 
 /// A control that has a value of the type [`RGB`].
 ///
@@ -294,6 +312,8 @@ impl From<ConValueRGB> for ControlValueSetter {
 	}
 }
 
+pub type ConValueRGBType = <ConValueRGB as ControlValue>::ConType;
+
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ConValueMenu(ConTypeMenu);
 
@@ -320,3 +340,5 @@ impl From<ConValueMenu> for ControlValueSetter {
 		ControlValueSetter::Menu(value.0)
 	}
 }
+
+pub type ConValueMenuType = <ConValueMenu as ControlValue>::ConType;
