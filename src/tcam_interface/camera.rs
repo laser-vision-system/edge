@@ -99,11 +99,10 @@ impl Camera {
 	}
 
 	/// Set a camera control
-	pub fn set_control(
-		&mut self,
-		id: KnownCameraControl,
-		value: ControlValueSetter,
-	) -> Result<(), NokhwaError> {
+	pub fn set_control<T>(&mut self, id: KnownCameraControl, value: T) -> Result<(), NokhwaError>
+	where
+		T: Into<ControlValueSetter>,
+	{
 		if match id {
 			KnownCameraControl::WhiteBalance => true,
 			_ => false,
@@ -111,7 +110,7 @@ impl Camera {
 			// HACK: Cheekily skip controls that may be inactive/disabled.
 			return Ok(());
 		}
-		self.inner.set_control(id, value)
+		self.inner.set_control(id, value.into())
 	}
 
 	#[allow(dead_code)]
@@ -129,7 +128,7 @@ impl Camera {
 
 			let mut value = control.get_value();
 			value.set_value(1);
-			self.set_control(KnownCameraControl::AutoExposure, value.into())
+			self.set_control(KnownCameraControl::AutoExposure, value)
 				.unwrap();
 		}
 
@@ -139,11 +138,8 @@ impl Camera {
 			};
 
 			control.reset_to_default();
-			self.set_control(
-				KnownCameraControl::ExposureAbsolute,
-				control.get_value().into(),
-			)
-			.unwrap();
+			self.set_control(KnownCameraControl::ExposureAbsolute, control.get_value())
+				.unwrap();
 		}
 
 		if let Some(control) = controls.get_mut(&KnownCameraControl::AutoExposure) {
@@ -153,7 +149,7 @@ impl Camera {
 
 			let mut value = control.get_value();
 			value.set_value(3);
-			self.set_control(KnownCameraControl::AutoExposure, value.into())
+			self.set_control(KnownCameraControl::AutoExposure, value)
 				.unwrap();
 		}
 
@@ -164,62 +160,62 @@ impl Camera {
 			match control {
 				CamControl::Integer(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::IntegerRange(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::Float(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::FloatRange(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::Boolean(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::String(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), (&control.get_value()).clone().into())
+					self.set_control(control.get_id(), (&control.get_value()).clone())
 						.expect("default controls should always be valid")
 				},
 				CamControl::Bytes(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), (&control.get_value()).clone().into())
+					self.set_control(control.get_id(), (&control.get_value()).clone())
 						.expect("default controls should always be valid")
 				},
 				CamControl::KeyValuePair(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::Point(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::Enum(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::RGB(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::Menu(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), control.get_value().into())
+					self.set_control(control.get_id(), control.get_value())
 						.expect("default controls should always be valid")
 				},
 				CamControl::None => (),
@@ -332,7 +328,7 @@ mod tests {
 		control
 			.set_value(new.into())
 			.expect("new value should be valid");
-		cam.set_control(id, control.get_value().into())?;
+		cam.set_control(id, control.get_value())?;
 
 		let CamControl::IntegerRange(mut control) = cam.get_control(id) else {
 			panic!("unexpected control variant")
@@ -340,7 +336,7 @@ mod tests {
 		println!("Modified: {}", control.get_value().get_value());
 
 		control.reset_to_default();
-		cam.set_control(id, control.get_value().into())?;
+		cam.set_control(id, control.get_value())?;
 
 		let CamControl::IntegerRange(control) = cam.get_control(id) else {
 			panic!("unexpected control variant")
@@ -369,7 +365,7 @@ mod tests {
 		control
 			.set_value(desired.into())
 			.expect("new value should be valid");
-		cam.set_control(id, control.get_value().into())?;
+		cam.set_control(id, control.get_value())?;
 
 		let CamControl::Menu(mut control) = cam.get_control(id) else {
 			panic!("unexpected control variant")
@@ -381,7 +377,7 @@ mod tests {
 		);
 
 		control.reset_to_default();
-		cam.set_control(id, control.get_value().into())?;
+		cam.set_control(id, control.get_value())?;
 
 		let CamControl::Menu(control) = cam.get_control(id) else {
 			panic!("unexpected control variant")
