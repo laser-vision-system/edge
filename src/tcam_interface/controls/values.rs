@@ -148,8 +148,8 @@ impl ControlValue for ConValueString {
 	}
 }
 
-impl From<&ConValueString> for ControlValueSetter {
-	fn from(value: &ConValueString) -> Self {
+impl From<ConValueString> for ControlValueSetter {
+	fn from(value: ConValueString) -> Self {
 		ControlValueSetter::String(value.0.clone())
 	}
 }
@@ -180,8 +180,8 @@ impl ControlValue for ConValueBytes {
 	}
 }
 
-impl From<&ConValueBytes> for ControlValueSetter {
-	fn from(value: &ConValueBytes) -> Self {
+impl From<ConValueBytes> for ControlValueSetter {
+	fn from(value: ConValueBytes) -> Self {
 		ControlValueSetter::Bytes(value.0.clone())
 	}
 }

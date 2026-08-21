@@ -189,12 +189,12 @@ impl Camera {
 				},
 				CamControl::String(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), (&control.get_value()).into())
+					self.set_control(control.get_id(), (&control.get_value()).clone().into())
 						.expect("default controls should always be valid")
 				},
 				CamControl::Bytes(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), (&control.get_value()).into())
+					self.set_control(control.get_id(), (&control.get_value()).clone().into())
 						.expect("default controls should always be valid")
 				},
 				CamControl::KeyValuePair(mut control) => {
