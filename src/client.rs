@@ -1,168 +1,43 @@
+use std::collections::HashMap;
 use std::io::Cursor;
-
+use std::net::TcpStream;
+use reqwest_websocket::{Upgrade};
 use image::ImageBuffer;
-use reqwest;
-use serde::{Deserialize, Serialize};
-
+use tungstenite::{connect, Message, Utf8Bytes, WebSocket};
+use serde::{Deserialize, Serialize,};
+use tungstenite::handshake::client::Response;
+use tungstenite::stream::MaybeTlsStream;
+use server_edge_datatypes as datatypes;
 use crate::{
 	settings::{
 		ENDPOINT_CAMERA_CONFIG, ENDPOINT_CAMERA_READINGS, ENDPOINT_GUI_UPDATE, ENDPOINT_IMAGE,
-		HOST, PORT,
+		HOST, PORT, API
 	},
 	vision_processor::CameraReadings,
 };
 
-#[must_use]
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-pub struct GuiUpdate {
-	setpoint: bool,
-	config: bool,
+pub struct Client {
+	websocket: (WebSocket<MaybeTlsStream<TcpStream>>, Response),
 }
+impl Client {
+	pub async fn new() -> Self {
+		let websocket = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
 
-impl GuiUpdate {
-	pub fn new(setpoint: bool, config: bool) -> Self {
-		Self { setpoint, config }
-	}
-
-	pub fn setpoint(&self) -> bool {
-		self.setpoint
-	}
-
-	pub fn config(&self) -> bool {
-		self.config
-	}
-}
-
-impl From<(bool, bool)> for GuiUpdate {
-	fn from(value: (bool, bool)) -> Self {
-		Self::new(value.0, value.1)
-	}
-}
-
-#[must_use]
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-pub struct CameraConfig {
-	framerate: f32,
-	brightness: i32,
-	hue: i32,
-	saturation: i32,
-}
-
-impl CameraConfig {
-	pub fn new(framerate: f32, brightness: i32, hue: i32, saturation: i32) -> Self {
 		Self {
-			framerate,
-			brightness,
-			hue,
-			saturation,
+			websocket,
 		}
 	}
+	pub async fn register_cameras(&mut self, cameras: HashMap<u32, String>) {
+		let mut msg = "RegisterCameras".to_string();
+		let send = datatypes::RegisterCameras{
+			cameras: cameras.clone()
+		};
+		msg.push_str(&*serde_json::to_string(&send).unwrap());
+		self.websocket
 
-	pub fn framerate(&self) -> f32 {
-		self.framerate
-	}
-
-	pub fn brightness(&self) -> i32 {
-		self.brightness
-	}
-
-	pub fn hue(&self) -> i32 {
-		self.hue
-	}
-
-	pub fn saturation(&self) -> i32 {
-		self.saturation
 	}
 }
 
-impl From<(f32, i32, i32, i32)> for CameraConfig {
-	fn from(value: (f32, i32, i32, i32)) -> Self {
-		Self::new(value.0, value.1, value.2, value.3)
-	}
-}
-
-// TODO: Look into making this a singleton or global.
-#[must_use]
-pub struct Client(reqwest::Client);
-
-impl Default for Client {
-	fn default() -> Self {
-		Self::new()
-	}
-}
-
-impl Client {
-	pub fn new() -> Self {
-		Self(reqwest::Client::new())
-	}
-
-	fn default_address() -> String {
-		format!("http://{HOST}:{PORT}")
-	}
-
-	fn url_from_endpoint(endpoint: &str) -> reqwest::Url {
-		let url = format!("{}/{}", Self::default_address(), endpoint);
-		reqwest::Url::parse(&url).unwrap()
-	}
-
-	/// Post camera info: `/camera_info`
-	pub async fn post_readings(&self, data: CameraReadings) -> Result<(), reqwest::Error> {
-		let url = Self::url_from_endpoint(ENDPOINT_CAMERA_READINGS);
-		self.0
-			.post(url)
-			.json(&data)
-			.send()
-			.await?
-			.error_for_status()?;
-		Ok(())
-	}
-
-	/// Post configuration: `/configuration`
-	pub async fn post_camera_config(&self, data: CameraConfig) -> Result<(), reqwest::Error> {
-		let url = Self::url_from_endpoint(ENDPOINT_CAMERA_CONFIG);
-		self.0
-			.post(url)
-			.json(&data)
-			.send()
-			.await?
-			.error_for_status()?;
-		Ok(())
-	}
-
-	/// Get configuration: `/configuration`
-	pub async fn get_camera_config(&self) -> Result<CameraConfig, reqwest::Error> {
-		let url = Self::url_from_endpoint(ENDPOINT_CAMERA_CONFIG);
-		self.0.get(url).send().await?.json::<CameraConfig>().await
-	}
-
-	/// Get GUI update: `/gui_update`
-	pub async fn get_gui_update(&self) -> Result<GuiUpdate, reqwest::Error> {
-		let url = Self::url_from_endpoint(ENDPOINT_GUI_UPDATE);
-		self.0.get(url).send().await?.json::<GuiUpdate>().await
-	}
-
-	/// Put image: `/image`
-	pub async fn put_image(
-		&self,
-		data: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-	) -> Result<(), reqwest::Error> {
-		let mut buff = Cursor::new(Vec::new());
-		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
-		enc.encode_image(&data).unwrap();
-
-		let part = reqwest::multipart::Part::bytes(buff.into_inner());
-		let multipart = reqwest::multipart::Form::new().part("file", part);
-
-		let url = Self::url_from_endpoint(ENDPOINT_IMAGE);
-		self.0
-			.put(url)
-			.multipart(multipart)
-			.send()
-			.await?
-			.error_for_status()?;
-		Ok(())
-	}
-}
 
 #[cfg(test)]
 mod tests {
@@ -185,7 +60,7 @@ mod tests {
 	}
 
 	#[tokio::test]
-	async fn post_readings() -> Result<(), reqwest::Error> {
+	async fn post_readings() -> Result<(), reqwest_websocket::Error> {
 		let client = Client::new();
 		let reading = CameraReadings::new(72.2, 0.21);
 		client.post_readings(reading).await

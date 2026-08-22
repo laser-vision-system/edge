@@ -1,8 +1,10 @@
+use std::net::TcpStream;
 use std::thread;
-
+use tungstenite::{connect, WebSocket}
+use tungstenite::handshake::client::Response;
+use tungstenite::stream::MaybeTlsStream;
 use crate::{
-	Camera, Client, Demonstration,
-	client::CameraConfig,
+	Camera, Demonstration, Client,
 	settings::{PRINT_RESULTS, UPDATE_DELAY},
 	vision_processor::VisionInterface,
 };
@@ -22,11 +24,8 @@ impl Conductor {
 	/// TODO: Error handling.
 	pub async fn new() -> Self {
 		let camera = Camera::new(0).unwrap();
-		let client = Client::new();
+		let client =
 		let demo = Demonstration::default();
-
-		let dummy_config = CameraConfig::new(30.0, 50, 0, 50);
-		client.post_camera_config(dummy_config).await.unwrap();
 
 		Self {
 			camera,
