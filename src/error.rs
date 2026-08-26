@@ -1,5 +1,8 @@
 use thiserror::Error;
 
+/// The error type for all operations in the Edge tier.
+///
+/// Any errors from underlying crates should be translated to this immediately.
 #[derive(Clone, Debug, Error)]
 pub enum EdgeError {
 	#[error("The server could not be reached when trying initial connection")]
@@ -25,3 +28,10 @@ pub enum EdgeError {
 	#[error("An error that does not yet have a specific implementation")]
 	General(String),
 }
+
+/// Specialised [`Result`] type for the Edge tier.
+///
+/// Shorthand for a result with the [`EdgeError`] error type.
+///
+/// [`Result`]: std::result::Result
+pub type Result<T> = std::result::Result<T, EdgeError>;
