@@ -2,12 +2,14 @@ use std::cmp::Ordering;
 
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
-	self, NokhwaError, OpenRequest, OpenedCamera,
+	self, OpenRequest, OpenedCamera,
 	format_types::Mjpeg,
 	frame::{Frame, IntoRgb},
 	open,
 	utils::{CameraControl, CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
+
+use crate::error::{EdgeError, Result};
 
 use super::controls::{
 	ControlMap,
@@ -26,15 +28,23 @@ pub struct Camera {
 }
 
 impl Camera {
-	pub fn new(index: u32, name: Option<&str>) -> Result<Self, NokhwaError> {
+	pub fn new(index: u32, name: Option<&str>) -> Result<Self> {
 		let name = name.unwrap_or("camera").to_string();
 
 		// TODO: Handle potential error cases.
-		let opened = open(CameraIndex::Index(index), OpenRequest::any())?;
+		let opened = open(CameraIndex::Index(index), OpenRequest::any()).map_err(|why| {
+			EdgeError::NokhwaInitialisation {
+				index,
+				reason: why.to_string(),
+			}
+		})?;
 		let OpenedCamera::Stream(mut camera) = opened else {
+			// TODO: Discuss how we handle this.
 			panic!("AA")
 		};
-		camera.open()?;
+		camera.open().map_err(|why| EdgeError::StreamOpen {
+			reason: why.to_string(),
+		})?;
 
 		Ok(Self {
 			inner: camera,
@@ -51,15 +61,19 @@ impl Camera {
 	/// Request an image of the current camera frame.
 	///
 	/// There seems to be a 2 frame latency.
-	pub fn get_image(&mut self) -> Result<RgbImage, NokhwaError> {
+	pub fn get_image(&mut self) -> Result<RgbImage> {
 		// TODO: Handle potential error cases.
-		let buffer = self.inner.frame()?;
+		let buffer = self.inner.frame().map_err(|_| EdgeError::FrameRead)?;
 		let frame: Frame<Mjpeg> = Frame::new(buffer);
-		let decoded = frame.into_rgb().materialize()?;
+		let decoded = frame
+			.into_rgb()
+			.materialize()
+			// We just assume it is always corruption for now.
+			.map_err(|_| EdgeError::FrameDecodeCorruption)?;
 		Ok(decoded)
 	}
 
-	pub fn get_image_shrink(&mut self) -> Result<RgbImage, NokhwaError> {
+	pub fn get_image_shrink(&mut self) -> Result<RgbImage> {
 		let frame = DynamicImage::ImageRgb8(self.get_image()?);
 		let new = frame
 			.crop_imm(0, 0, frame.width(), frame.height())
@@ -97,7 +111,7 @@ impl Camera {
 	}
 
 	/// Set a camera control
-	pub fn set_control<T>(&mut self, id: KnownCameraControl, value: T) -> Result<(), NokhwaError>
+	pub fn set_control<T>(&mut self, id: KnownCameraControl, value: T) -> Result<()>
 	where
 		T: Into<ControlValueSetter>,
 	{
@@ -108,7 +122,9 @@ impl Camera {
 			// HACK: Cheekily skip controls that may be inactive/disabled.
 			return Ok(());
 		}
-		self.inner.set_control(id, value.into())
+		self.inner
+			.set_control(id, value.into())
+			.map_err(|_| EdgeError::SetControl)
 	}
 
 	#[allow(dead_code)]
@@ -279,7 +295,7 @@ mod tests {
 	}
 
 	#[test]
-	fn new() -> Result<Camera, NokhwaError> {
+	fn new() -> Result<Camera> {
 		Camera::new(0, None)
 	}
 
@@ -312,7 +328,7 @@ mod tests {
 	}
 
 	#[test]
-	fn set_control() -> Result<(), NokhwaError> {
+	fn set_control() -> Result<()> {
 		let mut cam = Camera::new(0, None).unwrap();
 		let id = KnownCameraControl::Brightness;
 
@@ -345,7 +361,7 @@ mod tests {
 	}
 
 	#[test]
-	fn set_control_exposure() -> Result<(), NokhwaError> {
+	fn set_control_exposure() -> Result<()> {
 		let mut cam = Camera::new(0, None).unwrap();
 		let id = KnownCameraControl::AutoExposure;
 		let desired = 1;
