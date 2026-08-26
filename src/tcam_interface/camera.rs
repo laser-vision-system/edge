@@ -299,8 +299,13 @@ mod tests {
 		Camera::new(0, None)
 	}
 
-	// Can't implement `Termination` for `RgbImage`.
+	#[test]
+	fn print_camera_details() {
+		let cam = Camera::new(0, None).unwrap();
+		println!("{:#?}", cam.inner.info());
+	}
 
+	// Can't implement `Termination` for `RgbImage`.
 	#[test]
 	fn get_image() {
 		let mut cam = Camera::new(0, None).unwrap();
