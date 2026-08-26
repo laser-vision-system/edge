@@ -1,10 +1,10 @@
 use std::thread;
 
 use crate::{
-	Camera, Client, Demonstration,
-	client::CameraConfig,
+	client::{CameraConfig, Client},
 	settings::{PRINT_RESULTS, UPDATE_DELAY},
-	vision_processor::VisionInterface,
+	tcam_interface::camera::Camera,
+	vision_processor::{VisionInterface, demonstration::Demonstration},
 };
 
 /// # Conductor

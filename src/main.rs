@@ -1,4 +1,4 @@
-use edge::Conductor;
+use edge::conductor::Conductor;
 
 #[tokio::main]
 async fn main() {
