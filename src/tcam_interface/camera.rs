@@ -18,8 +18,6 @@ use super::controls::{
 
 /// An abstraction over the nokhwa camera objects.
 ///
-/// Nokhwa's callback camera literally just wraps the regular camera and executes a /loop on a spawned thread. There seems to be no benefit to using it.
-///
 /// TODO: The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
 #[must_use]
 pub struct Camera {
