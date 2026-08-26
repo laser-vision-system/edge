@@ -21,7 +21,7 @@ impl Conductor {
 	///
 	/// TODO: Error handling.
 	pub async fn new() -> Self {
-		let camera = Camera::new(0, None).unwrap();
+		let camera = Camera::new(0).unwrap();
 		let client = Client::new();
 		let demo = Demonstration::default();
 

@@ -44,7 +44,7 @@ impl Context {
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut context = Context::new()?;
-	let mut camera = Camera::new(0, None)?;
+	let mut camera = Camera::new(0)?;
 
 	loop {
 		let frame = camera.get_image_shrink()?;

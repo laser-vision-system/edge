@@ -24,13 +24,10 @@ use super::controls::{
 #[must_use]
 pub struct Camera {
 	inner: nokhwa::StreamCamera,
-	name: String,
 }
 
 impl Camera {
-	pub fn new(index: u32, name: Option<&str>) -> Result<Self> {
-		let name = name.unwrap_or("camera").to_string();
-
+	pub fn new(index: u32) -> Result<Self> {
 		// TODO: Handle potential error cases.
 		let opened = open(CameraIndex::Index(index), OpenRequest::any()).map_err(|why| {
 			EdgeError::NokhwaInitialisation {
@@ -46,14 +43,7 @@ impl Camera {
 			reason: why.to_string(),
 		})?;
 
-		Ok(Self {
-			inner: camera,
-			name,
-		})
-	}
-
-	pub fn name(&self) -> &str {
-		&self.name
+		Ok(Self { inner: camera })
 	}
 
 	// == Images ==
@@ -296,45 +286,45 @@ mod tests {
 
 	#[test]
 	fn new() -> Result<Camera> {
-		Camera::new(0, None)
+		Camera::new(0)
 	}
 
 	#[test]
 	fn print_camera_details() {
-		let cam = Camera::new(0, None).unwrap();
+		let cam = Camera::new(0).unwrap();
 		println!("{:#?}", cam.inner.info());
 	}
 
 	// Can't implement `Termination` for `RgbImage`.
 	#[test]
 	fn get_image() {
-		let mut cam = Camera::new(0, None).unwrap();
+		let mut cam = Camera::new(0).unwrap();
 		let _ = cam.get_image().unwrap();
 	}
 
 	#[test]
 	fn get_image_shrink() {
-		let mut cam = Camera::new(0, None).unwrap();
+		let mut cam = Camera::new(0).unwrap();
 		let _ = cam.get_image_shrink().unwrap();
 	}
 
 	#[test]
 	fn get_raw_controls() {
-		let cam = Camera::new(0, None).unwrap();
+		let cam = Camera::new(0).unwrap();
 		let c = cam.get_raw_controls();
 		println!("{c:#?}");
 	}
 
 	#[test]
 	fn get_all_available_controls() {
-		let cam = Camera::new(0, None).unwrap();
+		let cam = Camera::new(0).unwrap();
 		let c = cam.get_controls();
 		println!("{c:#?}");
 	}
 
 	#[test]
 	fn set_control() -> Result<()> {
-		let mut cam = Camera::new(0, None).unwrap();
+		let mut cam = Camera::new(0).unwrap();
 		let id = KnownCameraControl::Brightness;
 
 		// Assume it will always be this variant.
@@ -367,7 +357,7 @@ mod tests {
 
 	#[test]
 	fn set_control_exposure() -> Result<()> {
-		let mut cam = Camera::new(0, None).unwrap();
+		let mut cam = Camera::new(0).unwrap();
 		let id = KnownCameraControl::AutoExposure;
 		let desired = 1;
 
@@ -412,7 +402,7 @@ mod tests {
 
 	#[test]
 	fn reset_controls_to_default() {
-		let mut cam = Camera::new(0, None).unwrap();
+		let mut cam = Camera::new(0).unwrap();
 		cam.reset_controls_to_default();
 	}
 }
