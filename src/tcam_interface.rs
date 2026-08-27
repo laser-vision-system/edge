@@ -12,4 +12,7 @@ pub use status::Status;
 mod metadata;
 pub use metadata::Metadata;
 
+mod persistence;
+pub use persistence::Persistence;
+
 pub mod controls;
