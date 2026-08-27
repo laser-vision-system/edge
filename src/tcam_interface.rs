@@ -9,4 +9,7 @@ pub use identifier::Identifier;
 mod status;
 pub use status::Status;
 
+mod metadata;
+pub use metadata::Metadata;
+
 pub mod controls;
