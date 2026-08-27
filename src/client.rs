@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-use std::io::{Bytes, Cursor};
+use std::io::{Cursor, Write};
 use std::net::TcpStream;
 use reqwest_websocket::{Upgrade};
 use image::{EncodableLayout, ImageBuffer, RgbImage};
-use tungstenite::{connect, Message, Utf8Bytes, WebSocket};
+use tungstenite::{connect, Message, Utf8Bytes, WebSocket, Bytes};
 use serde::{Deserialize, Serialize,};
 use tungstenite::handshake::client::Response;
 use tungstenite::stream::MaybeTlsStream;
@@ -46,8 +46,7 @@ impl Client {
 	}
 	pub async fn send_image(&mut self, frame: ImageBuffer<image::Rgb<u8>, Vec<u8>>) {
 		let mut msg = "Image".to_string();
-		let send = frame.as_raw().clone().as_slice();
-		self.websocket.send(Message::Binary()).expect("TODO: panic message");
+		self.websocket.send(Message::Binary(Bytes::from(frame.clone().into_raw()))).expect("TODO: panic message");
 	}
 	pub async fn send_configuration(&mut self, conn_id: u32, camera_id: u32, configuration: String) {
 		let mut msg = "Configuration".to_string();
@@ -74,20 +73,6 @@ mod tests {
 
 	use super::*;
 
-	// A test returning a `CameraConfig` always counts as a success.
-	impl Termination for CameraConfig {
-		fn report(self) -> std::process::ExitCode {
-			std::process::ExitCode::SUCCESS
-		}
-	}
-
-	// A test returning a `GuiUpdate` always counts as a success.
-	impl Termination for GuiUpdate {
-		fn report(self) -> std::process::ExitCode {
-			std::process::ExitCode::SUCCESS
-		}
-	}
-
 	#[tokio::test]
 	async fn post_readings() -> Result<(), reqwest_websocket::Error> {
 		let client = Client::new();
@@ -99,7 +84,7 @@ mod tests {
 	async fn post_camera_config() -> Result<(), reqwest::Error> {
 		let client = Client::new();
 		let config = CameraConfig::new(30.0, 100, 0, 100);
-		client.post_camera_config(config).await
+		client.send_configuration().await;
 	}
 
 	#[tokio::test]
