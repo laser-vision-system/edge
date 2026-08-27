@@ -3,7 +3,7 @@ use std::thread;
 use crate::{
 	client::{CameraConfig, Client},
 	settings::{PRINT_RESULTS, UPDATE_DELAY},
-	tcam_interface::camera::Camera,
+	tcam_interface::Camera,
 	vision_processor::{VisionInterface, demonstration::Demonstration},
 };
 

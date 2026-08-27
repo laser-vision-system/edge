@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use edge::{
-	tcam_interface::camera::Camera,
+	tcam_interface::Camera,
 	vision_processor::{VisionInterface, demonstration::Demonstration},
 };
 use image::RgbImage;
