@@ -5,10 +5,10 @@ use reqwest_websocket::{Upgrade};
 use image::{EncodableLayout, ImageBuffer, RgbImage};
 use tungstenite::{connect, Message, Utf8Bytes, WebSocket, Bytes};
 use serde::{Deserialize, Serialize,};
-use tungstenite::handshake::client::Response;
 use tungstenite::stream::MaybeTlsStream;
 use websocket::futures::Sink;
 use server_edge_datatypes as datatypes;
+use server_edge_datatypes::{Configuration, SetNameCamera, StartViewingCamera, StopViewingCamera, ViewCameraConfig};
 use crate::{
 	settings::{
 		ENDPOINT_CAMERA_CONFIG, ENDPOINT_CAMERA_READINGS, ENDPOINT_GUI_UPDATE, ENDPOINT_IMAGE,
@@ -19,13 +19,29 @@ use crate::{
 
 pub struct Client {
 	websocket: (WebSocket<MaybeTlsStream<TcpStream>>),
+	camera_list: SetNameCamera,
+	start_viewing_camera: StartViewingCamera,
+	stop_viewing_camera: StopViewingCamera,
+	configuration: Configuration,
+	view_camera_config: ViewCameraConfig,
+
 }
 impl Client {
 	pub async fn new() -> Self {
 		let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
+		let camera_list = SetNameCamera { camera_id: 0, name: "".to_string()};
+		let start_viewing_camera = StartViewingCamera { conn_id: 0, camera_id: 0};
+		let stop_viewing_camera = StopViewingCamera { camera_id: 0};
+		let configuration = Configuration {conn_id: 0, camera_id: 0, configuration: "".to_string()};
+		let view_camera_config = ViewCameraConfig { conn_id: 0, camera_id: 0 };
 
 		Self {
 			websocket,
+			camera_list,
+			start_viewing_camera,
+			stop_viewing_camera,
+			configuration,
+			view_camera_config
 		}
 	}
 	pub async fn send_register_cameras(&mut self, cameras: HashMap<u32, String>) {
@@ -63,6 +79,72 @@ impl Client {
 		};
 		msg.push_str(&*serde_json::to_string(&send).unwrap());
 		self.websocket.send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
+	}
+	pub async fn websocket_incoming_data(&mut self,) {
+		loop{
+			match self.websocket.read() {
+				Message::Text(text) => {
+					let msg = text.trim();
+
+					let mut args = msg.splitn(2, ':');
+
+					match args.next().unwrap() {
+						"SetNameCamera" => match args.next() {
+							Some(data) => {
+								let data_unchecked: Result<SetNameCamera> = serde_json::from_str(data);
+								if(data_unchecked.is_ok()) {
+									let json = data_unchecked.unwrap();
+									self.camera_list = SetNameCamera {camera_id: json.camera_id, name: json.name)};
+								}
+							}
+							None => {}
+						}
+						"StartViewingCamera" => match args.next() {
+							Some(data) => {
+								let data_unchecked: Result<StartViewingCamera> = serde_json::from_str(data);
+								if(data_unchecked.is_ok()) {
+									let json = data_unchecked.unwrap();
+									self.start_viewing_camera = StartViewingCamera {conn_id: json.conn_id, camera_id: json.camera_id)};
+								}
+							}
+							None => {}
+						}
+						"StopViewingCamera" => match args.next() {
+							Some(data) => {
+								let data_unchecked: Result<StopViewingCamera> = serde_json::from_str(data);
+								if(data_unchecked.is_ok()) {
+									let json = data_unchecked.unwrap();
+									self.stop_viewing_camera = StopViewingCamera {camera_id: json.camera_id)};
+								}
+							}
+							None => {}
+						}
+						"Configuration" => match args.next() {
+							Some(data) => {
+								let data_unchecked: Result<Configuration> = serde_json::from_str(data);
+								if(data_unchecked.is_ok()) {
+									let json = data_unchecked.unwrap();
+									self.configuration = Configuration {conn_id: json.conn_id, camera_id: json.camera_id, configuration: json.configuration};
+								}
+							}
+							None => {}
+						}
+						"ViewCameraConfig" => match args.next() {
+							Some(data) => {
+								let data_unchecked: Result<ViewCameraConfig> = serde_json::from_str(data);
+								if(data_unchecked.is_ok()) {
+									let json = data_unchecked.unwrap();
+									self.view_camera_config = ViewCameraConfig {conn_id: json.conn_id, camera_id: json.camera_id};
+								}
+							}
+							None => {}
+						}
+
+					}
+
+				}
+			}
+		}
 	}
 }
 
