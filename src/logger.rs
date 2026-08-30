@@ -9,10 +9,7 @@
 
 //
 
-use std::{
-    time::{SystemTime, UNIX_EPOCH},
-    sync::OnceLock,
-};
+use std::sync::{Mutex, OnceLock};
 
 use chrono::{NaiveDate, Utc};
 
@@ -61,8 +58,8 @@ impl LogEntry {
 ///
 /// All log entries are consumed upon calling the send_logs function.
 pub struct Logger {
-	logs: Vec<LogEntry>,
-	count: LogCounter,
+	logs: Mutex<Vec<LogEntry>>,
+	count: Mutex<LogCounter>,
 }
 
 impl Logger {
@@ -70,9 +67,9 @@ impl Logger {
 	///
 	/// It should only be called once at the start of the program.
 	fn new() -> Self {
-		let mut logger = Logger {
-			logs: Vec::new(),
-			count: LogCounter::new(),
+		let logger = Logger {
+			logs: Mutex::new(Vec::new()),
+			count: Mutex::new(LogCounter::new()),
 		};
 
         logger.log_info("Logger initialised.");
@@ -80,40 +77,49 @@ impl Logger {
         logger
 	}
 
-	pub fn log_info(&mut self, message: &str) {
+	pub fn log_info(&self, message: &str) {
+        let mut logs = self.logs.lock().unwrap();
+
 		let log_entry = LogEntry::new(
-            self.count.next(),
+            // TODO: Handle unwrap better (or not use Mutex)
+            self.count.lock().unwrap().next(),
             LogLevel::INFO, message,
             None
         );
-		self.stash_log(log_entry);
+
+        logs.push(log_entry);
 	}
 
-	pub fn log_warn(&mut self, message: &str) {
+	pub fn log_warn(&self, message: &str) {
+        let mut logs = self.logs.lock().unwrap();
+
 		let log_entry = LogEntry::new(
-            self.count.next(),
+            // TODO: Handle unwrap better (or not use Mutex)
+            self.count.lock().unwrap().next(),
             LogLevel::WARN, message,
             None
         );
-		self.stash_log(log_entry);
+		
+        logs.push(log_entry);
 	}
 
-	pub fn log_error(&mut self, message: &str, error: Option<EdgeError>) {
+	pub fn log_error(&self, message: &str, error: EdgeError) {
+        let mut logs = self.logs.lock().unwrap();
+
 		let log_entry = LogEntry::new(
-            self.count.next(),
+            // TODO: Handle unwrap better (or not use Mutex)
+            self.count.lock().unwrap().next(),
             LogLevel::ERROR,
             message,
-            error
+            Some(error)
         );
-		self.stash_log(log_entry);
+		
+        logs.push(log_entry);
 	}
 
-	fn stash_log(&mut self, log_entry: LogEntry) {
-		self.logs.push(log_entry);
-	}
-
-	pub fn send_logs(self) {
-		for log in self.logs {
+	pub fn send_logs(&self) {
+        let logs = self.logs.lock().unwrap();
+		for log in logs.iter() {
 			// send the logs to the server
 		}
 	}
@@ -137,6 +143,7 @@ impl LogCounter {
 
 		if today != self.date {
 			self.date = today;
+            logger().log_info("Last log before counter resets.");
 			self.counter = 1
 		} else {
 			self.counter += 1;
