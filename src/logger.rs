@@ -9,9 +9,9 @@
 
 //
 
-use std::{
-	time::{SystemTime, UNIX_EPOCH},
-};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use chrono::{NaiveDate, NaiveDateTime, Utc};
 
 use crate::error::EdgeError::{self};
 
@@ -23,30 +23,29 @@ enum LogLevel {
 
 /// A single log entry.
 struct LogEntry {
-    count: u32,
+	count: u32,
 	timestamp: String,
 	level: LogLevel,
-    error_msg: String,
+	error_msg: String,
 	message: String,
 }
 
 impl LogEntry {
-    fn new(count: u32, level: LogLevel, message: &str, error: Option<EdgeError>) -> Self {
-        let start = SystemTime::now();
-        let timestamp = start.duration_since(UNIX_EPOCH).unwrap().as_secs().to_string();
-        let error_msg = match error {
-            Some(error) => format!("{:?}", error),
-            None => String::new(),
-        };
+	fn new(count: u32, level: LogLevel, message: &str, error: Option<EdgeError>) -> Self {
+		let timestamp = Utc::now().to_rfc3339();
+		let error_msg = match error {
+			Some(error) => format!("{:?}", error),
+			None => String::new(),
+		};
 
-        LogEntry {
-            count,
-            timestamp,
-            level,
-            error_msg: error_msg,
-            message: message.to_string(),
-        }
-    }
+		LogEntry {
+			count: count,
+			timestamp: timestamp,
+			level: level,
+			error_msg: error_msg,
+			message: message.to_string(),
+		}
+	}
 }
 
 /// The logger struct that holds each unsetn log entry and the log count.
@@ -56,7 +55,7 @@ impl LogEntry {
 /// All log entries are consumed upon calling the send_logs function.
 pub struct Logger {
 	logs: Vec<LogEntry>,
-    count: u32,
+	count: LogCounter,
 }
 
 impl Logger {
@@ -66,33 +65,72 @@ impl Logger {
 	pub fn new() -> Self {
 		Logger {
 			logs: vec![],
-			count: 1,
+			count: LogCounter::new(),
 		}
 	}
 
 	pub fn log_info(&mut self, message: &str) {
-		let log_entry = LogEntry::new(self.count, LogLevel::INFO, message, None);
+		let log_entry = LogEntry::new(
+            self.count.next(),
+            LogLevel::INFO, message,
+            None
+        );
 		self.stash_log(log_entry);
 	}
 
-    pub fn log_warn(&mut self, message: &str) {
-        let log_entry = LogEntry::new(self.count, LogLevel::WARN, message, None);
-        self.stash_log(log_entry);
-    }
+	pub fn log_warn(&mut self, message: &str) {
+		let log_entry = LogEntry::new(
+            self.count.next(),
+            LogLevel::WARN, message,
+            None
+        );
+		self.stash_log(log_entry);
+	}
 
-    pub fn log_error(&mut self, message: &str, error: Option<EdgeError>) {
-        let log_entry = LogEntry::new(self.count, LogLevel::ERROR, message, error);
-        self.stash_log(log_entry);
-    }
+	pub fn log_error(&mut self, message: &str, error: Option<EdgeError>) {
+		let log_entry = LogEntry::new(
+            self.count.next(),
+            LogLevel::ERROR,
+            message,
+            error
+        );
+		self.stash_log(log_entry);
+	}
 
-    fn stash_log(&mut self, log_entry: LogEntry) {
-        self.logs.push(log_entry);
-        self.count += 1;
-    }
+	fn stash_log(&mut self, log_entry: LogEntry) {
+		self.logs.push(log_entry);
+	}
 
-	pub fn send_logs(&self) {
-		for log in &self.logs {
+	pub fn send_logs(self) {
+		for log in self.logs {
 			// send the logs to the server
 		}
+	}
+}
+
+pub struct LogCounter {
+	date: NaiveDate,
+	counter: u32,
+}
+
+impl LogCounter {
+	fn new() -> Self {
+		LogCounter {
+			date: Utc::now().date_naive(),
+			counter: 0,
+		}
+	}
+
+	fn next(&mut self) -> u32 {
+		let today = Utc::now().date_naive();
+
+		if today != self.date {
+			self.date = today;
+			self.counter = 1
+		} else {
+			self.counter += 1;
+		}
+
+		self.counter
 	}
 }
