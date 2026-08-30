@@ -15,12 +15,16 @@ use chrono::{NaiveDate, NaiveDateTime, Utc};
 
 use crate::error::EdgeError::{self};
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
 enum LogLevel {
 	INFO,
 	WARN,
 	ERROR,
 }
 
+#[derive(Serialize, Deserialize)]
 /// A single log entry.
 struct LogEntry {
 	count: u32,
