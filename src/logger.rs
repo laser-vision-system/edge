@@ -9,9 +9,12 @@
 
 //
 
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    time::{SystemTime, UNIX_EPOCH},
+    sync::OnceLock,
+};
 
-use chrono::{NaiveDate, NaiveDateTime, Utc};
+use chrono::{NaiveDate, Utc};
 
 use crate::error::EdgeError::{self};
 
@@ -66,11 +69,15 @@ impl Logger {
 	/// This function creates a new logger instance.
 	///
 	/// It should only be called once at the start of the program.
-	pub fn new() -> Self {
-		Logger {
-			logs: vec![],
+	fn new() -> Self {
+		let mut logger = Logger {
+			logs: Vec::new(),
 			count: LogCounter::new(),
-		}
+		};
+
+        logger.log_info("Logger initialised.");
+
+        logger
 	}
 
 	pub fn log_info(&mut self, message: &str) {
@@ -112,7 +119,7 @@ impl Logger {
 	}
 }
 
-pub struct LogCounter {
+struct LogCounter {
 	date: NaiveDate,
 	counter: u32,
 }
@@ -137,4 +144,10 @@ impl LogCounter {
 
 		self.counter
 	}
+}
+
+static LOGGER: OnceLock<Logger> = OnceLock::new();
+
+pub fn logger() -> &'static Logger {
+    LOGGER.get_or_init(Logger::new)
 }
