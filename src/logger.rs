@@ -16,16 +16,16 @@
 
 use std::sync::{Mutex, OnceLock};
 
-use chrono::{NaiveDate, Utc, Duration};
+use chrono::{Duration, NaiveDate, Utc};
 
 use crate::error::EdgeError::{self};
 
 use serde::{Deserialize, Serialize};
 
-static LOGGER: OnceLock<Logger> = OnceLock::new();
+static LOGGER: OnceLock<Mutex<Logger>> = OnceLock::new();
 
-pub fn logger() -> &'static Logger {
-	LOGGER.get_or_init(Logger::new)
+pub fn logger() -> &'static Mutex<Logger> {
+	LOGGER.get_or_init(|| Mutex::new(Logger::new()))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -58,7 +58,7 @@ impl LogEntry {
 			count,
 			timestamp,
 			level,
-			message
+			message,
 		}
 	}
 }
@@ -69,68 +69,60 @@ impl LogEntry {
 ///
 /// All log entries are consumed upon calling the send_logs function.
 pub struct Logger {
-	logs: Mutex<Vec<LogEntry>>,
-	counter: Mutex<LogCounter>,
+	logs: Vec<LogEntry>,
+	counter: LogCounter,
 }
 
 impl Logger {
 	fn new() -> Self {
 		Logger {
-			logs: Mutex::new(Vec::new()),
-			counter: Mutex::new(LogCounter::new()),
+			logs: Vec::new(),
+			counter: LogCounter::new(),
 		}
 	}
 
-	pub fn log_info(&self, message: &str) {
-		let mut logs = self.logs.lock().unwrap();
-
+	pub fn log_info(&mut self, message: &str) {
 		let log_entry = LogEntry::new(
 			// TODO: Handle unwrap
-			self.counter.lock().unwrap().next(),
+			self.counter.next(),
 			LogLevel::INFO,
 			message,
 			None,
 		);
 
-		logs.push(log_entry);
+		self.logs.push(log_entry);
 	}
 
-	pub fn log_warn(&self, message: &str) {
-		let mut logs = self.logs.lock().unwrap();
-
+	pub fn log_warn(&mut self, message: &str) {
 		let log_entry = LogEntry::new(
 			// TODO: Handle unwrap
-			self.counter.lock().unwrap().next(),
+			self.counter.next(),
 			LogLevel::WARN,
 			message,
 			None,
 		);
 
-		logs.push(log_entry);
+		self.logs.push(log_entry);
 	}
 
-	pub fn log_error(&self, message: &str, error: EdgeError) {
-		let mut logs = self.logs.lock().unwrap();
-
+	pub fn log_error(&mut self, message: &str, error: EdgeError) {
 		let log_entry = LogEntry::new(
 			// TODO: Handle unwrap
-			self.counter.lock().unwrap().next(),
+			self.counter.next(),
 			LogLevel::ERROR,
 			message,
 			Some(error),
 		);
 
-		logs.push(log_entry);
+		self.logs.push(log_entry);
 	}
 
-	pub fn send_logs(&self) {
-		let logs = {
-			let mut logs = self.logs.lock().unwrap();
-			std::mem::take(&mut *logs)
-		};
+	pub fn send_logs(&mut self) {
+		let logs = std::mem::take(&mut self.logs);
+
 		for log in logs {
-            // TODO: Actually send the logs to the server
-			logger()._print_log(&log);
+			// TODO: Actually send the logs to the server
+			self._print_log(&log);
 		}
 	}
 
@@ -157,22 +149,21 @@ impl LogCounter {
 
 	fn next(&mut self) -> u32 {
 		let today = Utc::now().date_naive();
-        
-        
+
 		if today != self.date {
 			self.date = today;
 			self.counter = 1;
 		} else {
-            self.counter += 1;
+			self.counter += 1;
 		}
-		
+
 		self.counter
 	}
 
-    fn _reset_counter(&mut self) {
-        let yesterday = Utc::now().date_naive() - Duration::days(1);
-        self.date = yesterday;
-    }
+	fn _reset_counter(&mut self) {
+		let yesterday = Utc::now().date_naive() - Duration::days(1);
+		self.date = yesterday;
+	}
 }
 
 #[cfg(test)]
@@ -187,104 +178,172 @@ mod test {
 
 	#[test]
 	fn info() {
-		logger().log_info("This is INFO log test 1.");
-		logger().log_info("This is INFO log test 2.");
-		logger().log_info("This is INFO log test 3.");
-		logger().send_logs();
-        logger().send_logs();
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("This is INFO log test 1.");
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("This is INFO log test 2.");
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("This is INFO log test 3.");
+		logger().lock().unwrap().send_logs();
+		logger().lock().unwrap().send_logs();
 
-        logger().log_info("This is INFO log test 4.");
-		logger().log_info("This is INFO log test 5.");
-		logger().log_info("This is INFO log test 6.");
-        logger().send_logs();
-        logger().send_logs();
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("This is INFO log test 4.");
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("This is INFO log test 5.");
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("This is INFO log test 6.");
+		logger().lock().unwrap().send_logs();
+		logger().lock().unwrap().send_logs();
 	}
 
 	#[test]
 	fn warn() {
-		logger().log_warn("This is WARN log test 1.");
-		logger().log_warn("This is WARN log test 2.");
-		logger().log_warn("This is WARN log test 3.");
-		logger().send_logs();
-        logger().send_logs();
+		logger()
+			.lock()
+			.unwrap()
+			.log_warn("This is WARN log test 1.");
+		logger()
+			.lock()
+			.unwrap()
+			.log_warn("This is WARN log test 2.");
+		logger()
+			.lock()
+			.unwrap()
+			.log_warn("This is WARN log test 3.");
+		logger().lock().unwrap().send_logs();
+		logger().lock().unwrap().send_logs();
 
-        logger().log_warn("This is WARN log test 4.");
-		logger().log_warn("This is WARN log test 5.");
-		logger().log_warn("This is WARN log test 6.");
-		logger().send_logs();
-        logger().send_logs();
+		logger()
+			.lock()
+			.unwrap()
+			.log_warn("This is WARN log test 4.");
+		logger()
+			.lock()
+			.unwrap()
+			.log_warn("This is WARN log test 5.");
+		logger()
+			.lock()
+			.unwrap()
+			.log_warn("This is WARN log test 6.");
+		logger().lock().unwrap().send_logs();
+		logger().lock().unwrap().send_logs();
 	}
 
 	#[test]
 	fn all_error_types() {
 		let mut error = AutoConnect;
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = WebSocketConnection;
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = ServerConnection;
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = NokhwaNoBackend;
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = NokhwaInitialisation {
 			index: 69,
 			reason: "*Generic reason*".to_string(),
 		};
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = StreamOpen {
 			reason: "*Generic reason*".to_string(),
 		};
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = FrameRead;
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = FrameDecodeCorruption;
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = FrameDecodeOutOfMemory;
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = SetControl;
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
 		error = General("*Generic reason*".to_string());
-		logger().log_error("This is an ERROR log test.", error);
+		logger()
+			.lock()
+			.unwrap()
+			.log_error("This is an ERROR log test.", error);
 
-        logger().send_logs();
-        logger().send_logs();
+		logger().lock().unwrap().send_logs();
+		logger().lock().unwrap().send_logs();
 	}
 
 	#[test]
 	fn new_day() {
-        logger().log_info("Logging today.");
+		logger().lock().unwrap().log_info("Logging today.");
 
-        {
-            let mut counter = logger().counter.lock().unwrap();
-            counter._reset_counter();
-        }
-        
-        logger().log_info("Reset counter.");
+		// {
+		//     let mut counter = logger().lock().unwrap().counter.lock().unwrap();
+		//     counter._reset_counter();
+		// }
 
-        logger().log_info("Logging again today.");
+		logger().lock().unwrap().counter._reset_counter();
 
-        logger().log_info("Logging again today.");
+		logger().lock().unwrap().log_info("Reset counter.");
 
-        {
-            let mut counter = logger().counter.lock().unwrap();
-            counter._reset_counter();
-        }
+		logger().lock().unwrap().log_info("Logging again today.");
 
-        logger().log_info("Reset counter.");
+		logger().lock().unwrap().log_info("Logging again today.");
 
-        logger().log_info("Logging again today.");
+		logger().lock().unwrap().counter._reset_counter();
 
-        logger().log_info("Logging again today.");
+		logger().lock().unwrap().log_info("Reset counter.");
 
-        logger().send_logs();
-    }
+		logger().lock().unwrap().log_info("Logging again today.");
+
+		logger().lock().unwrap().log_info("Logging again today.");
+
+		logger().lock().unwrap().send_logs();
+	}
 }
