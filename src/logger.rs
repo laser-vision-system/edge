@@ -45,14 +45,8 @@ struct LogEntry {
 }
 
 impl LogEntry {
-	fn new(count: u32, level: LogLevel, message: &str, error: Option<EdgeError>) -> Self {
+	fn new(count: u32, level: LogLevel, message: String) -> Self {
 		let timestamp = Utc::now().to_rfc3339();
-		let error_msg = match error {
-			Some(error) => format!("{:?}: {}\n", error, error),
-			None => String::new(),
-		};
-
-		let message = error_msg + message;
 
 		LogEntry {
 			count,
@@ -86,8 +80,7 @@ impl Logger {
 			// TODO: Handle unwrap
 			self.counter.next(),
 			LogLevel::INFO,
-			message,
-			None,
+			message.to_string(),
 		);
 
 		self.logs.push(log_entry);
@@ -98,20 +91,20 @@ impl Logger {
 			// TODO: Handle unwrap
 			self.counter.next(),
 			LogLevel::WARN,
-			message,
-			None,
+			message.to_string(),
 		);
 
 		self.logs.push(log_entry);
 	}
 
 	pub fn log_error(&mut self, message: &str, error: EdgeError) {
+		let concat_message = format!("{:?}: {}\n{}", error, error, message);
+
 		let log_entry = LogEntry::new(
 			// TODO: Handle unwrap
 			self.counter.next(),
 			LogLevel::ERROR,
-			message,
-			Some(error),
+			concat_message,
 		);
 
 		self.logs.push(log_entry);
