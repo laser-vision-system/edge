@@ -1,4 +1,5 @@
 use std::thread;
+use tungstenite::connect;
 use crate::{
 	Camera, Demonstration,
 	client::Client,
@@ -33,29 +34,31 @@ impl Conductor {
 
 	pub async fn run(&mut self) {
 		loop {
-			let gui_update = self.client.get_gui_update().await.unwrap();
+			let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
 
-			if gui_update.config() {
-				let config = self.client.get_camera_config().await.unwrap();
+			// let gui_update = self.client.get_gui_update().await.unwrap();
+
+			// if gui_update.config() {
+				// let config = self.client.get_camera_config().await.unwrap();
 				// Not implemented in camera yet, just print results for now.
-				println!("Received new config: {config:?}");
-			}
+				// println!("Received new config: {config:?}");
+			// }
 
-			let frame = self.camera.get_image_shrink().unwrap();
-			let readings = self.demo.process_frame(&frame, gui_update.setpoint());
+			// let frame = self.camera.get_image_shrink().unwrap();
+			// let readings = self.demo.process_frame(&frame, gui_update.setpoint());
 
-			self.client.post_readings(readings).await.unwrap();
-			self.client.put_image(frame).await.unwrap();
+			// self.client.post_readings(readings).await.unwrap();
+			// self.client.put_image(frame).await.unwrap();
 
-			if PRINT_RESULTS {
-				println!(
-					"Percieved lightness: {:.4} | Deviation: {:.4} | Press Ctrl+C to stop.",
-					readings.intensity(),
-					readings.deviation()
-				);
-			}
+			// if PRINT_RESULTS {
+			// 	println!(
+			//		"Percieved lightness: {:.4} | Deviation: {:.4} | Press Ctrl+C to stop.",
+			//		readings.intensity(),
+			//		readings.deviation()
+			//	);
+			//}
 
-			thread::sleep(UPDATE_DELAY);
+			//thread::sleep(UPDATE_DELAY);
 		}
 	}
 }
