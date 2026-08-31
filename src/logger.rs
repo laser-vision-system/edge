@@ -75,14 +75,10 @@ pub struct Logger {
 
 impl Logger {
 	fn new() -> Self {
-		let logger = Logger {
+		Logger {
 			logs: Mutex::new(Vec::new()),
 			counter: Mutex::new(LogCounter::new()),
-		};
-
-		logger.log_info("Logger initialised.");
-
-		logger
+		}
 	}
 
 	pub fn log_info(&self, message: &str) {
@@ -173,7 +169,7 @@ impl LogCounter {
 		self.counter
 	}
 
-    pub fn _set_date_to_yesterday(&mut self) {
+    fn _reset_counter(&mut self) {
         let yesterday = Utc::now().date_naive() - Duration::days(1);
         self.date = yesterday;
     }
@@ -269,10 +265,10 @@ mod test {
 
         {
             let mut counter = logger().counter.lock().unwrap();
-            counter._set_date_to_yesterday();
+            counter._reset_counter();
         }
         
-        logger().log_info("Attempting to log yesterday.");
+        logger().log_info("Reset counter.");
 
         logger().log_info("Logging again today.");
 
@@ -280,10 +276,10 @@ mod test {
 
         {
             let mut counter = logger().counter.lock().unwrap();
-            counter._set_date_to_yesterday();
+            counter._reset_counter();
         }
 
-        logger().log_info("Attempting to log yesterday.");
+        logger().log_info("Reset counter.");
 
         logger().log_info("Logging again today.");
 
