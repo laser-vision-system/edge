@@ -157,6 +157,16 @@ impl LogCounter {
 		let yesterday = Utc::now().date_naive() - Duration::days(1);
 		self.date = yesterday;
 	}
+
+	fn _back_one_hour(&mut self) {
+		let hour_ago = Utc::now().date_naive() - Duration::hours(1);
+		self.date = hour_ago;
+	}
+
+	fn _forward_one_hour(&mut self) {
+		let hour_forward = Utc::now().date_naive() + Duration::hours(1);
+		self.date = hour_forward;
+	}
 }
 
 #[cfg(test)]
@@ -175,14 +185,17 @@ mod test {
 			.lock()
 			.unwrap()
 			.log_info("This is INFO log test 1.");
+
 		logger()
 			.lock()
 			.unwrap()
 			.log_info("This is INFO log test 2.");
+
 		logger()
 			.lock()
 			.unwrap()
 			.log_info("This is INFO log test 3.");
+
 		logger().lock().unwrap().send_logs();
 		logger().lock().unwrap().send_logs();
 
@@ -190,14 +203,17 @@ mod test {
 			.lock()
 			.unwrap()
 			.log_info("This is INFO log test 4.");
+
 		logger()
 			.lock()
 			.unwrap()
 			.log_info("This is INFO log test 5.");
+
 		logger()
 			.lock()
 			.unwrap()
 			.log_info("This is INFO log test 6.");
+
 		logger().lock().unwrap().send_logs();
 		logger().lock().unwrap().send_logs();
 	}
@@ -208,14 +224,17 @@ mod test {
 			.lock()
 			.unwrap()
 			.log_warn("This is WARN log test 1.");
+
 		logger()
 			.lock()
 			.unwrap()
 			.log_warn("This is WARN log test 2.");
+
 		logger()
 			.lock()
 			.unwrap()
 			.log_warn("This is WARN log test 3.");
+
 		logger().lock().unwrap().send_logs();
 		logger().lock().unwrap().send_logs();
 
@@ -223,14 +242,17 @@ mod test {
 			.lock()
 			.unwrap()
 			.log_warn("This is WARN log test 4.");
+
 		logger()
 			.lock()
 			.unwrap()
 			.log_warn("This is WARN log test 5.");
+
 		logger()
 			.lock()
 			.unwrap()
 			.log_warn("This is WARN log test 6.");
+
 		logger().lock().unwrap().send_logs();
 		logger().lock().unwrap().send_logs();
 	}
@@ -316,26 +338,45 @@ mod test {
 	fn new_day() {
 		logger().lock().unwrap().log_info("Logging today.");
 
-		// {
-		//     let mut counter = logger().lock().unwrap().counter.lock().unwrap();
-		//     counter._reset_counter();
-		// }
-
 		logger().lock().unwrap().counter._reset_counter();
 
 		logger().lock().unwrap().log_info("Reset counter.");
-
 		logger().lock().unwrap().log_info("Logging again today.");
-
 		logger().lock().unwrap().log_info("Logging again today.");
 
 		logger().lock().unwrap().counter._reset_counter();
 
 		logger().lock().unwrap().log_info("Reset counter.");
-
+		logger().lock().unwrap().log_info("Logging again today.");
 		logger().lock().unwrap().log_info("Logging again today.");
 
-		logger().lock().unwrap().log_info("Logging again today.");
+		logger().lock().unwrap().send_logs();
+	}
+
+	#[test]
+	fn daylight_savings() {
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("First log. Now going back an hour.");
+
+		logger().lock().unwrap().counter._back_one_hour();
+
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("Back one hour. Now going forward one hour.");
+
+		logger().lock().unwrap().counter._forward_one_hour();
+
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("Back to normal. Going forward one hour again.");
+
+		logger().lock().unwrap().counter._forward_one_hour();
+
+		logger().lock().unwrap().log_info("Now forward one hour.");
 
 		logger().lock().unwrap().send_logs();
 	}
