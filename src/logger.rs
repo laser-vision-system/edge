@@ -16,7 +16,7 @@
 
 use std::sync::{Mutex, OnceLock};
 
-use chrono::{Duration, NaiveDate, Utc};
+use chrono::{Duration, NaiveDate, Local};
 
 use crate::error::EdgeError::{self};
 
@@ -46,7 +46,7 @@ struct LogEntry {
 
 impl LogEntry {
 	fn new(count: u32, level: LogLevel, message: String) -> Self {
-		let timestamp = Utc::now().to_rfc3339();
+		let timestamp = Local::now().to_rfc3339();
 
 		LogEntry {
 			count,
@@ -135,13 +135,13 @@ struct LogCounter {
 impl LogCounter {
 	fn new() -> Self {
 		LogCounter {
-			date: Utc::now().date_naive(),
+			date: Local::now().date_naive(),
 			counter: 0,
 		}
 	}
 
 	fn next(&mut self) -> u32 {
-		let today = Utc::now().date_naive();
+		let today = Local::now().date_naive();
 
 		if today != self.date {
 			self.date = today;
@@ -154,17 +154,17 @@ impl LogCounter {
 	}
 
 	fn _reset_counter(&mut self) {
-		let yesterday = Utc::now().date_naive() - Duration::days(1);
+		let yesterday = Local::now().date_naive() - Duration::days(1);
 		self.date = yesterday;
 	}
 
 	fn _back_one_hour(&mut self) {
-		let hour_ago = Utc::now().date_naive() - Duration::hours(1);
+		let hour_ago = Local::now().date_naive() - Duration::hours(1);
 		self.date = hour_ago;
 	}
 
 	fn _forward_one_hour(&mut self) {
-		let hour_forward = Utc::now().date_naive() + Duration::hours(1);
+		let hour_forward = Local::now().date_naive() + Duration::hours(1);
 		self.date = hour_forward;
 	}
 }
