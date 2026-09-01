@@ -1,5 +1,10 @@
+use std::collections::HashMap;
 use std::thread;
-use tungstenite::connect;
+use image::{ImageBuffer};
+use tokio_tungstenite::connect_async;
+use tungstenite::{connect, Message, Utf8Bytes};
+use server_edge_datatypes::{CameraState, Configuration, DisconnectCamera, ImageAnalysis, RegisterCameras};
+use tokio::net::TcpListener;
 use crate::{
 	Camera, Demonstration,
 	client::Client,
@@ -32,33 +37,39 @@ impl Conductor {
 		}
 	}
 
-	pub async fn run(&mut self) {
-		loop {
-			let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
 
-			// let gui_update = self.client.get_gui_update().await.unwrap();
 
-			// if gui_update.config() {
-				// let config = self.client.get_camera_config().await.unwrap();
-				// Not implemented in camera yet, just print results for now.
-				// println!("Received new config: {config:?}");
-			// }
 
-			// let frame = self.camera.get_image_shrink().unwrap();
-			// let readings = self.demo.process_frame(&frame, gui_update.setpoint());
+	pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
-			// self.client.post_readings(readings).await.unwrap();
-			// self.client.put_image(frame).await.unwrap();
+		// Structs for test websocket data
+		let mut cameras_hashmap: HashMap<u64, (String, CameraState)> = HashMap::new();
+		cameras_hashmap.insert(1, ("".to_string(), CameraState::Active));
+		let cameras = RegisterCameras{
+			cameras: cameras_hashmap
+		};
 
-			// if PRINT_RESULTS {
-			// 	println!(
-			//		"Percieved lightness: {:.4} | Deviation: {:.4} | Press Ctrl+C to stop.",
-			//		readings.intensity(),
-			//		readings.deviation()
-			//	);
-			//}
+		let camera = DisconnectCamera{camera_id: 1};
 
-			//thread::sleep(UPDATE_DELAY);
+		let frame = ImageBuffer::new(800, 800);
+
+		let configuration = Configuration{conn_id: 0, camera_id: 0, configuration: "".to_string()};
+
+		let image_analysis = ImageAnalysis{camera_id: 1, intensity: 1.0, deviation: 1.0};
+
+		// Connection to WS
+		let listener = TcpListener::bind("127.0.0.1:9002").await?;
+		let (mut stream, _) = listener.accept().await?;
+
+			while listener.accept().await.is_ok() {
+				self.client.send_register_cameras(&mut stream, cameras.clone()).await?;
+				self.client.send_disconnect_camera(&mut stream, camera.clone()).await?;
+				self.client.send_image(&mut stream, frame.clone()).await?;
+				self.client.send_configuration(&mut stream, configuration.clone()).await?;
+				self.client.send_image_analysis(&mut stream, image_analysis.clone()).await?;
+				self.client.websocket_incoming_data(&mut stream).await?;
 		}
+
+		Ok(())
 	}
 }

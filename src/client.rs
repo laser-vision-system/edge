@@ -1,13 +1,14 @@
 use std::collections::HashMap;
-use std::net::TcpStream;
+use std::io::{Read, Write};
+use futures_util::{SinkExt, StreamExt};
+use tokio::net::{TcpListener, TcpStream};
 use image::{ImageBuffer};
-use tungstenite::{connect, Message, Utf8Bytes, WebSocket, Bytes, Result};
-use tungstenite::stream::MaybeTlsStream;
-use server_edge_datatypes as datatypes;
-use server_edge_datatypes::{RegisterCameras, UnregisterCamera, Configuration, SetNameCamera, StartViewingCamera, StopViewingCamera, ViewCameraConfig, ImageAnalysis};
+use tokio_tungstenite::tungstenite::{Message, Utf8Bytes, Bytes};
+use tokio_tungstenite::accept_async;
+use server_edge_datatypes::{RegisterCameras, DisconnectCamera, Configuration, SetNameCamera, StartViewingCamera, StopViewingCamera, ViewCameraConfig, ImageAnalysis};
+
 
 pub struct Client {
-	websocket: Option<WebSocket<MaybeTlsStream<TcpStream>>>,
 	camera_list: SetNameCamera,
 	start_viewing_camera: StartViewingCamera,
 	stop_viewing_camera: StopViewingCamera,
@@ -24,7 +25,6 @@ impl Client {
 		let view_camera_config = ViewCameraConfig { conn_id: 0, camera_id: 0 };
 
 		Self {
-			websocket: None,
 			camera_list,
 			start_viewing_camera,
 			stop_viewing_camera,
@@ -32,39 +32,61 @@ impl Client {
 			view_camera_config
 		}
 	}
-	pub fn websocket_connect_manual(&mut self) {
-		let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
-		self.websocket = Option::from(websocket);
+	pub async fn websocket_connect_manual(self) -> Result<TcpListener, std::io::Error> {
+		let listener = TcpListener::bind("127.0.0.1:9002").await;
+		return listener
 	}
-	pub fn websocket_connect_automatic(&mut self) {
+
+	pub fn websocket_connect_automatic(self) {
 		// TO DO automatic connection
 	}
-	pub async fn send_register_cameras(self, cameras: RegisterCameras) {
+	pub async fn send_register_cameras(&mut self, stream: &mut TcpStream, cameras: RegisterCameras) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let ws = accept_async(stream).await?;
 		let mut msg = "RegisterCameras".to_string();
-		msg.push_str(&*serde_json::to_string(&cameras).unwrap());
-		self.websocket.unwrap().send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
+		msg.push_str(&*serde_json::to_string(&cameras)?);
+		let (mut write, mut read) = ws.split();
+		write.send(Message::Text(Utf8Bytes::from(msg))).await?;
+		Ok(())
 	}
-	pub async fn send_unregister_camera(&mut self, camera: UnregisterCamera) {
-		let mut msg = "UnregisterCamera".to_string();
-		msg.push_str(&*serde_json::to_string(&camera).unwrap());
-		self.websocket.unwrap().send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
+	pub async fn send_disconnect_camera(&mut self, stream: &mut TcpStream, camera: DisconnectCamera) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let ws = accept_async(stream).await?;
+		let mut msg = "DisconnectCamera".to_string();
+		msg.push_str(&*serde_json::to_string(&camera)?);
+		let (mut write, mut read) = ws.split();
+		write.send(Message::Text(Utf8Bytes::from(msg))).await?;
+		Ok(())
 	}
-	pub async fn send_image(self, frame: ImageBuffer<image::Rgb<u8>, Vec<u8>>) {
-		self.websocket.unwrap().send(Message::Binary(Bytes::from(frame.clone().into_raw()))).expect("TODO: panic message");
+
+	pub async fn send_image(&mut self, stream: &mut TcpStream, frame: ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let ws = accept_async(stream).await?;
+		let msg = frame.clone().into_raw();
+		let (mut write, mut read) = ws.split();
+		write.send(Message::Binary(Bytes::from(msg))).await?;
+		Ok(())
 	}
-	pub async fn send_configuration(self, configuration: Configuration) {
+
+	pub async fn send_configuration(&mut self, stream: &mut TcpStream, configuration: Configuration) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let ws = accept_async(stream).await?;
 		let mut msg = "Configuration".to_string();
-		msg.push_str(&*serde_json::to_string(&configuration).unwrap());
-		self.websocket.unwrap().send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
+		msg.push_str(&*serde_json::to_string(&configuration)?);
+		let (mut write, mut read) = ws.split();
+		write.send(Message::Text(Utf8Bytes::from(msg))).await?;
+		Ok(())
 	}
-	pub async fn send_image_analysis(self, image_analysis: ImageAnalysis) {
+	pub async fn send_image_analysis(&mut self, stream: &mut TcpStream, image_analysis: ImageAnalysis) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let ws = accept_async(stream).await?;
 		let mut msg = "ImageAnalysis".to_string();
-		msg.push_str(&*serde_json::to_string(&image_analysis).unwrap());
-		self.websocket.unwrap().send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
+		msg.push_str(&*serde_json::to_string(&image_analysis)?);
+		let (mut write, mut read) = ws.split();
+		write.send(Message::Text(Utf8Bytes::from(msg))).await?;
+		Ok(())
 	}
-	pub async fn websocket_incoming_data(mut self) -> Result<()>  {
-		loop {
-			match self.websocket.as_mut().unwrap().read()? {
+
+	pub async fn websocket_incoming_data(&mut self, stream: &mut TcpStream) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let ws = accept_async(stream).await?;
+		let (mut write, mut read) = ws.split();
+		while let Some(msg) = read.next().await {
+			match msg? {
 				Message::Text(text) => {
 					let msg = text.trim();
 
@@ -130,51 +152,105 @@ impl Client {
 				_ => {}
 			}
 		}
+		Ok(())
 	}
 }
 
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use server_edge_datatypes::{RegisterCameras, UnregisterCamera, Configuration, SetNameCamera, StartViewingCamera, StopViewingCamera, ViewCameraConfig, CameraState, ImageAnalysis};
+	use server_edge_datatypes::{RegisterCameras, DisconnectCamera, Configuration, CameraState, ImageAnalysis};
 	#[tokio::test]
-	async fn send_register_cameras() {
-		let client = Client::new();
+	async fn send_register_cameras() -> Result<(), Box<dyn std::error::Error + Send + Sync>>{
+		let mut client = Client::new();
+
+		let listener = TcpListener::bind("127.0.0.1:9002").await?;
+		let (mut stream, _) = listener.accept().await?;
+
 		let mut cameras_hashmap: HashMap<u64, (String, CameraState)> = HashMap::new();
 		cameras_hashmap.insert(1, ("".to_string(), CameraState::Active));
 		let cameras = RegisterCameras{
 			cameras: cameras_hashmap
 		};
-		client.send_register_cameras(cameras).await;
+
+		while listener.accept().await.is_ok() {
+			client.send_register_cameras(&mut stream, cameras.clone()).await?;
+		}
+
+		Ok(())
 	}
 	#[tokio::test]
-	async fn send_unregister_camera() {
+	async fn send_disconnect_camera() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let mut client = Client::new();
-		let camera = UnregisterCamera{camera_id: 1};
-		client.send_unregister_camera(camera).await;
-	}
-	#[tokio::test]
-	async fn send_image() {
-		let client = Client::new();
-		let frame = ImageBuffer::new(800, 800);
-		client.send_image(frame).await;
-	}
-	#[tokio::test]
-	async fn send_configuration() {
-		let client = Client::new();
-		let configuration = Configuration{conn_id: 0, camera_id: 0, configuration: "".to_string()};
-		client.send_configuration(configuration).await;
-	}
-	#[tokio::test]
-	async fn send_image_analysis() {
-		let client = Client::new();
-		let image_analysis = ImageAnalysis{camera_id: 1, intensity: 1.0, deviation: 1.0};
-		client.send_image_analysis(image_analysis).await;
+
+		let listener = TcpListener::bind("127.0.0.1:9002").await?;
+		let (mut stream, _) = listener.accept().await?;
+
+		let camera = DisconnectCamera{camera_id: 1};
+
+		while listener.accept().await.is_ok() {
+			client.send_disconnect_camera(&mut stream, camera.clone()).await?;
+		}
+
+		Ok(())
 	}
 
 	#[tokio::test]
-	async fn websocket_incoming_data() {
-		let client = Client::new();
-		client.websocket_incoming_data().await.expect("TODO: panic message");
+	async fn send_image() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+
+		let listener = TcpListener::bind("127.0.0.1:9002").await?;
+		let (mut stream, _) = listener.accept().await?;
+
+		let frame = ImageBuffer::new(800, 800);
+
+		while listener.accept().await.is_ok() {
+			client.send_image(&mut stream, frame.clone()).await?;
+		}
+
+		Ok(())
+	}
+	#[tokio::test]
+	async fn send_configuration() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+
+		let listener = TcpListener::bind("127.0.0.1:9002").await?;
+		let (mut stream, _) = listener.accept().await?;
+
+		let configuration = Configuration{conn_id: 0, camera_id: 0, configuration: "".to_string()};
+
+		while listener.accept().await.is_ok() {
+			client.send_configuration(&mut stream, configuration.clone()).await?;
+		}
+
+		Ok(())
+	}
+	#[tokio::test]
+	async fn send_image_analysis() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+
+		let listener = TcpListener::bind("127.0.0.1:9002").await?;
+		let (mut stream, _) = listener.accept().await?;
+
+		let image_analysis = ImageAnalysis{camera_id: 1, intensity: 1.0, deviation: 1.0};
+
+		while listener.accept().await.is_ok() {
+			client.send_image_analysis(&mut stream, image_analysis.clone()).await?;
+		}
+
+		Ok(())
+	}
+	#[tokio::test]
+	async fn websocket_incoming_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+
+		let listener = TcpListener::bind("127.0.0.1:9002").await?;
+		let (mut stream, _) = listener.accept().await?;
+
+		while listener.accept().await.is_ok() {
+			client.websocket_incoming_data(&mut stream).await?;
+		}
+
+		Ok(())
 	}
 }
