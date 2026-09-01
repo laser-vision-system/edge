@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 use std::net::TcpStream;
 use image::{ImageBuffer};
-use tungstenite::{Message, Utf8Bytes, WebSocket, Bytes, Result};
+use tungstenite::{connect, Message, Utf8Bytes, WebSocket, Bytes, Result};
 use tungstenite::stream::MaybeTlsStream;
 use server_edge_datatypes as datatypes;
-use server_edge_datatypes::{Configuration, SetNameCamera, StartViewingCamera, StopViewingCamera, ViewCameraConfig};
+use server_edge_datatypes::{RegisterCameras, UnregisterCamera, Configuration, SetNameCamera, StartViewingCamera, StopViewingCamera, ViewCameraConfig, ImageAnalysis};
 
 pub struct Client {
+	websocket: Option<WebSocket<MaybeTlsStream<TcpStream>>>,
 	camera_list: SetNameCamera,
 	start_viewing_camera: StartViewingCamera,
 	stop_viewing_camera: StopViewingCamera,
@@ -17,12 +18,13 @@ pub struct Client {
 impl Client {
 	pub fn new() -> Self {
 		let camera_list = SetNameCamera { camera_id: 0, name: "".to_string()};
-		let start_viewing_camera = StartViewingCamera { conn_id: 0, camera_id: 0};
+		let start_viewing_camera = StartViewingCamera { camera_id: 0};
 		let stop_viewing_camera = StopViewingCamera { camera_id: 0};
 		let configuration = Configuration {conn_id: 0, camera_id: 0, configuration: "".to_string()};
 		let view_camera_config = ViewCameraConfig { conn_id: 0, camera_id: 0 };
 
 		Self {
+			websocket: None,
 			camera_list,
 			start_viewing_camera,
 			stop_viewing_camera,
@@ -30,44 +32,39 @@ impl Client {
 			view_camera_config
 		}
 	}
-	pub async fn send_register_cameras(&mut self, mut websocket: WebSocket<MaybeTlsStream<TcpStream>>, cameras: HashMap<u32, String>) {
+	pub fn websocket_connect_manual(&mut self) {
+		let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
+		self.websocket = Option::from(websocket);
+	}
+	pub fn websocket_connect_automatic(&mut self) {
+		// TO DO automatic connection
+	}
+	pub async fn send_register_cameras(self, cameras: RegisterCameras) {
 		let mut msg = "RegisterCameras".to_string();
-		let send = datatypes::RegisterCameras{
-			cameras: cameras.clone()
-		};
-		msg.push_str(&*serde_json::to_string(&send).unwrap());
-		websocket.send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
+		msg.push_str(&*serde_json::to_string(&cameras).unwrap());
+		self.websocket.unwrap().send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
 	}
-	pub async fn send_unregister_camera(&mut self, mut websocket: WebSocket<MaybeTlsStream<TcpStream>>, camera: u32) {
+	pub async fn send_unregister_camera(&mut self, camera: UnregisterCamera) {
 		let mut msg = "UnregisterCamera".to_string();
-		let send = datatypes::UnregisterCamera{
-			camera_id: camera
-		};
-		msg.push_str(&*serde_json::to_string(&send).unwrap());
-		websocket.send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
+		msg.push_str(&*serde_json::to_string(&camera).unwrap());
+		self.websocket.unwrap().send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
 	}
-	pub async fn send_image(&mut self, mut websocket: WebSocket<MaybeTlsStream<TcpStream>>, frame: ImageBuffer<image::Rgb<u8>, Vec<u8>>) {
-		websocket.send(Message::Binary(Bytes::from(frame.clone().into_raw()))).expect("TODO: panic message");
+	pub async fn send_image(self, frame: ImageBuffer<image::Rgb<u8>, Vec<u8>>) {
+		self.websocket.unwrap().send(Message::Binary(Bytes::from(frame.clone().into_raw()))).expect("TODO: panic message");
 	}
-	pub async fn send_configuration(&mut self, mut websocket: WebSocket<MaybeTlsStream<TcpStream>>, conn_id: u32, camera_id: u32, configuration: String) {
+	pub async fn send_configuration(self, configuration: Configuration) {
 		let mut msg = "Configuration".to_string();
-		let send = Configuration{
-			conn_id, camera_id, configuration
-		};
-		msg.push_str(&*serde_json::to_string(&send).unwrap());
-		websocket.send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
+		msg.push_str(&*serde_json::to_string(&configuration).unwrap());
+		self.websocket.unwrap().send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
 	}
-	pub async fn send_image_analysis(&mut self, mut websocket: WebSocket<MaybeTlsStream<TcpStream>>, camera_id: u32, intensity: f32, deviation: f32) {
+	pub async fn send_image_analysis(self, image_analysis: ImageAnalysis) {
 		let mut msg = "ImageAnalysis".to_string();
-		let send = datatypes::ImageAnalysis{
-			camera_id, intensity, deviation
-		};
-		msg.push_str(&*serde_json::to_string(&send).unwrap());
-		websocket.send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
+		msg.push_str(&*serde_json::to_string(&image_analysis).unwrap());
+		self.websocket.unwrap().send(Message::Text(Utf8Bytes::from(msg))).expect("TODO: panic message");
 	}
-	pub async fn websocket_incoming_data(&mut self, mut websocket: WebSocket<MaybeTlsStream<TcpStream>>,) -> Result<()>  {
+	pub async fn websocket_incoming_data(mut self) -> Result<()>  {
 		loop {
-			match websocket.read()? {
+			match self.websocket.as_mut().unwrap().read()? {
 				Message::Text(text) => {
 					let msg = text.trim();
 
@@ -89,7 +86,7 @@ impl Client {
 								let data_unchecked: serde_json::Result<StartViewingCamera> = serde_json::from_str(data);
 								if data_unchecked.is_ok() {
 									let json = data_unchecked.unwrap();
-									self.start_viewing_camera = StartViewingCamera {conn_id: json.conn_id, camera_id: json.camera_id};
+									self.start_viewing_camera = StartViewingCamera {camera_id: json.camera_id};
 								}
 							}
 							None => {}
@@ -139,46 +136,45 @@ impl Client {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use tungstenite::connect;
+	use server_edge_datatypes::{RegisterCameras, UnregisterCamera, Configuration, SetNameCamera, StartViewingCamera, StopViewingCamera, ViewCameraConfig, CameraState, ImageAnalysis};
 	#[tokio::test]
 	async fn send_register_cameras() {
-		let mut client = Client::new();
-		let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
-		let mut cameras = HashMap::new();
-		cameras.insert(1, "".to_string());
-		client.send_register_cameras(websocket, cameras).await;
+		let client = Client::new();
+		let mut cameras_hashmap: HashMap<u64, (String, CameraState)> = HashMap::new();
+		cameras_hashmap.insert(1, ("".to_string(), CameraState::Active));
+		let cameras = RegisterCameras{
+			cameras: cameras_hashmap
+		};
+		client.send_register_cameras(cameras).await;
 	}
 	#[tokio::test]
 	async fn send_unregister_camera() {
 		let mut client = Client::new();
-		let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
-		let camera = 1;
-		client.send_unregister_camera(websocket, camera).await;
+		let camera = UnregisterCamera{camera_id: 1};
+		client.send_unregister_camera(camera).await;
 	}
 	#[tokio::test]
 	async fn send_image() {
-		let mut client = Client::new();
-		let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
+		let client = Client::new();
 		let frame = ImageBuffer::new(800, 800);
-		client.send_image(websocket, frame).await;
+		client.send_image(frame).await;
 	}
 	#[tokio::test]
 	async fn send_configuration() {
-		let mut client = Client::new();
-		let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
-		client.send_configuration(websocket,1, 1, "configuration".to_string()).await;
+		let client = Client::new();
+		let configuration = Configuration{conn_id: 0, camera_id: 0, configuration: "".to_string()};
+		client.send_configuration(configuration).await;
 	}
 	#[tokio::test]
 	async fn send_image_analysis() {
-		let mut client = Client::new();
-		let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
-		client.send_image_analysis(websocket,1, 1.5, 1.5).await;
+		let client = Client::new();
+		let image_analysis = ImageAnalysis{camera_id: 1, intensity: 1.0, deviation: 1.0};
+		client.send_image_analysis(image_analysis).await;
 	}
 
 	#[tokio::test]
 	async fn websocket_incoming_data() {
-		let mut client = Client::new();
-		let (websocket, _) = connect("ws://localhost:9001/getCaseCount").expect("Can't connect");
-		client.websocket_incoming_data(websocket).await.expect("TODO: panic message");
+		let client = Client::new();
+		client.websocket_incoming_data().await.expect("TODO: panic message");
 	}
 }
