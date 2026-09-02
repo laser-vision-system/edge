@@ -10,7 +10,7 @@ mod status;
 pub(crate) use status::Status;
 
 mod metadata;
-pub use metadata::Metadata;
+pub(crate) use metadata::Metadata;
 
 mod persistence;
 pub use persistence::Persistence;
