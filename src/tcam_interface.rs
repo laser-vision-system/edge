@@ -7,7 +7,7 @@ mod identifier;
 pub(crate) use identifier::Identifier;
 
 mod status;
-pub use status::Status;
+pub(crate) use status::Status;
 
 mod metadata;
 pub use metadata::Metadata;
