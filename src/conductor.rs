@@ -1,10 +1,18 @@
 use std::collections::HashMap;
-use std::thread;
+use std::time::Duration;
 use image::{ImageBuffer};
-use tokio_tungstenite::connect_async;
-use tungstenite::{connect, Message, Utf8Bytes};
+use tokio::net::TcpStream;
+use tokio_util::codec::{BytesCodec, FramedRead, FramedWrite};
+use tokio::io::{AsyncWriteExt, Interest};
+use socket2;
+use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, MaybeTlsStream, WebSocketStream};
+use futures::{future, Sink, Stream, };
+use futures_util::{SinkExt, StreamExt};
+use tokio::io::AsyncReadExt;
+// use tungstenite::{connect, Message, Utf8Bytes};
 use server_edge_datatypes::{CameraState, Configuration, DisconnectCamera, ImageAnalysis, RegisterCameras};
 use tokio::net::TcpListener;
+use tokio_tungstenite::tungstenite::{Bytes, Utf8Bytes};
 use crate::{
 	Camera, Demonstration,
 	client::Client,
@@ -58,17 +66,31 @@ impl Conductor {
 		let image_analysis = ImageAnalysis{camera_id: 1, intensity: 1.0, deviation: 1.0};
 
 		// Connection to WS
-		let listener = TcpListener::bind("127.0.0.1:9002").await?;
-		let (mut stream, _) = listener.accept().await?;
+		// Keep alive WIP
+		// let mut stream = TcpStream::connect("ws://127.0.0.1:8080/edge_ws").await?;
+		let mut stream = self.client.websocket_connect_manual().await;
 
-			while listener.accept().await.is_ok() {
-				self.client.send_register_cameras(&mut stream, cameras.clone()).await?;
-				self.client.send_disconnect_camera(&mut stream, camera.clone()).await?;
-				self.client.send_image(&mut stream, frame.clone()).await?;
-				self.client.send_configuration(&mut stream, configuration.clone()).await?;
-				self.client.send_image_analysis(&mut stream, image_analysis.clone()).await?;
-				self.client.websocket_incoming_data(&mut stream).await?;
+		loop {
+			self.client.send_register_cameras(&mut stream, cameras.clone()).await?;
+			self.client.send_disconnect_camera(&mut stream, camera.clone()).await?;
+			self.client.send_configuration(&mut stream, configuration.clone()).await?;
+			self.client.send_image(&mut stream, frame.clone()).await?;
+			self.client.send_image_analysis(&mut stream, image_analysis.clone()).await?;
+			self.client.keep_alive(&mut stream).await?;
 		}
+
+		println!("Connected to the edge connector");
+		// let mut stream: TcpStream = socket;
+
+		// stream.writable().await?;
+		//
+		//
+		//
+		//
+		//
+
+		// stream.readable().await?;
+		// self.client.websocket_incoming_data(&mut stream).await?;
 
 		Ok(())
 	}
