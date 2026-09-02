@@ -8,8 +8,7 @@
 //! retained when a device is unplugged. There might be a way to enable this
 //! behaviour in v4l, but that is outside the project scope for now.
 //!
-//! All the necessary information should be in the [`CameraInfo`] struct, but
-//! only when retrived on an initialised camera.
+//! All the necessary information is in the [`CameraInfo`] struct.
 
 use nokhwa::utils::CameraInfo;
 
@@ -17,22 +16,22 @@ use nokhwa::utils::CameraInfo;
 ///
 /// See the [module level documentation](self) for more information.
 // `PartialOrd` and `Ord` are not strictly necessary.
-#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Identifier {
-	/// The internal name of the device. On v4l, taken from the "Card type" value.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct Identifier {
+	/// The internal name of the device. On v4l, taken from the "Card type" and "Driver name" values.
 	name: String,
-	/// The internal description of the device. On v4l, taken from the "Driver name" value.
+	/// The internal description of the device. On v4l, taken from the "Bus info" value.
 	description: String,
-	/// Additional miscellaneous information about the device. On v4l, taken from both the "Bus info" value, and the "Driver version" value.
+	/// Additional miscellaneous information about the device. On v4l, taken from the "Driver version" value.
 	misc: String,
 }
 
 impl From<CameraInfo> for Identifier {
 	fn from(value: CameraInfo) -> Self {
 		Self {
-			name: value.human_name(),
-			description: value.description().to_owned(),
-			misc: value.misc().to_owned(),
+			name: value.human_name().to_string(),
+			description: value.description().to_string(),
+			misc: value.misc().to_string(),
 		}
 	}
 }

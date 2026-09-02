@@ -4,7 +4,7 @@ mod camera;
 pub use camera::Camera;
 
 mod identifier;
-pub use identifier::Identifier;
+pub(crate) use identifier::Identifier;
 
 mod status;
 pub use status::Status;
