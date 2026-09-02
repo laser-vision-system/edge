@@ -13,6 +13,6 @@ mod metadata;
 pub(crate) use metadata::Metadata;
 
 mod persistence;
-pub use persistence::Persistence;
+pub(crate) use persistence::Persistence;
 
 pub mod controls;
