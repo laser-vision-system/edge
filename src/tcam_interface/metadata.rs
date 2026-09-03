@@ -103,3 +103,88 @@ impl Metadata {
 		self.indices.take();
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn default_values_as_expected() {
+		let meta = Metadata::default();
+		assert_eq!(meta.name, String::from("unnamed camera"));
+		assert_eq!(meta.status, Status::Uninitialised);
+		assert_eq!(meta.currently_viewed, false);
+		assert_eq!(meta.err_accumulation, 0);
+		assert!(meta.indices.is_none());
+		assert!(meta.camera.is_none());
+	}
+
+	#[test]
+	fn name_set_and_read() {
+		let mut meta = Metadata::default();
+		assert_eq!(meta.name, String::from("unnamed camera"));
+		meta.name = String::from("test_name");
+		assert_eq!(meta.name, String::from("test_name"));
+	}
+
+	#[test]
+	fn status_set_and_read() {
+		let mut meta = Metadata::default();
+		assert_eq!(meta.status, Status::Uninitialised);
+		meta.status = Status::Active;
+		assert_eq!(meta.status(), Status::Active);
+	}
+
+	#[test]
+	fn currently_viewed_set_and_read() {
+		let mut meta = Metadata::default();
+		assert_eq!(meta.currently_viewed, false);
+		meta.currently_viewed = true;
+		assert_eq!(meta.currently_viewed, true);
+	}
+
+	#[test]
+	fn err_accumulation_add() {
+		let mut meta = Metadata::default();
+		assert_eq!(meta.err_accumulation, 0);
+		meta.add_error();
+		meta.add_error();
+		assert_eq!(meta.err_accumulation, 4);
+	}
+
+	#[test]
+	fn indices_check_and_insert() {
+		let mut meta = Metadata::default();
+		assert!(meta.indices.is_none());
+		assert!(!meta.indices_has(0));
+		assert!(meta.try_insert_index(0));
+		assert!(meta.indices_has(0));
+		assert!(!meta.try_insert_index(0));
+		assert!(meta.try_insert_index(2));
+		assert!(meta.indices_has(2));
+	}
+
+	#[test]
+	#[ignore = "requires a camera device to be connected"]
+	fn camera_add() {
+		let mut meta = Metadata::default();
+		assert!(meta.camera.is_none());
+		let camera = Camera::new(0).expect("a valid camera device must exist at index 0");
+		meta.add_camera(camera);
+		assert!(meta.camera().is_some());
+	}
+
+	#[test]
+	#[ignore = "requires a camera device to be connected"]
+	fn camera_remove() {
+		let mut meta = Metadata::default();
+		assert!(meta.camera.is_none());
+		let camera = Camera::new(0).expect("a valid camera device must exist at index 0");
+		meta.add_camera(camera);
+		assert!(meta.camera().is_some());
+		assert!(meta.try_insert_index(0));
+		meta.remove_camera();
+		assert!(meta.indices.is_none());
+		assert!(meta.camera.is_none());
+	}
+}
