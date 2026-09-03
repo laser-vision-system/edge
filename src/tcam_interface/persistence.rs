@@ -3,10 +3,12 @@ use std::{
 	ops::{Deref, DerefMut},
 };
 
-use super::{Camera, Identifier, Metadata, Status};
+use nokhwa::utils::CameraInfo;
+
+use super::{Camera, Identifier, Metadata, NewCameraInfo};
 
 /// The internal mapping type.
-type __Map = HashMap<Identifier, Metadata>;
+type _Map = HashMap<Identifier, Metadata>;
 
 /// Persistence data for camera devices.
 ///
@@ -30,62 +32,56 @@ impl DerefMut for Persistence {
 }
 
 impl Persistence {
-	/// Look for and add new cameras.
+	/// Iterate over a list of devices info entries, returning newly instantiated cameras.
 	///
-	/// Returns a list of information about newly added devices.
-	///
-	/// The return type should be made into an explicit type.
-	pub(crate) fn poll_for_new_cameras(&mut self) -> HashMap<Identifier, (String, Status)> {
-		let all_devices = Camera::query_for_available_cameras();
-
-		all_devices
+	/// Separated out to make testing easier.
+	fn get_new_from_all(&mut self, devices: Vec<CameraInfo>) -> HashMap<Identifier, NewCameraInfo> {
+		devices
 			.into_iter()
-			.filter_map(|info| {
-				let index = info.index().clone().as_index().unwrap();
-				let is_meta = info.is_metadata();
-				// Create identifier.
-				let identifier = Identifier::from(info);
-
-				// TODO: Save to log.
-
-				// Contrast against Persistence.
-				// Is the entry occupied?
-				let metadata = self.inner.entry(identifier.clone()).or_insert_with(|| {
-					// TODO: Save to log.
-					// Create new metadata struct.
-					// Insert metadata into Persistence.
-					Metadata::default()
-				});
-
-				// Does Metadata contain the index?
-				// Add index to Metadata.
-				if metadata.try_insert_index(index) {
-					return None;
-				}
-
-				if is_meta {
-					// TODO: Save to log.
-					return None;
-				}
-
-				// TODO: Initialise the camera.
-				let cam_res = Camera::new(index);
-
-				match cam_res {
-					Err(_why) => {
-						// TODO: Save to logs.
-						metadata.status = Status::Invalid;
-						return None;
-					},
-					Ok(cam) => {
-						// TODO: Save to logs.
-						metadata.status = Status::Active;
-						metadata.add_camera(cam);
-					},
-				};
-
-				Some((identifier, (metadata.name.clone(), metadata.status)))
+			.filter_map(|info: CameraInfo| -> Option<(Identifier, NewCameraInfo)> {
+				self.try_create_device(info)
 			})
-			.collect::<HashMap<_, _>>()
+			.collect::<HashMap<Identifier, NewCameraInfo>>()
+	}
+
+	/// Attempt to create a new device from a device info entry.
+	fn try_create_device(&mut self, info: CameraInfo) -> Option<(Identifier, NewCameraInfo)> {
+		// Create identifier.
+		let identifier = Identifier::from(info.clone());
+		// TODO: Save to log.
+
+		// Contrast against Persistence.
+		let metadata = self.contrast(identifier.clone());
+		let index = info
+			.index()
+			.clone()
+			.as_index()
+			.expect("index should always be a number");
+		let is_metadata = info.is_metadata();
+		let device = metadata.try_register_device(index, is_metadata)?;
+		Some((identifier, device))
+	}
+
+	/// Get the [`Metadata`] for a device by its identifier.
+	///
+	/// Create a new entry if it does not exist.
+	fn contrast(&mut self, ident: Identifier) -> &mut Metadata {
+		// Is the entry occupied?
+		self.inner.entry(ident).or_insert_with(|| {
+			// TODO: Save to log.
+			// Create new metadata struct.
+			// Insert metadata into Persistence.
+			Metadata::default()
+		})
+	}
+
+	/// Poll all devices to instantiate newly connected cameras.
+	///
+	/// Returns a list of information about newly added cameras.
+	///
+	/// IDEA: The return type could be made into an explicit type.
+	pub(crate) fn poll_for_new_cameras(&mut self) -> HashMap<Identifier, NewCameraInfo> {
+		let all_devices = Camera::query_for_available_cameras();
+		self.get_new_from_all(all_devices)
 	}
 }

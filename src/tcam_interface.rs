@@ -15,4 +15,7 @@ pub(crate) use metadata::Metadata;
 mod persistence;
 pub(crate) use persistence::Persistence;
 
+mod new_camera_info;
+pub(crate) use new_camera_info::NewCameraInfo;
+
 pub mod controls;

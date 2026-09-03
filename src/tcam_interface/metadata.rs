@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use super::{Camera, Status};
+use super::{Camera, Status, new_camera_info::NewCameraInfo};
 
 type _ErrAccType = u8;
 // IDEA: Use nokhwa's internal `CameraIndex` type.
@@ -8,6 +8,8 @@ type _IndexType = u32;
 
 /// Named type for clarity.
 pub(crate) type InsertWasSuccessful = bool;
+/// Named type for clarity.
+type _InitialiseWasSuccessful = bool;
 
 /// Information about a camera device that persists after the device is disconnected.
 pub(crate) struct Metadata {
@@ -94,11 +96,63 @@ impl Metadata {
 	/// Add a camera instance to this this structure.
 	///
 	/// This will drop an existing camera. Should it check first?
-	pub(crate) fn add_camera(&mut self, camera: Camera) {
+	fn add_camera(&mut self, camera: Camera) {
 		self.camera.replace(camera);
 	}
 
-	/// Drop the current camera value and all indices.
+	/// Set up a camera for use.
+	///
+	/// TODO: Finish implementing; refer to edge flow logic diagram.
+	fn initialise_camera(&mut self, index: u32) -> _InitialiseWasSuccessful {
+		let cam_res = Camera::new(index);
+		match cam_res {
+			Err(_why) => {
+				// TODO: Save to logs.
+				self.status = Status::Invalid;
+				false
+			},
+			Ok(camera) => {
+				// TODO: Save to logs.
+				self.status = Status::Active;
+				self.add_camera(camera);
+				true
+			},
+		}
+	}
+
+	/// Attempt to add a device to this instance.
+	///
+	/// Returns [`None`] if:
+	///
+	/// - The index is already registered
+	/// - This is a metadata device
+	/// - The camera failed to intialise
+	pub(crate) fn try_register_device(
+		&mut self,
+		index: _IndexType,
+		is_metadata: bool,
+	) -> Option<NewCameraInfo> {
+		// Does Metadata contain the index?
+		// Add index to Metadata.
+		if self.try_insert_index(index) {
+			return None;
+		}
+
+		// Stop now if this is a metadata device.
+		if is_metadata {
+			// TODO: Save to log.
+			return None;
+		}
+
+		if !self.initialise_camera(index) {
+			return None;
+		}
+
+		let device = NewCameraInfo::new(self.name.clone(), self.status);
+		Some(device)
+	}
+
+	/// Drop the current camera and all of its indices.
 	pub(crate) fn remove_camera(&mut self) {
 		self.camera.take();
 		self.indices.take();
