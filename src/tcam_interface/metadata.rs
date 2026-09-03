@@ -2,8 +2,9 @@ use std::collections::HashSet;
 
 use super::{Camera, Status};
 
-type __ErrAccType = u8;
-type __IndexType = u32;
+type _ErrAccType = u8;
+// IDEA: Use nokhwa's internal `CameraIndex` type.
+type _IndexType = u32;
 
 /// Named type for clarity.
 pub(crate) type InsertWasSuccessful = bool;
@@ -23,11 +24,11 @@ pub(crate) struct Metadata {
 	pub(super) currently_viewed: bool,
 	/// An error accumulation value. If this value gets too high, the camera [`Status`] should be changed to [`Broken`](Status::Broken)
 	/// TODO: Error threshold.
-	err_accumulation: __ErrAccType,
+	err_accumulation: _ErrAccType,
 
 	// ==== Temporary data ====
 	/// All of the indicies that the camera is occupying.
-	indices: Option<HashSet<__IndexType>>,
+	indices: Option<HashSet<_IndexType>>,
 	/// The camera device where images are pulled from.
 	camera: Option<Camera>,
 }
@@ -52,7 +53,7 @@ impl Metadata {
 	}
 
 	/// Get the current error accumulation value.
-	pub(crate) fn err_accumulation(&self) -> __ErrAccType {
+	pub(crate) fn err_accumulation(&self) -> _ErrAccType {
 		self.err_accumulation
 	}
 
@@ -62,21 +63,21 @@ impl Metadata {
 	}
 
 	/// Get the list of all device indices that this camera is occupying.
-	pub(crate) fn indices(&self) -> Option<&HashSet<__IndexType>> {
+	pub(crate) fn indices(&self) -> Option<&HashSet<_IndexType>> {
 		self.indices.as_ref()
 	}
 
 	/// Check whether an index is present.
 	///
 	/// Returns false if the [`Option`] is [`None`].
-	pub(crate) fn indices_has(&self, index: __IndexType) -> bool {
+	pub(crate) fn indices_has(&self, index: _IndexType) -> bool {
 		self.indices().is_some_and(|ind| ind.contains(&index))
 	}
 
 	/// Attempt to add an index that a camera is determined to be occupying.
 	///
 	/// If this fails, it's because the device is already initialised and can be ignored.
-	pub(crate) fn try_insert_index(&mut self, index: __IndexType) -> InsertWasSuccessful {
+	pub(crate) fn try_insert_index(&mut self, index: _IndexType) -> InsertWasSuccessful {
 		self.indices.get_or_insert_default().insert(index)
 	}
 

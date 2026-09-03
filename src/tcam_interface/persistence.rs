@@ -12,11 +12,11 @@ type __Map = HashMap<Identifier, Metadata>;
 ///
 /// This type holds details about all currently and previously connected camera devices.
 pub(crate) struct Persistence {
-	inner: __Map,
+	inner: _Map,
 }
 
 impl Deref for Persistence {
-	type Target = __Map;
+	type Target = _Map;
 
 	fn deref(&self) -> &Self::Target {
 		&self.inner
