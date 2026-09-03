@@ -66,6 +66,13 @@ impl Metadata {
 		self.indices.as_ref()
 	}
 
+	/// Check whether an index is present.
+	///
+	/// Returns false if the [`Option`] is [`None`].
+	pub(crate) fn indices_has(&self, index: __IndexType) -> bool {
+		self.indices().is_some_and(|ind| ind.contains(&index))
+	}
+
 	/// Attempt to add an index that a camera is determined to be occupying.
 	///
 	/// If this fails, it's because the device is already initialised and can be ignored.
