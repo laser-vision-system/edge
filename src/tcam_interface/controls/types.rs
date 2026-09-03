@@ -20,31 +20,33 @@ pub(super) type ConTypeBytes = Vec<u8>;
 pub(super) type ConTypeEnum = i64;
 pub(super) type ConTypeMenu = u32;
 
-type __ConTypeKeyValue = i128;
-type __ConTypePoint = f64;
-type __ConTypeRGB = f64;
+type _ConTypeKeyValue = i128;
+type _ConTypePoint = f64;
+type _ConTypeRGB = f64;
 
 /// Represents a key and value use by [`ConValueKeyValue`] and by extention, [`KeyValuePairControl`].
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct ConTypeKeyValue(__ConTypeKeyValue, __ConTypeKeyValue);
+#[derive(
+	Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
+)]
+pub struct ConTypeKeyValue(_ConTypeKeyValue, _ConTypeKeyValue);
 
 impl ConTypeKeyValue {
-	pub fn get_key(&self) -> __ConTypeKeyValue {
+	pub fn get_key(&self) -> _ConTypeKeyValue {
 		self.0
 	}
 
-	pub fn get_value(&self) -> __ConTypeKeyValue {
+	pub fn get_value(&self) -> _ConTypeKeyValue {
 		self.1
 	}
 }
 
-impl From<(__ConTypeKeyValue, __ConTypeKeyValue)> for ConTypeKeyValue {
-	fn from(value: (__ConTypeKeyValue, __ConTypeKeyValue)) -> Self {
+impl From<(_ConTypeKeyValue, _ConTypeKeyValue)> for ConTypeKeyValue {
+	fn from(value: (_ConTypeKeyValue, _ConTypeKeyValue)) -> Self {
 		Self(value.0, value.1)
 	}
 }
 
-impl From<ConTypeKeyValue> for (__ConTypeKeyValue, __ConTypeKeyValue) {
+impl From<ConTypeKeyValue> for (_ConTypeKeyValue, _ConTypeKeyValue) {
 	fn from(value: ConTypeKeyValue) -> Self {
 		(value.0, value.1)
 	}
@@ -58,25 +60,25 @@ impl From<ConTypeKeyValue> for ControlValueSetter {
 
 /// Represents a point value use by [`ConValuePoint`] and by extention, [`PointControl`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct ConTypePoint(__ConTypePoint, __ConTypePoint);
+pub struct ConTypePoint(_ConTypePoint, _ConTypePoint);
 
 impl ConTypePoint {
-	pub fn get_x(&self) -> __ConTypePoint {
+	pub fn get_x(&self) -> _ConTypePoint {
 		self.0
 	}
 
-	pub fn get_y(&self) -> __ConTypePoint {
+	pub fn get_y(&self) -> _ConTypePoint {
 		self.1
 	}
 }
 
-impl From<(__ConTypePoint, __ConTypePoint)> for ConTypePoint {
-	fn from(value: (__ConTypePoint, __ConTypePoint)) -> Self {
+impl From<(_ConTypePoint, _ConTypePoint)> for ConTypePoint {
+	fn from(value: (_ConTypePoint, _ConTypePoint)) -> Self {
 		Self(value.0, value.1)
 	}
 }
 
-impl From<ConTypePoint> for (__ConTypePoint, __ConTypePoint) {
+impl From<ConTypePoint> for (_ConTypePoint, _ConTypePoint) {
 	fn from(value: ConTypePoint) -> Self {
 		(value.0, value.1)
 	}
@@ -90,29 +92,29 @@ impl From<ConTypePoint> for ControlValueSetter {
 
 /// Represents an RGB value use by [`ConValueRGB`] and by extention, [`RGBControl`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct ConTypeRGB(__ConTypeRGB, __ConTypeRGB, __ConTypeRGB);
+pub struct ConTypeRGB(_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
 
 impl ConTypeRGB {
-	pub fn get_r(&self) -> __ConTypeRGB {
+	pub fn get_r(&self) -> _ConTypeRGB {
 		self.0
 	}
 
-	pub fn get_g(&self) -> __ConTypeRGB {
+	pub fn get_g(&self) -> _ConTypeRGB {
 		self.1
 	}
 
-	pub fn get_b(&self) -> __ConTypeRGB {
+	pub fn get_b(&self) -> _ConTypeRGB {
 		self.2
 	}
 }
 
-impl From<(__ConTypeRGB, __ConTypeRGB, __ConTypeRGB)> for ConTypeRGB {
-	fn from(value: (__ConTypeRGB, __ConTypeRGB, __ConTypeRGB)) -> Self {
+impl From<(_ConTypeRGB, _ConTypeRGB, _ConTypeRGB)> for ConTypeRGB {
+	fn from(value: (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB)) -> Self {
 		Self(value.0, value.1, value.2)
 	}
 }
 
-impl From<ConTypeRGB> for (__ConTypeRGB, __ConTypeRGB, __ConTypeRGB) {
+impl From<ConTypeRGB> for (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB) {
 	fn from(value: ConTypeRGB) -> Self {
 		(value.0, value.1, value.2)
 	}
