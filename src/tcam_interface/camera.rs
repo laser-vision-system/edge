@@ -277,7 +277,7 @@ mod tests {
 			);
 			let misc = cam.misc();
 			if !misc.is_empty() {
-				print!("\n\t\t{misc:?}");
+				print!("\n\t\t{misc}");
 			}
 			println!();
 		}

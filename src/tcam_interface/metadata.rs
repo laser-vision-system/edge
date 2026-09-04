@@ -1,24 +1,36 @@
-use super::{Camera, Status};
+use std::collections::HashSet;
+
+use super::{Camera, Status, new_camera_info::NewCameraInfo};
+
+type _ErrAccType = u8;
+// IDEA: Use nokhwa's internal `CameraIndex` type.
+type _IndexType = u32;
+
+/// Named type for clarity.
+pub(crate) type InsertWasSuccessful = bool;
+/// Named type for clarity.
+type _InitialiseWasSuccessful = bool;
 
 /// Information about a camera device that persists after the device is disconnected.
-pub struct Metadata {
+pub(crate) struct Metadata {
 	// ==== Persistent data ====
 	/// A user configurable name for this camera.
 	///
 	/// It is not required to be unique, but it is best if it is.
 	///
 	/// If side-effects are needed when this value is changed, make it private and use accessor methods.
-	pub name: String,
+	pub(crate) name: String,
 	/// The current status of the camera.
-	status: Status,
+	pub(super) status: Status,
 	/// Whether this camera is sending the images to the server.
-	currently_viewed: bool,
+	pub(super) currently_viewed: bool,
 	/// An error accumulation value. If this value gets too high, the camera [`Status`] should be changed to [`Broken`](Status::Broken)
-	err_accumulation: u8,
+	/// TODO: Error threshold.
+	err_accumulation: _ErrAccType,
 
 	// ==== Temporary data ====
-	/// The current device index.
-	index: Option<u16>,
+	/// All of the indicies that the camera is occupying.
+	indices: Option<HashSet<_IndexType>>,
 	/// The camera device where images are pulled from.
 	camera: Option<Camera>,
 }
@@ -30,38 +42,204 @@ impl Default for Metadata {
 			status: Default::default(),
 			currently_viewed: false,
 			err_accumulation: 0,
-			index: None,
+			indices: None,
 			camera: None,
 		}
 	}
 }
 
 impl Metadata {
-	pub fn status(&self) -> &Status {
-		&self.status
+	/// Get the current status of this camera.
+	pub(crate) fn status(&self) -> Status {
+		self.status
 	}
 
-	pub fn set_viewed(&mut self, state: bool) {
-		self.currently_viewed = state;
-	}
-
-	pub fn err_accumulation(&self) -> u8 {
+	/// Get the current error accumulation value.
+	pub(crate) fn err_accumulation(&self) -> _ErrAccType {
 		self.err_accumulation
 	}
 
-	pub fn add_error(&mut self) {
+	/// Mark that this camera has encountered an error.
+	pub(crate) fn add_error(&mut self) {
 		self.err_accumulation += 2;
 	}
 
-	pub fn index(&self) -> Option<u16> {
-		self.index
+	/// Get the list of all device indices that this camera is occupying.
+	pub(crate) fn indices(&self) -> Option<&HashSet<_IndexType>> {
+		self.indices.as_ref()
 	}
 
-	pub fn camera(&self) -> Option<&Camera> {
+	/// Check whether an index is present.
+	///
+	/// Returns false if the [`Option`] is [`None`].
+	pub(crate) fn indices_has(&self, index: _IndexType) -> bool {
+		self.indices().is_some_and(|ind| ind.contains(&index))
+	}
+
+	/// Attempt to add an index that a camera is determined to be occupying.
+	///
+	/// If this fails, it's because the device is already initialised and can be ignored.
+	pub(crate) fn try_insert_index(&mut self, index: _IndexType) -> InsertWasSuccessful {
+		self.indices.get_or_insert_default().insert(index)
+	}
+
+	/// Get a reference to the current camera (if connected).
+	pub(crate) fn camera(&self) -> Option<&Camera> {
 		self.camera.as_ref()
 	}
 
-	pub fn camera_mut(&mut self) -> Option<&mut Camera> {
+	/// Get a mutable reference to the current camera (if connected).
+	pub(crate) fn camera_mut(&mut self) -> Option<&mut Camera> {
 		self.camera.as_mut()
+	}
+
+	/// Add a camera instance to this this structure.
+	///
+	/// This will drop an existing camera. Should it check first?
+	fn add_camera(&mut self, camera: Camera) {
+		self.camera.replace(camera);
+	}
+
+	/// Set up a camera for use.
+	///
+	/// TODO: Finish implementing; refer to edge flow logic diagram.
+	fn initialise_camera(&mut self, index: u32) -> _InitialiseWasSuccessful {
+		let cam_res = Camera::new(index);
+		match cam_res {
+			Err(_why) => {
+				// TODO: Save to logs.
+				self.status = Status::Invalid;
+				false
+			},
+			Ok(camera) => {
+				// TODO: Save to logs.
+				self.status = Status::Active;
+				self.add_camera(camera);
+				true
+			},
+		}
+	}
+
+	/// Attempt to add a device to this instance.
+	///
+	/// Returns [`None`] if:
+	///
+	/// - The index is already registered
+	/// - This is a metadata device
+	/// - The camera failed to intialise
+	pub(crate) fn try_register_device(
+		&mut self,
+		index: _IndexType,
+		is_metadata: bool,
+	) -> Option<NewCameraInfo> {
+		// Does Metadata contain the index?
+		// Add index to Metadata.
+		if self.try_insert_index(index) {
+			return None;
+		}
+
+		// Stop now if this is a metadata device.
+		if is_metadata {
+			// TODO: Save to log.
+			return None;
+		}
+
+		if !self.initialise_camera(index) {
+			return None;
+		}
+
+		let device = NewCameraInfo::new(self.name.clone(), self.status);
+		Some(device)
+	}
+
+	/// Drop the current camera and all of its indices.
+	pub(crate) fn remove_camera(&mut self) {
+		self.camera.take();
+		self.indices.take();
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn default_values_as_expected() {
+		let meta = Metadata::default();
+		assert_eq!(meta.name, String::from("unnamed camera"));
+		assert_eq!(meta.status, Status::Uninitialised);
+		assert_eq!(meta.currently_viewed, false);
+		assert_eq!(meta.err_accumulation, 0);
+		assert!(meta.indices.is_none());
+		assert!(meta.camera.is_none());
+	}
+
+	#[test]
+	fn name_set_and_read() {
+		let mut meta = Metadata::default();
+		assert_eq!(meta.name, String::from("unnamed camera"));
+		meta.name = String::from("test_name");
+		assert_eq!(meta.name, String::from("test_name"));
+	}
+
+	#[test]
+	fn status_set_and_read() {
+		let mut meta = Metadata::default();
+		assert_eq!(meta.status, Status::Uninitialised);
+		meta.status = Status::Active;
+		assert_eq!(meta.status(), Status::Active);
+	}
+
+	#[test]
+	fn currently_viewed_set_and_read() {
+		let mut meta = Metadata::default();
+		assert_eq!(meta.currently_viewed, false);
+		meta.currently_viewed = true;
+		assert_eq!(meta.currently_viewed, true);
+	}
+
+	#[test]
+	fn err_accumulation_add() {
+		let mut meta = Metadata::default();
+		assert_eq!(meta.err_accumulation, 0);
+		meta.add_error();
+		meta.add_error();
+		assert_eq!(meta.err_accumulation, 4);
+	}
+
+	#[test]
+	fn indices_check_and_insert() {
+		let mut meta = Metadata::default();
+		assert!(meta.indices.is_none());
+		assert!(!meta.indices_has(0));
+		assert!(meta.try_insert_index(0));
+		assert!(meta.indices_has(0));
+		assert!(!meta.try_insert_index(0));
+		assert!(meta.try_insert_index(2));
+		assert!(meta.indices_has(2));
+	}
+
+	#[test]
+	#[ignore = "requires a camera device to be connected"]
+	fn camera_add() {
+		let mut meta = Metadata::default();
+		assert!(meta.camera.is_none());
+		let camera = Camera::new(0).expect("a valid camera device must exist at index 0");
+		meta.add_camera(camera);
+		assert!(meta.camera().is_some());
+	}
+
+	#[test]
+	#[ignore = "requires a camera device to be connected"]
+	fn camera_remove() {
+		let mut meta = Metadata::default();
+		assert!(meta.camera.is_none());
+		let camera = Camera::new(0).expect("a valid camera device must exist at index 0");
+		meta.add_camera(camera);
+		assert!(meta.camera().is_some());
+		assert!(meta.try_insert_index(0));
+		meta.remove_camera();
+		assert!(meta.indices.is_none());
+		assert!(meta.camera.is_none());
 	}
 }

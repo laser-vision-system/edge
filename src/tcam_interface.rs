@@ -4,15 +4,18 @@ mod camera;
 pub use camera::Camera;
 
 mod identifier;
-pub use identifier::Identifier;
+pub(crate) use identifier::Identifier;
 
 mod status;
-pub use status::Status;
+pub(crate) use status::Status;
 
 mod metadata;
-pub use metadata::Metadata;
+pub(crate) use metadata::Metadata;
 
 mod persistence;
-pub use persistence::Persistence;
+pub(crate) use persistence::Persistence;
+
+mod new_camera_info;
+pub(crate) use new_camera_info::NewCameraInfo;
 
 pub mod controls;
