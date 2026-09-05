@@ -6,20 +6,14 @@ pub mod demonstration;
 #[must_use]
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub struct CameraReadings {
-	intensity: f32,
 	deviation: f32,
 }
 
 impl CameraReadings {
-	pub fn new(intensity: f32, deviation: f32) -> Self {
+	pub fn new(deviation: f32) -> Self {
 		Self {
-			intensity,
 			deviation,
 		}
-	}
-
-	pub fn intensity(&self) -> f32 {
-		self.intensity
 	}
 
 	pub fn deviation(&self) -> f32 {
@@ -27,9 +21,9 @@ impl CameraReadings {
 	}
 }
 
-impl From<(f32, f32)> for CameraReadings {
-	fn from(value: (f32, f32)) -> Self {
-		Self::new(value.0, value.1)
+impl From<f32> for CameraReadings {
+	fn from(value: f32) -> Self {
+		Self::new(value)
 	}
 }
 
