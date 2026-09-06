@@ -38,7 +38,7 @@ futures-util = "0.3.33"
 socket2 = "0.6.5"
 futures = "0.1.31"
 tokio-util = "0.7.19"
-
+async-std = "1.13.2"
 # Dependencies only needed for tests, examples, or benchmarks.
 [dev-dependencies]
 rerun = { version = "0.35", features = [
