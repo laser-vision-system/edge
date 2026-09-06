@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+server-edge-datatypes = { path = "./server-edge-datatypes"}
 chrono = "0.4"
 image = { version = "0.25", default-features = false, features = [
 	"rayon",
@@ -31,7 +32,14 @@ thiserror = "2.0"
 tokio = { version = "1", features = [
 	"full"
 ] }
-
+tungstenite = "0.28.0"
+serde_json = "1.0.151"
+tokio-tungstenite = "0.30.0"
+futures-util = "0.3.33"
+socket2 = "0.6.5"
+futures = "0.1.31"
+tokio-util = "0.7.19"
+async-std = "1.13.2"
 # Dependencies only needed for tests, examples, or benchmarks.
 [dev-dependencies]
 rerun = { version = "0.35", features = [

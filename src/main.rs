@@ -2,5 +2,5 @@ use edge::conductor::Conductor;
 
 #[tokio::main]
 async fn main() {
-	Conductor::new().await.run().await;
+	let _result = Conductor::new().await.run().await;
 }

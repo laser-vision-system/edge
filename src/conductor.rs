@@ -1,11 +1,13 @@
-use std::thread;
-
 use crate::{
-	client::{CameraConfig, Client},
-	settings::{PRINT_RESULTS, UPDATE_DELAY},
-	tcam_interface::Camera,
-	vision_processor::{VisionInterface, demonstration::Demonstration},
+	client::Client, settings, tcam_interface::Camera,
+	vision_processor::demonstration::Demonstration,
 };
+use async_std::task;
+use image::ImageBuffer;
+use server_edge_datatypes::edge::{DisconnectCamera, ImageAnalysis, RegisterCameras};
+use server_edge_datatypes::shared::{CameraState, Configuration};
+use settings::UPDATE_DELAY;
+use std::collections::HashMap;
 
 /// # Conductor
 ///
@@ -25,9 +27,6 @@ impl Conductor {
 		let client = Client::new();
 		let demo = Demonstration::default();
 
-		let dummy_config = CameraConfig::new(30.0, 50, 0, 50);
-		client.post_camera_config(dummy_config).await.unwrap();
-
 		Self {
 			camera,
 			client,
@@ -35,31 +34,49 @@ impl Conductor {
 		}
 	}
 
-	pub async fn run(&mut self) {
+	pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		// Structs for test websocket data
+		let mut cameras_hashmap: HashMap<u64, (String, CameraState)> = HashMap::new();
+		cameras_hashmap.insert(1, ("".to_string(), CameraState::Active));
+		let cameras = RegisterCameras {
+			cameras: cameras_hashmap,
+		};
+
+		let camera = DisconnectCamera { camera_id: 1 };
+
+		let frame = ImageBuffer::new(800, 800);
+
+		let configuration = Configuration {
+			conn_id: 0,
+			camera_id: 0,
+			configuration: "".to_string(),
+		};
+
+		let image_analysis = ImageAnalysis {
+			camera_id: 1,
+			intensity: 1.0,
+			deviation: 1.0,
+		};
+
+		let mut stream = self.client.websocket_connect_manual().await;
+
 		loop {
-			let gui_update = self.client.get_gui_update().await.unwrap();
-
-			if gui_update.config() {
-				let config = self.client.get_camera_config().await.unwrap();
-				// Not implemented in camera yet, just print results for now.
-				println!("Received new config: {config:?}");
-			}
-
-			let frame = self.camera.get_image_shrink().unwrap();
-			let readings = self.demo.process_frame(&frame, gui_update.setpoint());
-
-			self.client.post_readings(readings).await.unwrap();
-			self.client.put_image(frame).await.unwrap();
-
-			if PRINT_RESULTS {
-				println!(
-					"Percieved lightness: {:.4} | Deviation: {:.4} | Press Ctrl+C to stop.",
-					readings.intensity(),
-					readings.deviation()
-				);
-			}
-
-			thread::sleep(UPDATE_DELAY);
+			self.client
+				.send_register_cameras(&mut stream, cameras.clone())
+				.await?;
+			self.client
+				.send_disconnect_camera(&mut stream, camera.clone())
+				.await?;
+			self.client
+				.send_configuration(&mut stream, configuration.clone())
+				.await?;
+			self.client.send_image(&mut stream, frame.clone()).await?;
+			self.client
+				.send_image_analysis(&mut stream, image_analysis.clone())
+				.await?;
+			self.client.websocket_incoming_data(&mut stream).await?;
+			self.client.keep_alive(&mut stream).await?;
+			task::sleep(UPDATE_DELAY).await;
 		}
 	}
 }
