@@ -34,8 +34,8 @@ impl Context {
 
 		let readings = self.demo.process_frame(frame, false);
 
-		let lightness_path = format!("{path}/lightness");
-		self.send_scalar(&lightness_path, readings.intensity() as f64);
+		// let lightness_path = format!("{path}/lightness");
+		// self.send_scalar(&lightness_path, readings.intensity() as f64);
 
 		let deviation_path = format!("{path}/deviation");
 		self.send_scalar(&deviation_path, readings.deviation() as f64);

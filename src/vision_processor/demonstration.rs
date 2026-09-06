@@ -20,7 +20,7 @@ impl Demonstration {
 	#[allow(clippy::missing_asserts_for_indexing)]
 	#[allow(clippy::indexing_slicing)]
 	#[allow(clippy::cast_precision_loss)]
-	fn average_lightness(&mut self, frame: &RgbImage, setpoint: bool) -> (f32, f32) {
+	fn average_lightness(&mut self, frame: &RgbImage, setpoint: bool) -> f32 {
 		let raw_bytes = frame.as_raw();
 		let pixel_count = raw_bytes.len() as f32 / 3.0;
 
@@ -44,7 +44,7 @@ impl Demonstration {
 			deviation = lightness / self.setpoint;
 		}
 
-		(lightness, deviation)
+		deviation
 	}
 }
 
