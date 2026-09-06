@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 server-edge-datatypes = { path = "./server-edge-datatypes"}
+chrono = "0.4"
 image = { version = "0.25", default-features = false, features = [
 	"rayon",
 	"jpeg",
@@ -14,11 +15,10 @@ image = { version = "0.25", default-features = false, features = [
 	"avif"
 ] }
 lab = "0.11"
-nokhwa = { version = "0.10", default-features = false, features = [
-	"input-native",
-	"decoding",
+nokhwa = { path = "nokhwa", features = [
 	"serialize",
-	"output-threaded"
+	"input-native",
+	"runner",
 ] }
 rayon = "1"
 reqwest = { version = "0.13", features = [
@@ -28,6 +28,7 @@ reqwest = { version = "0.13", features = [
 serde = { version = "1" , features = [
 	"derive"
 ] }
+thiserror = "2.0"
 tokio = { version = "1", features = [
 	"full"
 ] }

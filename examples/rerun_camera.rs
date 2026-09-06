@@ -1,6 +1,9 @@
 use std::error::Error;
 
-use edge::{Camera, Demonstration, vision_processor::VisionInterface};
+use edge::{
+	tcam_interface::Camera,
+	vision_processor::{VisionInterface, demonstration::Demonstration},
+};
 use image::RgbImage;
 use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
 

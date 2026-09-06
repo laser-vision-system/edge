@@ -1,33 +1,21 @@
-//! # Tcam Interface
-//!
-//! Provides connection and configuration for connected cameras.
-//!
-//! ## Intended functionality
-//!
-//! - On start-up, identify all connected cameras.
-//! - Detect when a new camera is connected.
-//! - Detect when a camera disconnects.
-//! - Create a connection to a camera.
-//! - Read input from the camera.
-//! - Provide details about connected camera configurations.
-//! - Apply provided configurations.
-//!
-//! ## Expected sub-modules
-//!
-//! ### Camera
-//!
-//! A module containing a representational object for a single camera.
-//!
-//! ### Configurations
-//!
-//! A module containing configuration options available to the camera.
-//!
-//! Perhaps separated by the what types of cameras they can be applied to.
-//!
-//! ### Detection
-//!
-//! A module containing functions to detect newly connected cameras.
-//!
-//! These can be called at startup.
+//! Provides connection, identification, management, and configuration for camera devices.
 
-pub mod camera;
+mod camera;
+pub use camera::Camera;
+
+mod identifier;
+pub(crate) use identifier::Identifier;
+
+mod status;
+pub(crate) use status::Status;
+
+mod metadata;
+pub(crate) use metadata::Metadata;
+
+mod persistence;
+pub(crate) use persistence::Persistence;
+
+mod new_camera_info;
+pub(crate) use new_camera_info::NewCameraInfo;
+
+pub mod controls;
