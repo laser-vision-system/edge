@@ -53,8 +53,7 @@ impl Conductor {
 
 			if PRINT_RESULTS {
 				println!(
-					"Percieved lightness: {:.4} | Deviation: {:.4} | Press Ctrl+C to stop.",
-					readings.intensity(),
+					"Deviation: {:.4} | Press Ctrl+C to stop.",
 					readings.deviation()
 				);
 			}

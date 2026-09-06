@@ -187,7 +187,7 @@ mod tests {
 	#[tokio::test]
 	async fn post_readings() -> Result<(), reqwest::Error> {
 		let client = Client::new();
-		let reading = CameraReadings::new(72.2, 0.21);
+		let reading = CameraReadings::new(0.21);
 		client.post_readings(reading).await
 	}
 
