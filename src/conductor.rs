@@ -1,24 +1,14 @@
 use std::collections::HashMap;
-use std::time::Duration;
+use async_std::task;
 use image::{ImageBuffer};
-use tokio::net::TcpStream;
-use tokio_util::codec::{BytesCodec, FramedRead, FramedWrite};
-use tokio::io::{AsyncWriteExt, Interest};
-use socket2;
-use tokio_tungstenite::{connect_async, tungstenite::protocol::Message, MaybeTlsStream, WebSocketStream};
-use futures::{future, Sink, Stream, };
-use futures_util::{SinkExt, StreamExt};
-use tokio::io::AsyncReadExt;
-// use tungstenite::{connect, Message, Utf8Bytes};
-use server_edge_datatypes::{CameraState, Configuration, DisconnectCamera, ImageAnalysis, RegisterCameras};
-use tokio::net::TcpListener;
-use tokio_tungstenite::tungstenite::{Bytes, Utf8Bytes};
-use crate::{
-	Camera, Demonstration,
-	client::Client,
-	settings::{PRINT_RESULTS, UPDATE_DELAY},
-	vision_processor::VisionInterface,
+use server_edge_datatypes::edge::{
+	DisconnectCamera, ImageAnalysis, RegisterCameras
 };
+use server_edge_datatypes::shared::{
+	Configuration, CameraState
+};
+use crate::{client::Client, settings, Camera, Demonstration};
+use settings::UPDATE_DELAY;
 
 /// # Conductor
 ///
@@ -65,9 +55,6 @@ impl Conductor {
 
 		let image_analysis = ImageAnalysis{camera_id: 1, intensity: 1.0, deviation: 1.0};
 
-		// Connection to WS
-		// Keep alive WIP
-		// let mut stream = TcpStream::connect("ws://127.0.0.1:8080/edge_ws").await?;
 		let mut stream = self.client.websocket_connect_manual().await;
 
 		loop {
@@ -76,22 +63,10 @@ impl Conductor {
 			self.client.send_configuration(&mut stream, configuration.clone()).await?;
 			self.client.send_image(&mut stream, frame.clone()).await?;
 			self.client.send_image_analysis(&mut stream, image_analysis.clone()).await?;
+			self.client.websocket_incoming_data(&mut stream).await?;
 			self.client.keep_alive(&mut stream).await?;
+			task::sleep(UPDATE_DELAY).await;
 		}
 
-		println!("Connected to the edge connector");
-		// let mut stream: TcpStream = socket;
-
-		// stream.writable().await?;
-		//
-		//
-		//
-		//
-		//
-
-		// stream.readable().await?;
-		// self.client.websocket_incoming_data(&mut stream).await?;
-
-		Ok(())
 	}
 }

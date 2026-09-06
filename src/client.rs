@@ -1,13 +1,14 @@
-use std::collections::HashMap;
-use std::io::{Read, Write};
 use futures_util::{SinkExt, StreamExt};
-use tokio::net::{TcpListener, TcpStream};
+use tokio::net::TcpStream;
 use image::{ImageBuffer};
-use reqwest::Response;
 use tokio_tungstenite::tungstenite::{Message, Utf8Bytes, Bytes};
-use tokio_tungstenite::{accept_async, MaybeTlsStream, WebSocketStream, connect_async};
-use tungstenite::{};
-use server_edge_datatypes::{RegisterCameras, DisconnectCamera, Configuration, SetNameCamera, StartViewingCamera, StopViewingCamera, ViewCameraConfig, ImageAnalysis};
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
+use server_edge_datatypes::edge::{
+	RegisterCameras, DisconnectCamera, SetNameCamera, StartViewingCamera, StopViewingCamera, ImageAnalysis
+};
+use server_edge_datatypes::shared::{
+	Configuration, ViewCameraConfig
+};
 use crate::settings::{API, HOST, PORT};
 
 pub struct Client {
@@ -36,7 +37,7 @@ impl Client {
 	}
 	pub async fn websocket_connect_manual(&mut self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
 		let url = "ws://".to_string() + HOST + ":" + PORT + API;
-		let (stream, response) = connect_async("ws://127.0.0.1:8080/edge_ws").await.expect("Failed to connect");
+		let (stream, response) = connect_async(url).await.expect("Failed to connect");
 		return stream
 	}
 
@@ -154,9 +155,14 @@ impl Client {
 
 #[cfg(test)]
 mod tests {
-	use tokio::io::AsyncReadExt;
 	use super::*;
-	use server_edge_datatypes::{RegisterCameras, DisconnectCamera, Configuration, CameraState, ImageAnalysis};
+	use server_edge_datatypes::edge::{
+		DisconnectCamera, ImageAnalysis, RegisterCameras
+	};
+	use server_edge_datatypes::shared::{
+		Configuration, CameraState
+	};
+	use std::collections::HashMap;
 	#[tokio::test]
 	async fn send_register_cameras() -> Result<(), Box<dyn std::error::Error + Send + Sync>>{
 		let mut client = Client::new();
