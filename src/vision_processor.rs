@@ -1,16 +1,22 @@
 use image::RgbImage;
 use serde::{Deserialize, Serialize};
 
-use crate::vision_processor::{cnn::Cnn, diff::Diff, empty::Empty, demonstration::Demonstration};
-
 use crate::tcam_interface::Setpoint;
 
 use server_edge_datatypes::shared::VisionTechnique;
 
-pub mod cnn;
-pub mod demonstration;
-pub mod diff;
-pub mod empty;
+mod cnn;
+pub(crate) use cnn::Cnn;
+
+mod demonstration;
+pub(crate) use demonstration::Demonstration;
+
+mod diff;
+pub(crate) use diff::Diff;
+
+mod empty;
+pub(crate) use empty::Empty;
+
 
 #[must_use]
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
@@ -24,14 +30,13 @@ pub struct CameraReadings {
 pub trait VisionInterface {
 	fn identifier(&self) -> VisionTechnique;
 
-
+	/// Returns the deviation from the setpoint
 	// potentially change RgbImage to LumaImage here
-	fn process_frame(&self, frame: &RgbImage, setpoint: &mut dyn Setpoint) -> f32;
+	fn process_frame(&self, frame: &RgbImage, setpoint: &Setpoint) -> f32;
 
-	fn analyse_frame(&self, frame: &RgbImage, setpoint: &dyn Setpoint) -> f32;
-
-	// Write the new setpoint data to the setpoint
-	fn calibrate_setpoint(&self, frame: &RgbImage, setpoint: &mut dyn Setpoint);
+	/// Each processor needs this function to change with its respective struct inside Setpoint.
+	/// No processor should ever touch any struct of Setpoint other than its counterpart.
+	fn calibrate_setpoint(&self, frame: &RgbImage, setpoint: &mut Setpoint);
 }
 
 /// Swaps the current vision processing technique to the chosen one.
@@ -52,13 +57,3 @@ pub fn swap(
 		VisionTechnique::Demonstration => Some(Box::new(Demonstration::default())),
 	}
 }
-
-//
-// setpoint is per camera and per interface
-// it needs to be its own object that is also swapped when the vision interface is swapped
-// the setpoint contains the information necessary
-// the setpoint will porbs be a dynamic trait
-// instead of a bool, the process frame function takes a setpoint oibject
-// the setpoint will need to be stored in the metadata struct
-// when the vision interface is swapped out, setpoint needs to be cleared (back to None, setpoint will have to be Option<Box< dyn Setpoint>>)
-// implement demonstration too in case
