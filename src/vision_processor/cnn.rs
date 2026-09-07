@@ -1,6 +1,8 @@
 use image::RgbImage;
 
-use super::{CameraReadings, VisionInterface, VisionTechnique};
+use super::{CameraReadings, VisionInterface};
+
+use server_edge_datatypes::shared::VisionTechnique;
 
 pub struct Cnn {
     // f32 is a placeholder for now

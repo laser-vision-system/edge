@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::vision_processor::{cnn::Cnn, diff::Diff, empty::Empty};
 
+use server_edge_datatypes::shared::VisionTechnique;
+
 pub mod cnn;
 pub mod demonstration;
 pub mod diff;
@@ -39,20 +41,15 @@ pub trait VisionInterface {
 	fn process_frame(&mut self, frame: &RgbImage, setpoint: bool) -> CameraReadings;
 }
 
-// This belongs in the server-edge-datatypes submodule
-
-
-impl VisionTechnique {
-	pub fn swap(&self, current: &dyn VisionInterface) -> Option<Box<dyn VisionInterface>> {
-		if self == &current.identifier() {
-			return None;
-		}
-		match self {
-			Self::Empty => Some(Box::new(Empty::default())),
-			Self::Cnn => Some(Box::new(Cnn::default())),
-			Self::Diff => Some(Box::new(Diff::default())),
-			Self::Demonstration => Some(Box::new(demonstration::Demonstration::default())),
-		}
+pub fn swap(current: &dyn VisionInterface, swap_to: &VisionTechnique) -> Option<Box<dyn VisionInterface>> {
+	if swap_to == &current.identifier() {
+		return None;
+	}
+	match swap_to {
+		VisionTechnique::Empty => Some(Box::new(Empty::default())),
+		VisionTechnique::Cnn => Some(Box::new(Cnn::default())),
+		VisionTechnique::Diff => Some(Box::new(Diff::default())),
+		VisionTechnique::Demonstration => Some(Box::new(demonstration::Demonstration::default())),
 	}
 }
 

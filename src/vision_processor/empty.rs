@@ -2,6 +2,8 @@ use image::RgbImage;
 
 use super::{CameraReadings, VisionInterface};
 
+use server_edge_datatypes::shared::VisionTechnique;
+
 pub struct Empty {
     // f32 is a placeholder for now
     deviation: f32,

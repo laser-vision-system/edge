@@ -4,6 +4,8 @@ use rayon::prelude::*;
 
 use super::{CameraReadings, VisionInterface};
 
+use server_edge_datatypes::shared::VisionTechnique;
+
 #[must_use]
 pub struct Demonstration {
 	setpoint: f32,
@@ -52,7 +54,7 @@ impl VisionInterface for Demonstration {
 	fn process_frame(&mut self, frame: &RgbImage, setpoint: bool) -> CameraReadings {
 		self.average_lightness(frame, setpoint).into()
 	}
-	fn identifier(&self) -> super::VisionTechnique {
-		super::VisionTechnique::Demonstration
+	fn identifier(&self) -> VisionTechnique {
+		VisionTechnique::Demonstration
 	}
 }
