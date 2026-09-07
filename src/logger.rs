@@ -16,7 +16,7 @@
 
 use std::sync::{Mutex, OnceLock};
 
-use chrono::{Duration, NaiveDate, Local};
+use chrono::{Duration, Local, NaiveDate};
 
 use crate::error::EdgeError::{self};
 
@@ -35,35 +35,35 @@ enum LogLevel {
 	ERROR,
 }
 
-#[derive(Serialize, Deserialize)]
-/// A single log entry.
-struct LogEntry {
-	count: u32,
-	timestamp: String,
-	level: LogLevel,
-	message: String,
-}
+// #[derive(Serialize, Deserialize)]
+// /// A single log entry.
+// struct LogEntry {
+// 	count: u32,
+// 	timestamp: String,
+// 	level: LogLevel,
+// 	message: String,
+// }
 
-impl LogEntry {
-	fn new(count: u32, level: LogLevel, message: String) -> Self {
-		let timestamp = Local::now().to_rfc3339();
+// impl LogEntry {
+// 	fn new(count: u32, level: LogLevel, message: String) -> Self {
+// 		let timestamp = Local::now().to_rfc3339();
 
-		LogEntry {
-			count,
-			timestamp,
-			level,
-			message,
-		}
-	}
-}
+// 		LogEntry {
+// 			count,
+// 			timestamp,
+// 			level,
+// 			message,
+// 		}
+// 	}
+// }
 
-/// The logger struct that holds each unsent (buffered) log entry and the log count.
-///
-/// Each log entry is stored in a Vector.
-///
-/// All log entries are consumed upon calling the send_logs function.
+// The logger struct that holds each unsent (buffered) log entry and the log count.
+//
+// Each log entry is stored in a Vector.
+//
+// All log entries are consumed upon calling the send_logs function.
 pub struct Logger {
-	logs: Vec<LogEntry>,
+	logs: Vec<String>,
 	counter: LogCounter,
 }
 
@@ -76,9 +76,10 @@ impl Logger {
 	}
 
 	pub fn log_info(&mut self, message: &str) {
-		let log_entry = LogEntry::new(
-			// TODO: Handle unwrap
+		let log_entry = format!(
+			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
+			Local::now().to_rfc3339(),
 			LogLevel::INFO,
 			message.to_string(),
 		);
@@ -87,9 +88,10 @@ impl Logger {
 	}
 
 	pub fn log_warn(&mut self, message: &str) {
-		let log_entry = LogEntry::new(
-			// TODO: Handle unwrap
+		let log_entry = format!(
+			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
+			Local::now().to_rfc3339(),
 			LogLevel::WARN,
 			message.to_string(),
 		);
@@ -98,13 +100,14 @@ impl Logger {
 	}
 
 	pub fn log_error(&mut self, message: &str, error: EdgeError) {
-		let concat_message = format!("{:?}: {}\n{}", error, error, message);
-
-		let log_entry = LogEntry::new(
-			// TODO: Handle unwrap
+		let log_entry = format!(
+			"[{:05}] {}\n{:?}\n{:?}: {}\n{}\n----------",
 			self.counter.next(),
+			Local::now().to_rfc3339(),
 			LogLevel::ERROR,
-			concat_message,
+			error,
+			error,
+			message,
 		);
 
 		self.logs.push(log_entry);
@@ -115,15 +118,8 @@ impl Logger {
 
 		for log in logs {
 			// TODO: Actually send the logs to the server
-			self._print_log(&log);
+			println!("{}", log);
 		}
-	}
-
-	fn _print_log(&self, log: &LogEntry) {
-		println!(
-			"[{:05}] {}\n{:?}\n{}\n----------",
-			log.count, log.timestamp, log.level, log.message
-		);
 	}
 }
 
