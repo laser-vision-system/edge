@@ -1,44 +1,42 @@
 use image::RgbImage;
 
-use super::{VisionInterface};
+use super::VisionInterface;
 
 use server_edge_datatypes::shared::VisionTechnique;
 
-use crate::tcam_interface::{Setpoint, SetpointType};
+use crate::tcam_interface::Setpoint;
 
-pub struct Empty {
-    // f32 is a placeholder for now
-    deviation: f32,
-}
-
-impl Default for Empty {
-    fn default() -> Self {
-        Self { deviation: 0.0 }
-    }
-}
+#[derive(Default)]
+pub struct Empty {}
 
 impl Empty {
-    pub fn new(deviation: f32) -> Self {
-        Self { deviation }
-    }
+	pub fn new() -> Self {
+		Self {}
+	}
+
+	fn perform_analysis(&self, frame: &RgbImage) -> f32 {
+		// whatever it needs to do
+		0.0
+	}
 }
 
 impl VisionInterface for Empty {
-    fn process_frame(&mut self, _frame: &RgbImage, _setpoint: &mut dyn Setpoint) -> f32 {
-        0.0
-    }
+	fn identifier(&self) -> VisionTechnique {
+		VisionTechnique::Empty
+	}
 
-    fn identifier(&self) -> VisionTechnique {
-        VisionTechnique::Empty
-    }
-}
+	fn process_frame(&self, frame: &RgbImage, setpoint: &Setpoint) -> f32 {
+		match setpoint.empty_setpoint.intensity {
+			Some(_setpoint_intensity) => {
+				return 1.0 - (self.perform_analysis(frame) / _setpoint_intensity);
+			},
+			None => {
+				return -1.0;
+			},
+		}
+	}
 
-impl From<EmptySetpoint> for SetpointType {
-    fn from(x: EmptySetpoint) -> Self {
-        Self::Empty(x)
-    }
-}
-
-pub struct EmptySetpointDataType {
-	setpoint: Option<f32>,
+	fn calibrate_setpoint(&self, frame: &RgbImage, setpoint: &mut Setpoint) {
+		setpoint.demonstration_setpoint.intensity = Some(self.perform_analysis(frame));
+	}
 }

@@ -6,7 +6,7 @@ use super::VisionInterface;
 
 use server_edge_datatypes::shared::VisionTechnique;
 
-use crate::tcam_interface::{Setpoint, SetpointData, SetpointType};
+use crate::tcam_interface::Setpoint;
 
 #[must_use]
 #[derive(Default)]
@@ -21,7 +21,7 @@ impl Demonstration {
 	#[allow(clippy::missing_asserts_for_indexing)]
 	#[allow(clippy::indexing_slicing)]
 	#[allow(clippy::cast_precision_loss)]
-	fn average_lightness(&mut self, frame: &RgbImage) -> f32 {
+	fn average_lightness(&self, frame: &RgbImage) -> f32 {
 		let raw_bytes = frame.as_raw();
 		let pixel_count = raw_bytes.len() as f32 / 3.0;
 
@@ -41,57 +41,22 @@ impl Demonstration {
 }
 
 impl VisionInterface for Demonstration {
-	fn process_frame(&mut self, frame: &RgbImage, setpoint: &mut dyn Setpoint) -> f32 {
-		if setpoint.calibrate_next_image() {
-			// First deactivate the flag
-			setpoint.set_calibrate_next_image(false);
-			setpoint.calibrate(frame, self);
-			return 0.0;
-		}
-		self.average_lightness(frame)
-	}
-
 	fn identifier(&self) -> VisionTechnique {
 		VisionTechnique::Demonstration
 	}
-}
 
-pub struct DemonstrationSetpoint {
-	setpoint: DemonstrationSetpointDataType,
-	calibrate_next_image: bool,
-}
-
-impl Setpoint for DemonstrationSetpoint {
-	fn set_calibrate_next_image(&mut self, flag: bool) {
-		self.calibrate_next_image = flag;
+	fn process_frame(&self, frame: &RgbImage, setpoint: &Setpoint) -> f32 {
+		match setpoint.demonstration_setpoint.intensity {
+			Some(_setpoint_intensity) => {
+				return 1.0 - (self.average_lightness(frame) / _setpoint_intensity);
+			},
+			None => {
+				return -1.0;
+			},
+		}
 	}
 
-	fn calibrate_next_image(&self) -> bool {
-		self.calibrate_next_image
-	}
-
-	fn clear(&mut self) {
-		self.setpoint = None;
-	}
-
-	fn calibrate(&mut self, frame: &RgbImage, vision_implementation: &dyn VisionInterface) {
-		self.setpoint = vision_implementation.average_lightness(frame);
-		self.calibrate_next_image = false;
+	fn calibrate_setpoint(&self, frame: &RgbImage, setpoint: &mut Setpoint) {
+		setpoint.demonstration_setpoint.intensity = Some(self.average_lightness(frame));
 	}
 }
-
-// impl From<DemonstrationSetpointDataType> for SetpointData {
-// 	fn from(x: DemonstrationSetpointDataType) -> Self {
-// 		Self::DemonstrationSetpointData(x)
-// 	}
-// }
-
-// pub struct DemonstrationSetpointDataType {
-// 	setpoint: Option<f32>,
-// }
-
-// impl DemonstrationSetpointDataType {
-// 	fn new(value: Option<f32>) -> Self {
-// 		Self { setpoint: value }
-// 	}
-// }

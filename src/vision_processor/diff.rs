@@ -4,7 +4,7 @@ use super::VisionInterface;
 
 use server_edge_datatypes::shared::VisionTechnique;
 
-use crate::tcam_interface::{Setpoint, SetpointType};
+use crate::tcam_interface::{Setpoint};
 
 #[derive(Default)]
 pub struct Diff {}
@@ -13,50 +13,30 @@ impl Diff {
 	pub fn new() -> Self {
 		Self {}
 	}
-}
 
-impl VisionInterface for Diff {
-	fn process_frame(&mut self, frame: &RgbImage, setpoint: &mut dyn Setpoint) -> f32 {
-		// Placeholder for an actual implementation
-		2.0
-	}
-	fn identifier(&self) -> VisionTechnique {
-		VisionTechnique::Diff
-	}
-}
-
-pub struct DiffSetpoint {
-	setpoint: DiffSetpointDataType,
-	calibrate_next_image: bool,
-}
-
-impl Setpoint for DiffSetpoint {
-	fn set_calibrate_next_image(&mut self, flag: bool) {
-		self.calibrate_next_image = flag;
-	}
-
-	fn calibrate_next_image(&self) -> bool {
-		self.calibrate_next_image
-	}
-
-	fn clear(&mut self) {
-		self.setpoint = None;
-	}
-
-	fn calibrate(&mut self, image: &RgbImage) {
-		let gray_image = image::imageops::grayscale(image);
-		self.setpoint = Some(gray_image);
-		self.calibrate_next_image = false;
-	}
-}
-
-impl From<DiffSetpoint> for SetpointType {
-    fn from(x: DiffSetpoint) -> Self {
-        Self::Diff(x)
+    fn perform_analysis(&self, frame: &RgbImage) -> f32 {
+        // whatever it needs to do
+        4.2
     }
 }
 
-pub struct DiffSetpointDataType {
-    // TODO: Store calculate metrics fot the setpoint image during calibrate and save them here.
-	setpoint: Option<GrayImage>,
+impl VisionInterface for Diff {
+	fn identifier(&self) -> VisionTechnique {
+		VisionTechnique::Diff
+	}
+
+	fn process_frame(&self, frame: &RgbImage, setpoint: &Setpoint) -> f32 {
+		match setpoint.diff_setpoint.mean {
+			Some(_setpoint_intensity) => {
+				return 1.0 - (self.perform_analysis(frame) / _setpoint_intensity);
+			},
+			None => {
+				return -1.0;
+			},
+		}
+	}
+
+	fn calibrate_setpoint(&self, frame: &RgbImage, setpoint: &mut Setpoint) {
+		setpoint.demonstration_setpoint.intensity = Some(self.perform_analysis(frame));
+	}
 }
