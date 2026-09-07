@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use crate::tcam_interface::Setpoint;
+
 use super::{Camera, Status, new_camera_info::NewCameraInfo};
 
 type _ErrAccType = u8;
@@ -27,6 +29,8 @@ pub(crate) struct Metadata {
 	/// An error accumulation value. If this value gets too high, the camera [`Status`] should be changed to [`Broken`](Status::Broken)
 	/// TODO: Error threshold.
 	err_accumulation: _ErrAccType,
+	/// The current setpoint for this camera
+	setpoint: Setpoint,
 
 	// ==== Temporary data ====
 	/// All of the indicies that the camera is occupying.
@@ -42,6 +46,7 @@ impl Default for Metadata {
 			status: Default::default(),
 			currently_viewed: false,
 			err_accumulation: 0,
+			setpoint: Setpoint::new(),
 			indices: None,
 			camera: None,
 		}

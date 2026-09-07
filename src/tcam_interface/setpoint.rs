@@ -57,7 +57,7 @@ pub struct Setpoint {
 }
 
 impl Setpoint {
-	fn new() -> Self {
+	pub fn new() -> Self {
 		Self {
 			empty_setpoint: EmptySetpoint::new(),
 			diff_setpoint: DiffSetpoint::new(),
