@@ -1,6 +1,6 @@
 use crate::{
 	client::Client, settings, tcam_interface::Camera,
-	vision_processor::demonstration::Demonstration,
+	vision_processor::{VisionInterface, Empty, Cnn, Diff, Demonstration},
 };
 use async_std::task;
 use image::ImageBuffer;
@@ -15,7 +15,7 @@ use std::collections::HashMap;
 pub struct Conductor {
 	camera: Camera,
 	client: Client,
-	demo: Demonstration,
+	vision_processor: Box<dyn VisionInterface>,
 }
 
 impl Conductor {
@@ -25,12 +25,12 @@ impl Conductor {
 	pub async fn new() -> Self {
 		let camera = Camera::new(0).unwrap();
 		let client = Client::new();
-		let demo = Demonstration::default();
+		let vision_processor = Box::new(Empty::default());
 
 		Self {
 			camera,
 			client,
-			demo,
+			vision_processor,
 		}
 	}
 
