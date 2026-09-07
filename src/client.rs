@@ -65,7 +65,7 @@ impl Client {
 		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
 		cameras: RegisterCameras,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let mut msg = "RegisterCameras".to_string();
+		let mut msg = "RegisterCameras:".to_string();
 		msg.push_str(&*serde_json::to_string(&cameras)?);
 		stream.send(Message::Text(Utf8Bytes::from(msg))).await?;
 		Ok(())
@@ -75,7 +75,7 @@ impl Client {
 		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
 		camera: DisconnectCamera,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let mut msg = "DisconnectCamera".to_string();
+		let mut msg = "DisconnectCamera:".to_string();
 		msg.push_str(&*serde_json::to_string(&camera)?);
 		stream.send(Message::Text(Utf8Bytes::from(msg))).await?;
 		Ok(())
@@ -96,7 +96,7 @@ impl Client {
 		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
 		configuration: Configuration,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let mut msg = "Configuration".to_string();
+		let mut msg = "Configuration:".to_string();
 		msg.push_str(&*serde_json::to_string(&configuration)?);
 		stream.send(Message::Text(Utf8Bytes::from(msg))).await?;
 		Ok(())
@@ -106,7 +106,7 @@ impl Client {
 		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
 		image_analysis: ImageAnalysis,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let mut msg = "ImageAnalysis".to_string();
+		let mut msg = "ImageAnalysis:".to_string();
 		msg.push_str(&*serde_json::to_string(&image_analysis)?);
 		stream.send(Message::Text(Utf8Bytes::from(msg))).await?;
 		Ok(())
