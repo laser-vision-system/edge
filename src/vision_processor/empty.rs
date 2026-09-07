@@ -1,8 +1,10 @@
 use image::RgbImage;
 
-use super::{CameraReadings, VisionInterface};
+use super::{VisionInterface};
 
 use server_edge_datatypes::shared::VisionTechnique;
+
+use crate::tcam_interface::{Setpoint, SetpointType};
 
 pub struct Empty {
     // f32 is a placeholder for now
@@ -22,11 +24,21 @@ impl Empty {
 }
 
 impl VisionInterface for Empty {
-    fn process_frame(&mut self, _frame: &RgbImage, _setpoint: bool) -> CameraReadings {
-        // Placeholder for an actual implementation
-        CameraReadings::new(self.deviation)
+    fn process_frame(&mut self, _frame: &RgbImage, _setpoint: &mut dyn Setpoint) -> f32 {
+        0.0
     }
+
     fn identifier(&self) -> VisionTechnique {
         VisionTechnique::Empty
     }
+}
+
+impl From<EmptySetpoint> for SetpointType {
+    fn from(x: EmptySetpoint) -> Self {
+        Self::Empty(x)
+    }
+}
+
+pub struct EmptySetpointDataType {
+	setpoint: Option<f32>,
 }
