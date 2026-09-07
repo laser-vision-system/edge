@@ -52,4 +52,7 @@ impl VisionInterface for Demonstration {
 	fn process_frame(&mut self, frame: &RgbImage, setpoint: bool) -> CameraReadings {
 		self.average_lightness(frame, setpoint).into()
 	}
+	fn identifier(&self) -> super::VisionTechnique {
+		super::VisionTechnique::Demonstration
+	}
 }
