@@ -21,4 +21,4 @@ pub(crate) use new_camera_info::NewCameraInfo;
 pub mod controls;
 
 mod setpoint;
-pub(crate) use setpoint::{Setpoint, SetpointType, SetpointData};
+pub(crate) use setpoint::Setpoint;
