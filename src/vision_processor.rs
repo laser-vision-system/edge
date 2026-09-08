@@ -4,7 +4,6 @@ use std::{
 };
 
 use image::RgbImage;
-use serde::{Deserialize, Serialize};
 use server_edge_datatypes::shared::VisionTechnique;
 
 pub mod cnn;
@@ -16,28 +15,6 @@ pub use cnn::Cnn;
 pub use demonstration::Demonstration;
 pub use diff::Diff;
 pub use empty::Empty;
-
-#[must_use]
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-pub struct CameraReading {
-	deviation: f32,
-}
-
-impl CameraReading {
-	pub fn new(deviation: f32) -> Self {
-		Self { deviation }
-	}
-
-	pub fn deviation(&self) -> f32 {
-		self.deviation
-	}
-}
-
-impl From<f32> for CameraReading {
-	fn from(value: f32) -> Self {
-		Self::new(value)
-	}
-}
 
 // NOTE: If we do multithreading, this has to be swapped for `std::sync::Arc`.
 
