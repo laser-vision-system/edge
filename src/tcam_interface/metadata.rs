@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::tcam_interface::Setpoint;
+use crate::vision_processor::VisionState;
 
 use super::{Camera, Status, new_camera_info::NewCameraInfo};
 
@@ -13,30 +13,37 @@ pub(crate) type InsertWasSuccessful = bool;
 /// Named type for clarity.
 type _InitialiseWasSuccessful = bool;
 
-/// Information about a camera device that persists after the device is disconnected.
+/// Information about a camera device that persists after the device is
+/// disconnected.
 pub(crate) struct Metadata {
 	// ==== Persistent data ====
 	/// A user configurable name for this camera.
 	///
 	/// It is not required to be unique, but it is best if it is.
 	///
-	/// If side-effects are needed when this value is changed, make it private and use accessor methods.
+	/// If side-effects are needed when this value is changed, make it private
+	/// and use accessor methods.
 	pub(crate) name: String,
 	/// The current status of the camera.
 	pub(super) status: Status,
 	/// Whether this camera is sending the images to the server.
 	pub(super) currently_viewed: bool,
-	/// An error accumulation value. If this value gets too high, the camera [`Status`] should be changed to [`Broken`](Status::Broken)
-	/// TODO: Error threshold.
+	/// An error accumulation value. If this value gets too high, the camera
+	/// [`Status`] should be changed to [`Broken`](Status::Broken) TODO: Error
+	/// threshold.
 	err_accumulation: _ErrAccType,
-	/// The current setpoint for this camera
-	setpoint: Setpoint,
+	/// Whether to change the setpoint to the immediate next measurement.
+	/// TODO: Use.
+	calibrate: bool,
 
 	// ==== Temporary data ====
 	/// All of the indicies that the camera is occupying.
 	indices: Option<HashSet<_IndexType>>,
 	/// The camera device where images are pulled from.
 	camera: Option<Camera>,
+	/// Local holding of the vision processor state.
+	/// TODO: Use.
+	vision_state: Option<VisionState>,
 }
 
 impl Default for Metadata {
@@ -46,9 +53,10 @@ impl Default for Metadata {
 			status: Default::default(),
 			currently_viewed: false,
 			err_accumulation: 0,
-			setpoint: Setpoint::new(),
+			calibrate: false,
 			indices: None,
 			camera: None,
+			vision_state: None,
 		}
 	}
 }
@@ -83,7 +91,8 @@ impl Metadata {
 
 	/// Attempt to add an index that a camera is determined to be occupying.
 	///
-	/// If this fails, it's because the device is already initialised and can be ignored.
+	/// If this fails, it's because the device is already initialised and can be
+	/// ignored.
 	pub(crate) fn try_insert_index(&mut self, index: _IndexType) -> InsertWasSuccessful {
 		self.indices.get_or_insert_default().insert(index)
 	}

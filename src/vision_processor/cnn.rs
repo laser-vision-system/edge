@@ -1,44 +1,68 @@
-use image::RgbImage;
+use std::fmt;
 
-use super::{VisionInterface};
+use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
-use server_edge_datatypes::shared::VisionTechnique;
-
-use crate::tcam_interface::{Setpoint};
-
-#[derive(Default)]
+#[derive(Clone)]
 pub struct Cnn {
-    // Anything may be stored here if necessary (such as the model, or the model's weights)
+	session: SessionToken,
 }
 
 impl Cnn {
-    pub fn new() -> Self {
-        Self {}
-    }
-
-    fn perform_analysis(&self, frame: &RgbImage) -> f32 {
-        // whatever it needs to do
-        4.2
-    }
-}
-
-impl VisionInterface for Cnn {
-	fn identifier(&self) -> VisionTechnique {
-		VisionTechnique::Cnn
-	}
-
-	fn process_frame(&self, frame: &RgbImage, setpoint: &Setpoint) -> f32 {
-		match setpoint.cnn_setpoint.intensity {
-			Some(_setpoint_intensity) => {
-				return 1.0 - (self.perform_analysis(frame) / _setpoint_intensity);
-			},
-			None => {
-				return -1.0;
-			},
+	pub fn new() -> Self {
+		Self {
+			session: SessionToken::new(),
 		}
 	}
 
-	fn calibrate_setpoint(&self, frame: &RgbImage, setpoint: &mut Setpoint) {
-		setpoint.demonstration_setpoint.intensity = Some(self.perform_analysis(frame));
+	pub fn new_state(&self) -> VisionState {
+		VisionState::Cnn {
+			handle: self.session.downgrade(),
+			data: ExternalData::default(),
+		}
+	}
+}
+
+impl VisionInterface for Cnn {
+	fn process(&mut self, batch: &mut [BatchItem]) {
+		for item in batch {
+			let VisionState::Cnn { data, .. } = &mut item.state else {
+				// TODO: This should raise an error.
+				continue;
+			};
+			data.deviation = 0.0
+		}
+	}
+}
+
+impl Default for Cnn {
+	fn default() -> Self {
+		Self {
+			session: SessionToken::new(),
+		}
+	}
+}
+
+impl fmt::Debug for Cnn {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "Cnn")
+	}
+}
+
+impl fmt::Display for Cnn {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "Cnn")
+	}
+}
+
+/// Closely associated data used by external holders.
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+pub struct ExternalData {
+	pub setpoint: Option<f32>,
+	pub deviation: f32,
+}
+
+impl fmt::Display for ExternalData {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "ExternalData for Cnn: {:?}", self.setpoint)
 	}
 }

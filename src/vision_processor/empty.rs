@@ -1,42 +1,59 @@
-use image::RgbImage;
+use std::fmt;
 
-use super::VisionInterface;
+use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
-use server_edge_datatypes::shared::VisionTechnique;
-
-use crate::tcam_interface::Setpoint;
-
-#[derive(Default)]
-pub struct Empty {}
+#[derive(Clone)]
+pub struct Empty {
+	session: SessionToken,
+}
 
 impl Empty {
 	pub fn new() -> Self {
-		Self {}
+		Self {
+			session: SessionToken::new(),
+		}
 	}
 
-	fn perform_analysis(&self, frame: &RgbImage) -> f32 {
-		// whatever it needs to do
-		0.0
+	pub fn new_state(&self) -> VisionState {
+		VisionState::Empty {
+			handle: self.session.downgrade(),
+			data: ExternalData::default(),
+		}
 	}
 }
 
 impl VisionInterface for Empty {
-	fn identifier(&self) -> VisionTechnique {
-		VisionTechnique::Empty
+	fn process(&mut self, _: &mut [BatchItem]) {
+		return;
 	}
+}
 
-	fn process_frame(&self, frame: &RgbImage, setpoint: &Setpoint) -> f32 {
-		match setpoint.empty_setpoint.intensity {
-			Some(_setpoint_intensity) => {
-				return 1.0 - (self.perform_analysis(frame) / _setpoint_intensity);
-			},
-			None => {
-				return -1.0;
-			},
+impl Default for Empty {
+	fn default() -> Self {
+		Self {
+			session: SessionToken::new(),
 		}
 	}
+}
 
-	fn calibrate_setpoint(&self, frame: &RgbImage, setpoint: &mut Setpoint) {
-		setpoint.demonstration_setpoint.intensity = Some(self.perform_analysis(frame));
+impl fmt::Debug for Empty {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "Empty")
+	}
+}
+
+impl fmt::Display for Empty {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "Empty")
+	}
+}
+
+/// Closely associated data used by external holders.
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ExternalData;
+
+impl fmt::Display for ExternalData {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "ExternalData for Empty")
 	}
 }

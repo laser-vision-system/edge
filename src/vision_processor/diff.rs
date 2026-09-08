@@ -1,42 +1,77 @@
-use image::{GrayImage, RgbImage};
+use std::fmt;
 
-use super::VisionInterface;
+use image::RgbImage;
 
-use server_edge_datatypes::shared::VisionTechnique;
+use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
-use crate::tcam_interface::{Setpoint};
-
-#[derive(Default)]
-pub struct Diff {}
+#[derive(Clone)]
+pub struct Diff {
+	session: SessionToken,
+}
 
 impl Diff {
 	pub fn new() -> Self {
-		Self {}
-	}
-
-    fn perform_analysis(&self, frame: &RgbImage) -> f32 {
-        // whatever it needs to do
-        4.2
-    }
-}
-
-impl VisionInterface for Diff {
-	fn identifier(&self) -> VisionTechnique {
-		VisionTechnique::Diff
-	}
-
-	fn process_frame(&self, frame: &RgbImage, setpoint: &Setpoint) -> f32 {
-		match setpoint.diff_setpoint.mean {
-			Some(_setpoint_intensity) => {
-				return 1.0 - (self.perform_analysis(frame) / _setpoint_intensity);
-			},
-			None => {
-				return -1.0;
-			},
+		Self {
+			session: SessionToken::new(),
 		}
 	}
 
-	fn calibrate_setpoint(&self, frame: &RgbImage, setpoint: &mut Setpoint) {
-		setpoint.demonstration_setpoint.intensity = Some(self.perform_analysis(frame));
+	pub fn new_state(&self) -> VisionState {
+		VisionState::Diff {
+			handle: self.session.downgrade(),
+			data: ExternalData::default(),
+		}
+	}
+}
+
+impl VisionInterface for Diff {
+	fn process(&mut self, batch: &mut [BatchItem]) {
+		for item in batch {
+			let VisionState::Diff { data, .. } = &mut item.state else {
+				// TODO: This should raise an error.
+				continue;
+			};
+			data.deviation = 0.0
+		}
+	}
+}
+
+impl Default for Diff {
+	fn default() -> Self {
+		Self {
+			session: SessionToken::new(),
+		}
+	}
+}
+
+impl fmt::Debug for Diff {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "Diff")
+	}
+}
+
+impl fmt::Display for Diff {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "Diff")
+	}
+}
+
+/// Closely associated data used by external holders.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ExternalData {
+	pub image: Option<RgbImage>,
+	pub peak: Option<f32>,
+	pub mean: Option<f32>,
+	pub std_dev: Option<f32>,
+	pub deviation: f32,
+}
+
+impl fmt::Display for ExternalData {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(
+			f,
+			"ExternalData for Diff\n - peak: {:?}\n - mean: {:?}\n - std_dev: {:?}",
+			self.peak, self.mean, self.std_dev
+		)
 	}
 }

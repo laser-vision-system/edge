@@ -1,13 +1,14 @@
-use crate::{
-	client::Client, settings, tcam_interface::Camera,
-	vision_processor::{VisionInterface, Empty, Cnn, Diff, Demonstration},
-};
+use std::collections::HashMap;
+
 use async_std::task;
 use image::ImageBuffer;
-use server_edge_datatypes::edge::{DisconnectCamera, ImageAnalysis, RegisterCameras};
-use server_edge_datatypes::shared::{CameraState, Configuration};
+use server_edge_datatypes::{
+	edge::{DisconnectCamera, ImageAnalysis, RegisterCameras},
+	shared::{CameraState, Configuration},
+};
 use settings::UPDATE_DELAY;
-use std::collections::HashMap;
+
+use crate::{client::Client, settings, tcam_interface::Camera, vision_processor::VisionVariant};
 
 /// # Conductor
 ///
@@ -15,7 +16,7 @@ use std::collections::HashMap;
 pub struct Conductor {
 	camera: Camera,
 	client: Client,
-	vision_processor: Box<dyn VisionInterface>,
+	vision_processor: VisionVariant,
 }
 
 impl Conductor {
@@ -25,7 +26,7 @@ impl Conductor {
 	pub async fn new() -> Self {
 		let camera = Camera::new(0).unwrap();
 		let client = Client::new();
-		let vision_processor = Box::new(Empty::default());
+		let vision_processor = VisionVariant::default();
 
 		Self {
 			camera,
