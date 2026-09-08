@@ -1,219 +1,291 @@
-use std::io::Cursor;
-
+use crate::settings::{API, HOST, PORT};
+use futures_util::{SinkExt, StreamExt};
 use image::ImageBuffer;
-use reqwest;
-use serde::{Deserialize, Serialize};
-
-use crate::{
-	settings::{
-		ENDPOINT_CAMERA_CONFIG, ENDPOINT_CAMERA_READINGS, ENDPOINT_GUI_UPDATE, ENDPOINT_IMAGE,
-		HOST, PORT,
-	},
-	vision_processor::CameraReadings,
+use server_edge_datatypes::edge::{
+	DisconnectCamera, ImageAnalysis, RegisterCameras, SetNameCamera, StartViewingCamera,
+	StopViewingCamera,
 };
+use server_edge_datatypes::shared::{Configuration, ViewCameraConfig};
+use tokio::net::TcpStream;
+use tokio_tungstenite::tungstenite::{Bytes, Message, Utf8Bytes};
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
 
-#[must_use]
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-pub struct GuiUpdate {
-	setpoint: bool,
-	config: bool,
+pub struct Client {
+	camera_list: SetNameCamera,
+	start_viewing_camera: StartViewingCamera,
+	stop_viewing_camera: StopViewingCamera,
+	configuration: Configuration,
+	view_camera_config: ViewCameraConfig,
 }
-
-impl GuiUpdate {
-	pub fn new(setpoint: bool, config: bool) -> Self {
-		Self { setpoint, config }
-	}
-
-	pub fn setpoint(&self) -> bool {
-		self.setpoint
-	}
-
-	pub fn config(&self) -> bool {
-		self.config
-	}
-}
-
-impl From<(bool, bool)> for GuiUpdate {
-	fn from(value: (bool, bool)) -> Self {
-		Self::new(value.0, value.1)
-	}
-}
-
-#[must_use]
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-pub struct CameraConfig {
-	framerate: f32,
-	brightness: i32,
-	hue: i32,
-	saturation: i32,
-}
-
-impl CameraConfig {
-	pub fn new(framerate: f32, brightness: i32, hue: i32, saturation: i32) -> Self {
-		Self {
-			framerate,
-			brightness,
-			hue,
-			saturation,
-		}
-	}
-
-	pub fn framerate(&self) -> f32 {
-		self.framerate
-	}
-
-	pub fn brightness(&self) -> i32 {
-		self.brightness
-	}
-
-	pub fn hue(&self) -> i32 {
-		self.hue
-	}
-
-	pub fn saturation(&self) -> i32 {
-		self.saturation
-	}
-}
-
-impl From<(f32, i32, i32, i32)> for CameraConfig {
-	fn from(value: (f32, i32, i32, i32)) -> Self {
-		Self::new(value.0, value.1, value.2, value.3)
-	}
-}
-
-// TODO: Look into making this a singleton or global.
-#[must_use]
-pub struct Client(reqwest::Client);
-
-impl Default for Client {
-	fn default() -> Self {
-		Self::new()
-	}
-}
-
 impl Client {
 	pub fn new() -> Self {
-		Self(reqwest::Client::new())
+		let camera_list = SetNameCamera {
+			camera_id: 0,
+			name: "".to_string(),
+		};
+		let start_viewing_camera = StartViewingCamera { camera_id: 0 };
+		let stop_viewing_camera = StopViewingCamera { camera_id: 0 };
+		let configuration = Configuration {
+			conn_id: 0,
+			camera_id: 0,
+			configuration: "".to_string(),
+		};
+		let view_camera_config = ViewCameraConfig {
+			conn_id: 0,
+			camera_id: 0,
+		};
+
+		Self {
+			camera_list,
+			start_viewing_camera,
+			stop_viewing_camera,
+			configuration,
+			view_camera_config,
+		}
+	}
+	pub async fn websocket_connect_manual(&mut self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
+		let url = "ws://".to_string() + HOST + ":" + PORT + API;
+		let (stream, response) = connect_async(url).await.expect("Failed to connect");
+		return stream;
 	}
 
-	fn default_address() -> String {
-		format!("http://{HOST}:{PORT}")
+	pub fn websocket_connect_automatic(self) {
+		// TO DO automatic connection
 	}
-
-	fn url_from_endpoint(endpoint: &str) -> reqwest::Url {
-		let url = format!("{}/{}", Self::default_address(), endpoint);
-		reqwest::Url::parse(&url).unwrap()
+	pub async fn keep_alive(
+		&mut self,
+		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let msg = "hello";
+		stream.send(Message::Pong(Bytes::from(msg))).await?;
+		Ok(())
 	}
-
-	/// Post camera info: `/camera_info`
-	pub async fn post_readings(&self, data: CameraReadings) -> Result<(), reqwest::Error> {
-		let url = Self::url_from_endpoint(ENDPOINT_CAMERA_READINGS);
-		self.0
-			.post(url)
-			.json(&data)
-			.send()
-			.await?
-			.error_for_status()?;
+	pub async fn send_register_cameras(
+		&mut self,
+		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		cameras: RegisterCameras,
+	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut msg = "RegisterCameras".to_string();
+		msg.push_str(&*serde_json::to_string(&cameras)?);
+		stream.send(Message::Text(Utf8Bytes::from(msg))).await?;
+		Ok(())
+	}
+	pub async fn send_disconnect_camera(
+		&mut self,
+		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		camera: DisconnectCamera,
+	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut msg = "DisconnectCamera".to_string();
+		msg.push_str(&*serde_json::to_string(&camera)?);
+		stream.send(Message::Text(Utf8Bytes::from(msg))).await?;
 		Ok(())
 	}
 
-	/// Post configuration: `/configuration`
-	pub async fn post_camera_config(&self, data: CameraConfig) -> Result<(), reqwest::Error> {
-		let url = Self::url_from_endpoint(ENDPOINT_CAMERA_CONFIG);
-		self.0
-			.post(url)
-			.json(&data)
-			.send()
-			.await?
-			.error_for_status()?;
+	pub async fn send_image(
+		&mut self,
+		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		frame: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
+	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let msg = frame.clone().into_raw();
+		stream.send(Message::Binary(Bytes::from(msg))).await?;
 		Ok(())
 	}
 
-	/// Get configuration: `/configuration`
-	pub async fn get_camera_config(&self) -> Result<CameraConfig, reqwest::Error> {
-		let url = Self::url_from_endpoint(ENDPOINT_CAMERA_CONFIG);
-		self.0.get(url).send().await?.json::<CameraConfig>().await
+	pub async fn send_configuration(
+		&mut self,
+		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		configuration: Configuration,
+	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut msg = "Configuration".to_string();
+		msg.push_str(&*serde_json::to_string(&configuration)?);
+		stream.send(Message::Text(Utf8Bytes::from(msg))).await?;
+		Ok(())
+	}
+	pub async fn send_image_analysis(
+		&mut self,
+		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		image_analysis: ImageAnalysis,
+	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut msg = "ImageAnalysis".to_string();
+		msg.push_str(&*serde_json::to_string(&image_analysis)?);
+		stream.send(Message::Text(Utf8Bytes::from(msg))).await?;
+		Ok(())
 	}
 
-	/// Get GUI update: `/gui_update`
-	pub async fn get_gui_update(&self) -> Result<GuiUpdate, reqwest::Error> {
-		let url = Self::url_from_endpoint(ENDPOINT_GUI_UPDATE);
-		self.0.get(url).send().await?.json::<GuiUpdate>().await
-	}
+	pub async fn websocket_incoming_data(
+		&mut self,
+		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		while let Some(msg) = stream.next().await {
+			match msg? {
+				Message::Text(text) => {
+					let msg = text.trim();
 
-	/// Put image: `/image`
-	pub async fn put_image(
-		&self,
-		data: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-	) -> Result<(), reqwest::Error> {
-		let mut buff = Cursor::new(Vec::new());
-		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
-		enc.encode_image(&data).unwrap();
+					let mut args = msg.splitn(2, ':');
 
-		let part = reqwest::multipart::Part::bytes(buff.into_inner());
-		let multipart = reqwest::multipart::Form::new().part("file", part);
+					match args.next().unwrap() {
+						"SetNameCamera" => match args.next() {
+							Some(data) => {
+								let data_unchecked: serde_json::Result<SetNameCamera> =
+									serde_json::from_str(data);
+								if data_unchecked.is_ok() {
+									let json = data_unchecked.unwrap();
+									self.camera_list = SetNameCamera {
+										camera_id: json.camera_id,
+										name: json.name,
+									}
+								}
+							},
+							None => {},
+						},
+						"StartViewingCamera" => match args.next() {
+							Some(data) => {
+								let data_unchecked: serde_json::Result<StartViewingCamera> =
+									serde_json::from_str(data);
+								if data_unchecked.is_ok() {
+									let json = data_unchecked.unwrap();
+									self.start_viewing_camera = StartViewingCamera {
+										camera_id: json.camera_id,
+									};
+								}
+							},
+							None => {},
+						},
+						"StopViewingCamera" => match args.next() {
+							Some(data) => {
+								let data_unchecked: serde_json::Result<StopViewingCamera> =
+									serde_json::from_str(data);
+								if data_unchecked.is_ok() {
+									let json = data_unchecked.unwrap();
+									self.stop_viewing_camera = StopViewingCamera {
+										camera_id: json.camera_id,
+									};
+								}
+							},
+							None => {},
+						},
+						"Configuration" => match args.next() {
+							Some(data) => {
+								let data_unchecked: serde_json::Result<Configuration> =
+									serde_json::from_str(data);
+								if data_unchecked.is_ok() {
+									let json = data_unchecked.unwrap();
+									self.configuration = Configuration {
+										conn_id: json.conn_id,
+										camera_id: json.camera_id,
+										configuration: json.configuration,
+									};
+								}
+							},
+							None => {},
+						},
+						"ViewCameraConfig" => match args.next() {
+							Some(data) => {
+								let data_unchecked: serde_json::Result<ViewCameraConfig> =
+									serde_json::from_str(data);
+								if data_unchecked.is_ok() {
+									let json = data_unchecked.unwrap();
+									self.view_camera_config = ViewCameraConfig {
+										conn_id: json.conn_id,
+										camera_id: json.camera_id,
+									};
+								}
+							},
+							None => {},
+						},
+						_ => {},
+					}
+				},
+				Message::Ping(_) | Message::Pong(_) | Message::Close(_) | Message::Frame(_) => {},
 
-		let url = Self::url_from_endpoint(ENDPOINT_IMAGE);
-		self.0
-			.put(url)
-			.multipart(multipart)
-			.send()
-			.await?
-			.error_for_status()?;
+				_ => {},
+			}
+		}
 		Ok(())
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use std::process::Termination;
-
 	use super::*;
+	use server_edge_datatypes::edge::{DisconnectCamera, ImageAnalysis, RegisterCameras};
+	use server_edge_datatypes::shared::{CameraState, Configuration};
+	use std::collections::HashMap;
+	#[tokio::test]
+	async fn send_register_cameras() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+		let mut stream = client.websocket_connect_manual().await;
 
-	// A test returning a `CameraConfig` always counts as a success.
-	impl Termination for CameraConfig {
-		fn report(self) -> std::process::ExitCode {
-			std::process::ExitCode::SUCCESS
-		}
+		let mut cameras_hashmap: HashMap<u64, (String, CameraState)> = HashMap::new();
+		cameras_hashmap.insert(1, ("".to_string(), CameraState::Active));
+		let cameras = RegisterCameras {
+			cameras: cameras_hashmap,
+		};
+		client
+			.send_register_cameras(&mut stream, cameras.clone())
+			.await?;
+
+		Ok(())
 	}
+	#[tokio::test]
+	async fn send_disconnect_camera() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+		let mut stream = client.websocket_connect_manual().await;
 
-	// A test returning a `GuiUpdate` always counts as a success.
-	impl Termination for GuiUpdate {
-		fn report(self) -> std::process::ExitCode {
-			std::process::ExitCode::SUCCESS
-		}
+		let camera = DisconnectCamera { camera_id: 1 };
+
+		client
+			.send_disconnect_camera(&mut stream, camera.clone())
+			.await?;
+
+		Ok(())
 	}
 
 	#[tokio::test]
-	async fn post_readings() -> Result<(), reqwest::Error> {
-		let client = Client::new();
-		let reading = CameraReadings::new(72.2, 0.21);
-		client.post_readings(reading).await
+	async fn send_image() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+		let mut stream = client.websocket_connect_manual().await;
+		let frame = ImageBuffer::new(800, 800);
+		client.send_image(&mut stream, frame.clone()).await?;
+		Ok(())
 	}
-
 	#[tokio::test]
-	async fn post_camera_config() -> Result<(), reqwest::Error> {
-		let client = Client::new();
-		let config = CameraConfig::new(30.0, 100, 0, 100);
-		client.post_camera_config(config).await
+	async fn send_configuration() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+		let mut stream = client.websocket_connect_manual().await;
+
+		let configuration = Configuration {
+			conn_id: 0,
+			camera_id: 0,
+			configuration: "".to_string(),
+		};
+		client
+			.send_configuration(&mut stream, configuration.clone())
+			.await?;
+
+		Ok(())
 	}
-
 	#[tokio::test]
-	async fn get_camera_config() -> Result<CameraConfig, reqwest::Error> {
-		let client = Client::new();
-		client.get_camera_config().await
+	async fn send_image_analysis() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+		let mut stream = client.websocket_connect_manual().await;
+
+		let image_analysis = ImageAnalysis {
+			camera_id: 1,
+			intensity: 1.0,
+			deviation: 1.0,
+		};
+		client
+			.send_image_analysis(&mut stream, image_analysis.clone())
+			.await?;
+
+		Ok(())
 	}
-
 	#[tokio::test]
-	async fn get_gui_update() -> Result<GuiUpdate, reqwest::Error> {
-		let client = Client::new();
-		client.get_gui_update().await
-	}
-
-	#[tokio::test]
-	async fn put_image() -> Result<(), reqwest::Error> {
-		let client = Client::new();
-		let image = ImageBuffer::<image::Rgb<u8>, Vec<_>>::new(50, 50);
-		client.put_image(image).await
+	async fn websocket_incoming_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let mut client = Client::new();
+		let mut stream = client.websocket_connect_manual().await;
+		client.websocket_incoming_data(&mut stream).await?;
+		Ok(())
 	}
 }

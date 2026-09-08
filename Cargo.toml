@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+server-edge-datatypes = { path = "./server-edge-datatypes"}
+chrono = "0.4"
 image = { version = "0.25", default-features = false, features = [
 	"rayon",
 	"jpeg",
@@ -13,11 +15,10 @@ image = { version = "0.25", default-features = false, features = [
 	"avif"
 ] }
 lab = "0.11"
-nokhwa = { version = "0.10", default-features = false, features = [
-	"input-native",
-	"decoding",
+nokhwa = { path = "nokhwa", features = [
 	"serialize",
-	"output-threaded"
+	"input-native",
+	"runner",
 ] }
 rayon = "1"
 reqwest = { version = "0.13", features = [
@@ -27,10 +28,18 @@ reqwest = { version = "0.13", features = [
 serde = { version = "1" , features = [
 	"derive"
 ] }
+thiserror = "2.0"
 tokio = { version = "1", features = [
 	"full"
 ] }
-
+tungstenite = "0.28.0"
+serde_json = "1.0.151"
+tokio-tungstenite = "0.30.0"
+futures-util = "0.3.33"
+socket2 = "0.6.5"
+futures = "0.1.31"
+tokio-util = "0.7.19"
+async-std = "1.13.2"
 # Dependencies only needed for tests, examples, or benchmarks.
 [dev-dependencies]
 rerun = { version = "0.35", features = [
