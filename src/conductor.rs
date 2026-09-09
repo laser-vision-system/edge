@@ -8,7 +8,7 @@ use server_edge_datatypes::{
 };
 
 use crate::{
-	client::Client, settings::Settings, tcam_interface::Camera, vision_processor::VisionVariant,
+	client::Client, logger, settings::Settings, tcam_interface::Camera, vision_processor::VisionVariant,
 };
 
 /// # Conductor
