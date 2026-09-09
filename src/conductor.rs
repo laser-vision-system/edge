@@ -2,11 +2,14 @@ use crate::{
 	client::Client, settings, tcam_interface::Camera,
 	vision_processor::demonstration::Demonstration,
 };
-use async_std::task;
 use server_edge_datatypes::edge::{DisconnectCamera, ImageAnalysis, RegisterCameras};
 use server_edge_datatypes::shared::{CameraState, Configuration};
 use settings::UPDATE_DELAY;
 use std::collections::HashMap;
+use futures_util::StreamExt;
+use tokio_tungstenite::tungstenite::Message;
+use tokio::{time::interval};
+
 
 /// # Conductor
 ///
@@ -57,26 +60,50 @@ impl Conductor {
 			deviation: 1.0,
 		};
 
+		let mut interval = interval(UPDATE_DELAY);
+
 		let mut stream = self.client.websocket_connect_manual().await;
 
 		loop {
-			let frame = self.camera.get_image()?;
-			self.client
-				.send_register_cameras(&mut stream, cameras.clone())
-				.await?;
-			self.client
-				.send_disconnect_camera(&mut stream, camera.clone())
-				.await?;
-			self.client
-				.send_configuration(&mut stream, configuration.clone())
-				.await?;
-			self.client.send_image(&mut stream, camera_id, frame.clone()).await?;
-			self.client
-				.send_image_analysis(&mut stream, image_analysis.clone())
-				.await?;
-			self.client.websocket_incoming_data(&mut stream).await?;
-			self.client.keep_alive(&mut stream).await?;
-			task::sleep(UPDATE_DELAY).await;
+			tokio::select! {
+					Some(Ok(msg)) = stream.next() => {
+						 match msg {
+							Message::Text(text) => {
+							self.client.websocket_incoming_data(&text);
+						}
+
+                    	Message::Ping(_) | Message::Pong(_) | Message::Close(_) | Message::Frame(_) => {},
+						_ => {},
+
+                		}
+					}
+					_ = interval.tick() => {
+						let frame = self.camera.get_image()?;
+
+						self.client
+						.send_register_cameras(&mut stream, cameras.clone())
+						.await?;
+
+						self.client
+						.send_disconnect_camera(&mut stream, camera.clone())
+						.await?;
+
+						self.client
+						.send_configuration(&mut stream, configuration.clone())
+						.await?;
+
+						self.client
+						.send_image(&mut stream, camera_id, frame.clone())
+						.await?;
+
+						self.client
+						.send_image_analysis(&mut stream, image_analysis.clone())
+						.await?;
+
+						self.client.keep_alive(&mut stream).await?;
+						}
+					}
+				}
+
 		}
 	}
-}

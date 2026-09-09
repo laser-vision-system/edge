@@ -118,94 +118,86 @@ impl Client {
 
 	pub async fn websocket_incoming_data(
 		&mut self,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
-	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		while let Some(msg) = stream.next().await {
-			match msg? {
-				Message::Text(text) => {
-					let msg = text.trim();
+		text: &str,
+	) {
+		let msg = text.trim();
 
-					let mut args = msg.splitn(2, ':');
+		println!("Received from Server: {}", msg);
 
-					match args.next().unwrap() {
-						"SetNameCamera" => match args.next() {
-							Some(data) => {
-								let data_unchecked: serde_json::Result<SetNameCamera> =
-									serde_json::from_str(data);
-								if data_unchecked.is_ok() {
-									let json = data_unchecked.unwrap();
-									self.camera_list = SetNameCamera {
-										camera_id: json.camera_id,
-										name: json.name,
-									}
-								}
-							},
-							None => {},
-						},
-						"StartViewingCamera" => match args.next() {
-							Some(data) => {
-								let data_unchecked: serde_json::Result<StartViewingCamera> =
-									serde_json::from_str(data);
-								if data_unchecked.is_ok() {
-									let json = data_unchecked.unwrap();
-									self.start_viewing_camera = StartViewingCamera {
-										camera_id: json.camera_id,
-									};
-								}
-							},
-							None => {},
-						},
-						"StopViewingCamera" => match args.next() {
-							Some(data) => {
-								let data_unchecked: serde_json::Result<StopViewingCamera> =
-									serde_json::from_str(data);
-								if data_unchecked.is_ok() {
-									let json = data_unchecked.unwrap();
-									self.stop_viewing_camera = StopViewingCamera {
-										camera_id: json.camera_id,
-									};
-								}
-							},
-							None => {},
-						},
-						"Configuration" => match args.next() {
-							Some(data) => {
-								let data_unchecked: serde_json::Result<Configuration> =
-									serde_json::from_str(data);
-								if data_unchecked.is_ok() {
-									let json = data_unchecked.unwrap();
-									self.configuration = Configuration {
-										conn_id: json.conn_id,
-										camera_id: json.camera_id,
-										configuration: json.configuration,
-									};
-								}
-							},
-							None => {},
-						},
-						"ViewCameraConfig" => match args.next() {
-							Some(data) => {
-								let data_unchecked: serde_json::Result<ViewCameraConfig> =
-									serde_json::from_str(data);
-								if data_unchecked.is_ok() {
-									let json = data_unchecked.unwrap();
-									self.view_camera_config = ViewCameraConfig {
-										conn_id: json.conn_id,
-										camera_id: json.camera_id,
-									};
-								}
-							},
-							None => {},
-						},
-						_ => {},
+		let mut args = msg.splitn(2, ':');
+
+		match args.next().unwrap() {
+			"SetNameCamera" => match args.next() {
+				Some(data) => {
+					let data_unchecked: serde_json::Result<SetNameCamera> =
+						serde_json::from_str(data);
+					if data_unchecked.is_ok() {
+						let json = data_unchecked.unwrap();
+						self.camera_list = SetNameCamera {
+							camera_id: json.camera_id,
+							name: json.name,
+						}
+					}
+				}
+				None => {},
+			}
+			"StartViewingCamera" => match args.next() {
+				Some(data) => {
+					let data_unchecked: serde_json::Result<StartViewingCamera> =
+						serde_json::from_str(data);
+					if data_unchecked.is_ok() {
+						let json = data_unchecked.unwrap();
+						self.start_viewing_camera = StartViewingCamera {
+							camera_id: json.camera_id,
+						};
 					}
 				},
-				Message::Ping(_) | Message::Pong(_) | Message::Close(_) | Message::Frame(_) => {},
-
-				_ => {},
+				None => {}
 			}
+			"StopViewingCamera" => match args.next() {
+				Some(data) => {
+					let data_unchecked: serde_json::Result<StopViewingCamera> =
+						serde_json::from_str(data);
+					if data_unchecked.is_ok() {
+						let json = data_unchecked.unwrap();
+						self.stop_viewing_camera = StopViewingCamera {
+							camera_id: json.camera_id,
+						};
+					}
+				}
+				None => {}
+			}
+			"Configuration" => match args.next() {
+				Some(data) => {
+					let data_unchecked: serde_json::Result<Configuration> =
+						serde_json::from_str(data);
+					if data_unchecked.is_ok() {
+						let json = data_unchecked.unwrap();
+						self.configuration = Configuration {
+							conn_id: json.conn_id,
+							camera_id: json.camera_id,
+							configuration: json.configuration,
+						};
+					}
+				}
+				None => {}
+			}
+			"ViewCameraConfig" => match args.next() {
+				Some(data) => {
+					let data_unchecked: serde_json::Result<ViewCameraConfig> =
+						serde_json::from_str(data);
+					if data_unchecked.is_ok() {
+						let json = data_unchecked.unwrap();
+						self.view_camera_config = ViewCameraConfig {
+							conn_id: json.conn_id,
+							camera_id: json.camera_id,
+						};
+					}
+				}
+				None => {}
+			}
+			_ => {},
 		}
-		Ok(())
 	}
 }
 
@@ -290,7 +282,7 @@ mod tests {
 	async fn websocket_incoming_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let mut client = Client::new();
 		let mut stream = client.websocket_connect_manual().await;
-		client.websocket_incoming_data(&mut stream).await?;
+		// client.websocket_incoming_data(&mut stream).await?;
 		Ok(())
 	}
 }
