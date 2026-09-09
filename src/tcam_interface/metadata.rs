@@ -4,14 +4,14 @@ use crate::{logger, vision_processor::VisionState};
 
 use super::{Camera, Status, new_camera_info::NewCameraInfo};
 
-type _ErrAccType = u8;
+type ErrAccType = u16;
 // IDEA: Use nokhwa's internal `CameraIndex` type.
-type _IndexType = u32;
+type IndexType = u32;
 
 /// Named type for clarity.
 pub type InsertWasSuccessful = bool;
 /// Named type for clarity.
-type _InitialiseWasSuccessful = bool;
+type InitialiseWasSuccessful = bool;
 
 /// Information about a camera device that persists after the device is
 /// disconnected.
@@ -25,40 +25,25 @@ pub struct Metadata {
 	/// and use accessor methods.
 	pub name: String,
 	/// The current status of the camera.
-	pub(super) status: Status,
+	pub status: Status,
 	/// Whether this camera is sending the images to the server.
-	pub(super) currently_viewed: bool,
+	pub currently_viewed: bool,
 	/// An error accumulation value. If this value gets too high, the camera
 	/// [`Status`] should be changed to [`Broken`](Status::Broken) TODO: Error
 	/// threshold.
-	err_accumulation: _ErrAccType,
+	err_accumulation: ErrAccType,
 	/// Whether to change the setpoint to the immediate next measurement.
 	/// TODO: Use.
 	calibrate: bool,
 
 	// ==== Temporary data ====
 	/// All of the indicies that the camera is occupying.
-	indices: Option<HashSet<_IndexType>>,
+	indices: Option<HashSet<IndexType>>,
 	/// The camera device where images are pulled from.
 	camera: Option<Camera>,
 	/// Local holding of the vision processor state.
 	/// TODO: Use.
 	vision_state: Option<VisionState>,
-}
-
-impl Default for Metadata {
-	fn default() -> Self {
-		Self {
-			name: String::from("unnamed camera"),
-			status: Default::default(),
-			currently_viewed: false,
-			err_accumulation: 0,
-			calibrate: false,
-			indices: None,
-			camera: None,
-			vision_state: None,
-		}
-	}
 }
 
 impl Metadata {
@@ -68,24 +53,33 @@ impl Metadata {
 	}
 
 	/// Get the current error accumulation value.
-	pub fn err_accumulation(&self) -> _ErrAccType {
+	pub fn err_accumulation(&self) -> ErrAccType {
 		self.err_accumulation
 	}
 
 	/// Mark that this camera has encountered an error.
-	pub fn add_error(&mut self) {
-		self.err_accumulation += 2;
+	pub fn add_error(&mut self, increment: ErrAccType) {
+		self.err_accumulation += increment;
+	}
+
+	/// Reduce the error by up to an amount.
+	pub fn reduce_error(&mut self, amount: ErrAccType) {
+		if self.err_accumulation > amount {
+			self.err_accumulation -= amount;
+		} else if self.err_accumulation > 0 {
+			self.err_accumulation = 0;
+		}
 	}
 
 	/// Get the list of all device indices that this camera is occupying.
-	pub fn indices(&self) -> Option<&HashSet<_IndexType>> {
+	pub fn indices(&self) -> Option<&HashSet<IndexType>> {
 		self.indices.as_ref()
 	}
 
 	/// Check whether an index is present.
 	///
 	/// Returns false if the [`Option`] is [`None`].
-	pub fn indices_has(&self, index: _IndexType) -> bool {
+	pub fn indices_has(&self, index: IndexType) -> bool {
 		self.indices().is_some_and(|ind| ind.contains(&index))
 	}
 
@@ -93,7 +87,7 @@ impl Metadata {
 	///
 	/// If this fails, it's because the device is already initialised and can be
 	/// ignored.
-	pub fn try_insert_index(&mut self, index: _IndexType) -> InsertWasSuccessful {
+	pub fn try_insert_index(&mut self, index: IndexType) -> InsertWasSuccessful {
 		self.indices.get_or_insert_default().insert(index)
 	}
 
@@ -117,7 +111,7 @@ impl Metadata {
 	/// Set up a camera for use.
 	///
 	/// TODO: Finish implementing; refer to edge flow logic diagram.
-	fn initialise_camera(&mut self, index: u32) -> _InitialiseWasSuccessful {
+	fn initialise_camera(&mut self, index: u32) -> InitialiseWasSuccessful {
 		let cam_res = Camera::new(index);
 		match cam_res {
 			Err(_why) => {
@@ -149,7 +143,7 @@ impl Metadata {
 	/// - The camera failed to intialise
 	pub fn try_register_device(
 		&mut self,
-		index: _IndexType,
+		index: IndexType,
 		is_metadata: bool,
 	) -> Option<NewCameraInfo> {
 		// Does Metadata contain the index?
@@ -179,6 +173,21 @@ impl Metadata {
 	pub fn remove_camera(&mut self) {
 		self.camera.take();
 		self.indices.take();
+	}
+}
+
+impl Default for Metadata {
+	fn default() -> Self {
+		Self {
+			name: String::from("unnamed camera"),
+			status: Default::default(),
+			currently_viewed: false,
+			err_accumulation: 0,
+			calibrate: false,
+			indices: None,
+			camera: None,
+			vision_state: None,
+		}
 	}
 }
 
@@ -225,8 +234,8 @@ mod tests {
 	fn err_accumulation_add() {
 		let mut meta = Metadata::default();
 		assert_eq!(meta.err_accumulation, 0);
-		meta.add_error();
-		meta.add_error();
+		meta.add_error(2);
+		meta.add_error(2);
 		assert_eq!(meta.err_accumulation, 4);
 	}
 

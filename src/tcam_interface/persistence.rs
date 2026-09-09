@@ -1,34 +1,18 @@
-use std::{
-	collections::HashMap,
-	ops::{Deref, DerefMut},
-};
+use std::collections::HashMap;
 
 use nokhwa::utils::CameraInfo;
 
 use super::{Camera, Identifier, Metadata, NewCameraInfo};
 
 /// The internal mapping type.
-type _Map = HashMap<Identifier, Metadata>;
+type MapType = HashMap<Identifier, Metadata>;
 
 /// Persistence data for camera devices.
 ///
 /// This type holds details about all currently and previously connected camera devices.
+#[derive(Default)]
 pub struct Persistence {
-	inner: _Map,
-}
-
-impl Deref for Persistence {
-	type Target = _Map;
-
-	fn deref(&self) -> &Self::Target {
-		&self.inner
-	}
-}
-
-impl DerefMut for Persistence {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.inner
-	}
+	inner: MapType,
 }
 
 impl Persistence {
@@ -75,6 +59,10 @@ impl Persistence {
 		})
 	}
 
+	pub fn inner(&mut self) -> &mut MapType {
+		&mut self.inner
+	}
+
 	/// Poll all devices to instantiate newly connected cameras.
 	///
 	/// Returns a list of information about newly added cameras.
@@ -83,5 +71,13 @@ impl Persistence {
 	pub fn poll_for_new_cameras(&mut self) -> HashMap<Identifier, NewCameraInfo> {
 		let all_devices = Camera::query_for_available_cameras();
 		self.get_new_from_all(all_devices)
+	}
+
+	/// Filter peristence with an arbitrary function.
+	pub fn filter_by(&mut self, filter: Box<dyn Fn(&Metadata) -> bool>) -> Vec<&mut Metadata> {
+		self.inner
+			.values_mut()
+			.filter(|metadata| filter(metadata))
+			.collect()
 	}
 }
