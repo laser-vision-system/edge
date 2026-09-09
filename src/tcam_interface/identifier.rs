@@ -17,7 +17,7 @@ use nokhwa::utils::CameraInfo;
 /// See the [module level documentation](self) for more information.
 // `PartialOrd` and `Ord` are not strictly necessary.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct Identifier {
+pub struct Identifier {
 	/// The internal name of the device. On v4l, taken from the "Card type" and "Driver name" values.
 	name: String,
 	/// The internal description of the device. On v4l, taken from the "Bus info" value.
