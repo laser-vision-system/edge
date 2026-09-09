@@ -44,7 +44,9 @@ impl Conductor {
 
 		let camera = DisconnectCamera { camera_id: 1 };
 
-		let frame = ImageBuffer::new(800, 800);
+		let camera_id = 1;
+
+		let frame = self.camera.get_image()?;
 
 		let configuration = Configuration {
 			conn_id: 0,
@@ -70,7 +72,7 @@ impl Conductor {
 			self.client
 				.send_configuration(&mut stream, configuration.clone())
 				.await?;
-			self.client.send_image(&mut stream, frame.clone()).await?;
+			self.client.send_image(&mut stream, camera_id, frame.clone()).await?;
 			self.client
 				.send_image_analysis(&mut stream, image_analysis.clone())
 				.await?;
