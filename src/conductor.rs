@@ -27,10 +27,6 @@ impl Conductor {
 	/// TODO: Error handling.
 	pub async fn new() -> Self {
 		let camera = Camera::new(0).unwrap();
-		logger::logger()
-			.lock()
-			.unwrap()
-			.log_info("Camera opened successfully");
 		let client = Client::new();
 		let vision_processor = VisionVariant::default();
 
@@ -66,11 +62,6 @@ impl Conductor {
 		};
 
 		let mut stream = self.client.websocket_connect_manual().await;
-		// TODO: Make this log happen after default values are read
-		logger::logger()
-			.lock()
-			.unwrap()
-			.log_info("Websocket construction successful.");
 
 		loop {
 			self.client
