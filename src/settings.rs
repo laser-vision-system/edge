@@ -1,17 +1,32 @@
 //! # Settings
 //!
-//! A collection of constant variables.
-//!
-//! TODO: The ability to change settings with environment variables.
+//! TODO: Replace constants with values from environment variables.
+
 use std::time::Duration;
 
-pub const UPDATE_DELAY: Duration = Duration::from_millis(1000);
-pub const PRINT_RESULTS: bool = true;
+// ============================================================================
+// Only constants that are necessary for connecting to the server should be
+// defined here.
+// ============================================================================
 
+pub const API: &str = "/edge_ws";
 pub const HOST: &str = "127.0.0.1";
 pub const PORT: &str = "8080";
-pub const API: &str = "/edge_ws";
-pub const ENDPOINT_CAMERA_READINGS: &str = "camera_info";
-pub const ENDPOINT_CAMERA_CONFIG: &str = "configuration";
-pub const ENDPOINT_GUI_UPDATE: &str = "gui_update";
-pub const ENDPOINT_IMAGE: &str = "image";
+
+// ============================================================================
+// All other settings values should be defined within this struct. ==
+// ============================================================================
+
+/// System-level default settings.
+///
+/// This will be filled in by the initial connection to the server.
+#[derive(Debug, Default)]
+pub struct Settings {
+	update_delay: Duration,
+}
+
+impl Settings {
+	pub fn get_update_delay(&self) -> Duration {
+		self.update_delay
+	}
+}
