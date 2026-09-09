@@ -72,4 +72,12 @@ impl Persistence {
 		let all_devices = Camera::query_for_available_cameras();
 		self.get_new_from_all(all_devices)
 	}
+
+	/// Filter peristence with an arbitrary function.
+	pub fn filter_by(&mut self, filter: Box<dyn Fn(&Metadata) -> bool>) -> Vec<&mut Metadata> {
+		self.inner
+			.values_mut()
+			.filter(|metadata| filter(metadata))
+			.collect()
+	}
 }
