@@ -85,7 +85,7 @@ impl Conductor {
                 		}
 					}
 					_ = interval.tick() => {
-						let frame = self.camera.get_image()?;
+						let frame = self.camera.get_image_shrink()?;
 
 						// self.client
 						// .send_disconnect_camera(&mut stream, camera.clone())

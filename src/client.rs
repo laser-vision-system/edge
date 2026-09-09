@@ -1,3 +1,4 @@
+use std::io::Cursor;
 use crate::settings::{API, HOST, PORT};
 use futures_util::{SinkExt, StreamExt};
 use image::ImageBuffer;
@@ -54,6 +55,18 @@ impl Client {
 		// TO DO automatic connection
 
 	}
+
+	pub fn encode_image(
+		&mut self,
+		data: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
+	) -> Vec<u8> {
+		let mut buff = Cursor::new(Vec::new());
+		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
+		enc.encode_image(&data).unwrap();
+
+		buff.into_inner()
+	}
+
 	pub async fn keep_alive(
 		&mut self,
 		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
@@ -90,7 +103,8 @@ impl Client {
 		frame: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let mut msg = camera_id.to_be_bytes().to_vec();
-		msg.append(&mut frame.clone().to_vec());
+		let mut image = self.encode_image(frame);
+		msg.append(&mut image);
 		stream.send(Message::Binary(Bytes::from(msg))).await?;
 		Ok(())
 	}
