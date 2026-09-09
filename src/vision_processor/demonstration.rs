@@ -1,26 +1,36 @@
+use std::fmt;
+
 use image::RgbImage;
 use lab::Lab;
 use rayon::prelude::*;
 
-use super::{CameraReadings, VisionInterface};
+use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
-#[must_use]
+#[derive(Clone)]
 pub struct Demonstration {
-	setpoint: f32,
-}
-
-impl Default for Demonstration {
-	fn default() -> Self {
-		Self { setpoint: -1.0 }
-	}
+	session: SessionToken,
 }
 
 impl Demonstration {
-	// NOTE: Clippy complains about indexing the slice without asserting, but the par_chunk_exact guarantees this won't panic.
+	pub fn new() -> Self {
+		Self {
+			session: SessionToken::new(),
+		}
+	}
+
+	pub fn new_state(&self) -> VisionState {
+		VisionState::Demonstration {
+			handle: self.session.downgrade(),
+			data: ExternalData::default(),
+		}
+	}
+
+	// NOTE: Clippy complains about indexing the slice without asserting, but the
+	// par_chunk_exact guarantees this won't panic.
 	#[allow(clippy::missing_asserts_for_indexing)]
 	#[allow(clippy::indexing_slicing)]
 	#[allow(clippy::cast_precision_loss)]
-	fn average_lightness(&mut self, frame: &RgbImage, setpoint: bool) -> (f32, f32) {
+	fn average_lightness(&self, frame: &RgbImage) -> f32 {
 		let raw_bytes = frame.as_raw();
 		let pixel_count = raw_bytes.len() as f32 / 3.0;
 
@@ -33,23 +43,67 @@ impl Demonstration {
 			})
 			.sum();
 
-		let lightness = total_lightness / pixel_count;
-
-		if setpoint {
-			self.setpoint = lightness;
-		}
-
-		let mut deviation = 0.0;
-		if self.setpoint > 0.0 {
-			deviation = lightness / self.setpoint;
-		}
-
-		(lightness, deviation)
+		total_lightness / pixel_count
 	}
 }
 
 impl VisionInterface for Demonstration {
-	fn process_frame(&mut self, frame: &RgbImage, setpoint: bool) -> CameraReadings {
-		self.average_lightness(frame, setpoint).into()
+	fn process(&mut self, batch: &mut [BatchItem]) {
+		for item in batch {
+			let VisionState::Demonstration { data, .. } = &mut item.state else {
+				// TODO: This should raise an error.
+				continue;
+			};
+
+			let lightness = self.average_lightness(&item.image) as f32;
+
+			if item.calibrate {
+				data.setpoint = Some(lightness);
+			}
+
+			let mut deviation = 0.0;
+			if let Some(setpoint) = data.setpoint {
+				if setpoint > 0.0 {
+					deviation = lightness / setpoint;
+				}
+			}
+
+			data.intensity = Some(lightness);
+			data.deviation = Some(deviation);
+		}
+	}
+}
+
+impl Default for Demonstration {
+	fn default() -> Self {
+		Self {
+			session: SessionToken::new(),
+		}
+	}
+}
+
+impl fmt::Debug for Demonstration {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "Demonstration")
+	}
+}
+
+impl fmt::Display for Demonstration {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "Demonstration")
+	}
+}
+
+/// Closely associated data used by external holders.
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+pub struct ExternalData {
+	pub setpoint: Option<f32>,
+	pub intensity: Option<f32>,
+	pub deviation: Option<f32>,
+}
+
+impl fmt::Display for ExternalData {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "ExternalData for Demonstration: {:?}", self.setpoint)
 	}
 }

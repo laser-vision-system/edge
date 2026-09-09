@@ -1,41 +1,184 @@
+use std::{
+	fmt,
+	rc::{Rc, Weak},
+};
+
 use image::RgbImage;
-use serde::{Deserialize, Serialize};
+use server_edge_datatypes::shared::VisionTechnique;
 
+pub mod cnn;
 pub mod demonstration;
+pub mod diff;
+pub mod empty;
 
-#[must_use]
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
-pub struct CameraReadings {
-	intensity: f32,
-	deviation: f32,
-}
+pub use cnn::Cnn;
+pub use demonstration::Demonstration;
+pub use diff::Diff;
+pub use empty::Empty;
 
-impl CameraReadings {
-	pub fn new(intensity: f32, deviation: f32) -> Self {
-		Self {
-			intensity,
-			deviation,
-		}
+// NOTE: If we do multithreading, this has to be swapped for `std::sync::Arc`.
+
+#[derive(Clone)]
+pub struct SessionToken(Rc<()>);
+
+impl SessionToken {
+	pub fn new() -> Self {
+		Self(Rc::new(()))
 	}
 
-	pub fn intensity(&self) -> f32 {
-		self.intensity
-	}
-
-	pub fn deviation(&self) -> f32 {
-		self.deviation
+	pub fn downgrade(&self) -> SessionHandle {
+		SessionHandle(Rc::downgrade(&self.0))
 	}
 }
 
-impl From<(f32, f32)> for CameraReadings {
-	fn from(value: (f32, f32)) -> Self {
-		Self::new(value.0, value.1)
+#[derive(Clone, Debug)]
+pub struct SessionHandle(Weak<()>);
+
+impl SessionHandle {
+	/// Returns true only if the owning vision processor is still active.
+	pub fn is_valid(&self) -> bool {
+		self.0.upgrade().is_some()
 	}
 }
 
 /// A machine vision laser intensity measuring capable object.
 ///
-/// Implement on a type to declare it as capable of performing machine vision intensity measurement.
-pub trait VisionInterface {
-	fn process_frame(&mut self, frame: &RgbImage, setpoint: bool) -> CameraReadings;
+/// Implement on a type to declare it as capable of performing machine vision
+/// intensity measurement.
+pub trait VisionInterface: fmt::Debug + fmt::Display {
+	// fn new_state(&self) -> VisionState;
+
+	/// Process all frames in a single batch, setting the return value in-place.
+	fn process(&mut self, batch: &mut [BatchItem]);
+}
+
+#[derive(Debug)]
+pub enum VisionVariant {
+	Empty(Empty),
+	Demonstration(Demonstration),
+	Cnn(Cnn),
+	Diff(Diff),
+}
+
+impl VisionVariant {
+	/// Request to switch this variant with another one.
+	///
+	/// If the requested type is the same as the current, this is a no-op.
+	///
+	/// Swaps the current vision processing technique to the chosen one.
+	/// If the current technique is the same as the chosen one, returns None.
+	/// This function must be called from the conductor where the necessary
+	/// setpoint logic is implemented. The setpoint logic is not implemented
+	/// here because it is not the responsibility of the vision processor to
+	/// manage setpoints.
+	///
+	/// This method statically asserts exhaustiveness between
+	/// [this](VisionVariant) and [VisionTechnique].
+	pub fn swap(self, swap_to: VisionTechnique) -> Self {
+		if self.identifier() == swap_to {
+			return self;
+		}
+		match swap_to {
+			VisionTechnique::Empty => Self::Empty(Empty::new()),
+			VisionTechnique::Demonstration => Self::Demonstration(Demonstration::new()),
+			VisionTechnique::Cnn => Self::Cnn(Cnn::new()),
+			VisionTechnique::Diff => Self::Diff(Diff::new()),
+		}
+	}
+
+	/// A marker for which vision type this is.
+	///
+	/// Used when interacting with the server.
+	fn identifier(&self) -> VisionTechnique {
+		match self {
+			Self::Empty(_) => VisionTechnique::Empty,
+			Self::Demonstration(_) => VisionTechnique::Demonstration,
+			Self::Cnn(_) => VisionTechnique::Cnn,
+			Self::Diff(_) => VisionTechnique::Diff,
+		}
+	}
+}
+
+impl VisionInterface for VisionVariant {
+	fn process(&mut self, batch: &mut [BatchItem]) {
+		match self {
+			Self::Empty(inner) => inner.process(batch),
+			Self::Demonstration(inner) => inner.process(batch),
+			Self::Cnn(inner) => inner.process(batch),
+			Self::Diff(inner) => inner.process(batch),
+		}
+	}
+}
+
+impl Default for VisionVariant {
+	fn default() -> Self {
+		Self::Empty(Default::default())
+	}
+}
+
+// Pass-through implementation.
+impl fmt::Display for VisionVariant {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Empty(empty) => write!(f, "{}", empty),
+			Self::Demonstration(demonstration) => write!(f, "{}", demonstration),
+			Self::Cnn(cnn) => write!(f, "{}", cnn),
+			Self::Diff(diff) => write!(f, "{}", diff),
+		}
+	}
+}
+
+/// External state for the vision processor variants.
+#[derive(Clone, Debug)]
+pub enum VisionState {
+	Empty {
+		handle: SessionHandle,
+		data: empty::ExternalData,
+	},
+	Demonstration {
+		handle: SessionHandle,
+		data: demonstration::ExternalData,
+	},
+	Cnn {
+		handle: SessionHandle,
+		data: cnn::ExternalData,
+	},
+	Diff {
+		handle: SessionHandle,
+		data: diff::ExternalData,
+	},
+}
+
+impl VisionState {
+	/// Returns true only if the owning vision processor variant is still active.
+	pub fn is_valid(&self) -> bool {
+		match self {
+			Self::Empty { handle, .. }
+			| Self::Demonstration { handle, .. }
+			| Self::Cnn { handle, .. }
+			| Self::Diff { handle, .. } => handle.is_valid(),
+		}
+	}
+}
+
+/// A single record that is passed into `process_frame`.
+///
+/// Currently holds a reference to the vision state, but should probably be
+/// swapped to using an [`mpsc`](std::sync::mpsc) for multithreading. The [`VisionState`] would be sent back through it.
+pub struct BatchItem<'a> {
+	pub state: &'a mut VisionState,
+	pub image: RgbImage,
+	pub calibrate: bool,
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn swap() {
+		let mut variant = VisionVariant::default();
+		variant = variant.swap(VisionTechnique::Demonstration);
+		println!("Current variant: {}", variant)
+	}
 }

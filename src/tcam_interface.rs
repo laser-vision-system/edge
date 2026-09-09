@@ -1,21 +1,17 @@
-//! Provides connection, identification, management, and configuration for camera devices.
+//! Provides connection, identification, management, and configuration for
+//! camera devices.
 
 mod camera;
-pub use camera::Camera;
-
-mod identifier;
-pub(crate) use identifier::Identifier;
-
-mod status;
-pub(crate) use status::Status;
-
-mod metadata;
-pub(crate) use metadata::Metadata;
-
-mod persistence;
-pub(crate) use persistence::Persistence;
-
-mod new_camera_info;
-pub(crate) use new_camera_info::NewCameraInfo;
-
 pub mod controls;
+mod identifier;
+mod metadata;
+mod new_camera_info;
+mod persistence;
+mod status;
+
+pub use camera::Camera;
+pub(crate) use identifier::Identifier;
+pub(crate) use metadata::Metadata;
+pub(crate) use new_camera_info::NewCameraInfo;
+pub(crate) use persistence::Persistence;
+pub(crate) use status::Status;
