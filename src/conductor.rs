@@ -6,57 +6,45 @@ use server_edge_datatypes::{
 	edge::{DisconnectCamera, ImageAnalysis, RegisterCameras},
 	shared::{CameraState, Configuration},
 };
+use tokio::net::TcpStream;
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 
 use crate::{
-	client::Client, settings::Settings, tcam_interface::Camera, vision_processor::VisionVariant,
+	client::Client, settings::Settings, tcam_interface::Persistence,
+	vision_processor::VisionVariant,
 };
 
 /// # Conductor
 ///
 /// The main execution context.
-///
-/// TODO: Does this need to hold state?
 pub struct Conductor {
-	camera: Camera,
+	persistence: Persistence,
 	client: Client,
 	vision_processor: VisionVariant,
 }
 
 impl Conductor {
-	/// This should only be called once.
-	///
-	/// TODO: Error handling.
-	pub async fn new() -> Self {
-		let camera = Camera::new(0).unwrap();
-		let client = Client::new();
-		let vision_processor = VisionVariant::default();
-
-		Self {
-			camera,
-			client,
-			vision_processor,
-		}
-	}
-
-	pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let mut settings: Option<Settings> = None;
-		loop {
-			let loop_settings = placeholder_autoconnect(settings);
-
-			settings = Some(loop_settings)
-		}
-	}
-
-	pub async fn loop_once(
+	async fn loop_once(
 		&mut self,
 		settings: Settings,
+		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
 	) -> Result<Settings, Box<dyn std::error::Error + Send + Sync>> {
+		// TODO: Delay for polling cameras, so it doesn't happen every loop.
+
+		// This function detects new cameras and instantiates them.
+		let new_cameras = self.persistence.poll_for_new_cameras();
+
 		// Structs for test websocket data
+		// TODO: Replace with above.
 		let mut cameras_hashmap: HashMap<u64, (String, CameraState)> = HashMap::new();
 		cameras_hashmap.insert(1, ("".to_string(), CameraState::Active));
 		let cameras = RegisterCameras {
 			cameras: cameras_hashmap,
 		};
+
+		self.client
+			.send_register_cameras(stream, cameras.clone())
+			.await?;
 
 		let camera = DisconnectCamera { camera_id: 1 };
 
@@ -74,26 +62,49 @@ impl Conductor {
 			deviation: 1.0,
 		};
 
-		let mut stream = self.client.websocket_connect_manual().await;
+		self.client
+			.send_disconnect_camera(stream, camera.clone())
+			.await?;
+		self.client
+			.send_configuration(stream, configuration.clone())
+			.await?;
+		self.client.send_image(stream, frame.clone()).await?;
+		self.client
+			.send_image_analysis(stream, image_analysis.clone())
+			.await?;
+		self.client.websocket_incoming_data(stream).await?;
+		self.client.keep_alive(stream).await?;
 
-		loop {
-			self.client
-				.send_register_cameras(&mut stream, cameras.clone())
-				.await?;
-			self.client
-				.send_disconnect_camera(&mut stream, camera.clone())
-				.await?;
-			self.client
-				.send_configuration(&mut stream, configuration.clone())
-				.await?;
-			self.client.send_image(&mut stream, frame.clone()).await?;
-			self.client
-				.send_image_analysis(&mut stream, image_analysis.clone())
-				.await?;
-			self.client.websocket_incoming_data(&mut stream).await?;
-			self.client.keep_alive(&mut stream).await?;
-			task::sleep(settings.get_update_delay()).await;
+		task::sleep(settings.get_update_delay()).await;
+
+		Ok(settings)
+	}
+}
+
+impl Default for Conductor {
+	fn default() -> Self {
+		let persistence = Persistence::default();
+		let client = Client::new();
+		let vision_processor = VisionVariant::default();
+
+		Self {
+			persistence,
+			client,
+			vision_processor,
 		}
+	}
+}
+
+/// Call this function to begin the system.
+pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	let mut settings: Option<Settings> = None;
+	let mut conductor = Conductor::default();
+
+	let mut stream = conductor.client.websocket_connect_manual().await;
+
+	loop {
+		let loop_settings = placeholder_autoconnect(settings);
+		settings = Some(conductor.loop_once(loop_settings, &mut stream).await?)
 	}
 }
 

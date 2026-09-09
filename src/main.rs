@@ -1,6 +1,4 @@
-use edge::conductor::Conductor;
-
 #[tokio::main]
-async fn main() {
-	let _result = Conductor::new().await.run().await;
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	edge::run().await
 }
