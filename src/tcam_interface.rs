@@ -10,8 +10,8 @@ mod persistence;
 mod status;
 
 pub use camera::Camera;
-pub(crate) use identifier::Identifier;
-pub(crate) use metadata::Metadata;
-pub(crate) use new_camera_info::NewCameraInfo;
-pub(crate) use persistence::Persistence;
-pub(crate) use status::Status;
+pub use identifier::Identifier;
+pub use metadata::Metadata;
+pub use new_camera_info::NewCameraInfo;
+pub use persistence::Persistence;
+pub use status::Status;

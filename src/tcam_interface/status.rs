@@ -4,7 +4,7 @@
 /// discriminant is the type [`u8`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[repr(u8)]
-pub(crate) enum Status {
+pub enum Status {
 	/// This camera device has not yet been initialised. This should never be
 	/// the status outside of the camera detection logic.
 	#[default]

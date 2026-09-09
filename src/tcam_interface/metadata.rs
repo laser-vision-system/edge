@@ -9,13 +9,13 @@ type _ErrAccType = u8;
 type _IndexType = u32;
 
 /// Named type for clarity.
-pub(crate) type InsertWasSuccessful = bool;
+pub type InsertWasSuccessful = bool;
 /// Named type for clarity.
 type _InitialiseWasSuccessful = bool;
 
 /// Information about a camera device that persists after the device is
 /// disconnected.
-pub(crate) struct Metadata {
+pub struct Metadata {
 	// ==== Persistent data ====
 	/// A user configurable name for this camera.
 	///
@@ -23,7 +23,7 @@ pub(crate) struct Metadata {
 	///
 	/// If side-effects are needed when this value is changed, make it private
 	/// and use accessor methods.
-	pub(crate) name: String,
+	pub name: String,
 	/// The current status of the camera.
 	pub(super) status: Status,
 	/// Whether this camera is sending the images to the server.
@@ -63,29 +63,29 @@ impl Default for Metadata {
 
 impl Metadata {
 	/// Get the current status of this camera.
-	pub(crate) fn status(&self) -> Status {
+	pub fn status(&self) -> Status {
 		self.status
 	}
 
 	/// Get the current error accumulation value.
-	pub(crate) fn err_accumulation(&self) -> _ErrAccType {
+	pub fn err_accumulation(&self) -> _ErrAccType {
 		self.err_accumulation
 	}
 
 	/// Mark that this camera has encountered an error.
-	pub(crate) fn add_error(&mut self) {
+	pub fn add_error(&mut self) {
 		self.err_accumulation += 2;
 	}
 
 	/// Get the list of all device indices that this camera is occupying.
-	pub(crate) fn indices(&self) -> Option<&HashSet<_IndexType>> {
+	pub fn indices(&self) -> Option<&HashSet<_IndexType>> {
 		self.indices.as_ref()
 	}
 
 	/// Check whether an index is present.
 	///
 	/// Returns false if the [`Option`] is [`None`].
-	pub(crate) fn indices_has(&self, index: _IndexType) -> bool {
+	pub fn indices_has(&self, index: _IndexType) -> bool {
 		self.indices().is_some_and(|ind| ind.contains(&index))
 	}
 
@@ -93,17 +93,17 @@ impl Metadata {
 	///
 	/// If this fails, it's because the device is already initialised and can be
 	/// ignored.
-	pub(crate) fn try_insert_index(&mut self, index: _IndexType) -> InsertWasSuccessful {
+	pub fn try_insert_index(&mut self, index: _IndexType) -> InsertWasSuccessful {
 		self.indices.get_or_insert_default().insert(index)
 	}
 
 	/// Get a reference to the current camera (if connected).
-	pub(crate) fn camera(&self) -> Option<&Camera> {
+	pub fn camera(&self) -> Option<&Camera> {
 		self.camera.as_ref()
 	}
 
 	/// Get a mutable reference to the current camera (if connected).
-	pub(crate) fn camera_mut(&mut self) -> Option<&mut Camera> {
+	pub fn camera_mut(&mut self) -> Option<&mut Camera> {
 		self.camera.as_mut()
 	}
 
@@ -141,7 +141,7 @@ impl Metadata {
 	/// - The index is already registered
 	/// - This is a metadata device
 	/// - The camera failed to intialise
-	pub(crate) fn try_register_device(
+	pub fn try_register_device(
 		&mut self,
 		index: _IndexType,
 		is_metadata: bool,
@@ -167,7 +167,7 @@ impl Metadata {
 	}
 
 	/// Drop the current camera and all of its indices.
-	pub(crate) fn remove_camera(&mut self) {
+	pub fn remove_camera(&mut self) {
 		self.camera.take();
 		self.indices.take();
 	}

@@ -13,7 +13,7 @@ type _Map = HashMap<Identifier, Metadata>;
 /// Persistence data for camera devices.
 ///
 /// This type holds details about all currently and previously connected camera devices.
-pub(crate) struct Persistence {
+pub struct Persistence {
 	inner: _Map,
 }
 
@@ -80,7 +80,7 @@ impl Persistence {
 	/// Returns a list of information about newly added cameras.
 	///
 	/// IDEA: The return type could be made into an explicit type.
-	pub(crate) fn poll_for_new_cameras(&mut self) -> HashMap<Identifier, NewCameraInfo> {
+	pub fn poll_for_new_cameras(&mut self) -> HashMap<Identifier, NewCameraInfo> {
 		let all_devices = Camera::query_for_available_cameras();
 		self.get_new_from_all(all_devices)
 	}

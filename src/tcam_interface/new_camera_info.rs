@@ -3,13 +3,13 @@ use super::Status;
 /// Information about a newly instantiated device, to be sent to the server.
 // IDEA: This might be better suited in the server-edge-datatypes crate
 #[derive(Clone, Debug)]
-pub(crate) struct NewCameraInfo {
+pub struct NewCameraInfo {
 	pub name: String,
 	pub status: Status,
 }
 
 impl NewCameraInfo {
-	pub(crate) fn new(name: String, status: Status) -> Self {
+	pub fn new(name: String, status: Status) -> Self {
 		Self { name, status }
 	}
 }
