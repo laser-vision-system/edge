@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use futures_util::StreamExt;
 use tokio_tungstenite::tungstenite::Message;
 use tokio::{time::interval};
-
+use std::time::{SystemTime};
 
 /// # Conductor
 ///
@@ -64,6 +64,13 @@ impl Conductor {
 
 		let mut stream = self.client.websocket_connect_manual().await;
 
+		let mut now = SystemTime::now();
+
+		// self.client
+		// .send_register_cameras(&mut stream, cameras.clone())
+		// .await?;
+
+
 		loop {
 			tokio::select! {
 					Some(Ok(msg)) = stream.next() => {
@@ -80,27 +87,25 @@ impl Conductor {
 					_ = interval.tick() => {
 						let frame = self.camera.get_image()?;
 
-						self.client
-						.send_register_cameras(&mut stream, cameras.clone())
-						.await?;
+						// self.client
+						// .send_disconnect_camera(&mut stream, camera.clone())
+						// .await?;
 
-						self.client
-						.send_disconnect_camera(&mut stream, camera.clone())
-						.await?;
+						// self.client
+						// .send_configuration(&mut stream, configuration.clone())
+						// .await?;
+						self.client.keep_alive(&mut stream).await?;
 
+						println!("{}", now.elapsed().unwrap().as_millis());
+						println!();
 						self.client
-						.send_configuration(&mut stream, configuration.clone())
+						.send_image_analysis(&mut stream, image_analysis.clone())
 						.await?;
+						println!("{}", now.elapsed().unwrap().as_millis());
 
 						self.client
 						.send_image(&mut stream, camera_id, frame.clone())
 						.await?;
-
-						self.client
-						.send_image_analysis(&mut stream, image_analysis.clone())
-						.await?;
-
-						self.client.keep_alive(&mut stream).await?;
 						}
 					}
 				}
