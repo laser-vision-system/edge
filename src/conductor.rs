@@ -64,6 +64,11 @@ impl Conductor {
 
 		let mut stream = self.client.websocket_connect_manual().await;
 
+		// self.client
+		// .send_register_cameras(&mut stream, cameras.clone())
+		// .await?;
+
+
 		loop {
 			tokio::select! {
 					Some(Ok(msg)) = stream.next() => {
@@ -80,17 +85,13 @@ impl Conductor {
 					_ = interval.tick() => {
 						let frame = self.camera.get_image()?;
 
-						self.client
-						.send_register_cameras(&mut stream, cameras.clone())
-						.await?;
+						// self.client
+						// .send_disconnect_camera(&mut stream, camera.clone())
+						// .await?;
 
-						self.client
-						.send_disconnect_camera(&mut stream, camera.clone())
-						.await?;
-
-						self.client
-						.send_configuration(&mut stream, configuration.clone())
-						.await?;
+						// self.client
+						// .send_configuration(&mut stream, configuration.clone())
+						// .await?;
 
 						self.client
 						.send_image(&mut stream, camera_id, frame.clone())
