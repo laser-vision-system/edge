@@ -18,6 +18,8 @@ use super::controls::{
 	traits::{ControlDefault, ControlDescription, ControlValue},
 };
 
+use crate::logger;
+
 /// An abstraction over the nokhwa camera objects.
 ///
 /// TODO: The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
@@ -37,6 +39,10 @@ impl Camera {
 		})?;
 		let OpenedCamera::Stream(mut camera) = opened else {
 			// TODO: Discuss how we handle this.
+			logger::logger()
+				.lock()
+				.unwrap()
+				.log_warn("Camera is not a webcam...?");
 			panic!("AA")
 		};
 		camera.open().map_err(|why| EdgeError::StreamOpen {
@@ -55,6 +61,10 @@ impl Camera {
 		// TODO: Handle potential error cases.
 		let buffer = self.inner.frame().map_err(|_| EdgeError::FrameRead)?;
 		let frame: Frame<Mjpeg> = Frame::new(buffer);
+		logger::logger()
+			.lock()
+			.unwrap()
+			.log_info("Frame was successfully read");
 		let decoded = frame
 			.into_rgb()
 			.materialize()

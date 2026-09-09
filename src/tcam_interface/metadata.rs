@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::vision_processor::VisionState;
+use crate::{logger, vision_processor::VisionState};
 
 use super::{Camera, Status, new_camera_info::NewCameraInfo};
 
@@ -121,12 +121,18 @@ impl Metadata {
 		let cam_res = Camera::new(index);
 		match cam_res {
 			Err(_why) => {
-				// TODO: Save to logs.
+				logger::logger()
+					.lock()
+					.unwrap()
+					.log_error("Could not initialise camera", &_why);
 				self.status = Status::Invalid;
 				false
 			},
 			Ok(camera) => {
-				// TODO: Save to logs.
+				logger::logger()
+					.lock()
+					.unwrap()
+					.log_info("Camera successfully initialised");
 				self.status = Status::Active;
 				self.add_camera(camera);
 				true
@@ -154,7 +160,10 @@ impl Metadata {
 
 		// Stop now if this is a metadata device.
 		if is_metadata {
-			// TODO: Save to log.
+			logger::logger()
+				.lock()
+				.unwrap()
+				.log_warn(&format!("This index ({}) represents a metadata device", index));
 			return None;
 		}
 
