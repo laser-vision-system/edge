@@ -84,6 +84,9 @@ impl Logger {
 			message.to_string(),
 		);
 
+		#[cfg(debug_assertions)]
+		println!("{}", log_entry);
+
 		self.logs.push(log_entry);
 	}
 
@@ -95,6 +98,9 @@ impl Logger {
 			LogLevel::WARN,
 			message.to_string(),
 		);
+
+		#[cfg(debug_assertions)]
+		println!("{}", log_entry);
 
 		self.logs.push(log_entry);
 	}
@@ -109,6 +115,9 @@ impl Logger {
 			error,
 			message,
 		);
+
+		#[cfg(debug_assertions)]
+		println!("{}", log_entry);
 
 		self.logs.push(log_entry);
 	}
