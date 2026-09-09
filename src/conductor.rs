@@ -3,7 +3,6 @@ use crate::{
 	vision_processor::demonstration::Demonstration,
 };
 use async_std::task;
-use image::ImageBuffer;
 use server_edge_datatypes::edge::{DisconnectCamera, ImageAnalysis, RegisterCameras};
 use server_edge_datatypes::shared::{CameraState, Configuration};
 use settings::UPDATE_DELAY;
@@ -44,7 +43,7 @@ impl Conductor {
 
 		let camera = DisconnectCamera { camera_id: 1 };
 
-		let frame = ImageBuffer::new(800, 800);
+		let camera_id = 1;
 
 		let configuration = Configuration {
 			conn_id: 0,
@@ -61,6 +60,7 @@ impl Conductor {
 		let mut stream = self.client.websocket_connect_manual().await;
 
 		loop {
+			let frame = self.camera.get_image()?;
 			self.client
 				.send_register_cameras(&mut stream, cameras.clone())
 				.await?;
@@ -70,7 +70,7 @@ impl Conductor {
 			self.client
 				.send_configuration(&mut stream, configuration.clone())
 				.await?;
-			self.client.send_image(&mut stream, frame.clone()).await?;
+			self.client.send_image(&mut stream, camera_id, frame.clone()).await?;
 			self.client
 				.send_image_analysis(&mut stream, image_analysis.clone())
 				.await?;

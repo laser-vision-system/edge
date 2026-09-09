@@ -9,6 +9,7 @@ use server_edge_datatypes::shared::{Configuration, ViewCameraConfig};
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::{Bytes, Message, Utf8Bytes};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
+use tokio_util::bytes::Buf;
 
 pub struct Client {
 	camera_list: SetNameCamera,
@@ -51,6 +52,7 @@ impl Client {
 
 	pub fn websocket_connect_automatic(self) {
 		// TO DO automatic connection
+
 	}
 	pub async fn keep_alive(
 		&mut self,
@@ -84,9 +86,11 @@ impl Client {
 	pub async fn send_image(
 		&mut self,
 		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		camera_id: u64,
 		frame: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let msg = frame.clone().into_raw();
+		let mut msg = camera_id.to_be_bytes().to_vec();
+		msg.append(&mut frame.clone().to_vec());
 		stream.send(Message::Binary(Bytes::from(msg))).await?;
 		Ok(())
 	}
@@ -243,10 +247,11 @@ mod tests {
 
 	#[tokio::test]
 	async fn send_image() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+		let camera_id = 1;
 		let mut client = Client::new();
 		let mut stream = client.websocket_connect_manual().await;
 		let frame = ImageBuffer::new(800, 800);
-		client.send_image(&mut stream, frame.clone()).await?;
+		client.send_image(&mut stream, camera_id,  frame.clone()).await?;
 		Ok(())
 	}
 	#[tokio::test]
