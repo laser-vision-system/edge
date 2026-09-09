@@ -20,13 +20,10 @@ pub const PORT: &str = "8080";
 /// System-level default settings.
 ///
 /// This will be filled in by the initial connection to the server.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Settings {
-	update_delay: Duration,
-}
-
-impl Settings {
-	pub fn get_update_delay(&self) -> Duration {
-		self.update_delay
-	}
+	pub update_delay: Duration,
+	pub camera_err_decrement: u16,
+	pub camera_err_increment: u16,
+	pub camera_err_threshold: u16,
 }

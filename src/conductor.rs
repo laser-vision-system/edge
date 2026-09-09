@@ -10,7 +10,9 @@ use tokio::net::TcpStream;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 
 use crate::{
-	client::Client, settings::Settings, tcam_interface::Persistence,
+	client::Client,
+	settings::Settings,
+	tcam_interface::{Metadata, Persistence, Status},
 	vision_processor::VisionVariant,
 };
 
@@ -46,6 +48,20 @@ impl Conductor {
 			.send_register_cameras(stream, cameras.clone())
 			.await?;
 
+		for active_metadata in self
+			.persistence
+			.filter_by(Box::new(|metadata| metadata.status() == Status::Active))
+		{
+			on_active_camera(active_metadata, settings.clone());
+		}
+		// Send logs.
+
+		// Vision
+
+		// Send result
+
+		// Send statistics
+
 		let camera = DisconnectCamera { camera_id: 1 };
 
 		let frame = ImageBuffer::new(800, 800);
@@ -75,7 +91,7 @@ impl Conductor {
 		self.client.websocket_incoming_data(stream).await?;
 		self.client.keep_alive(stream).await?;
 
-		task::sleep(settings.get_update_delay()).await;
+		task::sleep(settings.update_delay).await;
 
 		Ok(settings)
 	}
@@ -106,6 +122,55 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let loop_settings = placeholder_autoconnect(settings);
 		settings = Some(conductor.loop_once(loop_settings, &mut stream).await?)
 	}
+}
+
+fn on_active_camera(metadata: &mut Metadata, settings: Settings) {
+	if !read_image(metadata, settings.clone()) {
+		metadata.add_error(settings.camera_err_increment);
+
+		if metadata.err_accumulation() < settings.camera_err_threshold {
+			metadata.status = Status::Disconnected;
+			// Save to log.
+			// Tell server disconnect.
+		} else {
+			metadata.status = Status::Broken;
+			// Save to log.
+			// Tell server bokrne.
+		}
+	}
+	// Save error count to log.
+}
+
+fn read_image(metadata: &mut Metadata, settings: Settings) -> bool {
+	let camera = metadata
+		.camera_mut()
+		.expect("camera expected by status being active");
+
+	let Ok(image) = camera.get_image_shrink() else {
+		// Save to log.
+		// Drop camera.
+		return false;
+	};
+
+	// Save to log.
+	metadata.reduce_error(settings.camera_err_decrement);
+	// Decode the frame.
+	// TODO: Add decoding function here.
+	// if !decode {
+	// If out of memory, send log and panic.
+	// Save to log.
+	// return false;
+	//}
+
+	// Save to log.
+
+	if metadata.currently_viewed {
+		// Send to server.
+	}
+
+	// Create batch item.
+
+	true
 }
 
 // Not a proper spot for these, but they demontrate the general flow.

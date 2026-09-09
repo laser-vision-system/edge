@@ -4,7 +4,7 @@ use crate::vision_processor::VisionState;
 
 use super::{Camera, Status, new_camera_info::NewCameraInfo};
 
-type ErrAccType = u8;
+type ErrAccType = u16;
 // IDEA: Use nokhwa's internal `CameraIndex` type.
 type IndexType = u32;
 
@@ -25,9 +25,9 @@ pub struct Metadata {
 	/// and use accessor methods.
 	pub name: String,
 	/// The current status of the camera.
-	pub(super) status: Status,
+	pub status: Status,
 	/// Whether this camera is sending the images to the server.
-	pub(super) currently_viewed: bool,
+	pub currently_viewed: bool,
 	/// An error accumulation value. If this value gets too high, the camera
 	/// [`Status`] should be changed to [`Broken`](Status::Broken) TODO: Error
 	/// threshold.
@@ -58,8 +58,17 @@ impl Metadata {
 	}
 
 	/// Mark that this camera has encountered an error.
-	pub fn add_error(&mut self) {
-		self.err_accumulation += 2;
+	pub fn add_error(&mut self, increment: ErrAccType) {
+		self.err_accumulation += increment;
+	}
+
+	/// Reduce the error by up to an amount.
+	pub fn reduce_error(&mut self, amount: ErrAccType) {
+		if self.err_accumulation > amount {
+			self.err_accumulation -= amount;
+		} else if self.err_accumulation > 0 {
+			self.err_accumulation = 0;
+		}
 	}
 
 	/// Get the list of all device indices that this camera is occupying.
@@ -216,8 +225,8 @@ mod tests {
 	fn err_accumulation_add() {
 		let mut meta = Metadata::default();
 		assert_eq!(meta.err_accumulation, 0);
-		meta.add_error();
-		meta.add_error();
+		meta.add_error(2);
+		meta.add_error(2);
 		assert_eq!(meta.err_accumulation, 4);
 	}
 
