@@ -1,21 +1,20 @@
-//! Provides connection, identification, management, and configuration for camera devices.
+//! Provides connection, identification, management, and configuration for
+//! camera devices.
 
 mod camera;
-pub use camera::Camera;
-
-mod identifier;
-pub(crate) use identifier::Identifier;
-
-mod status;
-pub(crate) use status::Status;
-
-mod metadata;
-pub(crate) use metadata::Metadata;
-
-mod persistence;
-pub(crate) use persistence::Persistence;
-
-mod new_camera_info;
-pub(crate) use new_camera_info::NewCameraInfo;
-
 pub mod controls;
+mod identifier;
+mod metadata;
+mod persistence;
+
+pub use camera::Camera;
+pub use identifier::Identifier;
+pub use metadata::Metadata;
+pub use persistence::Persistence;
+use server_edge_datatypes::shared::CameraId;
+
+#[derive(Clone, Debug)]
+pub enum WhyNo {
+	Disconnected(CameraId),
+	Broken(CameraId),
+}

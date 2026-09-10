@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, io::Cursor};
 
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
@@ -9,14 +9,18 @@ use nokhwa::{
 	utils::{CameraControl, CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
 
-use crate::error::{EdgeError, Result};
+use crate::{
+	error::{EdgeError, Result},
+	logger::logger,
+};
 
 use super::controls::{
 	ControlMap,
 	descriptions::CamControl,
-	extract_control, extract_controls,
 	traits::{ControlDefault, ControlDescription, ControlValue},
 };
+
+use crate::logger;
 
 /// An abstraction over the nokhwa camera objects.
 ///
@@ -37,6 +41,10 @@ impl Camera {
 		})?;
 		let OpenedCamera::Stream(mut camera) = opened else {
 			// TODO: Discuss how we handle this.
+			logger::logger()
+				.lock()
+				.unwrap()
+				.log_warn("Camera is not a webcam...?");
 			panic!("AA")
 		};
 		camera.open().map_err(|why| EdgeError::StreamOpen {
@@ -46,29 +54,59 @@ impl Camera {
 		Ok(Self { inner: camera })
 	}
 
+	pub fn encode_image(data: RgbImage) -> Vec<u8> {
+		let mut buff = Cursor::new(Vec::new());
+		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
+		enc.encode_image(&data).unwrap();
+		buff.into_inner()
+	}
+
 	// == Images ==
 
 	/// Request an image of the current camera frame.
 	///
 	/// There seems to be a 2 frame latency.
-	pub fn get_image(&mut self) -> Result<RgbImage> {
-		// TODO: Handle potential error cases.
-		let buffer = self.inner.frame().map_err(|_| EdgeError::FrameRead)?;
-		let frame: Frame<Mjpeg> = Frame::new(buffer);
-		let decoded = frame
+	pub fn get_frame(&mut self) -> Result<Frame<Mjpeg>> {
+		let frame_res = self.inner.frame().map_err(|_| EdgeError::FrameRead);
+		match frame_res {
+			Ok(buffer) => {
+				logger::logger()
+					.lock()
+					.unwrap()
+					.log_info("Frame was successfully read");
+				Ok(Frame::new(buffer))
+			},
+			Err(why) => {
+				logger::logger().lock().unwrap().log_error("", &why);
+				return Err(why);
+			},
+		}
+	}
+
+	/// Decode an image.
+	pub fn decode_image(&mut self, frame: Frame<Mjpeg>) -> Result<RgbImage> {
+		let decoded_res = frame
 			.into_rgb()
 			.materialize()
 			// We just assume it is always corruption for now.
-			.map_err(|_| EdgeError::FrameDecodeCorruption)?;
-		Ok(decoded)
-	}
-
-	pub fn get_image_shrink(&mut self) -> Result<RgbImage> {
-		let frame = DynamicImage::ImageRgb8(self.get_image()?);
-		let new = frame
-			.crop_imm(0, 0, frame.width(), frame.height())
-			.into_rgb8();
-		Ok(new)
+			.map_err(|_| EdgeError::FrameDecodeCorruption);
+		match decoded_res {
+			Ok(decoded) => {
+				logger::logger()
+					.lock()
+					.unwrap()
+					.log_info("Frame was successfully decoded");
+				let frame = DynamicImage::ImageRgb8(decoded);
+				let new = frame
+					.crop_imm(0, 0, frame.width(), frame.height())
+					.into_rgb8();
+				Ok(new)
+			},
+			Err(why) => {
+				logger::logger().lock().unwrap().log_error("", &why);
+				Err(why)
+			},
+		}
 	}
 
 	// == Configurations ==
@@ -85,25 +123,24 @@ impl Camera {
 
 	/// Get a map of the camera controls
 	pub fn get_controls(&self) -> ControlMap {
-		extract_controls(self.inner.controls().unwrap())
+		ControlMap::from(self.inner.controls().unwrap())
 	}
 
 	/// Get a camera control by ID
 	pub fn get_control(&self, id: KnownCameraControl) -> CamControl {
-		let nokhwa_control = self
-			.inner
+		self.inner
 			.controls()
 			.unwrap()
 			.into_iter()
 			.find(|con| con.control() == id)
-			.unwrap();
-		extract_control(nokhwa_control)
+			.unwrap()
+			.into()
 	}
 
 	/// Set a camera control
 	pub fn set_control<T>(&mut self, id: KnownCameraControl, value: T) -> Result<()>
 	where
-		T: Into<ControlValueSetter>,
+		T: Into<ControlValueSetter> + Clone,
 	{
 		if match id {
 			KnownCameraControl::WhiteBalance => true,
@@ -113,8 +150,30 @@ impl Camera {
 			return Ok(());
 		}
 		self.inner
-			.set_control(id, value.into())
+			.set_control(id, value.clone().into())
 			.map_err(|_| EdgeError::SetControl)
+			.inspect_err(|why| {
+				logger().lock().unwrap().log_error(
+					&format!("Failed to set control {} to {}", id, value.into()),
+					&why,
+				)
+			})
+	}
+
+	pub fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
+		controls.into_inner().into_iter().for_each(|(id, val)| {
+			let CamControl::IntegerRange(control) = val else {
+				logger().lock().unwrap().log_error(
+					"Attempting to set a control of an unsupported type.",
+					&EdgeError::SetControl,
+				);
+				return;
+			};
+			// TODO: Handle error. Maybe try make this operation atomic?
+			let _ = self.set_control(id, control.get_value());
+		});
+
+		Ok(())
 	}
 
 	#[allow(dead_code)]
@@ -157,7 +216,7 @@ impl Camera {
 				.unwrap();
 		}
 
-		for (id, control) in self.get_controls() {
+		for (id, control) in self.get_controls().into_inner() {
 			if id == KnownCameraControl::ExposureAbsolute {
 				continue;
 			}
@@ -297,15 +356,17 @@ mod tests {
 
 	// Can't implement `Termination` for `RgbImage`.
 	#[test]
-	fn get_image() {
+	fn get_frame() {
 		let mut cam = Camera::new(0).unwrap();
-		let _ = cam.get_image().unwrap();
+		let _ = cam.get_frame().unwrap();
+		let _ = cam.get_frame().unwrap();
 	}
 
 	#[test]
-	fn get_image_shrink() {
+	fn decode_image() {
 		let mut cam = Camera::new(0).unwrap();
-		let _ = cam.get_image_shrink().unwrap();
+		let frame = cam.get_frame().unwrap();
+		let _ = cam.decode_image(frame);
 	}
 
 	#[test]
@@ -319,7 +380,14 @@ mod tests {
 	fn get_all_available_controls() {
 		let cam = Camera::new(0).unwrap();
 		let c = cam.get_controls();
-		println!("{c:#?}");
+		println!("{c}");
+	}
+
+	#[test]
+	fn get_stripped_controls() {
+		let cam = Camera::new(0).unwrap();
+		let c = cam.get_controls().stripped();
+		println!("{c}");
 	}
 
 	#[test]

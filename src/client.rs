@@ -3,15 +3,19 @@ use crate::settings::{API, HOST, PORT};
 use futures_util::{SinkExt};
 use image::ImageBuffer;
 use serde::de::DeserializeOwned;
+use reqwest::Client as ReqwestClient;
 use serde::Serialize;
-use server_edge_datatypes::edge::{
-	SetNameCamera, StartViewingCamera, StopViewingCamera,
+use serde::de::DeserializeOwned;
+use server_edge_datatypes::{
+	edge::{SetNameCamera, StartViewingCamera, StopViewingCamera},
+	shared::{Configuration, ViewCameraConfig},
 };
-use server_edge_datatypes::shared::{Configuration, ViewCameraConfig};
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::{Bytes, Message, Utf8Bytes};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
 use tokio;
+
+pub type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 pub struct Client {
 	camera_list: SetNameCamera,
@@ -20,6 +24,7 @@ pub struct Client {
 	configuration: Configuration,
 	view_camera_config: ViewCameraConfig,
 }
+
 impl Client {
 	pub fn new() -> Self {
 		let camera_list = SetNameCamera {
@@ -46,11 +51,13 @@ impl Client {
 			view_camera_config,
 		}
 	}
-	pub async fn websocket_connect_manual(&mut self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
+
+	pub async fn websocket_connect_manual(&mut self) -> WebSocket {
 		let url = "ws://".to_string() + HOST + ":" + PORT + API;
 		let (stream, response) = connect_async(url).await.expect("Failed to connect");
 		return stream;
 	}
+	
 	pub fn encode_image(
 		&mut self,
 		data: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
@@ -68,9 +75,9 @@ impl Client {
 
 	pub async fn send_text<T: Serialize>(
 		&mut self,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		stream: &mut WebSocket,
 		mut prefix: String,
-		data: T
+		data: T,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		prefix.push_str(&*serde_json::to_string(&data)?);
 		stream.send(Message::Text(Utf8Bytes::from(prefix))).await?;
@@ -79,7 +86,7 @@ impl Client {
 
 	pub async fn keep_alive(
 		&mut self,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		stream: &mut WebSocket,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let msg = "hello";
 		stream.send(Message::Pong(Bytes::from(msg))).await?;
@@ -88,7 +95,7 @@ impl Client {
 
 	pub async fn send_image(
 		&mut self,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		stream: &mut WebSocket,
 		camera_id: u64,
 		frame: &mut Vec<u8>,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -98,48 +105,44 @@ impl Client {
 		Ok(())
 	}
 
-	pub async fn websocket_incoming_data(
-		&mut self,
-		text: &str,
-	) {
+	pub async fn websocket_incoming_data(&mut self, text: &str) {
 		let msg = text.trim();
 
 		println!("Received from Server: {}", msg);
 
 		let mut args = msg.splitn(2, ':');
 
-		match args.next().unwrap()
-		{
+		match args.next().unwrap() {
 			"SetNameCamera" => match args.next() {
 				Some(data) => {
 					self.camera_list = Self::unpack(data).unwrap();
-				}
+				},
 				None => {},
-			}
+			},
 			"StartViewingCamera" => match args.next() {
 				Some(data) => {
 					self.start_viewing_camera = Self::unpack(data).unwrap();
-				}
-				None => {}
-			}
+				},
+				None => {},
+			},
 			"StopViewingCamera" => match args.next() {
 				Some(data) => {
 					self.stop_viewing_camera = Self::unpack(data).unwrap();
-				}
-				None => {}
-			}
+				},
+				None => {},
+			},
 			"Configuration" => match args.next() {
 				Some(data) => {
 					self.configuration = Self::unpack(data).unwrap();
-				}
-				None => {}
-			}
+				},
+				None => {},
+			},
 			"ViewCameraConfig" => match args.next() {
 				Some(data) => {
 					self.view_camera_config = Self::unpack(data).unwrap();
-				}
-				None => {}
-			}
+				},
+				None => {},
+			},
 			_ => {},
 		}
 	}
@@ -148,22 +151,27 @@ impl Client {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use server_edge_datatypes::edge::RegisterCameras;
-	use server_edge_datatypes::shared::CameraState;
+
+	use server_edge_datatypes::{
+		edge::{NewCameraInfo, RegisterCameras},
+		shared::CameraStatus,
+	};
+
 	use std::collections::HashMap;
+
 	#[tokio::test]
 	async fn send_text() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let mut client = Client::new();
 		let mut stream = client.websocket_connect_manual().await;
 
-		let mut cameras_hashmap: HashMap<u64, (String, CameraState)> = HashMap::new();
-		cameras_hashmap.insert(1, ("".to_string(), CameraState::Active));
+		let mut cameras_hashmap: HashMap<u64, NewCameraInfo> = HashMap::new();
+		cameras_hashmap.insert(1, NewCameraInfo::new("".to_string(), CameraStatus::Active));
 		let cameras = RegisterCameras {
 			cameras: cameras_hashmap,
 		};
 		client
-			.send_text(&mut stream, "RegisterCameras:".to_string(),  cameras.clone())
-		 	.await?;
+			.send_text(&mut stream, "RegisterCameras:".to_string(), cameras.clone())
+			.await?;
 
 		Ok(())
 	}
@@ -177,6 +185,7 @@ mod tests {
 		// client.send_image(&mut stream, camera_id,  frame.clone()).await?;
 		Ok(())
 	}
+
 	#[tokio::test]
 	async fn websocket_incoming_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let mut client = Client::new();

@@ -10,6 +10,8 @@
 //!
 //! All the necessary information is in the [`CameraInfo`] struct.
 
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 use nokhwa::utils::CameraInfo;
 
 /// The `Identifier` type.
@@ -17,13 +19,21 @@ use nokhwa::utils::CameraInfo;
 /// See the [module level documentation](self) for more information.
 // `PartialOrd` and `Ord` are not strictly necessary.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct Identifier {
+pub struct Identifier {
 	/// The internal name of the device. On v4l, taken from the "Card type" and "Driver name" values.
 	name: String,
 	/// The internal description of the device. On v4l, taken from the "Bus info" value.
 	description: String,
 	/// Additional miscellaneous information about the device. On v4l, taken from the "Driver version" value.
 	misc: String,
+}
+
+impl Identifier {
+	pub fn calculate_hash(&self) -> u64 {
+		let mut s = DefaultHasher::new();
+		self.hash(&mut s);
+		s.finish()
+	}
 }
 
 impl From<CameraInfo> for Identifier {
@@ -33,5 +43,17 @@ impl From<CameraInfo> for Identifier {
 			description: value.description().to_string(),
 			misc: value.misc().to_string(),
 		}
+	}
+}
+
+impl PartialEq<u64> for Identifier {
+	fn eq(&self, other: &u64) -> bool {
+		self.calculate_hash().eq(other)
+	}
+}
+
+impl PartialEq<Identifier> for u64 {
+	fn eq(&self, other: &Identifier) -> bool {
+		other.calculate_hash().eq(self)
 	}
 }

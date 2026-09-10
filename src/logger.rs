@@ -22,9 +22,12 @@ use crate::error::EdgeError::{self};
 
 use serde::{Deserialize, Serialize};
 
+// Declare a type alias for easy imports
+pub type LoggerRef = &'static Mutex<Logger>;
+
 static LOGGER: OnceLock<Mutex<Logger>> = OnceLock::new();
 
-pub fn logger() -> &'static Mutex<Logger> {
+pub fn logger() -> LoggerRef {
 	LOGGER.get_or_init(|| Mutex::new(Logger::new()))
 }
 
@@ -84,6 +87,9 @@ impl Logger {
 			message.to_string(),
 		);
 
+		#[cfg(debug_assertions)]
+		println!("{}", log_entry);
+
 		self.logs.push(log_entry);
 	}
 
@@ -96,10 +102,13 @@ impl Logger {
 			message.to_string(),
 		);
 
+		#[cfg(debug_assertions)]
+		println!("{}", log_entry);
+
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_error(&mut self, message: &str, error: EdgeError) {
+	pub fn log_error(&mut self, message: &str, error: &EdgeError) {
 		let log_entry = format!(
 			"[{:05}] {}\n{:?}\n{:?}: {}\n{}\n----------",
 			self.counter.next(),
@@ -109,6 +118,9 @@ impl Logger {
 			error,
 			message,
 		);
+
+		#[cfg(debug_assertions)]
+		println!("{}", log_entry);
 
 		self.logs.push(log_entry);
 	}
@@ -259,25 +271,25 @@ mod test {
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		error = WebSocketConnection;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		error = ServerConnection;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		error = NokhwaNoBackend;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		error = NokhwaInitialisation {
 			index: 69,
@@ -286,7 +298,7 @@ mod test {
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		error = StreamOpen {
 			reason: "*Generic reason*".to_string(),
@@ -294,37 +306,39 @@ mod test {
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		error = FrameRead;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		error = FrameDecodeCorruption;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		error = FrameDecodeOutOfMemory;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		error = SetControl;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
-		error = General("*Generic reason*".to_string());
+		error = General {
+			reason: "*Generic reason*".to_string(),
+		};
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", error);
+			.log_error("This is an ERROR log test.", &error);
 
 		logger().lock().unwrap().send_logs();
 		logger().lock().unwrap().send_logs();
