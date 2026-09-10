@@ -1,68 +1,86 @@
-# ========== Base ==========
-FROM python:3.13-slim-trixie AS base
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# ---- Builder Stage ----
+# Use the official Rust image. The 'slim' variant is smaller and works for most cases.
+FROM rust:slim-bookworm AS builder
 
-ENV UV_LINK_MODE=copy \
-	UV_COMPILE_BYTECODE=1 \
-	PYTHONUNBUFFERED=1
+# Set the working directory.
+WORKDIR /usr/src/app
 
-WORKDIR /app
+ARG LLVM_VERSION=12
 
-# OpenCV system dependencies.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-	libgl1 \
-	libglib2.0-0 \
-	&& rm -rf /var/lib/apt/lists/*
+# Make sure that all packages are up to date then
+# install the base Ubuntu packages that we need for
+# building the kernel
+
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        bc \
+        binutils \
+        binutils-aarch64-linux-gnu \
+        binutils-arm-linux-gnueabi \
+        binutils-mips-linux-gnu \
+        binutils-mipsel-linux-gnu \
+        binutils-powerpc-linux-gnu \
+        binutils-powerpc64-linux-gnu \
+        binutils-powerpc64le-linux-gnu \
+        binutils-riscv64-linux-gnu \
+        binutils-s390x-linux-gnu \
+        bison \
+        ca-certificates \
+        ccache \
+        cpio \
+        curl \
+        expect \
+        flex \
+        git \
+        gnupg \
+        libelf-dev \
+        libssl-dev \
+        lz4 \
+        make \
+        opensbi \
+        openssl \
+        ovmf \
+        qemu-efi-aarch64 \
+        qemu-system-arm \
+        qemu-system-mips \
+        qemu-system-misc \
+        qemu-system-ppc \
+        qemu-system-x86 \
+        u-boot-tools \
+        xz-utils \
+        zstd && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install the latest nightly Clang/lld packages from apt.llvm.org
+# Delete all the apt list files since they're big and get stale quickly
+RUN curl https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
+    echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal$(test ${LLVM_VERSION} -ne 12 && echo "-${LLVM_VERSION}") main" | tee -a /etc/apt/sources.list && \
+    apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+        clang-${LLVM_VERSION} \
+        lld-${LLVM_VERSION} \
+        llvm-${LLVM_VERSION} && \
+    chmod -f +x /usr/lib/llvm-${LLVM_VERSION}/bin/* && \
+    rm -rf /var/lib/apt/lists/*
 
 
-# ========== Development ==========
-FROM base AS development
+# Install musl tools for static compilation.
+RUN apt-get update && apt-get install -y musl-tools
+RUN rustup target add x86_64-unknown-linux-musl
 
-# Copy config files.
-COPY pyproject.toml uv.lock .python-version ./
-
-# Install dependencies (including dev).
-RUN --mount=type=cache,target=/root/.cache/uv \
-	uv sync --frozen --no-install-project
-
-# Copy the entire project (including tests/).
+# Copy your application's source code.
 COPY . .
 
-# Final sync to install the local package in editable-like mode.
-RUN --mount=type=cache,target=/root/.cache/uv \
-	uv sync --frozen
+# Build a statically-linked, release-optimized binary.
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
-ENV PATH="/app/.venv/bin:$PATH"
+# ---- Final Stage ----
+# Use the 'scratch' image, which is completely empty.
+FROM scratch
 
-CMD ["python", "-m", "edge"]
+# Copy the compiled binary from the builder stage
+COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/edge /edge
 
-
-# ========== Test ==========
-# This target only runs tests; if they fail, the docker build fails.
-FROM development AS test
-RUN uv run pytest
-
-
-# ========== Production ==========
-FROM base AS builder
-COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-	uv sync --frozen --no-install-project --no-dev
-
-
-FROM base AS production
-
-# Copy only the production venv.
-COPY --from=builder /app/.venv /app/.venv
-
-# Copy only necessary files.
-COPY src/ ./src/
-COPY pyproject.toml uv.lock README.md ./
-
-# Final sync (bytecode compilation happens here).
-RUN --mount=type=cache,target=/root/.cache/uv \
-	uv sync --frozen --no-dev
-
-ENV PATH="/app/.venv/bin:$PATH"
-
-CMD ["python", "-m", "edge"]
+# Set the entrypoint for the container
+CMD ["/edge"]

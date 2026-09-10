@@ -29,7 +29,7 @@ impl VisionInterface for Cnn {
 				// TODO: This should raise an error.
 				continue;
 			};
-			data.deviation = 0.0
+			data.deviation = Some(0.0)
 		}
 	}
 }
@@ -58,7 +58,7 @@ impl fmt::Display for Cnn {
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ExternalData {
 	pub setpoint: Option<f32>,
-	pub deviation: f32,
+	pub deviation: Option<f32>,
 }
 
 impl fmt::Display for ExternalData {

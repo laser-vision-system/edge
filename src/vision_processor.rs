@@ -4,7 +4,7 @@ use std::{
 };
 
 use image::RgbImage;
-use server_edge_datatypes::shared::VisionTechnique;
+use server_edge_datatypes::shared::{CameraId, VisionTechnique};
 
 pub mod cnn;
 pub mod demonstration;
@@ -159,6 +159,15 @@ impl VisionState {
 			| Self::Diff { handle, .. } => handle.is_valid(),
 		}
 	}
+
+	pub fn get_deviation(&self) -> Option<f32> {
+		match self {
+			Self::Empty { .. } => None,
+			Self::Demonstration { data, .. } => data.deviation,
+			Self::Cnn { data, .. } => data.deviation,
+			Self::Diff { data, .. } => data.deviation,
+		}
+	}
 }
 
 /// A single record that is passed into `process_frame`.
@@ -166,9 +175,29 @@ impl VisionState {
 /// Currently holds a reference to the vision state, but should probably be
 /// swapped to using an [`mpsc`](std::sync::mpsc) for multithreading. The [`VisionState`] would be sent back through it.
 pub struct BatchItem<'a> {
+	pub camera_id: CameraId,
 	pub state: &'a mut VisionState,
 	pub image: RgbImage,
 	pub calibrate: bool,
+	pub send_to_server: bool,
+}
+
+impl<'a> BatchItem<'a> {
+	pub fn new(
+		camera_id: CameraId,
+		state: &'a mut VisionState,
+		image: RgbImage,
+		calibrate: bool,
+		send_to_server: bool,
+	) -> Self {
+		Self {
+			camera_id,
+			state,
+			image,
+			calibrate,
+			send_to_server,
+		}
+	}
 }
 
 #[cfg(test)]

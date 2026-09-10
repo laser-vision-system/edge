@@ -35,9 +35,11 @@ impl Context {
 		self.send_image(path, &rerun_image);
 
 		let batch = BatchItem {
+			camera_id: 0,
 			image: frame,
 			state: &mut self.state,
 			calibrate: incr == 0,
+			send_to_server: false,
 		};
 		let mut batched = [batch];
 		self.demo.process(&mut batched);
@@ -61,8 +63,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut incr: u8 = 0;
 
 	loop {
-		let frame = camera.get_image_shrink()?;
-		context.log_frame("camera/live_feed", frame, incr);
+		let frame = camera.get_frame()?;
+		let image = camera.decode_image(frame)?;
+		context.log_frame("camera/live_feed", image, incr);
 		if incr == 50 {
 			incr = 0;
 		} else {

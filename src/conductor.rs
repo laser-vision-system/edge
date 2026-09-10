@@ -1,19 +1,21 @@
 use async_std::task;
-use image::ImageBuffer;
 use server_edge_datatypes::{
-	edge::{ImageAnalysis, RegisterCameras},
+	edge::{ImageAnalysis, RegisterCameras, UpdateCameraStatus},
 	shared::{CameraStatus, Configuration, ViewCameraConfig},
 };
-use tokio::net::TcpStream;
-use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
+
+use futures_util::StreamExt;
+
+use tokio::time::interval;
+use tokio_tungstenite::tungstenite::Message;
 
 use crate::{
-	client::Client,
+	client::{Client, WebSocket},
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
-	tcam_interface::{Metadata, Persistence},
-	vision_processor::VisionVariant,
+	tcam_interface::{Camera, Persistence, WhyNo},
+	vision_processor::{VisionInterface, VisionVariant},
 };
 
 /// # Conductor
@@ -29,7 +31,7 @@ impl Conductor {
 	async fn loop_once(
 		&mut self,
 		settings: Settings,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		stream: &mut WebSocket,
 	) -> Result<Settings, Box<dyn std::error::Error + Send + Sync>> {
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
 
@@ -37,116 +39,141 @@ impl Conductor {
 		let new_cameras = self.persistence.poll_for_new_cameras();
 
 		self.client
-			.send_register_cameras(
+			.send_text(
 				stream,
+				"RegisterCameras:".into(),
 				RegisterCameras {
 					cameras: new_cameras,
 				},
 			)
 			.await?;
 
-		// TODO: Check if we have a request to modify camera config.
-		let example = Configuration {
-			camera_id: 598275214,
-			conn_id: 12,
-			configuration: "{\"Saturation\":{\"IntegerRange\":{\"control_type\":\"Saturation\",\"value\":64,\"default\":64,\"step\":1,\"min\":0,\"max\":128}},\"Brightness\":{\"IntegerRange\":{\"control_type\":\"Brightness\",\"value\":0,\"default\":0,\"step\":1,\"min\":-64,\"max\":64}},\"Contrast\":{\"IntegerRange\":{\"control_type\":\"Contrast\",\"value\":32,\"default\":32,\"step\":1,\"min\":0,\"max\":64}},\"Gain\":{\"IntegerRange\":{\"control_type\":\"Gain\",\"value\":0,\"default\":0,\"step\":1,\"min\":0,\"max\":100}},\"Gamma\":{\"IntegerRange\":{\"control_type\":\"Gamma\",\"value\":100,\"default\":100,\"step\":1,\"min\":72,\"max\":500}},\"Hue\":{\"IntegerRange\":{\"control_type\":\"Hue\",\"value\":0,\"default\":0,\"step\":1,\"min\":-40,\"max\":40}}}".into(),
-		};
-		for (id, entry) in self.persistence.inner().iter_mut() {
-			if id.calculate_hash() == example.camera_id {
-				let Some(camera) = entry.camera_mut() else {
-					logger()
-						.lock()
-						.unwrap()
-						.log_error("", &EdgeError::CameraNotPresent);
-					break;
-				};
-				match serde_json::from_str(&example.configuration) {
-					Ok(map) => {
-						if let Err(why) = camera.set_controls(map) {
-							logger()
-								.lock()
-								.unwrap()
-								.log_error("Failed to set requested cntrols from server", &why);
-						};
-					},
-					Err(why) => {
-						logger().lock().unwrap().log_error(
-							"Failed to parse requested configuration",
-							&EdgeError::DecodeControls { reason: why },
-						);
-					},
-				};
+		while self.query_websockets(settings.clone(), stream).await {}
 
-				logger()
-					.lock()
-					.unwrap()
-					.log_info("We've found the correct camera by id");
-				break;
-			}
-		}
-		logger().lock().unwrap().send_logs();
-
-		// TODO: Check if we should send a camera config.
-		let example = ViewCameraConfig {
-			camera_id: 9825723522,
-			conn_id: 21,
-		};
-		for (id, entry) in self.persistence.inner().iter_mut() {
-			if id.calculate_hash() == example.camera_id {
-				let Some(camera) = entry.camera() else {
-					logger()
-						.lock()
-						.unwrap()
-						.log_error("", &EdgeError::CameraNotPresent);
-					break;
-				};
-				let important_controls = camera.get_controls().stripped();
-				let configuration =
-					Configuration::build_response(example, important_controls.serialise());
-				self.client
-					.send_configuration(stream, configuration)
-					.await?;
-				break;
-			}
-		}
-		logger().lock().unwrap().send_logs();
-
-		for active_metadata in self.persistence.filter_by(Box::new(|metadata| {
-			metadata.status() == CameraStatus::Active
-		})) {
-			on_active_camera(active_metadata, settings.clone());
-		}
-		// Send logs.
-
-		// Vision
-
-		// Send result
-
-		// Send statistics
-
-		//let camera = DisconnectCamera { camera_id: 1 };
-
-		let frame = ImageBuffer::new(800, 800);
-
-		let image_analysis = ImageAnalysis {
-			camera_id: 1,
-			deviation: 1.0,
-		};
+		//let frame = self.camera.get_image_shrink()?;
+		//let compressed_frame = self.client.encode_image(frame.clone());
 
 		//self.client
-		//	.send_disconnect_camera(stream, camera.clone())
-		//	.await?;
+		//.send_text(&mut stream, "DisconnectCamera:".to_string(), camera.clone())
+		//.await?;
 
-		self.client.send_image(stream, frame.clone()).await?;
-		self.client
-			.send_image_analysis(stream, image_analysis.clone())
-			.await?;
-		self.client.websocket_incoming_data(stream).await?;
+		//self.client
+		//.send_image(&mut stream, camera_id,  compressed_frame.clone().as_mut())
+		//.await?;
+
 		self.client.keep_alive(stream).await?;
+
+		placeholder_config_request(&mut self.persistence);
+
+		placeholder_send_config(&mut self.persistence);
+
+		let batch_items = self.persistence.run_on_active(settings.clone());
+
+		let mut items = Vec::with_capacity(batch_items.len());
+
+		for item in batch_items {
+			match item {
+				Ok(batch) => items.push(batch),
+				Err((_, details)) => match details {
+					WhyNo::Disconnected(id) => {
+						let _ = self
+							.client
+							.send_text(
+								stream,
+								"UpdateCameraStatus:".into(),
+								UpdateCameraStatus {
+									camera_id: id,
+									status: CameraStatus::Disconnected,
+								},
+							)
+							.await;
+					},
+					WhyNo::Broken(id) => {
+						let _ = self
+							.client
+							.send_text(
+								stream,
+								"UpdateCameraStatus:".into(),
+								UpdateCameraStatus {
+									camera_id: id,
+									status: CameraStatus::Broken,
+								},
+							)
+							.await;
+					},
+				},
+			}
+		}
+
+		// Send logs.
+		logger().lock().unwrap().send_logs();
+
+		// Vision
+		self.vision_processor.process(&mut items);
+
+		// Send result
+		for item in items.iter() {
+			let deviation_maybe = item.state.get_deviation();
+			let camid = item.camera_id;
+			if let Some(deviation) = deviation_maybe {
+				let result = self
+					.client
+					.send_text(
+						stream,
+						"ImageAnalysis:".into(),
+						ImageAnalysis {
+							camera_id: camid,
+							deviation,
+						},
+					)
+					.await;
+
+				let _ = result.inspect_err(|why| {
+					logger().lock().unwrap().log_error(
+						&format!("failed to send to server: {why}"),
+						&EdgeError::ServerConnection,
+					)
+				});
+			};
+
+			if item.send_to_server {
+				let mut encoded = Camera::encode_image(item.image.clone());
+				let result = self
+					.client
+					.send_image(stream, item.camera_id, &mut encoded)
+					.await;
+				let _ = result.inspect_err(|why| {
+					logger().lock().unwrap().log_error(
+						&format!("failed to image send to server: {why}"),
+						&EdgeError::ServerConnection,
+					)
+				});
+			}
+		}
+
+		// Send statistics
 
 		task::sleep(settings.update_delay).await;
 
 		Ok(settings)
+	}
+
+	async fn query_websockets(&mut self, settings: Settings, stream: &mut WebSocket) -> bool {
+		let mut interval = interval(settings.websocket_poll_interval);
+		tokio::select! {
+			Some(Ok(msg)) = stream.next() => {
+				match msg {
+					Message::Text(text) => {
+						println!("{}", text );
+						// TODO
+						self.client.websocket_incoming_data(&text).await;
+						true
+					}
+					_ => {true},
+				}
+			}
+			_ = interval.tick() => false
+		}
 	}
 }
 
@@ -177,59 +204,10 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	}
 }
 
-fn on_active_camera(metadata: &mut Metadata, settings: Settings) {
-	if !read_image(metadata, settings.clone()) {
-		metadata.add_error(settings.camera_err_increment);
-
-		if metadata.err_accumulation() < settings.camera_err_threshold {
-			metadata.status = CameraStatus::Disconnected;
-			// Save to log.
-			// Tell server disconnect.
-		} else {
-			metadata.status = CameraStatus::Broken;
-			// Save to log.
-			// Tell server bokrne.
-		}
-	}
-	// Save error count to log.
-}
-
-fn read_image(metadata: &mut Metadata, settings: Settings) -> bool {
-	let camera = metadata
-		.camera_mut()
-		.expect("camera expected by status being active");
-
-	let Ok(image) = camera.get_image_shrink() else {
-		// Save to log.
-		// Drop camera.
-		return false;
-	};
-
-	// Save to log.
-	metadata.reduce_error(settings.camera_err_decrement);
-	// Decode the frame.
-	// TODO: Add decoding function here.
-	// if !decode {
-	// If out of memory, send log and panic.
-	// Save to log.
-	// return false;
-	//}
-
-	// Save to log.
-
-	if metadata.currently_viewed {
-		// Send to server.
-	}
-
-	// Create batch item.
-
-	true
-}
-
 // Not a proper spot for these, but they demontrate the general flow.
 
 // TODO: Place this in a more suitable module (not client).
-pub fn placeholder_autoconnect(settings: Option<Settings>) -> Settings {
+fn placeholder_autoconnect(settings: Option<Settings>) -> Settings {
 	let connection_established = true;
 
 	if !connection_established {
@@ -243,11 +221,81 @@ pub fn placeholder_autoconnect(settings: Option<Settings>) -> Settings {
 }
 
 // TODO: Place this in a more suitable module (not client).
-pub fn placeholder_get_default_settings(settings: Option<Settings>) -> Settings {
+fn placeholder_get_default_settings(settings: Option<Settings>) -> Settings {
 	// TODO: Get the default settings from the server
 	// Build the settings struct from the received data.
 	// If the server fails to send correct settings, use Settings::default() as
 	// a fallback and report the issue to the server in as much detail as
 	// possible.
 	Settings::default()
+}
+
+fn placeholder_config_request(persistence: &mut Persistence) {
+	// TODO: Check if we have a request to modify camera config.
+	let example = Configuration {
+			camera_id: 598275214,
+			conn_id: 12,
+			configuration: "{\"Saturation\":{\"IntegerRange\":{\"control_type\":\"Saturation\",\"value\":64,\"default\":64,\"step\":1,\"min\":0,\"max\":128}},\"Brightness\":{\"IntegerRange\":{\"control_type\":\"Brightness\",\"value\":0,\"default\":0,\"step\":1,\"min\":-64,\"max\":64}},\"Contrast\":{\"IntegerRange\":{\"control_type\":\"Contrast\",\"value\":32,\"default\":32,\"step\":1,\"min\":0,\"max\":64}},\"Gain\":{\"IntegerRange\":{\"control_type\":\"Gain\",\"value\":0,\"default\":0,\"step\":1,\"min\":0,\"max\":100}},\"Gamma\":{\"IntegerRange\":{\"control_type\":\"Gamma\",\"value\":100,\"default\":100,\"step\":1,\"min\":72,\"max\":500}},\"Hue\":{\"IntegerRange\":{\"control_type\":\"Hue\",\"value\":0,\"default\":0,\"step\":1,\"min\":-40,\"max\":40}}}".into(),
+		};
+	for (id, entry) in persistence.inner().iter_mut() {
+		if id.calculate_hash() == example.camera_id {
+			let Some(camera) = entry.camera_mut() else {
+				logger()
+					.lock()
+					.unwrap()
+					.log_error("", &EdgeError::CameraNotPresent);
+				break;
+			};
+			match serde_json::from_str(&example.configuration) {
+				Ok(map) => {
+					if let Err(why) = camera.set_controls(map) {
+						logger()
+							.lock()
+							.unwrap()
+							.log_error("Failed to set requested cntrols from server", &why);
+					};
+				},
+				Err(why) => {
+					logger().lock().unwrap().log_error(
+						"Failed to parse requested configuration",
+						&EdgeError::DecodeControls { reason: why },
+					);
+				},
+			};
+
+			logger()
+				.lock()
+				.unwrap()
+				.log_info("We've found the correct camera by id");
+			break;
+		}
+	}
+	logger().lock().unwrap().send_logs();
+}
+
+fn placeholder_send_config(persistence: &mut Persistence) {
+	// TODO: Check if we should send a camera config.
+	let example = ViewCameraConfig {
+		camera_id: 9825723522,
+		conn_id: 21,
+	};
+	for (id, entry) in persistence.inner().iter_mut() {
+		if id.calculate_hash() == example.camera_id {
+			let Some(camera) = entry.camera() else {
+				logger()
+					.lock()
+					.unwrap()
+					.log_error("", &EdgeError::CameraNotPresent);
+				break;
+			};
+			let important_controls = camera.get_controls().stripped();
+			let configuration =
+				Configuration::build_response(example, important_controls.serialise());
+			//self.client
+			//	.send_configuration(stream, configuration)
+			//	.await?;
+			break;
+		}
+	}
+	logger().lock().unwrap().send_logs();
 }
