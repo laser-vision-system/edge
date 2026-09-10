@@ -1,19 +1,17 @@
-use std::io::Cursor;
 use crate::settings::{API, HOST, PORT};
-use futures_util::{SinkExt};
+use futures_util::SinkExt;
 use image::ImageBuffer;
-use serde::de::DeserializeOwned;
-use reqwest::Client as ReqwestClient;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use server_edge_datatypes::{
-	edge::{SetNameCamera, StartViewingCamera, StopViewingCamera},
+	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
 	shared::{Configuration, ViewCameraConfig},
 };
+use std::io::Cursor;
+use tokio;
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::{Bytes, Message, Utf8Bytes};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
-use tokio;
 
 pub type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
@@ -23,6 +21,7 @@ pub struct Client {
 	stop_viewing_camera: StopViewingCamera,
 	configuration: Configuration,
 	view_camera_config: ViewCameraConfig,
+	setpoint: Setpoint,
 }
 
 impl Client {
@@ -42,6 +41,7 @@ impl Client {
 			conn_id: 0,
 			camera_id: 0,
 		};
+		let setpoint = Setpoint { camera_id: 0 };
 
 		Self {
 			camera_list,
@@ -49,6 +49,7 @@ impl Client {
 			stop_viewing_camera,
 			configuration,
 			view_camera_config,
+			setpoint,
 		}
 	}
 
@@ -57,11 +58,8 @@ impl Client {
 		let (stream, response) = connect_async(url).await.expect("Failed to connect");
 		return stream;
 	}
-	
-	pub fn encode_image(
-		&mut self,
-		data: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-	) -> Vec<u8> {
+
+	pub fn encode_image(&mut self, data: ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Vec<u8> {
 		let mut buff = Cursor::new(Vec::new());
 		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
 		enc.encode_image(&data).unwrap();
@@ -140,6 +138,12 @@ impl Client {
 			"ViewCameraConfig" => match args.next() {
 				Some(data) => {
 					self.view_camera_config = Self::unpack(data).unwrap();
+				},
+				None => {},
+			},
+			"Setpoint" => match args.next() {
+				Some(data) => {
+					self.setpoint = Self::unpack(data).unwrap();
 				},
 				None => {},
 			},
