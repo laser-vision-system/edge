@@ -14,7 +14,6 @@ use crate::error::{EdgeError, Result};
 use super::controls::{
 	ControlMap,
 	descriptions::CamControl,
-	extract_control, extract_controls,
 	traits::{ControlDefault, ControlDescription, ControlValue},
 };
 
@@ -95,19 +94,18 @@ impl Camera {
 
 	/// Get a map of the camera controls
 	pub fn get_controls(&self) -> ControlMap {
-		extract_controls(self.inner.controls().unwrap())
+		ControlMap::from(self.inner.controls().unwrap())
 	}
 
 	/// Get a camera control by ID
 	pub fn get_control(&self, id: KnownCameraControl) -> CamControl {
-		let nokhwa_control = self
-			.inner
+		self.inner
 			.controls()
 			.unwrap()
 			.into_iter()
 			.find(|con| con.control() == id)
-			.unwrap();
-		extract_control(nokhwa_control)
+			.unwrap()
+			.into()
 	}
 
 	/// Set a camera control
@@ -167,7 +165,7 @@ impl Camera {
 				.unwrap();
 		}
 
-		for (id, control) in self.get_controls() {
+		for (id, control) in self.get_controls().into_inner() {
 			if id == KnownCameraControl::ExposureAbsolute {
 				continue;
 			}
@@ -329,7 +327,14 @@ mod tests {
 	fn get_all_available_controls() {
 		let cam = Camera::new(0).unwrap();
 		let c = cam.get_controls();
-		println!("{c:#?}");
+		println!("{c}");
+	}
+
+	#[test]
+	fn get_stripped_controls() {
+		let cam = Camera::new(0).unwrap();
+		let c = cam.get_controls().stripped();
+		println!("{c}");
 	}
 
 	#[test]
