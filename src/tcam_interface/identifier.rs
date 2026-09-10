@@ -45,3 +45,15 @@ impl From<CameraInfo> for Identifier {
 		}
 	}
 }
+
+impl PartialEq<u64> for Identifier {
+	fn eq(&self, other: &u64) -> bool {
+		self.calculate_hash().eq(other)
+	}
+}
+
+impl PartialEq<Identifier> for u64 {
+	fn eq(&self, other: &Identifier) -> bool {
+		other.calculate_hash().eq(self)
+	}
+}
