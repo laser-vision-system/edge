@@ -3,7 +3,7 @@ use reqwest::Client as ReqwestClient;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use server_edge_datatypes::{
-	edge::{SetNameCamera, StartViewingCamera, StopViewingCamera},
+	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
 	shared::{Configuration, ViewCameraConfig},
 };
 use tokio::net::TcpStream;
@@ -20,6 +20,7 @@ pub struct Client {
 	stop_viewing_camera: StopViewingCamera,
 	configuration: Configuration,
 	view_camera_config: ViewCameraConfig,
+	setpoint: Setpoint,
 	restful_client: ReqwestClient,
 }
 
@@ -42,6 +43,7 @@ impl Client {
 			conn_id: 0,
 			camera_id: 0,
 		};
+		let setpoint = Setpoint { camera_id: 0 };
 
 		Self {
 			camera_list,
@@ -49,6 +51,7 @@ impl Client {
 			stop_viewing_camera,
 			configuration,
 			view_camera_config,
+			setpoint,
 			restful_client: ReqwestClient::new(),
 		}
 	}
@@ -135,6 +138,12 @@ impl Client {
 			"ViewCameraConfig" => match args.next() {
 				Some(data) => {
 					self.view_camera_config = Self::unpack(data).unwrap();
+				},
+				None => {},
+			},
+			"Setpoint" => match args.next() {
+				Some(data) => {
+					self.setpoint = Self::unpack(data).unwrap();
 				},
 				None => {},
 			},
