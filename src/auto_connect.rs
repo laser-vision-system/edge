@@ -15,14 +15,11 @@ pub async fn identify_network() -> Result<Vec<String>, String> {
             let mut network_addresses = Vec::new();
             for networks in interface.ips.iter() {
                 if networks.is_ipv4() == true {
-                    // print!("{}", networks);
-                    // println!(" in this network we have the following IP addresses:");
                     for raw_address in networks.iter() {
                         if raw_address.is_ipv4() == true {
                             let mut url = "http://".to_string();
                             url.push_str(raw_address.to_string().as_str());
                             url.push_str(":8080/is_api");
-                            // println!("this IP address is in the network: {}", url);
                             network_addresses.push(url);
                         }
                     }
