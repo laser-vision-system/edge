@@ -14,7 +14,7 @@ pub const HOST: &str = "127.0.0.1";
 pub const PORT: &str = "8080";
 
 // ============================================================================
-// All other settings values should be defined within this struct. ==
+// All other settings values should be defined within this struct.
 // ============================================================================
 
 /// System-level default settings.
