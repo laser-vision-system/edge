@@ -10,6 +10,8 @@
 //!
 //! All the necessary information is in the [`CameraInfo`] struct.
 
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 use nokhwa::utils::CameraInfo;
 
 /// The `Identifier` type.
@@ -24,6 +26,14 @@ pub struct Identifier {
 	description: String,
 	/// Additional miscellaneous information about the device. On v4l, taken from the "Driver version" value.
 	misc: String,
+}
+
+impl Identifier {
+	pub fn calculate_hash(&self) -> u64 {
+		let mut s = DefaultHasher::new();
+		self.hash(&mut s);
+		s.finish()
+	}
 }
 
 impl From<CameraInfo> for Identifier {
