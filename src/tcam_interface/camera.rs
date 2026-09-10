@@ -9,7 +9,10 @@ use nokhwa::{
 	utils::{CameraControl, CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
 
-use crate::error::{EdgeError, Result};
+use crate::{
+	error::{EdgeError, Result},
+	logger::logger,
+};
 
 use super::controls::{
 	ControlMap,
@@ -111,7 +114,7 @@ impl Camera {
 	/// Set a camera control
 	pub fn set_control<T>(&mut self, id: KnownCameraControl, value: T) -> Result<()>
 	where
-		T: Into<ControlValueSetter>,
+		T: Into<ControlValueSetter> + Clone,
 	{
 		if match id {
 			KnownCameraControl::WhiteBalance => true,
@@ -121,14 +124,23 @@ impl Camera {
 			return Ok(());
 		}
 		self.inner
-			.set_control(id, value.into())
+			.set_control(id, value.clone().into())
 			.map_err(|_| EdgeError::SetControl)
+			.inspect_err(|why| {
+				logger().lock().unwrap().log_error(
+					&format!("Failed to set control {} to {}", id, value.into()),
+					&why,
+				)
+			})
 	}
 
 	pub fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
 		controls.into_inner().into_iter().for_each(|(id, val)| {
 			let CamControl::IntegerRange(control) = val else {
-				// Save to logs.
+				logger().lock().unwrap().log_error(
+					"Attempting to set a control of an unsupported type.",
+					&EdgeError::SetControl,
+				);
 				return;
 			};
 			// TODO: Handle error. Maybe try make this operation atomic?

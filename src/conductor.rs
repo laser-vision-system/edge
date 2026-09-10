@@ -9,8 +9,10 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 
 use crate::{
 	client::Client,
+	error::EdgeError,
+	logger::logger,
 	settings::Settings,
-	tcam_interface::{Metadata, Persistence, controls::ControlMap},
+	tcam_interface::{Metadata, Persistence},
 	vision_processor::VisionVariant,
 };
 
@@ -52,24 +54,37 @@ impl Conductor {
 		for (id, entry) in self.persistence.inner().iter_mut() {
 			if id.calculate_hash() == example.camera_id {
 				let Some(camera) = entry.camera_mut() else {
-					// Save to log.
+					logger()
+						.lock()
+						.unwrap()
+						.log_error("", &EdgeError::CameraNotPresent);
 					break;
 				};
 				match serde_json::from_str(&example.configuration) {
 					Ok(map) => {
 						if let Err(why) = camera.set_controls(map) {
-							// Save to logs.
+							logger()
+								.lock()
+								.unwrap()
+								.log_error("Failed to set requested cntrols from server", &why);
 						};
 					},
 					Err(why) => {
-						// Save to logs.
+						logger().lock().unwrap().log_error(
+							"Failed to parse requested configuration",
+							&EdgeError::DecodeControls { reason: why },
+						);
 					},
 				};
 
-				// We've found the correct camera by id.
+				logger()
+					.lock()
+					.unwrap()
+					.log_info("We've found the correct camera by id");
 				break;
 			}
 		}
+		logger().lock().unwrap().send_logs();
 
 		// TODO: Check if we should send a camera config.
 		let example = ViewCameraConfig {
@@ -79,7 +94,10 @@ impl Conductor {
 		for (id, entry) in self.persistence.inner().iter_mut() {
 			if id.calculate_hash() == example.camera_id {
 				let Some(camera) = entry.camera() else {
-					// Save to log.
+					logger()
+						.lock()
+						.unwrap()
+						.log_error("", &EdgeError::CameraNotPresent);
 					break;
 				};
 				let important_controls = camera.get_controls().stripped();
@@ -91,6 +109,7 @@ impl Conductor {
 				break;
 			}
 		}
+		logger().lock().unwrap().send_logs();
 
 		for active_metadata in self.persistence.filter_by(Box::new(|metadata| {
 			metadata.status() == CameraStatus::Active
