@@ -2,7 +2,6 @@ use std::io::Cursor;
 use crate::settings::{API, HOST, PORT};
 use futures_util::{SinkExt};
 use image::ImageBuffer;
-use pnet::datalink;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use server_edge_datatypes::edge::{
@@ -12,9 +11,7 @@ use server_edge_datatypes::shared::{Configuration, ViewCameraConfig};
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::{Bytes, Message, Utf8Bytes};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
-use std::time::Duration;
-use reqwest::{Client as ReqwestClient};
-use std::process::Command;
+use tokio;
 
 pub struct Client {
 	camera_list: SetNameCamera,
@@ -22,12 +19,8 @@ pub struct Client {
 	stop_viewing_camera: StopViewingCamera,
 	configuration: Configuration,
 	view_camera_config: ViewCameraConfig,
-	restful_client: ReqwestClient,
 }
 impl Client {
-	pub fn identify_network(&mut self) {
-
-	}
 	pub fn new() -> Self {
 		let camera_list = SetNameCamera {
 			camera_id: 0,
@@ -51,7 +44,6 @@ impl Client {
 			stop_viewing_camera,
 			configuration,
 			view_camera_config,
-			restful_client: ReqwestClient::new(),
 		}
 	}
 	pub async fn websocket_connect_manual(&mut self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
@@ -59,12 +51,6 @@ impl Client {
 		let (stream, response) = connect_async(url).await.expect("Failed to connect");
 		return stream;
 	}
-
-	pub fn websocket_connect_automatic(self) {
-		// TO DO automatic connection
-
-	}
-
 	pub fn encode_image(
 		&mut self,
 		data: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
