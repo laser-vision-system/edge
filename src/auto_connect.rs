@@ -1,5 +1,6 @@
 use pnet_datalink::interfaces;
 use reqwest::Client;
+use tokio::task::JoinSet;
 use crate::error::EdgeError;
 
 
@@ -39,11 +40,10 @@ pub async fn websocket_connect_automatic() -> Result<String,Box<dyn std::error::
     let client = Client::new();
     let urls: Vec<String> = identify_network().await?;
 
-    let mut pairs = Vec::new();
-
+    let mut set = JoinSet::new();
+    
     for url in urls {
-        let a = tokio::spawn(get_response(url, client.clone()));
-        pairs.push(a);
+        set.spawn(get_response(url, client.clone()));
     }
 
     async fn get_response(url: String, client: Client) -> Result<(String, String), Box<reqwest::Error>> {
@@ -54,19 +54,16 @@ pub async fn websocket_connect_automatic() -> Result<String,Box<dyn std::error::
         }
     }
 
-    for pair in pairs {
-        let result = pair.await;
+    while let Some(result) = set.join_next().await {
         match result {
-            Ok(Ok(a)) =>{
+            Ok(Ok(a)) => {
                 if a.1 == "This is an API for the laser intensity analysis project" {
                     return Ok(a.0.clone());
                 }
             }
-
-            _ => {
-
-            }
+            _ => { }
         }
     }
+
     Err(Box::new(EdgeError::AutoConnect))
 }
