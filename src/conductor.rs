@@ -50,22 +50,11 @@ impl Conductor {
 
 		while self.query_websockets(settings.clone(), stream).await {}
 
-		//let frame = self.camera.get_image_shrink()?;
-		//let compressed_frame = self.client.encode_image(frame.clone());
-
-		//self.client
-		//.send_text(&mut stream, "DisconnectCamera:".to_string(), camera.clone())
-		//.await?;
-
-		//self.client
-		//.send_image(&mut stream, camera_id,  compressed_frame.clone().as_mut())
-		//.await?;
-
 		self.client.keep_alive(stream).await?;
 
-		placeholder_config_request(&mut self.persistence);
+		//placeholder_config_request(&mut self.persistence);
 
-		placeholder_send_config(&mut self.persistence);
+		//placeholder_send_config(&mut self.persistence);
 
 		let batch_items = self.persistence.run_on_active(settings.clone());
 
