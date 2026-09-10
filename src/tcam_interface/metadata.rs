@@ -1,8 +1,10 @@
 use std::collections::HashSet;
 
+use server_edge_datatypes::{edge::NewCameraInfo, shared::CameraStatus};
+
 use crate::{logger, vision_processor::VisionState};
 
-use super::{Camera, Status, new_camera_info::NewCameraInfo};
+use super::Camera;
 
 type ErrAccType = u16;
 // IDEA: Use nokhwa's internal `CameraIndex` type.
@@ -25,11 +27,11 @@ pub struct Metadata {
 	/// and use accessor methods.
 	pub name: String,
 	/// The current status of the camera.
-	pub status: Status,
+	pub status: CameraStatus,
 	/// Whether this camera is sending the images to the server.
 	pub currently_viewed: bool,
 	/// An error accumulation value. If this value gets too high, the camera
-	/// [`Status`] should be changed to [`Broken`](Status::Broken) TODO: Error
+	/// [`CameraStatus`] should be changed to [`Broken`](CameraStatus::Broken) TODO: Error
 	/// threshold.
 	err_accumulation: ErrAccType,
 	/// Whether to change the setpoint to the immediate next measurement.
@@ -48,7 +50,7 @@ pub struct Metadata {
 
 impl Metadata {
 	/// Get the current status of this camera.
-	pub fn status(&self) -> Status {
+	pub fn status(&self) -> CameraStatus {
 		self.status
 	}
 
@@ -119,7 +121,7 @@ impl Metadata {
 					.lock()
 					.unwrap()
 					.log_error("Could not initialise camera", &_why);
-				self.status = Status::Invalid;
+				self.status = CameraStatus::Invalid;
 				false
 			},
 			Ok(camera) => {
@@ -127,7 +129,7 @@ impl Metadata {
 					.lock()
 					.unwrap()
 					.log_info("Camera successfully initialised");
-				self.status = Status::Active;
+				self.status = CameraStatus::Active;
 				self.add_camera(camera);
 				true
 			},
@@ -154,10 +156,10 @@ impl Metadata {
 
 		// Stop now if this is a metadata device.
 		if is_metadata {
-			logger::logger()
-				.lock()
-				.unwrap()
-				.log_warn(&format!("This index ({}) represents a metadata device", index));
+			logger::logger().lock().unwrap().log_warn(&format!(
+				"This index ({}) represents a metadata device",
+				index
+			));
 			return None;
 		}
 
@@ -199,7 +201,7 @@ mod tests {
 	fn default_values_as_expected() {
 		let meta = Metadata::default();
 		assert_eq!(meta.name, String::from("unnamed camera"));
-		assert_eq!(meta.status, Status::Uninitialised);
+		assert_eq!(meta.status, CameraStatus::Uninitialised);
 		assert_eq!(meta.currently_viewed, false);
 		assert_eq!(meta.err_accumulation, 0);
 		assert!(meta.indices.is_none());
@@ -217,9 +219,9 @@ mod tests {
 	#[test]
 	fn status_set_and_read() {
 		let mut meta = Metadata::default();
-		assert_eq!(meta.status, Status::Uninitialised);
-		meta.status = Status::Active;
-		assert_eq!(meta.status(), Status::Active);
+		assert_eq!(meta.status, CameraStatus::Uninitialised);
+		meta.status = CameraStatus::Active;
+		assert_eq!(meta.status(), CameraStatus::Active);
 	}
 
 	#[test]

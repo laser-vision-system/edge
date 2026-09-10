@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use async_std::task;
 use image::ImageBuffer;
 use server_edge_datatypes::{
-	edge::{DisconnectCamera, ImageAnalysis, RegisterCameras},
-	shared::{CameraState, Configuration},
+	edge::{ImageAnalysis, RegisterCameras},
+	shared::{CameraStatus, Configuration},
 };
 use tokio::net::TcpStream;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
@@ -12,7 +12,7 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use crate::{
 	client::Client,
 	settings::Settings,
-	tcam_interface::{Metadata, Persistence, Status},
+	tcam_interface::{Metadata, Persistence},
 	vision_processor::VisionVariant,
 };
 
@@ -38,8 +38,8 @@ impl Conductor {
 
 		// Structs for test websocket data
 		// TODO: Replace with above.
-		let mut cameras_hashmap: HashMap<u64, (String, CameraState)> = HashMap::new();
-		cameras_hashmap.insert(1, ("".to_string(), CameraState::Active));
+		let mut cameras_hashmap: HashMap<u64, (String, CameraStatus)> = HashMap::new();
+		cameras_hashmap.insert(1, ("".to_string(), CameraStatus::Active));
 		let cameras = RegisterCameras {
 			cameras: cameras_hashmap,
 		};
@@ -48,10 +48,9 @@ impl Conductor {
 			.send_register_cameras(stream, cameras.clone())
 			.await?;
 
-		for active_metadata in self
-			.persistence
-			.filter_by(Box::new(|metadata| metadata.status() == Status::Active))
-		{
+		for active_metadata in self.persistence.filter_by(Box::new(|metadata| {
+			metadata.status() == CameraStatus::Active
+		})) {
 			on_active_camera(active_metadata, settings.clone());
 		}
 		// Send logs.
@@ -62,7 +61,7 @@ impl Conductor {
 
 		// Send statistics
 
-		let camera = DisconnectCamera { camera_id: 1 };
+		//let camera = DisconnectCamera { camera_id: 1 };
 
 		let frame = ImageBuffer::new(800, 800);
 
@@ -74,13 +73,12 @@ impl Conductor {
 
 		let image_analysis = ImageAnalysis {
 			camera_id: 1,
-			intensity: 1.0,
 			deviation: 1.0,
 		};
 
-		self.client
-			.send_disconnect_camera(stream, camera.clone())
-			.await?;
+		//self.client
+		//	.send_disconnect_camera(stream, camera.clone())
+		//	.await?;
 		self.client
 			.send_configuration(stream, configuration.clone())
 			.await?;
@@ -129,11 +127,11 @@ fn on_active_camera(metadata: &mut Metadata, settings: Settings) {
 		metadata.add_error(settings.camera_err_increment);
 
 		if metadata.err_accumulation() < settings.camera_err_threshold {
-			metadata.status = Status::Disconnected;
+			metadata.status = CameraStatus::Disconnected;
 			// Save to log.
 			// Tell server disconnect.
 		} else {
-			metadata.status = Status::Broken;
+			metadata.status = CameraStatus::Broken;
 			// Save to log.
 			// Tell server bokrne.
 		}
