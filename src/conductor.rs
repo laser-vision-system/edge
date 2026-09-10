@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-
 use async_std::task;
 use image::ImageBuffer;
 use server_edge_datatypes::{
 	edge::{ImageAnalysis, RegisterCameras},
-	shared::{CameraStatus, Configuration},
+	shared::{CameraStatus, Configuration, ViewCameraConfig},
 };
 use tokio::net::TcpStream;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
@@ -36,17 +34,35 @@ impl Conductor {
 		// This function detects new cameras and instantiates them.
 		let new_cameras = self.persistence.poll_for_new_cameras();
 
-		// Structs for test websocket data
-		// TODO: Replace with above.
-		let mut cameras_hashmap: HashMap<u64, (String, CameraStatus)> = HashMap::new();
-		cameras_hashmap.insert(1, ("".to_string(), CameraStatus::Active));
-		let cameras = RegisterCameras {
-			cameras: cameras_hashmap,
-		};
-
 		self.client
-			.send_register_cameras(stream, cameras.clone())
+			.send_register_cameras(
+				stream,
+				RegisterCameras {
+					cameras: new_cameras,
+				},
+			)
 			.await?;
+
+		// TODO: Check if we should send a camera config.
+		let example = ViewCameraConfig {
+			camera_id: 9825723522,
+			conn_id: 21,
+		};
+		for (id, entry) in self.persistence.inner().iter_mut() {
+			if id.calculate_hash() == example.camera_id {
+				let Some(camera) = entry.camera() else {
+					// Save to log.
+					break;
+				};
+				let important_controls = camera.get_controls().stripped();
+				let configuration =
+					Configuration::build_response(example, important_controls.serialise());
+				self.client
+					.send_configuration(stream, configuration)
+					.await?;
+				break;
+			}
+		}
 
 		for active_metadata in self.persistence.filter_by(Box::new(|metadata| {
 			metadata.status() == CameraStatus::Active
@@ -65,12 +81,6 @@ impl Conductor {
 
 		let frame = ImageBuffer::new(800, 800);
 
-		let configuration = Configuration {
-			conn_id: 0,
-			camera_id: 0,
-			configuration: "".to_string(),
-		};
-
 		let image_analysis = ImageAnalysis {
 			camera_id: 1,
 			deviation: 1.0,
@@ -79,9 +89,7 @@ impl Conductor {
 		//self.client
 		//	.send_disconnect_camera(stream, camera.clone())
 		//	.await?;
-		self.client
-			.send_configuration(stream, configuration.clone())
-			.await?;
+
 		self.client.send_image(stream, frame.clone()).await?;
 		self.client
 			.send_image_analysis(stream, image_analysis.clone())
