@@ -10,7 +10,7 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use crate::{
 	client::Client,
 	settings::Settings,
-	tcam_interface::{Metadata, Persistence},
+	tcam_interface::{Metadata, Persistence, controls::ControlMap},
 	vision_processor::VisionVariant,
 };
 
@@ -42,6 +42,34 @@ impl Conductor {
 				},
 			)
 			.await?;
+
+		// TODO: Check if we have a request to modify camera config.
+		let example = Configuration {
+			camera_id: 598275214,
+			conn_id: 12,
+			configuration: "{\"Saturation\":{\"IntegerRange\":{\"control_type\":\"Saturation\",\"value\":64,\"default\":64,\"step\":1,\"min\":0,\"max\":128}},\"Brightness\":{\"IntegerRange\":{\"control_type\":\"Brightness\",\"value\":0,\"default\":0,\"step\":1,\"min\":-64,\"max\":64}},\"Contrast\":{\"IntegerRange\":{\"control_type\":\"Contrast\",\"value\":32,\"default\":32,\"step\":1,\"min\":0,\"max\":64}},\"Gain\":{\"IntegerRange\":{\"control_type\":\"Gain\",\"value\":0,\"default\":0,\"step\":1,\"min\":0,\"max\":100}},\"Gamma\":{\"IntegerRange\":{\"control_type\":\"Gamma\",\"value\":100,\"default\":100,\"step\":1,\"min\":72,\"max\":500}},\"Hue\":{\"IntegerRange\":{\"control_type\":\"Hue\",\"value\":0,\"default\":0,\"step\":1,\"min\":-40,\"max\":40}}}".into(),
+		};
+		for (id, entry) in self.persistence.inner().iter_mut() {
+			if id.calculate_hash() == example.camera_id {
+				let Some(camera) = entry.camera_mut() else {
+					// Save to log.
+					break;
+				};
+				match serde_json::from_str(&example.configuration) {
+					Ok(map) => {
+						if let Err(why) = camera.set_controls(map) {
+							// Save to logs.
+						};
+					},
+					Err(why) => {
+						// Save to logs.
+					},
+				};
+
+				// We've found the correct camera by id.
+				break;
+			}
+		}
 
 		// TODO: Check if we should send a camera config.
 		let example = ViewCameraConfig {
