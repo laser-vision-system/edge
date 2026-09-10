@@ -47,6 +47,7 @@ netwatcher = "0.8.0"
 rerun = { version = "0.35", features = [
 	"image"
 ] }
+image-compare = "0.5"
 
 [lints.rust]
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.
