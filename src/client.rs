@@ -1,16 +1,17 @@
+use crate::settings::{API, HOST, PORT};
 use futures_util::SinkExt;
-use reqwest::Client as ReqwestClient;
+use image::ImageBuffer;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use server_edge_datatypes::{
 	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
 	shared::{Configuration, ViewCameraConfig},
 };
+use std::io::Cursor;
+use tokio;
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::{Bytes, Message, Utf8Bytes};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
-
-use crate::settings::{API, HOST, PORT};
 
 pub type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
@@ -21,12 +22,9 @@ pub struct Client {
 	configuration: Configuration,
 	view_camera_config: ViewCameraConfig,
 	setpoint: Setpoint,
-	restful_client: ReqwestClient,
 }
 
 impl Client {
-	pub fn identify_network(&mut self) {}
-
 	pub fn new() -> Self {
 		let camera_list = SetNameCamera {
 			camera_id: 0,
@@ -52,7 +50,6 @@ impl Client {
 			configuration,
 			view_camera_config,
 			setpoint,
-			restful_client: ReqwestClient::new(),
 		}
 	}
 
@@ -62,8 +59,11 @@ impl Client {
 		return stream;
 	}
 
-	pub fn websocket_connect_automatic(self) {
-		// TO DO automatic connection
+	pub fn encode_image(&mut self, data: ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Vec<u8> {
+		let mut buff = Cursor::new(Vec::new());
+		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
+		enc.encode_image(&data).unwrap();
+		buff.into_inner()
 	}
 
 	pub fn unpack<T: DeserializeOwned>(data: &str) -> Option<T> {
