@@ -13,13 +13,6 @@ impl Cnn {
 			session: SessionToken::new(),
 		}
 	}
-
-	pub fn new_state(&self) -> VisionState {
-		VisionState::Cnn {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
-	}
 }
 
 impl VisionInterface for Cnn {
@@ -30,6 +23,13 @@ impl VisionInterface for Cnn {
 				continue;
 			};
 			data.deviation = Some(0.0)
+		}
+	}
+
+	fn new_state(&self) -> VisionState {
+		VisionState::Cnn {
+			handle: self.session.downgrade(),
+			data: ExternalData::default(),
 		}
 	}
 }

@@ -15,13 +15,6 @@ impl Diff {
 			session: SessionToken::new(),
 		}
 	}
-
-	pub fn new_state(&self) -> VisionState {
-		VisionState::Diff {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
-	}
 }
 
 impl VisionInterface for Diff {
@@ -32,6 +25,13 @@ impl VisionInterface for Diff {
 				continue;
 			};
 			data.deviation = Some(0.0)
+		}
+	}
+
+	fn new_state(&self) -> VisionState {
+		VisionState::Diff {
+			handle: self.session.downgrade(),
+			data: ExternalData::default(),
 		}
 	}
 }

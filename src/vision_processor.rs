@@ -1,6 +1,6 @@
 use std::{
 	fmt,
-	rc::{Rc, Weak},
+	sync::{Arc, Mutex, OnceLock, Weak},
 };
 
 use image::RgbImage;
@@ -16,18 +16,26 @@ pub use demonstration::Demonstration;
 pub use diff::Diff;
 pub use empty::Empty;
 
+pub type VisionRef = &'static Mutex<VisionVariant>;
+
+static VISION: OnceLock<Mutex<VisionVariant>> = OnceLock::new();
+
+pub fn vision() -> VisionRef {
+	VISION.get_or_init(|| Mutex::new(VisionVariant::default()))
+}
+
 // NOTE: If we do multithreading, this has to be swapped for `std::sync::Arc`.
 
 #[derive(Clone)]
-pub struct SessionToken(Rc<()>);
+pub struct SessionToken(Arc<()>);
 
 impl SessionToken {
 	pub fn new() -> Self {
-		Self(Rc::new(()))
+		Self(Arc::new(()))
 	}
 
 	pub fn downgrade(&self) -> SessionHandle {
-		SessionHandle(Rc::downgrade(&self.0))
+		SessionHandle(Arc::downgrade(&self.0))
 	}
 }
 
@@ -50,6 +58,8 @@ pub trait VisionInterface: fmt::Debug + fmt::Display {
 
 	/// Process all frames in a single batch, setting the return value in-place.
 	fn process(&mut self, batch: &mut [BatchItem]);
+
+	fn new_state(&self) -> VisionState;
 }
 
 #[derive(Debug)]
@@ -106,6 +116,15 @@ impl VisionInterface for VisionVariant {
 			Self::Demonstration(inner) => inner.process(batch),
 			Self::Cnn(inner) => inner.process(batch),
 			Self::Diff(inner) => inner.process(batch),
+		}
+	}
+
+	fn new_state(&self) -> VisionState {
+		match self {
+			Self::Empty(inner) => inner.new_state(),
+			Self::Demonstration(inner) => inner.new_state(),
+			Self::Cnn(inner) => inner.new_state(),
+			Self::Diff(inner) => inner.new_state(),
 		}
 	}
 }

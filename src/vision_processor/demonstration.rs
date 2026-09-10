@@ -18,13 +18,6 @@ impl Demonstration {
 		}
 	}
 
-	pub fn new_state(&self) -> VisionState {
-		VisionState::Demonstration {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
-	}
-
 	// NOTE: Clippy complains about indexing the slice without asserting, but the
 	// par_chunk_exact guarantees this won't panic.
 	#[allow(clippy::missing_asserts_for_indexing)]
@@ -70,6 +63,13 @@ impl VisionInterface for Demonstration {
 
 			data.intensity = Some(lightness);
 			data.deviation = Some(deviation);
+		}
+	}
+
+	fn new_state(&self) -> VisionState {
+		VisionState::Demonstration {
+			handle: self.session.downgrade(),
+			data: ExternalData::default(),
 		}
 	}
 }
