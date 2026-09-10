@@ -1,7 +1,13 @@
 use pnet_datalink::interfaces;
 use reqwest::Client;
+use server_edge_datatypes::edge::Settings;
+use tokio::net::TcpStream;
 use tokio::task::JoinSet;
-use crate::error::EdgeError;
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
+use crate::{
+    error::EdgeError,
+};
+pub type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 
 pub async fn identify_network() -> Result<Vec<String>, String> {
@@ -66,4 +72,18 @@ pub async fn websocket_connect_automatic() -> Result<String,Box<dyn std::error::
     }
 
     Err(Box::new(EdgeError::AutoConnect))
+}
+
+pub async fn connect_loop(settings: Option<Settings>) -> Result<(WebSocket, (Settings , Box<dyn std::error::Error + Send + Sync>)> {
+    let url = websocket_connect_automatic().await?;
+    let connection_established = ;
+
+    if !connection_established {
+        todo!("connect to the server");
+
+        #[allow(unreachable_code)]
+        crate::conductor::placeholder_get_default_settings(settings);
+    }
+
+    Settings::default()
 }

@@ -5,8 +5,9 @@ use server_edge_datatypes::{
 };
 
 use futures_util::StreamExt;
-
+use tokio::net::TcpStream;
 use tokio::time::interval;
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tokio_tungstenite::tungstenite::Message;
 
 use crate::{
@@ -16,6 +17,7 @@ use crate::{
 	settings::Settings,
 	tcam_interface::{Camera, Persistence, WhyNo},
 	vision_processor::{VisionInterface, VisionVariant},
+	auto_connect::websocket_connect_automatic
 };
 
 /// # Conductor
@@ -185,10 +187,12 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let mut settings: Option<Settings> = None;
 	let mut conductor = Conductor::default();
 
-	let mut stream = conductor.client.websocket_connect_manual().await;
+	let url = websocket_connect_automatic().await?;
+	let mut stream = conductor.client.websocket_connect(url).await;
+
 
 	loop {
-		let loop_settings = placeholder_autoconnect(settings);
+		let loop_settings = connect_loop(settings);
 		settings = Some(conductor.loop_once(loop_settings, &mut stream).await?)
 	}
 }
@@ -196,18 +200,6 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 // Not a proper spot for these, but they demontrate the general flow.
 
 // TODO: Place this in a more suitable module (not client).
-fn placeholder_autoconnect(settings: Option<Settings>) -> Settings {
-	let connection_established = true;
-
-	if !connection_established {
-		todo!("connect to the server");
-
-		#[allow(unreachable_code)]
-		placeholder_get_default_settings(settings);
-	}
-
-	Settings::default()
-}
 
 // TODO: Place this in a more suitable module (not client).
 fn placeholder_get_default_settings(settings: Option<Settings>) -> Settings {
