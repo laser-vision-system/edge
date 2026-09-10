@@ -12,6 +12,8 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
 
 use crate::settings::{API, HOST, PORT};
 
+pub type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
+
 pub struct Client {
 	camera_list: SetNameCamera,
 	start_viewing_camera: StartViewingCamera,
@@ -51,7 +53,7 @@ impl Client {
 		}
 	}
 
-	pub async fn websocket_connect_manual(&mut self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
+	pub async fn websocket_connect_manual(&mut self) -> WebSocket {
 		let url = "ws://".to_string() + HOST + ":" + PORT + API;
 		let (stream, response) = connect_async(url).await.expect("Failed to connect");
 		return stream;
@@ -68,7 +70,7 @@ impl Client {
 
 	pub async fn send_text<T: Serialize>(
 		&mut self,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		stream: &mut WebSocket,
 		mut prefix: String,
 		data: T,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -79,7 +81,7 @@ impl Client {
 
 	pub async fn keep_alive(
 		&mut self,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		stream: &mut WebSocket,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let msg = "hello";
 		stream.send(Message::Pong(Bytes::from(msg))).await?;
@@ -88,7 +90,7 @@ impl Client {
 
 	pub async fn send_image(
 		&mut self,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		stream: &mut WebSocket,
 		camera_id: u64,
 		frame: &mut Vec<u8>,
 	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

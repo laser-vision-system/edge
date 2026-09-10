@@ -66,28 +66,47 @@ impl Camera {
 	/// Request an image of the current camera frame.
 	///
 	/// There seems to be a 2 frame latency.
-	pub fn get_image(&mut self) -> Result<RgbImage> {
-		// TODO: Handle potential error cases.
-		let buffer = self.inner.frame().map_err(|_| EdgeError::FrameRead)?;
-		let frame: Frame<Mjpeg> = Frame::new(buffer);
-		logger::logger()
-			.lock()
-			.unwrap()
-			.log_info("Frame was successfully read");
-		let decoded = frame
+	pub fn get_frame(&mut self) -> Result<Frame<Mjpeg>> {
+		let frame_res = self.inner.frame().map_err(|_| EdgeError::FrameRead);
+		match frame_res {
+			Ok(buffer) => {
+				logger::logger()
+					.lock()
+					.unwrap()
+					.log_info("Frame was successfully read");
+				Ok(Frame::new(buffer))
+			},
+			Err(why) => {
+				logger::logger().lock().unwrap().log_error("", &why);
+				return Err(why);
+			},
+		}
+	}
+
+	/// Decode an image.
+	pub fn decode_image(&mut self, frame: Frame<Mjpeg>) -> Result<RgbImage> {
+		let decoded_res = frame
 			.into_rgb()
 			.materialize()
 			// We just assume it is always corruption for now.
-			.map_err(|_| EdgeError::FrameDecodeCorruption)?;
-		Ok(decoded)
-	}
-
-	pub fn get_image_shrink(&mut self) -> Result<RgbImage> {
-		let frame = DynamicImage::ImageRgb8(self.get_image()?);
-		let new = frame
-			.crop_imm(0, 0, frame.width(), frame.height())
-			.into_rgb8();
-		Ok(new)
+			.map_err(|_| EdgeError::FrameDecodeCorruption);
+		match decoded_res {
+			Ok(decoded) => {
+				logger::logger()
+					.lock()
+					.unwrap()
+					.log_info("Frame was successfully decoded");
+				let frame = DynamicImage::ImageRgb8(decoded);
+				let new = frame
+					.crop_imm(0, 0, frame.width(), frame.height())
+					.into_rgb8();
+				Ok(new)
+			},
+			Err(why) => {
+				logger::logger().lock().unwrap().log_error("", &why);
+				Err(why)
+			},
+		}
 	}
 
 	// == Configurations ==
@@ -337,15 +356,17 @@ mod tests {
 
 	// Can't implement `Termination` for `RgbImage`.
 	#[test]
-	fn get_image() {
+	fn get_frame() {
 		let mut cam = Camera::new(0).unwrap();
-		let _ = cam.get_image().unwrap();
+		let _ = cam.get_frame().unwrap();
+		let _ = cam.get_frame().unwrap();
 	}
 
 	#[test]
-	fn get_image_shrink() {
+	fn decode_image() {
 		let mut cam = Camera::new(0).unwrap();
-		let _ = cam.get_image_shrink().unwrap();
+		let frame = cam.get_frame().unwrap();
+		let _ = cam.decode_image(frame);
 	}
 
 	#[test]

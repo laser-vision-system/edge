@@ -1,24 +1,22 @@
 use async_std::task;
 use server_edge_datatypes::{
-	edge::{ImageAnalysis, RegisterCameras},
+	edge::{ImageAnalysis, RegisterCameras, UpdateCameraStatus},
 	shared::{CameraStatus, Configuration, ViewCameraConfig},
-};
-use tokio::net::TcpStream;
-use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
-
-use crate::{
-	client::Client,
-	error::EdgeError,
-	logger::logger,
-	settings::Settings,
-	tcam_interface::{Metadata, Persistence},
-	vision_processor::VisionVariant,
 };
 
 use futures_util::StreamExt;
 
 use tokio::time::interval;
 use tokio_tungstenite::tungstenite::Message;
+
+use crate::{
+	client::{Client, WebSocket},
+	error::EdgeError,
+	logger::logger,
+	settings::Settings,
+	tcam_interface::{Camera, Persistence, WhyNo},
+	vision_processor::{VisionInterface, VisionVariant},
+};
 
 /// # Conductor
 ///
@@ -33,7 +31,7 @@ impl Conductor {
 	async fn loop_once(
 		&mut self,
 		settings: Settings,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+		stream: &mut WebSocket,
 	) -> Result<Settings, Box<dyn std::error::Error + Send + Sync>> {
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
 
@@ -60,14 +58,6 @@ impl Conductor {
 		//.await?;
 
 		//self.client
-		//.send_text(&mut stream, "Configuration:".to_string(), configuration.clone())
-		//.await?;
-
-		//self.client
-		//.send_text(&mut stream, "ImageAnalysis:".to_string(), image_analysis.clone())
-		//.await?;
-
-		//self.client
 		//.send_image(&mut stream, camera_id,  compressed_frame.clone().as_mut())
 		//.await?;
 
@@ -77,16 +67,89 @@ impl Conductor {
 
 		placeholder_send_config(&mut self.persistence);
 
-		for active_metadata in self.persistence.filter_by(Box::new(|metadata| {
-			metadata.status() == CameraStatus::Active
-		})) {
-			on_active_camera(active_metadata, settings.clone());
+		let batch_items = self.persistence.run_on_active(settings.clone());
+
+		let mut items = Vec::with_capacity(batch_items.len());
+
+		for item in batch_items {
+			match item {
+				Ok(batch) => items.push(batch),
+				Err((_, details)) => match details {
+					WhyNo::Disconnected(id) => {
+						let _ = self
+							.client
+							.send_text(
+								stream,
+								"UpdateCameraStatus:".into(),
+								UpdateCameraStatus {
+									camera_id: id,
+									status: CameraStatus::Disconnected,
+								},
+							)
+							.await;
+					},
+					WhyNo::Broken(id) => {
+						let _ = self
+							.client
+							.send_text(
+								stream,
+								"UpdateCameraStatus:".into(),
+								UpdateCameraStatus {
+									camera_id: id,
+									status: CameraStatus::Broken,
+								},
+							)
+							.await;
+					},
+				},
+			}
 		}
+
 		// Send logs.
+		logger().lock().unwrap().send_logs();
 
 		// Vision
+		self.vision_processor.process(&mut items);
 
 		// Send result
+		for item in items.iter() {
+			let deviation_maybe = item.state.get_deviation();
+			let camid = item.camera_id;
+			if let Some(deviation) = deviation_maybe {
+				let result = self
+					.client
+					.send_text(
+						stream,
+						"ImageAnalysis:".into(),
+						ImageAnalysis {
+							camera_id: camid,
+							deviation,
+						},
+					)
+					.await;
+
+				let _ = result.inspect_err(|why| {
+					logger().lock().unwrap().log_error(
+						&format!("failed to send to server: {why}"),
+						&EdgeError::ServerConnection,
+					)
+				});
+			};
+
+			if item.send_to_server {
+				let mut encoded = Camera::encode_image(item.image.clone());
+				let result = self
+					.client
+					.send_image(stream, item.camera_id, &mut encoded)
+					.await;
+				let _ = result.inspect_err(|why| {
+					logger().lock().unwrap().log_error(
+						&format!("failed to image send to server: {why}"),
+						&EdgeError::ServerConnection,
+					)
+				});
+			}
+		}
 
 		// Send statistics
 
@@ -95,11 +158,7 @@ impl Conductor {
 		Ok(settings)
 	}
 
-	async fn query_websockets(
-		&mut self,
-		settings: Settings,
-		stream: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
-	) -> bool {
+	async fn query_websockets(&mut self, settings: Settings, stream: &mut WebSocket) -> bool {
 		let mut interval = interval(settings.websocket_poll_interval);
 		tokio::select! {
 			Some(Ok(msg)) = stream.next() => {
@@ -143,55 +202,6 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 		let loop_settings = placeholder_autoconnect(settings);
 		settings = Some(conductor.loop_once(loop_settings, &mut stream).await?)
 	}
-}
-
-fn on_active_camera(metadata: &mut Metadata, settings: Settings) {
-	if !read_image(metadata, settings.clone()) {
-		metadata.add_error(settings.camera_err_increment);
-
-		if metadata.err_accumulation() < settings.camera_err_threshold {
-			metadata.status = CameraStatus::Disconnected;
-			// Save to log.
-			// Tell server disconnect.
-		} else {
-			metadata.status = CameraStatus::Broken;
-			// Save to log.
-			// Tell server bokrne.
-		}
-	}
-	// Save error count to log.
-}
-
-fn read_image(metadata: &mut Metadata, settings: Settings) -> bool {
-	let camera = metadata
-		.camera_mut()
-		.expect("camera expected by status being active");
-
-	let Ok(image) = camera.get_image_shrink() else {
-		// Save to log.
-		// Drop camera.
-		return false;
-	};
-
-	// Save to log.
-	metadata.reduce_error(settings.camera_err_decrement);
-	// Decode the frame.
-	// TODO: Add decoding function here.
-	// if !decode {
-	// If out of memory, send log and panic.
-	// Save to log.
-	// return false;
-	//}
-
-	// Save to log.
-
-	if metadata.currently_viewed {
-		// Send to server.
-	}
-
-	// Create batch item.
-
-	true
 }
 
 // Not a proper spot for these, but they demontrate the general flow.

@@ -1,8 +1,16 @@
 use std::collections::HashSet;
 
-use server_edge_datatypes::{edge::NewCameraInfo, shared::CameraStatus};
+use image::RgbImage;
+use server_edge_datatypes::{
+	edge::{NewCameraInfo, Settings},
+	shared::{CameraId, CameraStatus},
+};
 
-use crate::{logger, vision_processor::VisionState};
+use crate::{
+	error::Result,
+	logger::{self, logger},
+	vision_processor::{BatchItem, VisionState},
+};
 
 use super::Camera;
 
@@ -103,6 +111,42 @@ impl Metadata {
 		self.camera.as_mut()
 	}
 
+	pub fn get_image(&mut self, settings: Settings) -> Result<RgbImage> {
+		let frame = match self
+			.camera_mut()
+			.expect("camera expected by status being active")
+			.get_frame()
+		{
+			Ok(frame) => frame,
+			Err(why) => {
+				logger().lock().unwrap().log_error("", &why);
+				self.remove_camera();
+				return Err(why);
+			},
+		};
+
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("Successfully read frame from camera");
+		self.reduce_error(settings.camera_err_decrement);
+
+		let image = match self
+			.camera_mut()
+			.expect("camera expected by status being active")
+			.decode_image(frame)
+		{
+			Ok(image) => image,
+			Err(why) => {
+				// TODO: If out of memory, send log and panic.
+				logger().lock().unwrap().log_error("", &why);
+				return Err(why);
+			},
+		};
+
+		Ok(image)
+	}
+
 	/// Add a camera instance to this this structure.
 	///
 	/// This will drop an existing camera. Should it check first?
@@ -175,6 +219,16 @@ impl Metadata {
 	pub fn remove_camera(&mut self) {
 		self.camera.take();
 		self.indices.take();
+	}
+
+	pub fn make_batch_item(&mut self, image: RgbImage, id: CameraId) -> BatchItem<'_> {
+		let state = self
+			.vision_state
+			.as_mut()
+			.expect("vision state expected while status is active");
+		let calibrate = self.calibrate;
+		self.calibrate = false;
+		BatchItem::new(id, state, image, calibrate, self.currently_viewed)
 	}
 }
 

@@ -31,7 +31,7 @@ impl VisionInterface for Diff {
 				// TODO: This should raise an error.
 				continue;
 			};
-			data.deviation = 0.0
+			data.deviation = Some(0.0)
 		}
 	}
 }
@@ -63,7 +63,7 @@ pub struct ExternalData {
 	pub peak: Option<f32>,
 	pub mean: Option<f32>,
 	pub std_dev: Option<f32>,
-	pub deviation: f32,
+	pub deviation: Option<f32>,
 }
 
 impl fmt::Display for ExternalData {
