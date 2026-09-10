@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, io::Cursor};
 
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
@@ -52,6 +52,13 @@ impl Camera {
 		})?;
 
 		Ok(Self { inner: camera })
+	}
+
+	pub fn encode_image(data: RgbImage) -> Vec<u8> {
+		let mut buff = Cursor::new(Vec::new());
+		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
+		enc.encode_image(&data).unwrap();
+		buff.into_inner()
 	}
 
 	// == Images ==

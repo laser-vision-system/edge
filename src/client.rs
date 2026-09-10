@@ -59,17 +59,6 @@ impl Client {
 
 	pub fn websocket_connect_automatic(self) {
 		// TO DO automatic connection
-
-	}
-
-	pub fn encode_image(
-		&mut self,
-		data: ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-	) -> Vec<u8> {
-		let mut buff = Cursor::new(Vec::new());
-		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
-		enc.encode_image(&data).unwrap();
-		buff.into_inner()
 	}
 
 	pub fn unpack<T: DeserializeOwned>(data: &str) -> Option<T> {
