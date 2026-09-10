@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use nokhwa::utils::CameraInfo;
+use server_edge_datatypes::{edge::NewCameraInfo, shared::CameraId};
 
-use super::{Camera, Identifier, Metadata, NewCameraInfo};
+use super::{Camera, Identifier, Metadata};
 
 /// The internal mapping type.
 type MapType = HashMap<Identifier, Metadata>;
@@ -19,17 +20,17 @@ impl Persistence {
 	/// Iterate over a list of devices info entries, returning newly instantiated cameras.
 	///
 	/// Separated out to make testing easier.
-	fn get_new_from_all(&mut self, devices: Vec<CameraInfo>) -> HashMap<Identifier, NewCameraInfo> {
+	fn get_new_from_all(&mut self, devices: Vec<CameraInfo>) -> HashMap<CameraId, NewCameraInfo> {
 		devices
 			.into_iter()
-			.filter_map(|info: CameraInfo| -> Option<(Identifier, NewCameraInfo)> {
+			.filter_map(|info: CameraInfo| -> Option<(CameraId, NewCameraInfo)> {
 				self.try_create_device(info)
 			})
-			.collect::<HashMap<Identifier, NewCameraInfo>>()
+			.collect::<HashMap<CameraId, NewCameraInfo>>()
 	}
 
 	/// Attempt to create a new device from a device info entry.
-	fn try_create_device(&mut self, info: CameraInfo) -> Option<(Identifier, NewCameraInfo)> {
+	fn try_create_device(&mut self, info: CameraInfo) -> Option<(CameraId, NewCameraInfo)> {
 		// Create identifier.
 		let identifier = Identifier::from(info.clone());
 		// TODO: Save to log.
@@ -43,7 +44,8 @@ impl Persistence {
 			.expect("index should always be a number");
 		let is_metadata = info.is_metadata();
 		let device = metadata.try_register_device(index, is_metadata)?;
-		Some((identifier, device))
+		let hashed_id: CameraId = identifier.calculate_hash();
+		Some((hashed_id, device))
 	}
 
 	/// Get the [`Metadata`] for a device by its identifier.
@@ -68,7 +70,7 @@ impl Persistence {
 	/// Returns a list of information about newly added cameras.
 	///
 	/// IDEA: The return type could be made into an explicit type.
-	pub fn poll_for_new_cameras(&mut self) -> HashMap<Identifier, NewCameraInfo> {
+	pub fn poll_for_new_cameras(&mut self) -> HashMap<CameraId, NewCameraInfo> {
 		let all_devices = Camera::query_for_available_cameras();
 		self.get_new_from_all(all_devices)
 	}
