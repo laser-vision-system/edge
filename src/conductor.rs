@@ -1,5 +1,4 @@
 use async_std::task;
-use image::ImageBuffer;
 use server_edge_datatypes::{
 	edge::{ImageAnalysis, RegisterCameras},
 	shared::{CameraStatus, Configuration, ViewCameraConfig},
@@ -15,6 +14,11 @@ use crate::{
 	tcam_interface::{Metadata, Persistence},
 	vision_processor::VisionVariant,
 };
+
+use futures_util::StreamExt;
+
+use tokio::time::interval;
+use tokio_tungstenite::tungstenite::Message;
 
 /// # Conductor
 ///
@@ -36,14 +40,59 @@ impl Conductor {
 		// This function detects new cameras and instantiates them.
 		let new_cameras = self.persistence.poll_for_new_cameras();
 
-		self.client
-			.send_register_cameras(
-				stream,
-				RegisterCameras {
-					cameras: new_cameras,
-				},
-			)
-			.await?;
+		//self.client
+		//	.send_register_cameras(
+		//		stream,
+		//		RegisterCameras {
+		//			cameras: new_cameras,
+		//		},
+		//	)
+		//	.await?;
+
+		let mut interval = interval(settings.websocket_poll_interval);
+
+		let mut stream = self.client.websocket_connect_manual().await;
+
+		//self.client
+		//	.send_text(&mut stream, "RegisterCameras:".to_string(), cameras.clone())
+		//	.await?;
+
+		tokio::select! {
+			Some(Ok(msg)) = stream.next() => {
+				match msg {
+					Message::Text(text) => {
+					println!("{}", text );
+					self.client.websocket_incoming_data(&text).await;
+				}
+
+				Message::Ping(_) | Message::Pong(_) | Message::Close(_) | Message::Frame(_) => {},
+				_ => {},
+
+				}
+			}
+			_ = interval.tick() => {
+				let frame = self.camera.get_image_shrink()?;
+				let compressed_frame = self.client.encode_image(frame.clone());
+
+				self.client
+				.send_text(&mut stream, "DisconnectCamera:".to_string(), camera.clone())
+				.await?;
+
+				self.client
+				.send_text(&mut stream, "Configuration:".to_string(), configuration.clone())
+				.await?;
+
+				self.client
+				.send_text(&mut stream, "ImageAnalysis:".to_string(), image_analysis.clone())
+				.await?;
+
+				self.client
+				.send_image(&mut stream, camera_id,  compressed_frame.clone().as_mut())
+				.await?;
+
+				self.client.keep_alive(&mut stream).await?;
+			}
+		}
 
 		// TODO: Check if we have a request to modify camera config.
 		let example = Configuration {
@@ -126,7 +175,7 @@ impl Conductor {
 
 		//let camera = DisconnectCamera { camera_id: 1 };
 
-		let frame = ImageBuffer::new(800, 800);
+		let camera_id = 1;
 
 		let image_analysis = ImageAnalysis {
 			camera_id: 1,
@@ -138,9 +187,9 @@ impl Conductor {
 		//	.await?;
 
 		self.client.send_image(stream, frame.clone()).await?;
-		self.client
-			.send_image_analysis(stream, image_analysis.clone())
-			.await?;
+		//self.client
+		//	.send_image_analysis(stream, image_analysis.clone())
+		//	.await?;
 		self.client.websocket_incoming_data(stream).await?;
 		self.client.keep_alive(stream).await?;
 
