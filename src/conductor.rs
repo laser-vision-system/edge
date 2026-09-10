@@ -9,7 +9,6 @@ use std::collections::HashMap;
 use futures_util::StreamExt;
 use tokio_tungstenite::tungstenite::Message;
 use tokio::{time::interval};
-use std::time::{SystemTime};
 
 /// # Conductor
 ///
@@ -64,11 +63,9 @@ impl Conductor {
 
 		let mut stream = self.client.websocket_connect_manual().await;
 
-		let mut now = SystemTime::now();
-
-		// self.client
-		// .send_register_cameras(&mut stream, cameras.clone())
-		// .await?;
+		self.client
+		.send_text(&mut stream, "RegisterCameras:".to_string(), cameras.clone())
+		.await?;
 
 
 		loop {
@@ -76,7 +73,8 @@ impl Conductor {
 					Some(Ok(msg)) = stream.next() => {
 						 match msg {
 							Message::Text(text) => {
-							self.client.websocket_incoming_data(&text);
+							println!("{}", text );
+							self.client.websocket_incoming_data(&text).await;
 						}
 
                     	Message::Ping(_) | Message::Pong(_) | Message::Close(_) | Message::Frame(_) => {},
@@ -86,26 +84,25 @@ impl Conductor {
 					}
 					_ = interval.tick() => {
 						let frame = self.camera.get_image_shrink()?;
+						let compressed_frame = self.client.encode_image(frame.clone());
 
-						// self.client
-						// .send_disconnect_camera(&mut stream, camera.clone())
-						// .await?;
+						self.client
+						.send_text(&mut stream, "DisconnectCamera:".to_string(), camera.clone())
+						.await?;
 
-						// self.client
-						// .send_configuration(&mut stream, configuration.clone())
-						// .await?;
+						self.client
+						.send_text(&mut stream, "Configuration:".to_string(), configuration.clone())
+						.await?;
+
+						self.client
+						.send_text(&mut stream, "ImageAnalysis:".to_string(), image_analysis.clone())
+						.await?;
+
+						self.client
+						.send_image(&mut stream, camera_id,  compressed_frame.clone().as_mut())
+						.await?;
+
 						self.client.keep_alive(&mut stream).await?;
-
-						println!("{}", now.elapsed().unwrap().as_millis());
-						println!();
-						self.client
-						.send_image_analysis(&mut stream, image_analysis.clone())
-						.await?;
-						println!("{}", now.elapsed().unwrap().as_millis());
-
-						self.client
-						.send_image(&mut stream, camera_id, frame.clone())
-						.await?;
 						}
 					}
 				}
