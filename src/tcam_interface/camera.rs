@@ -125,6 +125,19 @@ impl Camera {
 			.map_err(|_| EdgeError::SetControl)
 	}
 
+	pub fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
+		controls.into_inner().into_iter().for_each(|(id, val)| {
+			let CamControl::IntegerRange(control) = val else {
+				// Save to logs.
+				return;
+			};
+			// TODO: Handle error. Maybe try make this operation atomic?
+			let _ = self.set_control(id, control.get_value());
+		});
+
+		Ok(())
+	}
+
 	#[allow(dead_code)]
 	fn get_raw_controls(&self) -> Vec<CameraControl> {
 		self.inner.controls().unwrap()
