@@ -332,7 +332,9 @@ mod test {
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = General("*Generic reason*".to_string());
+		error = General {
+			reason: "*Generic reason*".to_string(),
+		};
 		logger()
 			.lock()
 			.unwrap()

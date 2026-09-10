@@ -19,7 +19,11 @@
 //!
 //! ## TODO: Oh god fix the naming of the types.
 
-use std::collections::HashMap;
+use std::{
+	collections::HashMap,
+	fmt,
+	ops::{Deref, DerefMut},
+};
 
 #[allow(unused_imports, reason = "Needed for module docstring")]
 use nokhwa::utils::ControlValueSetter;
@@ -32,19 +36,73 @@ pub mod types;
 pub mod values;
 
 use descriptions::CamControl;
+use serde::{Deserialize, Serialize};
 
-// TODO: Maybe make this into a struct itself.
-pub type ControlMap = HashMap<KnownCameraControl, CamControl>;
+type MapType = HashMap<KnownCameraControl, CamControl>;
 
-/// Convert a collection of [`nokhwa`] [`CameraControl`] into a custom type.
-pub fn extract_controls(nokhwa_controls: Vec<CameraControl>) -> ControlMap {
-	nokhwa_controls
-		.into_iter()
-		.map(|control| (control.control(), extract_control(control)))
-		.collect::<ControlMap>()
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ControlMap {
+	inner: MapType,
 }
 
-/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
-pub fn extract_control(nokhwa_control: CameraControl) -> CamControl {
-	nokhwa_control.into()
+impl ControlMap {
+	pub fn into_inner(self) -> MapType {
+		self.inner
+	}
+
+	pub fn stripped(self) -> Self {
+		let inner = self
+			.inner
+			.into_iter()
+			.filter(|(key, _)| {
+				[
+					KnownCameraControl::Brightness,
+					KnownCameraControl::Contrast,
+					KnownCameraControl::Saturation,
+					KnownCameraControl::Hue,
+					KnownCameraControl::Gain,
+					KnownCameraControl::Gamma,
+				]
+				.contains(key)
+			})
+			.collect();
+
+		Self { inner }
+	}
+
+	pub fn serialise(&self) -> String {
+		serde_json::to_string(&self.inner)
+			.expect("everything in the inner map should be correcly serialisable")
+	}
+}
+
+impl From<Vec<CameraControl>> for ControlMap {
+	/// Convert a collection of [`nokhwa`] [`CameraControl`] into a custom type.
+	fn from(nokhwa_controls: Vec<CameraControl>) -> Self {
+		let inner = nokhwa_controls
+			.into_iter()
+			.map(|control| (control.control(), control.into()))
+			.collect::<MapType>();
+		Self { inner }
+	}
+}
+
+impl Deref for ControlMap {
+	type Target = MapType;
+
+	fn deref(&self) -> &Self::Target {
+		&self.inner
+	}
+}
+
+impl DerefMut for ControlMap {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.inner
+	}
+}
+
+impl fmt::Display for ControlMap {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{}", self.serialise())
+	}
 }

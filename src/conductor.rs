@@ -1,16 +1,16 @@
-use std::collections::HashMap;
-
 use async_std::task;
 use image::ImageBuffer;
 use server_edge_datatypes::{
 	edge::{ImageAnalysis, RegisterCameras},
-	shared::{CameraStatus, Configuration},
+	shared::{CameraStatus, Configuration, ViewCameraConfig},
 };
 use tokio::net::TcpStream;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 
 use crate::{
 	client::Client,
+	error::EdgeError,
+	logger::logger,
 	settings::Settings,
 	tcam_interface::{Metadata, Persistence},
 	vision_processor::VisionVariant,
@@ -36,17 +36,80 @@ impl Conductor {
 		// This function detects new cameras and instantiates them.
 		let new_cameras = self.persistence.poll_for_new_cameras();
 
-		// Structs for test websocket data
-		// TODO: Replace with above.
-		let mut cameras_hashmap: HashMap<u64, (String, CameraStatus)> = HashMap::new();
-		cameras_hashmap.insert(1, ("".to_string(), CameraStatus::Active));
-		let cameras = RegisterCameras {
-			cameras: cameras_hashmap,
-		};
-
 		self.client
-			.send_register_cameras(stream, cameras.clone())
+			.send_register_cameras(
+				stream,
+				RegisterCameras {
+					cameras: new_cameras,
+				},
+			)
 			.await?;
+
+		// TODO: Check if we have a request to modify camera config.
+		let example = Configuration {
+			camera_id: 598275214,
+			conn_id: 12,
+			configuration: "{\"Saturation\":{\"IntegerRange\":{\"control_type\":\"Saturation\",\"value\":64,\"default\":64,\"step\":1,\"min\":0,\"max\":128}},\"Brightness\":{\"IntegerRange\":{\"control_type\":\"Brightness\",\"value\":0,\"default\":0,\"step\":1,\"min\":-64,\"max\":64}},\"Contrast\":{\"IntegerRange\":{\"control_type\":\"Contrast\",\"value\":32,\"default\":32,\"step\":1,\"min\":0,\"max\":64}},\"Gain\":{\"IntegerRange\":{\"control_type\":\"Gain\",\"value\":0,\"default\":0,\"step\":1,\"min\":0,\"max\":100}},\"Gamma\":{\"IntegerRange\":{\"control_type\":\"Gamma\",\"value\":100,\"default\":100,\"step\":1,\"min\":72,\"max\":500}},\"Hue\":{\"IntegerRange\":{\"control_type\":\"Hue\",\"value\":0,\"default\":0,\"step\":1,\"min\":-40,\"max\":40}}}".into(),
+		};
+		for (id, entry) in self.persistence.inner().iter_mut() {
+			if id.calculate_hash() == example.camera_id {
+				let Some(camera) = entry.camera_mut() else {
+					logger()
+						.lock()
+						.unwrap()
+						.log_error("", &EdgeError::CameraNotPresent);
+					break;
+				};
+				match serde_json::from_str(&example.configuration) {
+					Ok(map) => {
+						if let Err(why) = camera.set_controls(map) {
+							logger()
+								.lock()
+								.unwrap()
+								.log_error("Failed to set requested cntrols from server", &why);
+						};
+					},
+					Err(why) => {
+						logger().lock().unwrap().log_error(
+							"Failed to parse requested configuration",
+							&EdgeError::DecodeControls { reason: why },
+						);
+					},
+				};
+
+				logger()
+					.lock()
+					.unwrap()
+					.log_info("We've found the correct camera by id");
+				break;
+			}
+		}
+		logger().lock().unwrap().send_logs();
+
+		// TODO: Check if we should send a camera config.
+		let example = ViewCameraConfig {
+			camera_id: 9825723522,
+			conn_id: 21,
+		};
+		for (id, entry) in self.persistence.inner().iter_mut() {
+			if id.calculate_hash() == example.camera_id {
+				let Some(camera) = entry.camera() else {
+					logger()
+						.lock()
+						.unwrap()
+						.log_error("", &EdgeError::CameraNotPresent);
+					break;
+				};
+				let important_controls = camera.get_controls().stripped();
+				let configuration =
+					Configuration::build_response(example, important_controls.serialise());
+				self.client
+					.send_configuration(stream, configuration)
+					.await?;
+				break;
+			}
+		}
+		logger().lock().unwrap().send_logs();
 
 		for active_metadata in self.persistence.filter_by(Box::new(|metadata| {
 			metadata.status() == CameraStatus::Active
@@ -65,12 +128,6 @@ impl Conductor {
 
 		let frame = ImageBuffer::new(800, 800);
 
-		let configuration = Configuration {
-			conn_id: 0,
-			camera_id: 0,
-			configuration: "".to_string(),
-		};
-
 		let image_analysis = ImageAnalysis {
 			camera_id: 1,
 			deviation: 1.0,
@@ -79,9 +136,7 @@ impl Conductor {
 		//self.client
 		//	.send_disconnect_camera(stream, camera.clone())
 		//	.await?;
-		self.client
-			.send_configuration(stream, configuration.clone())
-			.await?;
+
 		self.client.send_image(stream, frame.clone()).await?;
 		self.client
 			.send_image_analysis(stream, image_analysis.clone())
