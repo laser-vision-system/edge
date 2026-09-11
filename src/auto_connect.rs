@@ -1,10 +1,10 @@
 use std::fmt;
 
+use crate::logger::logger;
 use crate::{
 	error::{EdgeError, Result},
 	websocket::WebSocket,
 };
-use crate::{logger::logger, settings};
 use pnet_datalink::interfaces;
 use reqwest::Client;
 use server_edge_datatypes::edge::Settings;
@@ -40,7 +40,7 @@ impl fmt::Display for AddressComp {
 	}
 }
 
-pub async fn identify_network() -> Result<Vec<AddressComp>> {
+async fn identify_network() -> Result<Vec<AddressComp>> {
 	let all_interfaces = interfaces();
 	let default_interface = all_interfaces
 		.iter()
