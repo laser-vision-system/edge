@@ -3,6 +3,8 @@ use std::{
 	sync::{Arc, Mutex, OnceLock, Weak},
 };
 
+use crate::logger::logger;
+
 use image::RgbImage;
 use server_edge_datatypes::shared::{CameraId, VisionTechnique};
 
@@ -86,8 +88,13 @@ impl VisionVariant {
 	/// [this](VisionVariant) and [VisionTechnique].
 	pub fn swap(self, swap_to: VisionTechnique) -> Self {
 		if self.identifier() == swap_to {
+			logger().lock().unwrap().log_warn("That VisionTechnique is already active.");
+			logger().lock().unwrap().send_logs();
 			return self;
 		}
+		
+		logger().lock().unwrap().log_info(&format!("Swapping VisionTechnique to: {}...", swap_to));
+		logger().lock().unwrap().send_logs();
 		match swap_to {
 			VisionTechnique::Empty => Self::Empty(Empty::new()),
 			VisionTechnique::Demonstration => Self::Demonstration(Demonstration::new()),
