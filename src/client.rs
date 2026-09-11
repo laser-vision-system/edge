@@ -59,6 +59,11 @@ impl Client {
 		return stream;
 	}
 
+	pub async fn websocket_connect(&mut self, url: String) -> WebSocket {
+		let (stream, response) = connect_async(url).await.expect("Failed to connect");
+		return stream;
+	}
+
 	pub fn encode_image(&mut self, data: ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Vec<u8> {
 		let mut buff = Cursor::new(Vec::new());
 		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
