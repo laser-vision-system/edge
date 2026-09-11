@@ -81,6 +81,10 @@ impl Metadata {
 		}
 	}
 
+	pub fn request_calibration(&mut self) {
+		self.calibrate = true;
+	}
+
 	/// Get the list of all device indices that this camera is occupying.
 	pub fn indices(&self) -> Option<&HashSet<IndexType>> {
 		self.indices.as_ref()

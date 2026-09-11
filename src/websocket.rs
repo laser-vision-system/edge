@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use futures_util::{SinkExt, StreamExt};
 use serde::Serialize;
-use serde::de::DeserializeOwned;
 use server_edge_datatypes::edge::EdgeRequests;
 use tokio::{self, net::TcpStream, time::interval};
 use tokio_tungstenite::{
@@ -11,6 +10,7 @@ use tokio_tungstenite::{
 };
 
 use crate::{
+	logger::logger,
 	network::unpack,
 	settings::{API, HOST, PORT},
 };
@@ -73,9 +73,9 @@ impl WebSocket {
 			Some(Ok(msg)) = self.inner.next() => {
 				match msg {
 					Message::Text(text) => {
-						println!("{}", text );
-						// TODO
-						websocket_incoming_data(&text).await
+						#[cfg(debug_assertions)]
+						logger().lock().unwrap().log_info(&format!("Received message: {}", text));
+						process_incoming(&text).await
 					}
 					_ => None,
 				}
@@ -85,7 +85,7 @@ impl WebSocket {
 	}
 }
 
-pub async fn websocket_incoming_data(text: &str) -> Option<EdgeRequests> {
+async fn process_incoming(text: &str) -> Option<EdgeRequests> {
 	let msg = text.trim();
 
 	println!("Received from Server: {}", msg);
@@ -127,6 +127,12 @@ pub async fn websocket_incoming_data(text: &str) -> Option<EdgeRequests> {
 			data => data.map_or(None, |inner| {
 				let unpacked = unpack(inner);
 				unpacked.map_or(None, |inner| Some(EdgeRequests::Setpoint(inner)))
+			}),
+		},
+		"SetProcessingType" => match args.next() {
+			data => data.map_or(None, |inner| {
+				let unpacked = unpack(inner);
+				unpacked.map_or(None, |inner| Some(EdgeRequests::SetProcessingType(inner)))
 			}),
 		},
 		_ => None,

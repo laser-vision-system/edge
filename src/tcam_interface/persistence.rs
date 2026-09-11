@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use image::RgbImage;
 use nokhwa::utils::CameraInfo;
 use server_edge_datatypes::{
-	edge::{NewCameraInfo, Settings, UpdateCameraStatus},
+	edge::{NewCameraInfo, Settings},
 	shared::{CameraId, CameraStatus},
 };
 
@@ -87,6 +87,13 @@ impl Persistence {
 			.values_mut()
 			.filter(|metadata| filter(metadata))
 			.collect()
+	}
+
+	pub fn get_with_id(&mut self, ident: CameraId) -> Option<&mut Metadata> {
+		self.inner
+			.iter_mut()
+			.filter_map(|(key, val)| if *key == ident { Some(val) } else { None })
+			.last()
 	}
 
 	pub fn run_on_active(
