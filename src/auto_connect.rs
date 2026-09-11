@@ -1,9 +1,10 @@
+use futures_util::stream::FusedStream;
 use pnet_datalink::interfaces;
 use reqwest::Client;
 use server_edge_datatypes::edge::Settings;
 use tokio::net::TcpStream;
 use tokio::task::JoinSet;
-use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
+use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 
 use crate::{error::EdgeError, websocket::WebSocket};
 
@@ -73,24 +74,24 @@ pub async fn websocket_connect_automatic()
 	Err(Box::new(EdgeError::AutoConnect))
 }
 
+
+/// When call,
 pub async fn connect_loop(
-	websocket: Option<WebSocket>,
+	mut websocket: Option<WebSocket>,
 	settings: Option<Settings>,
 ) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
-	let url = websocket_connect_automatic().await?;
-	let connection_established = true;
-
+	let connection_established = websocket.is_none();
 	if !connection_established {
-		todo!("connect to the server");
-
+		let client = Client::new();
 		let url = websocket_connect_automatic().await?;
-		let socket = WebSocket::websocket_connect(&url);
-
-		#[allow(unreachable_code)]
-		get_default_settings(settings);
+		let (return_websocket, response) = connect_async(url).await?;
+		let temp_settings  = client.get(&url[..]).send().await?;
+		let return_settings =
+		return Ok((Some(return_websocket), Settings::default()))
 	}
 
-	Ok((_, Settings::default()))
+	Ok((Some(websocket), Settings::default()))
+
 }
 
 fn get_default_settings(settings: Option<Settings>) -> Settings {
