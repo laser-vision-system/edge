@@ -1,14 +1,15 @@
-use futures_util::stream::FusedStream;
+use crate::network::unpack;
+use crate::{
+	error::{EdgeError, Result},
+	websocket::WebSocket,
+};
 use pnet_datalink::interfaces;
 use reqwest::Client;
 use server_edge_datatypes::edge::Settings;
-use tokio::net::TcpStream;
-use crate::network::unpack;
 use tokio::task::JoinSet;
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
-use crate::{error::EdgeError, websocket::WebSocket};
+use tokio_tungstenite::connect_async;
 
-pub async fn identify_network() -> Result<Vec<String>, String> {
+pub async fn identify_network() -> std::result::Result<Vec<String>, String> {
 	let all_interfaces = interfaces();
 	let default_interface = all_interfaces
 		.iter()
@@ -39,7 +40,7 @@ pub async fn identify_network() -> Result<Vec<String>, String> {
 }
 
 pub async fn websocket_connect_automatic()
--> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+-> std::result::Result<String, Box<dyn std::error::Error + Send + Sync>> {
 	let client = Client::new();
 	let urls: Vec<String> = identify_network().await?;
 
@@ -52,7 +53,7 @@ pub async fn websocket_connect_automatic()
 	async fn get_response(
 		url: String,
 		client: Client,
-	) -> Result<(String, String), Box<reqwest::Error>> {
+	) -> std::result::Result<(String, String), Box<reqwest::Error>> {
 		let result = client.get(&url[..]).send().await;
 		match result {
 			Ok(a) => Ok((url, a.text().await?)),
@@ -74,32 +75,52 @@ pub async fn websocket_connect_automatic()
 	Err(Box::new(EdgeError::AutoConnect))
 }
 
-
 /// When call,
 pub async fn connect_loop(
-	mut websocket: Option<WebSocket>,
+	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
-) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
-	let connection_established = websocket.is_none();
-	if !connection_established {
-		let client = Client::new();
-		let url = websocket_connect_automatic().await?;
-		let (stream, response) = connect_async(url).await?;
-		let return_websocket = WebSocket::new(stream);
-		let temp_settings  = client.get(&url[..]).send().await?;
-		let return_settings: Settings = unpack(temp_settings.text().await?.as_str())?;
-		return Ok((return_websocket, Settings::default()))
+) -> Result<(WebSocket, Settings)> {
+	match (websocket, settings) {
+		// All good, normal operation.
+		(Some(socket), Some(settings)) => Ok((socket, settings)),
+		// Lost connection to server
+		(None, _) => new_connection().await,
+		// Fallback
+		_ => new_connection().await,
 	}
-
-	Ok((Some(websocket), Settings::default()))
-
 }
 
-fn get_default_settings(settings: Option<Settings>) -> Settings {
+async fn new_connection() -> Result<(WebSocket, Settings)> {
+	let url = websocket_connect_automatic()
+		.await
+		.map_err(|_| EdgeError::AutoConnect)?;
+	let (stream, _) = connect_async(url.clone())
+		.await
+		.map_err(|_| EdgeError::AutoConnect)?;
+	let return_websocket = WebSocket::new(stream);
+	let return_settings = get_default_settings(&url)
+		.await
+		.map_err(|_| EdgeError::AutoConnect)?;
+	Ok((return_websocket, return_settings))
+}
+
+async fn get_default_settings(url: &str) -> Result<Settings> {
 	// TODO: Get the default settings from the server
 	// Build the settings struct from the received data.
 	// If the server fails to send correct settings, use Settings::default() as
 	// a fallback and report the issue to the server in as much detail as
 	// possible.
-	Settings::default()
+	let client = Client::new();
+	let temp_settings = client
+		.get(url)
+		.send()
+		.await
+		.map_err(|_| EdgeError::ServerConnection)?;
+	unpack(
+		temp_settings
+			.text()
+			.await
+			.map_err(|_| EdgeError::WebSocketUnpack)?
+			.as_str(),
+	)
 }
