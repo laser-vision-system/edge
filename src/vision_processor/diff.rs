@@ -28,14 +28,14 @@ impl DiffModel {
 		correlation: f32,
 		intersection: f32,
 	) -> f32 {
-		self.intercept +
-		self.peak * peak +
-		self.mean * mean +
-		self.std_dev * std_dev +
-		self.luma_ssim * luma_ssim +
-		self. hellinger * hellinger +
-		self.correlation * correlation +
-		self.intersection * intersection
+		self.intercept
+			+ self.peak * peak
+			+ self.mean * mean
+			+ self.std_dev * std_dev
+			+ self.luma_ssim * luma_ssim
+			+ self.hellinger * hellinger
+			+ self.correlation * correlation
+			+ self.intersection * intersection
 	}
 }
 
@@ -73,6 +73,7 @@ impl Diff {
 			data: ExternalData::default(),
 		}
 	}
+
 	fn compute_brightness_stats(&self, img: &GrayImage) -> (u8, f32, f32) {
 		let pixels: Vec<u8> = img.pixels().map(|p| p.0[0]).collect();
 		let n = pixels.len() as f32;
@@ -95,6 +96,7 @@ impl Diff {
 
 		(peak, mean, std_dev)
 	}
+	
 	fn collect_metrics(
 		&self,
 		image: &GrayImage,
@@ -151,7 +153,15 @@ impl VisionInterface for Diff {
 				correlation,
 				intersection,
 			) = self.collect_metrics(&grey_image, &data.image.unwrap());
-			let relative_intensity = model.predict(peak_diff, mean_diff, std_dev_diff, luma_ssim, hellinger, correlation, intersection);
+			let relative_intensity = model.predict(
+				peak_diff,
+				mean_diff,
+				std_dev_diff,
+				luma_ssim,
+				hellinger,
+				correlation,
+				intersection,
+			);
 			data.deviation = Some(1.0 - relative_intensity as f32);
 		}
 	}
