@@ -134,6 +134,7 @@ impl VisionInterface for Diff {
 				// TODO: This should raise an error.
 				continue;
 			};
+
 			if item.calibrate {
 				let grey_image = Some(DynamicImage::ImageRgb8(item.image.clone()).into_luma8());
 				data.image = grey_image.clone();
@@ -143,7 +144,9 @@ impl VisionInterface for Diff {
 				data.std_dev = Some(std_dev);
 				continue;
 			}
+
 			let grey_image = DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
+			
 			let (
 				peak_diff,
 				mean_diff,
@@ -153,7 +156,8 @@ impl VisionInterface for Diff {
 				correlation,
 				intersection,
 			) = self.collect_metrics(&grey_image, &data.image.unwrap());
-			let relative_intensity = model.predict(
+
+			let relative_intensity = self.model.predict(
 				peak_diff,
 				mean_diff,
 				std_dev_diff,
@@ -162,6 +166,7 @@ impl VisionInterface for Diff {
 				correlation,
 				intersection,
 			);
+			
 			data.deviation = Some(1.0 - relative_intensity as f32);
 		}
 	}
