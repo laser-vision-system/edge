@@ -1,7 +1,6 @@
 //! Edge computing system for laser measurement on a μ-com.
 
 mod auto_connect;
-mod client;
 mod conductor;
 mod error;
 mod logger;

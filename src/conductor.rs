@@ -6,7 +6,6 @@ use tokio::time::interval;
 
 use crate::{
 	auto_connect::connect_loop,
-	client::Client,
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
@@ -20,7 +19,6 @@ use crate::{
 /// The main execution context.
 pub struct Conductor {
 	persistence: Persistence,
-	client: Client,
 }
 
 impl Conductor {
@@ -220,12 +218,8 @@ impl Conductor {
 impl Default for Conductor {
 	fn default() -> Self {
 		let persistence = Persistence::default();
-		let client = Client::new();
 
-		Self {
-			persistence,
-			client,
-		}
+		Self { persistence }
 	}
 }
 
