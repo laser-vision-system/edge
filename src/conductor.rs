@@ -110,7 +110,9 @@ impl Conductor {
 							view_config_req,
 							important_controls.serialise(),
 						);
-						websocket.send_text("Configuration:".into(), configuration);
+						let _ = websocket
+							.send_text("Configuration:".into(), configuration)
+							.await;
 					}
 				},
 				EdgeRequests::Setpoint(calibration_req) => {
