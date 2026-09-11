@@ -85,7 +85,7 @@ pub async fn connect_loop(
 		let client = Client::new();
 		let url = websocket_connect_automatic().await?;
 		let (stream, response) = connect_async(url).await?;
-		let return_websocket: WebSocket::new(stream);
+		let return_websocket = WebSocket::new(stream);
 		let temp_settings  = client.get(&url[..]).send().await?;
 		let return_settings: Settings = unpack(temp_settings.text().await?.as_str())?;
 		return Ok((return_websocket, Settings::default()))

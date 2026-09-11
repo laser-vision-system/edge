@@ -1,21 +1,16 @@
 use server_edge_datatypes::{
 	edge::{EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
-	shared::{CameraStatus, Configuration, ViewCameraConfig},
+	shared::{CameraStatus, Configuration},
 };
-
-use futures_util::StreamExt;
-use tokio::net::TcpStream;
 use tokio::time::interval;
-use tokio_tungstenite::tungstenite::Message;
-use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 
 use crate::{
-	auto_connect::{connect_loop, websocket_connect_automatic},
+	auto_connect::connect_loop,
 	client::Client,
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
-	tcam_interface::{Camera, Metadata, Persistence, WhyNo},
+	tcam_interface::{Camera, Persistence, WhyNo},
 	vision_processor::{VisionInterface, VisionVariant},
 	websocket::WebSocket,
 };
@@ -34,7 +29,8 @@ impl Conductor {
 		&mut self,
 		mut websocket: WebSocket,
 		settings: Settings,
-	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
+		vision_processor: VisionVariant,
+	) -> Result<(WebSocket, Settings, VisionVariant), Box<dyn std::error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
 
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
@@ -50,6 +46,8 @@ impl Conductor {
 				},
 			)
 			.await?;
+
+		let mut requested_type = None;
 
 		while let Some(request) = websocket
 			.query_websockets(settings.websocket_poll_interval)
@@ -121,17 +119,18 @@ impl Conductor {
 					}
 				},
 				EdgeRequests::SetProcessingType(processing_req) => {
-					self.vision_processor.swap(processing_req.processing_type);
+					requested_type = Some(processing_req.processing_type);
 				},
 			}
-			logger().lock().unwrap().send_logs();
 		}
+		logger().lock().unwrap().send_logs();
 
 		websocket.keep_alive().await?;
 
-		//placeholder_config_request(&mut self.persistence);
-
-		//placeholder_send_config(&mut self.persistence);
+		let vision_processor = match requested_type {
+			Some(swap_to) => vision_processor.swap(swap_to),
+			None => vision_processor,
+		};
 
 		let batch_items = self.persistence.run_on_active(settings.clone());
 
@@ -213,7 +212,7 @@ impl Conductor {
 		// This should guarantee that the loop will take at least this long.
 		limit_interval.tick().await;
 
-		Ok((websocket, settings))
+		Ok((websocket, settings, vision_processor))
 	}
 }
 
@@ -236,11 +235,15 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let mut websocket: Option<WebSocket> = None;
 	let mut settings: Option<Settings> = None;
 	let mut conductor = Conductor::default();
+	let mut vision_processor = VisionVariant::default();
 
 	loop {
 		let (loop_websocket, loop_settings) = connect_loop(websocket, settings).await.unwrap();
-		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
+		let result = conductor
+			.loop_once(loop_websocket, loop_settings, vision_processor)
+			.await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);
+		vision_processor = result.2;
 	}
 }
