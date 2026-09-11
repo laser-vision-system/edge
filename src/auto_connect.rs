@@ -91,10 +91,10 @@ pub async fn websocket_connect_automatic() -> Result<String> {
 pub async fn connect_loop(
 	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
-) -> Result<(WebSocket, Settings)> {
+) -> (WebSocket, Settings) {
 	match (websocket, settings) {
 		// All good, normal operation.
-		(Some(socket), Some(settings)) => Ok((socket, settings)),
+		(Some(socket), Some(settings)) => (socket, settings),
 		// Lost connection to server
 		(None, _) => new_connection().await,
 		// Fallback
@@ -102,7 +102,17 @@ pub async fn connect_loop(
 	}
 }
 
-async fn new_connection() -> Result<(WebSocket, Settings)> {
+async fn new_connection() -> (WebSocket, Settings) {
+	match try_connect_once().await {
+		Ok(yay) => yay,
+		Err(err) => {
+			logger().lock().unwrap().log_error("PLEASE", &err);
+			panic!("SERVER FAILED TO CONNECT")
+		},
+	}
+}
+
+async fn try_connect_once() -> Result<(WebSocket, Settings)> {
 	let url = websocket_connect_automatic().await?;
 	let (stream, _) = connect_async(url.clone())
 		.await

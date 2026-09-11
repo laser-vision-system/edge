@@ -238,7 +238,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let mut vision_processor = VisionVariant::default();
 
 	loop {
-		let (loop_websocket, loop_settings) = connect_loop(websocket, settings).await.unwrap();
+		let (loop_websocket, loop_settings) = connect_loop(websocket, settings).await;
 		let result = conductor
 			.loop_once(loop_websocket, loop_settings, vision_processor)
 			.await?;
