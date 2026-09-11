@@ -18,6 +18,8 @@ pub enum EdgeError {
 	General { reason: String },
 	#[error("The server could not be reached when trying initial connection")]
 	AutoConnect,
+	#[error("Fail connect: {reason}")]
+	AutoConnectUrl { reason: String },
 	#[error("The WebSocket connection could not be created")]
 	WebSocketConnection,
 	#[error("The server could not be reached")]
@@ -55,6 +57,9 @@ impl Clone for EdgeError {
 				reason: reason.clone(),
 			},
 			Self::AutoConnect => Self::AutoConnect,
+			Self::AutoConnectUrl { reason } => Self::AutoConnectUrl {
+				reason: reason.clone(),
+			},
 			Self::WebSocketConnection => Self::WebSocketConnection,
 			Self::ServerConnection => Self::ServerConnection,
 			Self::NokhwaNoBackend => Self::NokhwaNoBackend,

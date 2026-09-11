@@ -68,6 +68,7 @@ pub async fn websocket_connect_automatic() -> Result<String> {
 			Ok(Ok(a)) => {
 				if a.1 == "This is an API for the laser intensity analysis project" {
 					let idk = a.0;
+					// FIX: Swap to ws protocol
 					let mut please = idk
 						.rsplit("/")
 						.skip(1)
@@ -114,10 +115,12 @@ async fn new_connection() -> (WebSocket, Settings) {
 
 async fn try_connect_once() -> Result<(WebSocket, Settings)> {
 	//let url = websocket_connect_automatic().await?;
-	let url = "http://127.0.0.1:8080/edge_ws";
+	let url = "ws://127.0.0.1:8080/edge_ws";
 	let (stream, _) = connect_async(url)
 		.await
-		.map_err(|_| EdgeError::AutoConnect)?;
+		.map_err(|why| EdgeError::AutoConnectUrl {
+			reason: why.to_string(),
+		})?;
 	let return_websocket = WebSocket::new(stream);
 	let return_settings = get_default_settings(&url).await?;
 	Ok((return_websocket, return_settings))
