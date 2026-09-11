@@ -2,7 +2,7 @@ use crate::{
 	error::{EdgeError, Result},
 	websocket::WebSocket,
 };
-use crate::{logger::logger, network::unpack};
+use crate::{logger::logger, settings};
 use pnet_datalink::interfaces;
 use reqwest::Client;
 use server_edge_datatypes::edge::Settings;
