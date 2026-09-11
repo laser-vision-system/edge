@@ -10,4 +10,6 @@ mod settings;
 pub mod tcam_interface;
 pub mod vision_processor;
 
+pub mod auto_connect;
+
 pub use conductor::run;

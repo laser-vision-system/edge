@@ -1,16 +1,17 @@
+use crate::settings::{API, HOST, PORT};
 use futures_util::SinkExt;
-use reqwest::Client as ReqwestClient;
+use image::ImageBuffer;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use server_edge_datatypes::{
-	edge::{SetNameCamera, StartViewingCamera, StopViewingCamera},
+	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
 	shared::{Configuration, ViewCameraConfig},
 };
+use std::io::Cursor;
+use tokio;
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::{Bytes, Message, Utf8Bytes};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
-
-use crate::settings::{API, HOST, PORT};
 
 pub type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
@@ -20,12 +21,10 @@ pub struct Client {
 	stop_viewing_camera: StopViewingCamera,
 	configuration: Configuration,
 	view_camera_config: ViewCameraConfig,
-	restful_client: ReqwestClient,
+	setpoint: Setpoint,
 }
 
 impl Client {
-	pub fn identify_network(&mut self) {}
-
 	pub fn new() -> Self {
 		let camera_list = SetNameCamera {
 			camera_id: 0,
@@ -42,6 +41,7 @@ impl Client {
 			conn_id: 0,
 			camera_id: 0,
 		};
+		let setpoint = Setpoint { camera_id: 0 };
 
 		Self {
 			camera_list,
@@ -49,7 +49,7 @@ impl Client {
 			stop_viewing_camera,
 			configuration,
 			view_camera_config,
-			restful_client: ReqwestClient::new(),
+			setpoint,
 		}
 	}
 
@@ -59,8 +59,11 @@ impl Client {
 		return stream;
 	}
 
-	pub fn websocket_connect_automatic(self) {
-		// TO DO automatic connection
+	pub fn encode_image(&mut self, data: ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Vec<u8> {
+		let mut buff = Cursor::new(Vec::new());
+		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
+		enc.encode_image(&data).unwrap();
+		buff.into_inner()
 	}
 
 	pub fn unpack<T: DeserializeOwned>(data: &str) -> Option<T> {
@@ -135,6 +138,12 @@ impl Client {
 			"ViewCameraConfig" => match args.next() {
 				Some(data) => {
 					self.view_camera_config = Self::unpack(data).unwrap();
+				},
+				None => {},
+			},
+			"Setpoint" => match args.next() {
+				Some(data) => {
+					self.setpoint = Self::unpack(data).unwrap();
 				},
 				None => {},
 			},

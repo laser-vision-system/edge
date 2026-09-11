@@ -155,6 +155,13 @@ impl VisionInterface for Diff {
 			data.deviation = Some(1.0 - relative_intensity as f32);
 		}
 	}
+
+	fn new_state(&self) -> VisionState {
+		VisionState::Diff {
+			handle: self.session.downgrade(),
+			data: ExternalData::default(),
+		}
+	}
 }
 
 impl Default for Diff {
