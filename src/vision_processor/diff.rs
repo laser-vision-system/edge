@@ -42,7 +42,7 @@ impl DiffModel {
 impl Default for DiffModel {
 	fn default() -> Self {
 		DiffModel {
-			intercept: 0.0.5819997604631103,
+			intercept: 0.5819997604631103,
 			peak: -0.027890896459691977,
 			mean: 0.03606082141430921,
 			std_dev: -0.21063533527616005,
@@ -53,7 +53,7 @@ impl Default for DiffModel {
 		}
 	}
 }
-#[derive(Clone)]
+
 pub struct Diff {
 	session: SessionToken,
 	model: DiffModel,
@@ -96,7 +96,7 @@ impl Diff {
 
 		(peak, mean, std_dev)
 	}
-	
+
 	fn collect_metrics(
 		&self,
 		image: &GrayImage,
@@ -146,7 +146,7 @@ impl VisionInterface for Diff {
 			}
 
 			let grey_image = DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
-			
+
 			let (
 				peak_diff,
 				mean_diff,
@@ -155,7 +155,7 @@ impl VisionInterface for Diff {
 				hellinger,
 				correlation,
 				intersection,
-			) = self.collect_metrics(&grey_image, &data.image.unwrap());
+			) = self.collect_metrics(&grey_image, &data.image.clone().unwrap());
 
 			let relative_intensity = self.model.predict(
 				peak_diff,
@@ -166,7 +166,7 @@ impl VisionInterface for Diff {
 				correlation,
 				intersection,
 			);
-			
+
 			data.deviation = Some(1.0 - relative_intensity as f32);
 		}
 	}

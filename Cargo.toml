@@ -37,12 +37,12 @@ serde_json = "1.0.151"
 tokio-tungstenite = "0.30.0"
 futures-util = "0.3.33"
 pnet_datalink = "0.35.0"
+image-compare = "0.5"
 # Dependencies only needed for tests, examples, or benchmarks.
 [dev-dependencies]
 rerun = { version = "0.35", features = [
 	"image"
 ] }
-image-compare = "0.5"
 
 [lints.rust]
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.
