@@ -5,6 +5,7 @@ mod client;
 mod conductor;
 mod error;
 mod logger;
+mod network;
 mod settings;
 mod websocket;
 

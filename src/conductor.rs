@@ -1,5 +1,5 @@
 use server_edge_datatypes::{
-	edge::{ImageAnalysis, RegisterCameras, UpdateCameraStatus},
+	edge::{EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
 	shared::{CameraStatus, Configuration, ViewCameraConfig},
 };
 
@@ -32,7 +32,7 @@ pub struct Conductor {
 impl Conductor {
 	async fn loop_once(
 		&mut self,
-		websocket: WebSocket,
+		mut websocket: WebSocket,
 		settings: Settings,
 	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
@@ -51,9 +51,31 @@ impl Conductor {
 			)
 			.await?;
 
-		let mut interval = interval(settings.websocket_poll_interval);
-
-		while websocket.query_websockets(interval).await {}
+		while let Some(request) = websocket
+			.query_websockets(settings.websocket_poll_interval)
+			.await
+		{
+			match request {
+				EdgeRequests::SetNameCamera(SetNameCamera) => {
+					todo!()
+				},
+				EdgeRequests::StartViewingCamera(StartViewingCamera) => {
+					todo!()
+				},
+				EdgeRequests::StopViewingCamera(StopViewingCamera) => {
+					todo!()
+				},
+				EdgeRequests::Configuration(Configuration) => {
+					todo!()
+				},
+				EdgeRequests::ViewCameraConfig(ViewCameraConfig) => {
+					todo!()
+				},
+				EdgeRequests::Setpoint(Setpoint) => {
+					todo!()
+				},
+			}
+		}
 
 		websocket.keep_alive().await?;
 

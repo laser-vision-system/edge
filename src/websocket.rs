@@ -1,14 +1,17 @@
+use std::time::Duration;
+
 use futures_util::{SinkExt, StreamExt};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use tokio::{self, net::TcpStream, time::Interval};
+use server_edge_datatypes::edge::EdgeRequests;
+use tokio::{self, net::TcpStream, time::interval};
 use tokio_tungstenite::{
 	MaybeTlsStream, WebSocketStream, connect_async,
 	tungstenite::{Bytes, Message, Utf8Bytes},
 };
 
 use crate::{
-	error::{EdgeError, Result},
+	network::unpack,
 	settings::{API, HOST, PORT},
 };
 
@@ -61,25 +64,68 @@ impl WebSocket {
 		Ok(())
 	}
 
-	pub async fn query_websockets(&mut self, mut interval: Interval) -> bool {
+	pub async fn query_websockets(&mut self, period: Duration) -> Option<EdgeRequests> {
+		let mut interval = interval(period);
 		tokio::select! {
 			Some(Ok(msg)) = self.inner.next() => {
 				match msg {
 					Message::Text(text) => {
 						println!("{}", text );
 						// TODO
-						//self.client.websocket_incoming_data(&text).await;
-						true
+						websocket_incoming_data(&text).await
 					}
-					_ => {true},
+					_ => None,
 				}
 			}
-			_ = interval.tick() => false
+			_ = interval.tick() => None
 		}
 	}
 }
 
-pub fn unpack<T: DeserializeOwned>(data: &str) -> Result<T> {
-	let data_unchecked: serde_json::Result<T> = serde_json::from_str(data);
-	data_unchecked.map_err(|_| EdgeError::WebSocketUnpack)
+pub async fn websocket_incoming_data(text: &str) -> Option<EdgeRequests> {
+	let msg = text.trim();
+
+	println!("Received from Server: {}", msg);
+
+	let mut args = msg.splitn(2, ':');
+
+	match args.next().unwrap() {
+		"SetNameCamera" => match args.next() {
+			data => data.map_or(None, |inner| {
+				let unpacked = unpack(inner);
+				unpacked.map_or(None, |inner| Some(EdgeRequests::SetNameCamera(inner)))
+			}),
+		},
+		"StartViewingCamera" => match args.next() {
+			data => data.map_or(None, |inner| {
+				let unpacked = unpack(inner);
+				unpacked.map_or(None, |inner| Some(EdgeRequests::StartViewingCamera(inner)))
+			}),
+		},
+		"StopViewingCamera" => match args.next() {
+			data => data.map_or(None, |inner| {
+				let unpacked = unpack(inner);
+				unpacked.map_or(None, |inner| Some(EdgeRequests::StopViewingCamera(inner)))
+			}),
+		},
+		"Configuration" => match args.next() {
+			data => data.map_or(None, |inner| {
+				let unpacked = unpack(inner);
+				unpacked.map_or(None, |inner| Some(EdgeRequests::Configuration(inner)))
+			}),
+		},
+		"ViewCameraConfig" => match args.next() {
+			data => data.map_or(None, |inner| {
+				let unpacked = unpack(inner);
+				unpacked.map_or(None, |inner| Some(EdgeRequests::ViewCameraConfig(inner)))
+			}),
+		},
+		"Setpoint" => match args.next() {
+			data => data.map_or(None, |inner| {
+				let unpacked = unpack(inner);
+				unpacked.map_or(None, |inner| Some(EdgeRequests::Setpoint(inner)))
+			}),
+		},
+		_ => None,
+	}
 }
