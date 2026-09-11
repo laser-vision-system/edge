@@ -14,7 +14,7 @@ use crate::{
 	logger::logger,
 	settings::Settings,
 	tcam_interface::{Camera, Persistence, WhyNo},
-	vision_processor::{VisionInterface, VisionVariant},
+	vision_processor::{VisionInterface, VisionVariant, vision},
 };
 
 /// # Conductor
@@ -23,7 +23,6 @@ use crate::{
 pub struct Conductor {
 	persistence: Persistence,
 	client: Client,
-	vision_processor: VisionVariant,
 }
 
 impl Conductor {
@@ -99,7 +98,7 @@ impl Conductor {
 		logger().lock().unwrap().send_logs();
 
 		// Vision
-		self.vision_processor.process(&mut items);
+		vision().lock().unwrap().process(&mut items);
 
 		// Send result
 		for item in items.iter() {
@@ -172,12 +171,10 @@ impl Default for Conductor {
 	fn default() -> Self {
 		let persistence = Persistence::default();
 		let client = Client::new();
-		let vision_processor = VisionVariant::default();
 
 		Self {
 			persistence,
 			client,
-			vision_processor,
 		}
 	}
 }

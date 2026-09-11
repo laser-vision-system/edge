@@ -13,18 +13,18 @@ impl Empty {
 			session: SessionToken::new(),
 		}
 	}
-
-	pub fn new_state(&self) -> VisionState {
-		VisionState::Empty {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
-	}
 }
 
 impl VisionInterface for Empty {
 	fn process(&mut self, _: &mut [BatchItem]) {
 		return;
+	}
+
+	fn new_state(&self) -> VisionState {
+		VisionState::Empty {
+			handle: self.session.downgrade(),
+			data: ExternalData::default(),
+		}
 	}
 }
 

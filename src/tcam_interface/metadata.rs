@@ -9,7 +9,7 @@ use server_edge_datatypes::{
 use crate::{
 	error::Result,
 	logger::{self, logger},
-	vision_processor::{BatchItem, VisionState},
+	vision_processor::{BatchItem, VisionInterface, VisionState, vision},
 };
 
 use super::Camera;
@@ -168,12 +168,14 @@ impl Metadata {
 				self.status = CameraStatus::Invalid;
 				false
 			},
-			Ok(camera) => {
+			Ok(mut camera) => {
 				logger::logger()
 					.lock()
 					.unwrap()
 					.log_info("Camera successfully initialised");
+				camera.reset_controls_to_default();
 				self.status = CameraStatus::Active;
+				self.vision_state = Some(vision().lock().unwrap().new_state());
 				self.add_camera(camera);
 				true
 			},
@@ -219,6 +221,7 @@ impl Metadata {
 	pub fn remove_camera(&mut self) {
 		self.camera.take();
 		self.indices.take();
+		self.vision_state.take();
 	}
 
 	pub fn make_batch_item(&mut self, image: RgbImage, id: CameraId) -> BatchItem<'_> {
