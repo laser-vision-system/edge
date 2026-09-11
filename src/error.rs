@@ -42,6 +42,10 @@ pub enum EdgeError {
 	CameraNotPresent,
 	#[error("Failed to unpack data from the websocket")]
 	WebSocketUnpack,
+	#[error("Error while finding the default interface")]
+	IdentifyNetwork,
+	#[error("Failed to get a response: {reason}")]
+	ReqwestError { reason: String },
 }
 
 impl Clone for EdgeError {
@@ -71,6 +75,10 @@ impl Clone for EdgeError {
 			},
 			Self::CameraNotPresent => Self::CameraNotPresent,
 			Self::WebSocketUnpack => Self::WebSocketUnpack,
+			Self::IdentifyNetwork => Self::IdentifyNetwork,
+			Self::ReqwestError { reason } => Self::ReqwestError {
+				reason: reason.clone(),
+			},
 		}
 	}
 }

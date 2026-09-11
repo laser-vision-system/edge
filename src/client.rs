@@ -13,8 +13,6 @@ use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::{Bytes, Message, Utf8Bytes};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
 
-pub type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
-
 pub struct Client {
 	camera_list: SetNameCamera,
 	start_viewing_camera: StartViewingCamera,
