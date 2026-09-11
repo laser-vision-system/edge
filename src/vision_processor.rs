@@ -88,11 +88,17 @@ impl VisionVariant {
 	/// [this](VisionVariant) and [VisionTechnique].
 	pub fn swap(self, swap_to: VisionTechnique) -> Self {
 		if self.identifier() == swap_to {
-			logger().lock().unwrap().log_warn("That VisionTechnique is already active.");
+			logger()
+				.lock()
+				.unwrap()
+				.log_warn("That VisionTechnique is already active.");
 			return self;
 		}
-		
-		logger().lock().unwrap().log_info(&format!("Swapping VisionTechnique to: {}...", swap_to));
+
+		logger()
+			.lock()
+			.unwrap()
+			.log_info(&format!("Swapping VisionTechnique to: {:?}...", swap_to));
 		match swap_to {
 			VisionTechnique::Empty => Self::Empty(Empty::new()),
 			VisionTechnique::Demonstration => Self::Demonstration(Demonstration::new()),
