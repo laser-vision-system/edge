@@ -68,7 +68,7 @@ pub async fn websocket_connect_automatic() -> Result<String> {
 			Ok(Ok(a)) => {
 				if a.1 == "This is an API for the laser intensity analysis project" {
 					let idk = a.0;
-					let please = idk
+					let mut please = idk
 						.rsplit("/")
 						.skip(1)
 						.collect::<Vec<_>>()
@@ -76,6 +76,7 @@ pub async fn websocket_connect_automatic() -> Result<String> {
 						.rev()
 						.collect::<Vec<_>>()
 						.join("");
+					please.push_str(settings::API);
 					return Ok(please);
 				}
 			},
@@ -133,4 +134,27 @@ async fn get_default_settings(url: &str) -> Result<Settings> {
 	//		.map_err(|_| EdgeError::WebSocketUnpack)?
 	//		.as_str(),
 	//)
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::settings;
+
+	#[test]
+	fn chop_end() {
+		let mut url = "http://".to_string();
+		url.push_str("myweb.d.0.yay");
+		url.push_str(":8080/is_api");
+		let mut please = url
+			.rsplit("/")
+			.skip(1)
+			.collect::<Vec<_>>()
+			.into_iter()
+			.rev()
+			.collect::<Vec<_>>()
+			.join("");
+		please.push_str(settings::API);
+
+		println!("{please}");
+	}
 }
