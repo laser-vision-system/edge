@@ -23,6 +23,9 @@ pub struct WebSocket {
 }
 
 impl WebSocket {
+	pub fn new(inner: WebsocketType) -> Self {
+		Self { inner }
+	}
 	pub async fn websocket_connect(url: &str) -> Self {
 		let (stream, _) = connect_async(url).await.expect("Failed to connect");
 		Self { inner: stream }
