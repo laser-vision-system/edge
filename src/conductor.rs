@@ -6,17 +6,17 @@ use server_edge_datatypes::{
 use futures_util::StreamExt;
 use tokio::net::TcpStream;
 use tokio::time::interval;
-use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 
 use crate::{
+	auto_connect::{connect_loop, websocket_connect_automatic},
 	client::{Client, WebSocket},
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
 	tcam_interface::{Camera, Persistence, WhyNo},
 	vision_processor::{VisionInterface, VisionVariant},
-	auto_connect::websocket_connect_automatic
 };
 
 /// # Conductor
@@ -192,25 +192,10 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let url = websocket_connect_automatic().await?;
 	let mut stream = conductor.client.websocket_connect(url).await;
 
-
 	loop {
-		let loop_settings = connect_loop(settings);
+		let (no_stream, loop_settings) = connect_loop(settings).await.unwrap();
 		settings = Some(conductor.loop_once(loop_settings, &mut stream).await?)
 	}
-}
-
-// Not a proper spot for these, but they demontrate the general flow.
-
-// TODO: Place this in a more suitable module (not client).
-
-// TODO: Place this in a more suitable module (not client).
-fn placeholder_get_default_settings(settings: Option<Settings>) -> Settings {
-	// TODO: Get the default settings from the server
-	// Build the settings struct from the received data.
-	// If the server fails to send correct settings, use Settings::default() as
-	// a fallback and report the issue to the server in as much detail as
-	// possible.
-	Settings::default()
 }
 
 fn placeholder_config_request(persistence: &mut Persistence) {

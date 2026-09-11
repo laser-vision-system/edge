@@ -3,6 +3,7 @@
 mod client;
 mod conductor;
 mod error;
+mod logger;
 mod settings;
 
 // Used by rerun example.

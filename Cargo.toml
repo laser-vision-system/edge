@@ -37,7 +37,6 @@ serde_json = "1.0.151"
 tokio-tungstenite = "0.30.0"
 futures-util = "0.3.33"
 pnet_datalink = "0.35.0"
-async-std = "1.13.2"
 # Dependencies only needed for tests, examples, or benchmarks.
 [dev-dependencies]
 rerun = { version = "0.35", features = [

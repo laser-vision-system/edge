@@ -64,13 +64,6 @@ impl Client {
 		return stream;
 	}
 
-	pub fn encode_image(&mut self, data: ImageBuffer<image::Rgb<u8>, Vec<u8>>) -> Vec<u8> {
-		let mut buff = Cursor::new(Vec::new());
-		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
-		enc.encode_image(&data).unwrap();
-		buff.into_inner()
-	}
-
 	pub fn unpack<T: DeserializeOwned>(data: &str) -> Option<T> {
 		let data_unchecked: serde_json::Result<T> = serde_json::from_str(data);
 		data_unchecked.ok()
