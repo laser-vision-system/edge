@@ -1,4 +1,3 @@
-use async_std::task;
 use server_edge_datatypes::{
 	edge::{ImageAnalysis, RegisterCameras, UpdateCameraStatus},
 	shared::{CameraStatus, Configuration, ViewCameraConfig},
@@ -33,6 +32,8 @@ impl Conductor {
 		settings: Settings,
 		stream: &mut WebSocket,
 	) -> Result<Settings, Box<dyn std::error::Error + Send + Sync>> {
+		let mut limit_interval = interval(settings.update_delay);
+
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
 
 		// This function detects new cameras and instantiates them.
@@ -142,7 +143,8 @@ impl Conductor {
 
 		// Send statistics
 
-		task::sleep(settings.update_delay).await;
+		// This should guarantee that the loop will take at least this long.
+		limit_interval.tick().await;
 
 		Ok(settings)
 	}
