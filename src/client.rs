@@ -53,54 +53,6 @@ impl Client {
 		}
 	}
 
-	pub async fn websocket_connect_manual(&mut self) -> WebSocket {
-		let url = "ws://".to_string() + HOST + ":" + PORT + API;
-		let (stream, response) = connect_async(url).await.expect("Failed to connect");
-		return stream;
-	}
-
-	pub async fn websocket_connect(&mut self, url: String) -> WebSocket {
-		let (stream, response) = connect_async(url).await.expect("Failed to connect");
-		return stream;
-	}
-
-	pub fn unpack<T: DeserializeOwned>(data: &str) -> Option<T> {
-		let data_unchecked: serde_json::Result<T> = serde_json::from_str(data);
-		data_unchecked.ok()
-	}
-
-	pub async fn send_text<T: Serialize>(
-		&mut self,
-		stream: &mut WebSocket,
-		mut prefix: String,
-		data: T,
-	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		prefix.push_str(&*serde_json::to_string(&data)?);
-		stream.send(Message::Text(Utf8Bytes::from(prefix))).await?;
-		Ok(())
-	}
-
-	pub async fn keep_alive(
-		&mut self,
-		stream: &mut WebSocket,
-	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let msg = "hello";
-		stream.send(Message::Pong(Bytes::from(msg))).await?;
-		Ok(())
-	}
-
-	pub async fn send_image(
-		&mut self,
-		stream: &mut WebSocket,
-		camera_id: u64,
-		frame: &mut Vec<u8>,
-	) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		let mut msg = camera_id.to_be_bytes().to_vec();
-		msg.append(frame);
-		stream.send(Message::Binary(Bytes::from(msg))).await?;
-		Ok(())
-	}
-
 	pub async fn websocket_incoming_data(&mut self, text: &str) {
 		let msg = text.trim();
 

@@ -11,12 +11,13 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 
 use crate::{
 	auto_connect::{connect_loop, websocket_connect_automatic},
-	client::{Client, WebSocket},
+	client::Client,
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
 	tcam_interface::{Camera, Persistence, WhyNo},
 	vision_processor::{VisionInterface, VisionVariant},
+	websocket::WebSocket,
 };
 
 /// # Conductor
@@ -31,9 +32,9 @@ pub struct Conductor {
 impl Conductor {
 	async fn loop_once(
 		&mut self,
+		websocket: WebSocket,
 		settings: Settings,
-		stream: &mut WebSocket,
-	) -> Result<Settings, Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
 
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
@@ -41,9 +42,8 @@ impl Conductor {
 		// This function detects new cameras and instantiates them.
 		let new_cameras = self.persistence.poll_for_new_cameras();
 
-		self.client
+		websocket
 			.send_text(
-				stream,
 				"RegisterCameras:".into(),
 				RegisterCameras {
 					cameras: new_cameras,
@@ -51,9 +51,11 @@ impl Conductor {
 			)
 			.await?;
 
-		while self.query_websockets(settings.clone(), stream).await {}
+		let mut interval = interval(settings.websocket_poll_interval);
 
-		self.client.keep_alive(stream).await?;
+		while websocket.query_websockets(interval).await {}
+
+		websocket.keep_alive().await?;
 
 		//placeholder_config_request(&mut self.persistence);
 
@@ -68,10 +70,8 @@ impl Conductor {
 				Ok(batch) => items.push(batch),
 				Err((_, details)) => match details {
 					WhyNo::Disconnected(id) => {
-						let _ = self
-							.client
+						let _ = websocket
 							.send_text(
-								stream,
 								"UpdateCameraStatus:".into(),
 								UpdateCameraStatus {
 									camera_id: id,
@@ -81,10 +81,8 @@ impl Conductor {
 							.await;
 					},
 					WhyNo::Broken(id) => {
-						let _ = self
-							.client
+						let _ = websocket
 							.send_text(
-								stream,
 								"UpdateCameraStatus:".into(),
 								UpdateCameraStatus {
 									camera_id: id,
@@ -108,10 +106,8 @@ impl Conductor {
 			let deviation_maybe = item.state.get_deviation();
 			let camid = item.camera_id;
 			if let Some(deviation) = deviation_maybe {
-				let result = self
-					.client
+				let result = websocket
 					.send_text(
-						stream,
 						"ImageAnalysis:".into(),
 						ImageAnalysis {
 							camera_id: camid,
@@ -130,10 +126,7 @@ impl Conductor {
 
 			if item.send_to_server {
 				let mut encoded = Camera::encode_image(item.image.clone());
-				let result = self
-					.client
-					.send_image(stream, item.camera_id, &mut encoded)
-					.await;
+				let result = websocket.send_image(item.camera_id, &mut encoded).await;
 				let _ = result.inspect_err(|why| {
 					logger().lock().unwrap().log_error(
 						&format!("failed to image send to server: {why}"),
@@ -148,25 +141,7 @@ impl Conductor {
 		// This should guarantee that the loop will take at least this long.
 		limit_interval.tick().await;
 
-		Ok(settings)
-	}
-
-	async fn query_websockets(&mut self, settings: Settings, stream: &mut WebSocket) -> bool {
-		let mut interval = interval(settings.websocket_poll_interval);
-		tokio::select! {
-			Some(Ok(msg)) = stream.next() => {
-				match msg {
-					Message::Text(text) => {
-						println!("{}", text );
-						// TODO
-						self.client.websocket_incoming_data(&text).await;
-						true
-					}
-					_ => {true},
-				}
-			}
-			_ = interval.tick() => false
-		}
+		Ok((websocket, settings))
 	}
 }
 
@@ -186,15 +161,15 @@ impl Default for Conductor {
 
 /// Call this function to begin the system.
 pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	let mut websocket: Option<WebSocket> = None;
 	let mut settings: Option<Settings> = None;
 	let mut conductor = Conductor::default();
 
-	let url = websocket_connect_automatic().await?;
-	let mut stream = conductor.client.websocket_connect(url).await;
-
 	loop {
-		let (no_stream, loop_settings) = connect_loop(settings).await.unwrap();
-		settings = Some(conductor.loop_once(loop_settings, &mut stream).await?)
+		let (loop_websocket, loop_settings) = connect_loop(websocket, settings).await.unwrap();
+		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
+		websocket = Some(result.0);
+		settings = Some(result.1);
 	}
 }
 

@@ -5,9 +5,7 @@ use tokio::net::TcpStream;
 use tokio::task::JoinSet;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 
-use crate::error::EdgeError;
-
-pub type WebSocket = WebSocketStream<MaybeTlsStream<TcpStream>>;
+use crate::{error::EdgeError, websocket::WebSocket};
 
 pub async fn identify_network() -> Result<Vec<String>, String> {
 	let all_interfaces = interfaces();
@@ -76,6 +74,7 @@ pub async fn websocket_connect_automatic()
 }
 
 pub async fn connect_loop(
+	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
 ) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
 	let url = websocket_connect_automatic().await?;
@@ -83,6 +82,9 @@ pub async fn connect_loop(
 
 	if !connection_established {
 		todo!("connect to the server");
+
+		let url = websocket_connect_automatic().await?;
+		let socket = WebSocket::websocket_connect(&url);
 
 		#[allow(unreachable_code)]
 		get_default_settings(settings);
