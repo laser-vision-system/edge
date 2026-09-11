@@ -14,8 +14,12 @@ pub type Result<T> = std::result::Result<T, EdgeError>;
 /// Any errors from underlying crates should be translated to this immediately.
 #[derive(Debug, Error)]
 pub enum EdgeError {
+	#[error("{reason}")]
+	General { reason: String },
 	#[error("The server could not be reached when trying initial connection")]
 	AutoConnect,
+	#[error("Fail connect: {reason}")]
+	AutoConnectUrl { reason: String },
 	#[error("The WebSocket connection could not be created")]
 	WebSocketConnection,
 	#[error("The server could not be reached")]
@@ -38,14 +42,24 @@ pub enum EdgeError {
 	DecodeControls { reason: SerdeError },
 	#[error("Attempted to access a camera that does not exist")]
 	CameraNotPresent,
-	#[error("{reason}")]
-	General { reason: String },
+	#[error("Failed to unpack data from the websocket")]
+	WebSocketUnpack,
+	#[error("Error while finding the default interface")]
+	IdentifyNetwork,
+	#[error("Failed to get a response: {reason}")]
+	ReqwestError { reason: String },
 }
 
 impl Clone for EdgeError {
 	fn clone(&self) -> Self {
 		match self {
+			Self::General { reason } => Self::General {
+				reason: reason.clone(),
+			},
 			Self::AutoConnect => Self::AutoConnect,
+			Self::AutoConnectUrl { reason } => Self::AutoConnectUrl {
+				reason: reason.clone(),
+			},
 			Self::WebSocketConnection => Self::WebSocketConnection,
 			Self::ServerConnection => Self::ServerConnection,
 			Self::NokhwaNoBackend => Self::NokhwaNoBackend,
@@ -65,7 +79,9 @@ impl Clone for EdgeError {
 				reason: format!("Failed to decode the controls sent by the server: {reason}",),
 			},
 			Self::CameraNotPresent => Self::CameraNotPresent,
-			Self::General { reason } => Self::General {
+			Self::WebSocketUnpack => Self::WebSocketUnpack,
+			Self::IdentifyNetwork => Self::IdentifyNetwork,
+			Self::ReqwestError { reason } => Self::ReqwestError {
 				reason: reason.clone(),
 			},
 		}

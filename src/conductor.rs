@@ -1,20 +1,18 @@
 use server_edge_datatypes::{
-	edge::{ImageAnalysis, RegisterCameras, UpdateCameraStatus},
-	shared::{CameraStatus, Configuration, ViewCameraConfig},
+	edge::{EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
+	shared::{CameraStatus, Configuration},
 };
-
-use futures_util::StreamExt;
-
 use tokio::time::interval;
-use tokio_tungstenite::tungstenite::Message;
 
 use crate::{
-	client::{Client, WebSocket},
+	auto_connect::connect_loop,
+	client::Client,
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
 	tcam_interface::{Camera, Persistence, WhyNo},
 	vision_processor::{VisionInterface, VisionVariant, vision},
+	websocket::WebSocket,
 };
 
 /// # Conductor
@@ -28,9 +26,10 @@ pub struct Conductor {
 impl Conductor {
 	async fn loop_once(
 		&mut self,
+		mut websocket: WebSocket,
 		settings: Settings,
-		stream: &mut WebSocket,
-	) -> Result<Settings, Box<dyn std::error::Error + Send + Sync>> {
+		vision_processor: VisionVariant,
+	) -> Result<(WebSocket, Settings, VisionVariant), Box<dyn std::error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
 
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
@@ -38,9 +37,8 @@ impl Conductor {
 		// This function detects new cameras and instantiates them.
 		let new_cameras = self.persistence.poll_for_new_cameras();
 
-		self.client
+		websocket
 			.send_text(
-				stream,
 				"RegisterCameras:".into(),
 				RegisterCameras {
 					cameras: new_cameras,
@@ -48,13 +46,92 @@ impl Conductor {
 			)
 			.await?;
 
-		while self.query_websockets(settings.clone(), stream).await {}
+		let mut requested_type = None;
 
-		self.client.keep_alive(stream).await?;
+		while let Some(request) = websocket
+			.query_websockets(settings.websocket_poll_interval)
+			.await
+		{
+			match request {
+				EdgeRequests::SetNameCamera(cam_name_req) => {
+					if let Some(meta) = self.persistence.get_with_id(cam_name_req.camera_id) {
+						meta.name = cam_name_req.name
+					}
+				},
+				EdgeRequests::StartViewingCamera(start_view_cam_req) => {
+					if let Some(meta) = self.persistence.get_with_id(start_view_cam_req.camera_id) {
+						meta.currently_viewed = true
+					}
+				},
+				EdgeRequests::StopViewingCamera(stop_view_cam_req) => {
+					if let Some(meta) = self.persistence.get_with_id(stop_view_cam_req.camera_id) {
+						meta.currently_viewed = false
+					}
+				},
+				EdgeRequests::Configuration(set_config_req) => {
+					if let Some(meta) = self.persistence.get_with_id(set_config_req.camera_id) {
+						let Some(camera) = meta.camera_mut() else {
+							continue;
+						};
+						logger()
+							.lock()
+							.unwrap()
+							.log_error("", &EdgeError::CameraNotPresent);
+						match serde_json::from_str(&set_config_req.configuration) {
+							Ok(map) => {
+								if let Err(why) = camera.set_controls(map) {
+									logger().lock().unwrap().log_error(
+										"Failed to set requested cntrols from server",
+										&why,
+									);
+								};
+							},
+							Err(why) => {
+								logger().lock().unwrap().log_error(
+									"Failed to parse requested configuration",
+									&EdgeError::DecodeControls { reason: why },
+								);
+							},
+						};
+					}
+				},
+				EdgeRequests::ViewCameraConfig(view_config_req) => {
+					if let Some(meta) = self.persistence.get_with_id(view_config_req.camera_id) {
+						let Some(camera) = meta.camera() else {
+							logger()
+								.lock()
+								.unwrap()
+								.log_error("", &EdgeError::CameraNotPresent);
+							continue;
+						};
+						let important_controls = camera.get_controls().stripped();
+						let configuration = Configuration::build_response(
+							view_config_req,
+							important_controls.serialise(),
+						);
+						let _ = websocket
+							.send_text("Configuration:".into(), configuration)
+							.await;
+					}
+				},
+				EdgeRequests::Setpoint(calibration_req) => {
+					if let Some(meta) = self.persistence.get_with_id(calibration_req.camera_id) {
+						meta.request_calibration();
+					}
+				},
+				EdgeRequests::SetProcessingType(processing_req) => {
+					requested_type = Some(processing_req.processing_type);
+				},
+			}
+		}
+		logger().lock().unwrap().send_logs();
 
-		//placeholder_config_request(&mut self.persistence);
+		websocket.keep_alive().await?;
 
-		//placeholder_send_config(&mut self.persistence);
+		let vision_processor = match requested_type {
+			Some(swap_to) => vision_processor.swap(swap_to),
+			None => vision_processor,
+		};
 
 		let batch_items = self.persistence.run_on_active(settings.clone());
 
@@ -65,10 +142,8 @@ impl Conductor {
 				Ok(batch) => items.push(batch),
 				Err((_, details)) => match details {
 					WhyNo::Disconnected(id) => {
-						let _ = self
-							.client
+						let _ = websocket
 							.send_text(
-								stream,
 								"UpdateCameraStatus:".into(),
 								UpdateCameraStatus {
 									camera_id: id,
@@ -78,10 +153,8 @@ impl Conductor {
 							.await;
 					},
 					WhyNo::Broken(id) => {
-						let _ = self
-							.client
+						let _ = websocket
 							.send_text(
-								stream,
 								"UpdateCameraStatus:".into(),
 								UpdateCameraStatus {
 									camera_id: id,
@@ -105,10 +178,8 @@ impl Conductor {
 			let deviation_maybe = item.state.get_deviation();
 			let camid = item.camera_id;
 			if let Some(deviation) = deviation_maybe {
-				let result = self
-					.client
+				let result = websocket
 					.send_text(
-						stream,
 						"ImageAnalysis:".into(),
 						ImageAnalysis {
 							camera_id: camid,
@@ -127,10 +198,7 @@ impl Conductor {
 
 			if item.send_to_server {
 				let mut encoded = Camera::encode_image(item.image.clone());
-				let result = self
-					.client
-					.send_image(stream, item.camera_id, &mut encoded)
-					.await;
+				let result = websocket.send_image(item.camera_id, &mut encoded).await;
 				let _ = result.inspect_err(|why| {
 					logger().lock().unwrap().log_error(
 						&format!("failed to image send to server: {why}"),
@@ -145,25 +213,7 @@ impl Conductor {
 		// This should guarantee that the loop will take at least this long.
 		limit_interval.tick().await;
 
-		Ok(settings)
-	}
-
-	async fn query_websockets(&mut self, settings: Settings, stream: &mut WebSocket) -> bool {
-		let mut interval = interval(settings.websocket_poll_interval);
-		tokio::select! {
-			Some(Ok(msg)) = stream.next() => {
-				match msg {
-					Message::Text(text) => {
-						println!("{}", text );
-						// TODO
-						self.client.websocket_incoming_data(&text).await;
-						true
-					}
-					_ => {true},
-				}
-			}
-			_ = interval.tick() => false
-		}
+		Ok((websocket, settings, vision_processor))
 	}
 }
 
@@ -181,109 +231,18 @@ impl Default for Conductor {
 
 /// Call this function to begin the system.
 pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	let mut websocket: Option<WebSocket> = None;
 	let mut settings: Option<Settings> = None;
 	let mut conductor = Conductor::default();
-
-	let mut stream = conductor.client.websocket_connect_manual().await;
+	let mut vision_processor = VisionVariant::default();
 
 	loop {
-		let loop_settings = placeholder_autoconnect(settings);
-		settings = Some(conductor.loop_once(loop_settings, &mut stream).await?)
+		let (loop_websocket, loop_settings) = connect_loop(websocket, settings).await;
+		let result = conductor
+			.loop_once(loop_websocket, loop_settings, vision_processor)
+			.await?;
+		websocket = Some(result.0);
+		settings = Some(result.1);
+		vision_processor = result.2;
 	}
-}
-
-// Not a proper spot for these, but they demontrate the general flow.
-
-// TODO: Place this in a more suitable module (not client).
-fn placeholder_autoconnect(settings: Option<Settings>) -> Settings {
-	let connection_established = true;
-
-	if !connection_established {
-		todo!("connect to the server");
-
-		#[allow(unreachable_code)]
-		placeholder_get_default_settings(settings);
-	}
-
-	Settings::default()
-}
-
-// TODO: Place this in a more suitable module (not client).
-fn placeholder_get_default_settings(settings: Option<Settings>) -> Settings {
-	// TODO: Get the default settings from the server
-	// Build the settings struct from the received data.
-	// If the server fails to send correct settings, use Settings::default() as
-	// a fallback and report the issue to the server in as much detail as
-	// possible.
-	Settings::default()
-}
-
-fn placeholder_config_request(persistence: &mut Persistence) {
-	// TODO: Check if we have a request to modify camera config.
-	let example = Configuration {
-			camera_id: 598275214,
-			conn_id: 12,
-			configuration: "{\"Saturation\":{\"IntegerRange\":{\"control_type\":\"Saturation\",\"value\":64,\"default\":64,\"step\":1,\"min\":0,\"max\":128}},\"Brightness\":{\"IntegerRange\":{\"control_type\":\"Brightness\",\"value\":0,\"default\":0,\"step\":1,\"min\":-64,\"max\":64}},\"Contrast\":{\"IntegerRange\":{\"control_type\":\"Contrast\",\"value\":32,\"default\":32,\"step\":1,\"min\":0,\"max\":64}},\"Gain\":{\"IntegerRange\":{\"control_type\":\"Gain\",\"value\":0,\"default\":0,\"step\":1,\"min\":0,\"max\":100}},\"Gamma\":{\"IntegerRange\":{\"control_type\":\"Gamma\",\"value\":100,\"default\":100,\"step\":1,\"min\":72,\"max\":500}},\"Hue\":{\"IntegerRange\":{\"control_type\":\"Hue\",\"value\":0,\"default\":0,\"step\":1,\"min\":-40,\"max\":40}}}".into(),
-		};
-	for (id, entry) in persistence.inner().iter_mut() {
-		if id.calculate_hash() == example.camera_id {
-			let Some(camera) = entry.camera_mut() else {
-				logger()
-					.lock()
-					.unwrap()
-					.log_error("", &EdgeError::CameraNotPresent);
-				break;
-			};
-			match serde_json::from_str(&example.configuration) {
-				Ok(map) => {
-					if let Err(why) = camera.set_controls(map) {
-						logger()
-							.lock()
-							.unwrap()
-							.log_error("Failed to set requested cntrols from server", &why);
-					};
-				},
-				Err(why) => {
-					logger().lock().unwrap().log_error(
-						"Failed to parse requested configuration",
-						&EdgeError::DecodeControls { reason: why },
-					);
-				},
-			};
-
-			logger()
-				.lock()
-				.unwrap()
-				.log_info("We've found the correct camera by id");
-			break;
-		}
-	}
-	logger().lock().unwrap().send_logs();
-}
-
-fn placeholder_send_config(persistence: &mut Persistence) {
-	// TODO: Check if we should send a camera config.
-	let example = ViewCameraConfig {
-		camera_id: 9825723522,
-		conn_id: 21,
-	};
-	for (id, entry) in persistence.inner().iter_mut() {
-		if id.calculate_hash() == example.camera_id {
-			let Some(camera) = entry.camera() else {
-				logger()
-					.lock()
-					.unwrap()
-					.log_error("", &EdgeError::CameraNotPresent);
-				break;
-			};
-			let important_controls = camera.get_controls().stripped();
-			let configuration =
-				Configuration::build_response(example, important_controls.serialise());
-			//self.client
-			//	.send_configuration(stream, configuration)
-			//	.await?;
-			break;
-		}
-	}
-	logger().lock().unwrap().send_logs();
 }
