@@ -68,7 +68,14 @@ pub async fn websocket_connect_automatic() -> Result<String> {
 			Ok(Ok(a)) => {
 				if a.1 == "This is an API for the laser intensity analysis project" {
 					let idk = a.0;
-					let please = idk.rsplit("/").skip(1).collect::<Vec<_>>().join("");
+					let please = idk
+						.rsplit("/")
+						.skip(1)
+						.collect::<Vec<_>>()
+						.into_iter()
+						.rev()
+						.collect::<Vec<_>>()
+						.join("");
 					return Ok(please);
 				}
 			},
