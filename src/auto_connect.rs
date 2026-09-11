@@ -113,8 +113,9 @@ async fn new_connection() -> (WebSocket, Settings) {
 }
 
 async fn try_connect_once() -> Result<(WebSocket, Settings)> {
-	let url = websocket_connect_automatic().await?;
-	let (stream, _) = connect_async(url.clone())
+	//let url = websocket_connect_automatic().await?;
+	let url = "http://127.0.0.1:8080/edge_ws";
+	let (stream, _) = connect_async(url)
 		.await
 		.map_err(|_| EdgeError::AutoConnect)?;
 	let return_websocket = WebSocket::new(stream);
