@@ -25,7 +25,7 @@ type InitialiseWasSuccessful = bool;
 
 /// Information about a camera device that persists after the device is
 /// disconnected.
-pub struct Metadata {
+pub struct PerpetualInfo {
 	// ==== Persistent data ====
 	/// A user configurable name for this camera.
 	///
@@ -56,7 +56,7 @@ pub struct Metadata {
 	vision_state: Option<VisionState>,
 }
 
-impl Metadata {
+impl PerpetualInfo {
 	/// Get the current status of this camera.
 	pub fn status(&self) -> CameraStatus {
 		self.status
@@ -239,7 +239,7 @@ impl Metadata {
 	}
 }
 
-impl Default for Metadata {
+impl Default for PerpetualInfo {
 	fn default() -> Self {
 		Self {
 			name: String::from("unnamed camera"),
@@ -260,7 +260,7 @@ mod tests {
 
 	#[test]
 	fn default_values_as_expected() {
-		let meta = Metadata::default();
+		let meta = PerpetualInfo::default();
 		assert_eq!(meta.name, String::from("unnamed camera"));
 		assert_eq!(meta.status, CameraStatus::Uninitialised);
 		assert_eq!(meta.currently_viewed, false);
@@ -271,7 +271,7 @@ mod tests {
 
 	#[test]
 	fn name_set_and_read() {
-		let mut meta = Metadata::default();
+		let mut meta = PerpetualInfo::default();
 		assert_eq!(meta.name, String::from("unnamed camera"));
 		meta.name = String::from("test_name");
 		assert_eq!(meta.name, String::from("test_name"));
@@ -279,7 +279,7 @@ mod tests {
 
 	#[test]
 	fn status_set_and_read() {
-		let mut meta = Metadata::default();
+		let mut meta = PerpetualInfo::default();
 		assert_eq!(meta.status, CameraStatus::Uninitialised);
 		meta.status = CameraStatus::Active;
 		assert_eq!(meta.status(), CameraStatus::Active);
@@ -287,7 +287,7 @@ mod tests {
 
 	#[test]
 	fn currently_viewed_set_and_read() {
-		let mut meta = Metadata::default();
+		let mut meta = PerpetualInfo::default();
 		assert_eq!(meta.currently_viewed, false);
 		meta.currently_viewed = true;
 		assert_eq!(meta.currently_viewed, true);
@@ -295,7 +295,7 @@ mod tests {
 
 	#[test]
 	fn err_accumulation_add() {
-		let mut meta = Metadata::default();
+		let mut meta = PerpetualInfo::default();
 		assert_eq!(meta.err_accumulation, 0);
 		meta.add_error(2);
 		meta.add_error(2);
@@ -304,7 +304,7 @@ mod tests {
 
 	#[test]
 	fn indices_check_and_insert() {
-		let mut meta = Metadata::default();
+		let mut meta = PerpetualInfo::default();
 		assert!(meta.indices.is_none());
 		assert!(!meta.indices_has(0));
 		assert!(meta.try_insert_index(0));
@@ -317,7 +317,7 @@ mod tests {
 	#[test]
 	#[ignore = "requires a camera device to be connected"]
 	fn camera_add() {
-		let mut meta = Metadata::default();
+		let mut meta = PerpetualInfo::default();
 		assert!(meta.camera.is_none());
 		let camera = CameraDevice::new(0).expect("a valid camera device must exist at index 0");
 		meta.add_camera(camera);
@@ -327,7 +327,7 @@ mod tests {
 	#[test]
 	#[ignore = "requires a camera device to be connected"]
 	fn camera_remove() {
-		let mut meta = Metadata::default();
+		let mut meta = PerpetualInfo::default();
 		assert!(meta.camera.is_none());
 		let camera = CameraDevice::new(0).expect("a valid camera device must exist at index 0");
 		meta.add_camera(camera);

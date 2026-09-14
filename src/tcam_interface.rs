@@ -4,12 +4,12 @@
 mod camera_device;
 pub mod controls;
 mod identifier;
-mod metadata;
+mod perpetual_info;
 mod persistence;
 
 pub use camera_device::CameraDevice;
 pub use identifier::Identifier;
-pub use metadata::Metadata;
+pub use perpetual_info::PerpetualInfo;
 pub use persistence::Persistence;
 use server_edge_datatypes::shared::CameraId;
 

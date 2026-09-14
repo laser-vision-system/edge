@@ -9,10 +9,10 @@ use server_edge_datatypes::{
 
 use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
 
-use super::{CameraDevice, Identifier, Metadata, WhyNo};
+use super::{CameraDevice, Identifier, PerpetualInfo, WhyNo};
 
 /// The internal mapping type.
-type MapType = HashMap<Identifier, Metadata>;
+type MapType = HashMap<Identifier, PerpetualInfo>;
 
 /// Persistence data for camera devices.
 ///
@@ -54,16 +54,16 @@ impl Persistence {
 		Some((hashed_id, device))
 	}
 
-	/// Get the [`Metadata`] for a device by its identifier.
+	/// Get the [`PerpetualInfo`] for a device by its identifier.
 	///
 	/// Create a new entry if it does not exist.
-	fn contrast(&mut self, ident: Identifier) -> &mut Metadata {
+	fn contrast(&mut self, ident: Identifier) -> &mut PerpetualInfo {
 		// Is the entry occupied?
 		self.inner.entry(ident).or_insert_with(|| {
 			// TODO: Save to log.
 			// Create new metadata struct.
 			// Insert metadata into Persistence.
-			Metadata::default()
+			PerpetualInfo::default()
 		})
 	}
 
@@ -82,14 +82,17 @@ impl Persistence {
 	}
 
 	/// Filter peristence with an arbitrary function.
-	pub fn filter_by(&mut self, filter: Box<dyn Fn(&Metadata) -> bool>) -> Vec<&mut Metadata> {
+	pub fn filter_by(
+		&mut self,
+		filter: Box<dyn Fn(&PerpetualInfo) -> bool>,
+	) -> Vec<&mut PerpetualInfo> {
 		self.inner
 			.values_mut()
 			.filter(|metadata| filter(metadata))
 			.collect()
 	}
 
-	pub fn get_with_id(&mut self, ident: CameraId) -> Option<&mut Metadata> {
+	pub fn get_with_id(&mut self, ident: CameraId) -> Option<&mut PerpetualInfo> {
 		self.inner
 			.iter_mut()
 			.filter_map(|(key, val)| if *key == ident { Some(val) } else { None })
@@ -115,7 +118,7 @@ impl Persistence {
 
 	fn on_active_camera(
 		id: CameraId,
-		metadata: &mut Metadata,
+		metadata: &mut PerpetualInfo,
 		settings: Settings,
 	) -> std::result::Result<BatchItem<'_>, (EdgeError, WhyNo)> {
 		let image = match Self::imahe_glgo(id, metadata, settings) {
@@ -138,7 +141,7 @@ impl Persistence {
 
 	fn imahe_glgo(
 		id: CameraId,
-		metadata: &mut Metadata,
+		metadata: &mut PerpetualInfo,
 		settings: Settings,
 	) -> std::result::Result<RgbImage, (EdgeError, WhyNo)> {
 		match metadata.get_image(settings.clone()) {
@@ -147,7 +150,7 @@ impl Persistence {
 		}
 	}
 
-	fn on_error(id: CameraId, metadata: &mut Metadata, settings: Settings) -> WhyNo {
+	fn on_error(id: CameraId, metadata: &mut PerpetualInfo, settings: Settings) -> WhyNo {
 		metadata.add_error(settings.camera_err_increment);
 
 		if metadata.err_accumulation() < settings.camera_err_threshold {

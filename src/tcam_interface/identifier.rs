@@ -1,8 +1,8 @@
 //! A unique identifier for a camera device.
 //!
 //! This will match both the actual camera device, as well as any metadata
-//! devices. Additionally, if an identical device is plugged into the same port
-//! as a previous device, it will be treated as the same device.
+//! devices. Additionally, if a different, but identical device is plugged into
+//! the same port as a previous device, it will be treated as the same device.
 //!
 //! Note that the device index is not used. This is because the index is not
 //! retained when a device is unplugged. There might be a way to enable this
