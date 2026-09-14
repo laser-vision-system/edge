@@ -1,3 +1,5 @@
+mod perpetual_info;
+
 use std::collections::HashMap;
 
 use image::RgbImage;
@@ -9,7 +11,9 @@ use server_edge_datatypes::{
 
 use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
 
-use super::{CameraDevice, Identifier, PerpetualInfo, WhyNo};
+pub use self::perpetual_info::PerpetualInfo;
+
+use super::{CameraDevice, Identifier, WhyNo};
 
 /// The internal mapping type.
 type MapType = HashMap<Identifier, PerpetualInfo>;
