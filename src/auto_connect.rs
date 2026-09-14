@@ -28,6 +28,14 @@ impl AddressComp {
 			endpoint,
 		}
 	}
+	fn local_host() -> Self {
+		Self::new(
+			"http://".to_string(),
+			"127.0.0.1".to_string(),
+			":8080".to_string(),
+			"/is_api".to_string()
+		)
+	}
 }
 
 impl fmt::Display for AddressComp {
@@ -43,14 +51,10 @@ impl fmt::Display for AddressComp {
 async fn identify_network() -> Result<Vec<AddressComp>> {
 	let host_interfaces = interfaces();
 	let host_active_interfaces = host_interfaces.iter().filter(|network| !network.ips.is_empty() && network.is_up() == true).collect::<Vec<_>>();
-	let mut network_addresses = Vec::new();
+	let mut network_addresses = Vec::with_capacity(host_active_interfaces.len());
 	for interface in host_active_interfaces {
 		if interface.is_loopback() == true {
-			network_addresses.push(AddressComp::new(
-				"http://".to_string(),
-				"127.0.0.1".to_string(),
-				":8080".to_string(),
-				"/is_api".to_string(),));
+			network_addresses.push(AddressComp::local_host());
 			continue
 		}
 		if !interface.ips.is_empty() && interface.is_up() == true {
@@ -70,7 +74,6 @@ async fn identify_network() -> Result<Vec<AddressComp>> {
 		Err(EdgeError::IdentifyNetwork)
 	}
 }
-
 
 pub async fn websocket_connect_automatic() -> Result<String> {
 	let client = Client::new();
