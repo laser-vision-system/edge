@@ -41,19 +41,18 @@ impl Persistence {
 
 	/// Attempt to create a new device from a device info entry.
 	fn try_create_device(&mut self, info: CameraInfo) -> Option<(CameraId, NewCameraInfo)> {
-		// Create identifier.
 		let identifier = Identifier::from(info.clone());
 		// TODO: Save to log.
 
-		// Contrast against Persistence.
-		let metadata = self.contrast(identifier.clone());
+		let entry = self.contrast(identifier.clone());
+		// New devices will be the `Uninitialised` variant here.
 		let index = info
 			.index()
 			.clone()
 			.as_index()
 			.expect("index should always be a number");
 		let is_metadata = info.is_metadata();
-		let device = metadata.try_register_device(index, is_metadata)?;
+		let device = entry.try_register_device(index, is_metadata)?;
 		let hashed_id: CameraId = identifier.calculate_hash();
 		Some((hashed_id, device))
 	}
@@ -62,11 +61,8 @@ impl Persistence {
 	///
 	/// Create a new entry if it does not exist.
 	fn contrast(&mut self, ident: Identifier) -> &mut PerpetualInfo {
-		// Is the entry occupied?
 		self.inner.entry(ident).or_insert_with(|| {
 			// TODO: Save to log.
-			// Create new metadata struct.
-			// Insert metadata into Persistence.
 			PerpetualInfo::default()
 		})
 	}
@@ -78,8 +74,6 @@ impl Persistence {
 	/// Poll all devices to instantiate newly connected cameras.
 	///
 	/// Returns a list of information about newly added cameras.
-	///
-	/// IDEA: The return type could be made into an explicit type.
 	pub fn poll_for_new_cameras(&mut self) -> HashMap<CameraId, NewCameraInfo> {
 		let all_devices = CameraDevice::query_for_available_cameras();
 		self.get_new_from_all(all_devices)
@@ -92,7 +86,7 @@ impl Persistence {
 	) -> Vec<&mut PerpetualInfo> {
 		self.inner
 			.values_mut()
-			.filter(|metadata| filter(metadata))
+			.filter(|entry| filter(entry))
 			.collect()
 	}
 
@@ -110,10 +104,10 @@ impl Persistence {
 		let batch: Vec<_> = self
 			.inner
 			.iter_mut()
-			.filter(|(_, metadata)| metadata.status() == CameraStatus::Active)
-			.map(|(ident, active_metadata)| {
+			.filter(|(_, entry)| entry.status() == CameraStatus::Active)
+			.map(|(ident, active_entry)| {
 				let id = ident.calculate_hash();
-				Self::on_active_camera(id, active_metadata, settings.clone())
+				Self::on_active_camera(id, active_entry, settings.clone())
 			})
 			.collect();
 
@@ -122,10 +116,10 @@ impl Persistence {
 
 	fn on_active_camera(
 		id: CameraId,
-		metadata: &mut PerpetualInfo,
+		entry: &mut PerpetualInfo,
 		settings: Settings,
 	) -> std::result::Result<BatchItem<'_>, (EdgeError, WhyNo)> {
-		let image = match Self::imahe_glgo(id, metadata, settings) {
+		let image = match Self::imahe_glgo(id, entry, settings) {
 			Ok(image) => image,
 			Err(why) => return Err(why),
 		};
@@ -135,34 +129,34 @@ impl Persistence {
 		logger().lock().unwrap().log_warn(&format!(
 			"Camera at id: {} has {} errors",
 			id,
-			metadata.err_accumulation()
+			entry.err_accumulation()
 		));
 
-		let batch = metadata.make_batch_item(image, id);
+		let batch = entry.make_batch_item(image, id);
 
 		Ok(batch)
 	}
 
 	fn imahe_glgo(
 		id: CameraId,
-		metadata: &mut PerpetualInfo,
+		entry: &mut PerpetualInfo,
 		settings: Settings,
 	) -> std::result::Result<RgbImage, (EdgeError, WhyNo)> {
-		match metadata.get_image(settings.clone()) {
+		match entry.get_image(settings.clone()) {
 			Ok(image) => Ok(image),
-			Err(why) => Err((why, Self::on_error(id, metadata, settings))),
+			Err(why) => Err((why, Self::on_error(id, entry, settings))),
 		}
 	}
 
-	fn on_error(id: CameraId, metadata: &mut PerpetualInfo, settings: Settings) -> WhyNo {
-		metadata.add_error(settings.camera_err_increment);
+	fn on_error(id: CameraId, entry: &mut PerpetualInfo, settings: Settings) -> WhyNo {
+		entry.add_error(settings.camera_err_increment);
 
-		if metadata.err_accumulation() < settings.camera_err_threshold {
-			metadata.status = CameraStatus::Disconnected;
+		if entry.err_accumulation() < settings.camera_err_threshold {
+			entry.status = CameraStatus::Disconnected;
 			logger().lock().unwrap().log_warn("disconnetcted");
 			return WhyNo::Disconnected(id);
 		} else {
-			metadata.status = CameraStatus::Broken;
+			entry.status = CameraStatus::Broken;
 			logger().lock().unwrap().log_warn("bokrne");
 			return WhyNo::Broken(id);
 		}

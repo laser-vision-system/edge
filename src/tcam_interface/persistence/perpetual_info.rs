@@ -198,8 +198,6 @@ impl PerpetualInfo {
 		index: IndexType,
 		is_metadata: bool,
 	) -> Option<NewCameraInfo> {
-		// Does Metadata contain the index?
-		// Add index to Metadata.
 		if self.try_insert_index(index) {
 			return None;
 		}
