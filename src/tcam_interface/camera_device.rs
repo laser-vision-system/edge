@@ -26,11 +26,11 @@ use crate::logger;
 ///
 /// TODO: The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
 #[must_use]
-pub struct Camera {
+pub struct CameraDevice {
 	inner: nokhwa::StreamCamera,
 }
 
-impl Camera {
+impl CameraDevice {
 	pub fn new(index: u32) -> Result<Self> {
 		// TODO: Handle potential error cases.
 		let opened = open(CameraIndex::Index(index), OpenRequest::any()).map_err(|why| {
@@ -316,7 +316,7 @@ mod tests {
 
 	use super::*;
 
-	impl Termination for Camera {
+	impl Termination for CameraDevice {
 		fn report(self) -> ExitCode {
 			ExitCode::SUCCESS
 		}
@@ -324,7 +324,7 @@ mod tests {
 
 	#[test]
 	fn print_devices() {
-		let cameras = Camera::query_for_available_cameras();
+		let cameras = CameraDevice::query_for_available_cameras();
 
 		print!("Available devices: [\n");
 		for cam in cameras {
@@ -344,55 +344,55 @@ mod tests {
 	}
 
 	#[test]
-	fn new() -> Result<Camera> {
-		Camera::new(0)
+	fn new() -> Result<CameraDevice> {
+		CameraDevice::new(0)
 	}
 
 	#[test]
 	fn print_camera_details() {
-		let cam = Camera::new(0).unwrap();
+		let cam = CameraDevice::new(0).unwrap();
 		println!("{:#?}", cam.inner.info());
 	}
 
 	// Can't implement `Termination` for `RgbImage`.
 	#[test]
 	fn get_frame() {
-		let mut cam = Camera::new(0).unwrap();
+		let mut cam = CameraDevice::new(0).unwrap();
 		let _ = cam.get_frame().unwrap();
 		let _ = cam.get_frame().unwrap();
 	}
 
 	#[test]
 	fn decode_image() {
-		let mut cam = Camera::new(0).unwrap();
+		let mut cam = CameraDevice::new(0).unwrap();
 		let frame = cam.get_frame().unwrap();
 		let _ = cam.decode_image(frame);
 	}
 
 	#[test]
 	fn get_raw_controls() {
-		let cam = Camera::new(0).unwrap();
+		let cam = CameraDevice::new(0).unwrap();
 		let c = cam.get_raw_controls();
 		println!("{c:#?}");
 	}
 
 	#[test]
 	fn get_all_available_controls() {
-		let cam = Camera::new(0).unwrap();
+		let cam = CameraDevice::new(0).unwrap();
 		let c = cam.get_controls();
 		println!("{c}");
 	}
 
 	#[test]
 	fn get_stripped_controls() {
-		let cam = Camera::new(0).unwrap();
+		let cam = CameraDevice::new(0).unwrap();
 		let c = cam.get_controls().stripped();
 		println!("{c}");
 	}
 
 	#[test]
 	fn set_control() -> Result<()> {
-		let mut cam = Camera::new(0).unwrap();
+		let mut cam = CameraDevice::new(0).unwrap();
 		let id = KnownCameraControl::Brightness;
 
 		// Assume it will always be this variant.
@@ -425,7 +425,7 @@ mod tests {
 
 	#[test]
 	fn set_control_exposure() -> Result<()> {
-		let mut cam = Camera::new(0).unwrap();
+		let mut cam = CameraDevice::new(0).unwrap();
 		let id = KnownCameraControl::AutoExposure;
 		let desired = 1;
 
@@ -470,7 +470,7 @@ mod tests {
 
 	#[test]
 	fn reset_controls_to_default() {
-		let mut cam = Camera::new(0).unwrap();
+		let mut cam = CameraDevice::new(0).unwrap();
 		cam.reset_controls_to_default();
 	}
 }
@@ -508,7 +508,7 @@ mod nokhwa_test {
 	#[test]
 	fn main() {
 		println!("\t==== NOKHWA TEST ====");
-		let cameras = super::Camera::query_for_available_cameras();
+		let cameras = super::CameraDevice::query_for_available_cameras();
 		print_available_camera_info(&cameras);
 		let first_camera = cameras.first().unwrap();
 		print_camera_details(first_camera);

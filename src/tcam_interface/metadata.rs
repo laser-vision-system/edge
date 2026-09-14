@@ -12,7 +12,7 @@ use crate::{
 	vision_processor::{BatchItem, VisionInterface, VisionState, vision},
 };
 
-use super::Camera;
+use super::CameraDevice;
 
 type ErrAccType = u16;
 // IDEA: Use nokhwa's internal `CameraIndex` type.
@@ -50,7 +50,7 @@ pub struct Metadata {
 	/// All of the indicies that the camera is occupying.
 	indices: Option<HashSet<IndexType>>,
 	/// The camera device where images are pulled from.
-	camera: Option<Camera>,
+	camera: Option<CameraDevice>,
 	/// Local holding of the vision processor state.
 	/// TODO: Use.
 	vision_state: Option<VisionState>,
@@ -106,12 +106,12 @@ impl Metadata {
 	}
 
 	/// Get a reference to the current camera (if connected).
-	pub fn camera(&self) -> Option<&Camera> {
+	pub fn camera(&self) -> Option<&CameraDevice> {
 		self.camera.as_ref()
 	}
 
 	/// Get a mutable reference to the current camera (if connected).
-	pub fn camera_mut(&mut self) -> Option<&mut Camera> {
+	pub fn camera_mut(&mut self) -> Option<&mut CameraDevice> {
 		self.camera.as_mut()
 	}
 
@@ -154,7 +154,7 @@ impl Metadata {
 	/// Add a camera instance to this this structure.
 	///
 	/// This will drop an existing camera. Should it check first?
-	fn add_camera(&mut self, camera: Camera) {
+	fn add_camera(&mut self, camera: CameraDevice) {
 		self.camera.replace(camera);
 	}
 
@@ -162,7 +162,7 @@ impl Metadata {
 	///
 	/// TODO: Finish implementing; refer to edge flow logic diagram.
 	fn initialise_camera(&mut self, index: u32) -> InitialiseWasSuccessful {
-		let cam_res = Camera::new(index);
+		let cam_res = CameraDevice::new(index);
 		match cam_res {
 			Err(_why) => {
 				logger::logger()
@@ -319,7 +319,7 @@ mod tests {
 	fn camera_add() {
 		let mut meta = Metadata::default();
 		assert!(meta.camera.is_none());
-		let camera = Camera::new(0).expect("a valid camera device must exist at index 0");
+		let camera = CameraDevice::new(0).expect("a valid camera device must exist at index 0");
 		meta.add_camera(camera);
 		assert!(meta.camera().is_some());
 	}
@@ -329,7 +329,7 @@ mod tests {
 	fn camera_remove() {
 		let mut meta = Metadata::default();
 		assert!(meta.camera.is_none());
-		let camera = Camera::new(0).expect("a valid camera device must exist at index 0");
+		let camera = CameraDevice::new(0).expect("a valid camera device must exist at index 0");
 		meta.add_camera(camera);
 		assert!(meta.camera().is_some());
 		assert!(meta.try_insert_index(0));

@@ -9,7 +9,7 @@ use server_edge_datatypes::{
 
 use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
 
-use super::{Camera, Identifier, Metadata, WhyNo};
+use super::{CameraDevice, Identifier, Metadata, WhyNo};
 
 /// The internal mapping type.
 type MapType = HashMap<Identifier, Metadata>;
@@ -77,7 +77,7 @@ impl Persistence {
 	///
 	/// IDEA: The return type could be made into an explicit type.
 	pub fn poll_for_new_cameras(&mut self) -> HashMap<CameraId, NewCameraInfo> {
-		let all_devices = Camera::query_for_available_cameras();
+		let all_devices = CameraDevice::query_for_available_cameras();
 		self.get_new_from_all(all_devices)
 	}
 

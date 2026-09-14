@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use edge::{
-	tcam_interface::Camera,
+	tcam_interface::CameraDevice,
 	vision_processor::{BatchItem, Demonstration, VisionInterface, VisionState},
 };
 use image::RgbImage;
@@ -58,7 +58,7 @@ impl Context {
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut context = Context::new()?;
-	let mut camera = Camera::new(0)?;
+	let mut camera = CameraDevice::new(0)?;
 
 	let mut incr: u8 = 0;
 

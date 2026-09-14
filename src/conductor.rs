@@ -9,7 +9,7 @@ use crate::{
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
-	tcam_interface::{Camera, Persistence, WhyNo},
+	tcam_interface::{CameraDevice, Persistence, WhyNo},
 	vision_processor::{VisionInterface, VisionVariant, vision},
 	websocket::WebSocket,
 };
@@ -195,7 +195,7 @@ impl Conductor {
 			};
 
 			if item.send_to_server {
-				let mut encoded = Camera::encode_image(item.image.clone());
+				let mut encoded = CameraDevice::encode_image(item.image.clone());
 				let result = websocket.send_image(item.camera_id, &mut encoded).await;
 				let _ = result.inspect_err(|why| {
 					logger().lock().unwrap().log_error(
