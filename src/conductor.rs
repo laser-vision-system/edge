@@ -35,14 +35,16 @@ impl Conductor {
 		// This function detects new cameras and instantiates them.
 		let new_cameras = self.persistence.poll_for_new_cameras();
 
-		websocket
-			.send_text(
-				"RegisterCameras:".into(),
-				RegisterCameras {
-					cameras: new_cameras,
-				},
-			)
-			.await?;
+		if !new_cameras.is_empty() {
+			websocket
+				.send_text(
+					"RegisterCameras:".into(),
+					RegisterCameras {
+						cameras: new_cameras,
+					},
+				)
+				.await?;
+		}
 
 		let mut requested_type = None;
 

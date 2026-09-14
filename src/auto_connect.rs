@@ -41,41 +41,36 @@ impl fmt::Display for AddressComp {
 }
 
 async fn identify_network() -> Result<Vec<AddressComp>> {
-	let all_interfaces = interfaces();
-	let default_interface = all_interfaces
-		.iter()
-		.find(|e| e.is_up() && !e.is_loopback() && !e.ips.is_empty());
-
-	match default_interface {
-		Some(interface) => {
-			let mut network_addresses = Vec::new();
-			for networks in interface.ips.iter() {
-				if networks.is_ipv4() == true {
-					for raw_address in networks.iter() {
-						if raw_address.is_ipv4() == true {
-							let url = AddressComp::new(
-								"http://".to_string(),
-								raw_address.to_string(),
-								":8080".to_string(),
-								"/is_api".to_string(),
-							);
-							network_addresses.push(url);
-						}
-					}
-				}
-			}
-			Ok(network_addresses)
-		},
-		None => {
-			let err = EdgeError::IdentifyNetwork;
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("Error while finding the default interface.", &err);
-			Err(err)
-		},
+	let host_interfaces = interfaces();
+	let host_active_interfaces = host_interfaces.iter().filter(|network| !network.ips.is_empty() && network.is_up() == true).collect::<Vec<_>>();
+	let mut network_addresses = Vec::new();
+	for interface in host_active_interfaces {
+		if interface.is_loopback() == true {
+			network_addresses.push(AddressComp::new(
+				"http://".to_string(),
+				"127.0.0.1".to_string(),
+				":8080".to_string(),
+				"/is_api".to_string(),));
+			continue
+		}
+		if !interface.ips.is_empty() && interface.is_up() == true {
+			let _interface = interface.ips.iter()
+				.filter(|ip| ip.is_ipv4() == true)
+				.map(|ip| network_addresses.push(AddressComp::new(
+					"http://".to_string(),
+					"127.0.0.1".to_string(),
+					":8080".to_string(),
+					"/is_api".to_string(),)));
+		}
+	}
+	if network_addresses.len() > 0 {
+		Ok(network_addresses.clone())
+	}
+	else {
+		Err(EdgeError::IdentifyNetwork)
 	}
 }
+
 
 pub async fn websocket_connect_automatic() -> Result<String> {
 	let client = Client::new();
