@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{collections::HashSet, fmt};
 
 use crate::logger::logger;
 use crate::{
@@ -11,7 +11,7 @@ use server_edge_datatypes::edge::Settings;
 use tokio::task::JoinSet;
 use tokio_tungstenite::connect_async;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct AddressComp {
 	protocol: String,
 	host: String,
@@ -48,15 +48,12 @@ impl fmt::Display for AddressComp {
 	}
 }
 
-async fn identify_network() -> Vec<AddressComp> {
-	let mut network_addresses = Vec::new();
-	network_addresses.push(AddressComp::local_host());
-
-	let mut wee = interfaces()
+async fn identify_network() -> HashSet<AddressComp> {
+	let mut network_addresses = interfaces()
 		.into_iter()
 		.filter(|network| network.is_up() && !network.is_loopback() && !network.ips.is_empty())
 		.flat_map(|network| network.ips)
-		.filter(|ip| ip.is_ipv4())
+		.filter(|ip| ip.is_ipv4() && ip.prefix() >= 24)
 		.flat_map(|ip| ip.iter())
 		.map(|ip| {
 			AddressComp::new(
@@ -66,9 +63,8 @@ async fn identify_network() -> Vec<AddressComp> {
 				"/is_api".to_string(),
 			)
 		})
-		.collect::<Vec<_>>();
-
-	network_addresses.append(&mut wee);
+		.collect::<HashSet<_>>();
+	network_addresses.insert(AddressComp::local_host());
 
 	network_addresses
 }
@@ -93,7 +89,7 @@ async fn get_response(url: AddressComp, client: Client) -> Result<WebSocketRespo
 	Ok(WebSocketResponse { url, message })
 }
 
-async fn get_websocket_url(urls: Vec<AddressComp>) -> Result<String> {
+async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 	let client = Client::new();
 	let mut set = JoinSet::new();
 
