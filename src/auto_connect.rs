@@ -48,8 +48,11 @@ impl fmt::Display for AddressComp {
 	}
 }
 
-async fn identify_network() -> Result<Vec<AddressComp>> {
-	let mut network_addresses = interfaces()
+async fn identify_network() -> Vec<AddressComp> {
+	let mut network_addresses = Vec::new();
+	network_addresses.push(AddressComp::local_host());
+
+	let mut wee = interfaces()
 		.into_iter()
 		.filter(|network| network.is_up() && !network.is_loopback() && !network.ips.is_empty())
 		.flat_map(|network| network.ips)
@@ -65,13 +68,9 @@ async fn identify_network() -> Result<Vec<AddressComp>> {
 		})
 		.collect::<Vec<_>>();
 
-	network_addresses.push(AddressComp::local_host());
+	network_addresses.append(&mut wee);
 
-	if network_addresses.len() > 0 {
-		Ok(network_addresses.clone())
-	} else {
-		Err(EdgeError::IdentifyNetwork)
-	}
+	network_addresses
 }
 
 struct WebSocketResponse {
@@ -153,7 +152,7 @@ async fn loop_until_connection() -> (WebSocket, Settings) {
 }
 
 async fn try_connect_once() -> Result<(WebSocket, Settings)> {
-	let urls = identify_network().await?;
+	let urls = identify_network().await;
 	let websocket_url = get_websocket_url(urls).await?;
 	let (stream, _) =
 		connect_async(websocket_url.clone())
