@@ -5,7 +5,7 @@ use server_edge_datatypes::{
 use tokio::time::interval;
 
 use crate::{
-	auto_connect::connect_loop,
+	auto_connect::assert_connection,
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
@@ -249,7 +249,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let mut vision_processor = VisionVariant::default();
 
 	loop {
-		let (loop_websocket, loop_settings) = connect_loop(websocket, settings).await;
+		let (loop_websocket, loop_settings) = assert_connection(websocket, settings).await;
 		let result = conductor
 			.loop_once(loop_websocket, loop_settings, vision_processor)
 			.await?;
