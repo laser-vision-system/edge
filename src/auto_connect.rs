@@ -54,10 +54,11 @@ async fn identify_network() -> Result<Vec<AddressComp>> {
 		.filter(|network| network.is_up() && !network.is_loopback() && !network.ips.is_empty())
 		.flat_map(|network| network.ips)
 		.filter(|ip| ip.is_ipv4())
+		.flat_map(|ip| ip.iter())
 		.map(|ip| {
 			AddressComp::new(
 				"http://".to_string(),
-				ip.ip().to_string(),
+				ip.to_string(),
 				":8080".to_string(),
 				"/is_api".to_string(),
 			)
