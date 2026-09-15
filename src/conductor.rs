@@ -1,6 +1,6 @@
 use server_edge_datatypes::{
 	edge::{EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
-	shared::{CameraStatus, Configuration},
+	shared::{CameraStatus, Configuration, VisionTechnique},
 };
 use tokio::time::interval;
 
@@ -35,14 +35,16 @@ impl Conductor {
 		// This function detects new cameras and instantiates them.
 		let new_cameras = self.persistence.poll_for_new_cameras();
 
-		websocket
-			.send_text(
-				"RegisterCameras:".into(),
-				RegisterCameras {
-					cameras: new_cameras,
-				},
-			)
-			.await?;
+		if !new_cameras.is_empty() {
+			websocket
+				.send_text(
+					"RegisterCameras:".into(),
+					RegisterCameras {
+						cameras: new_cameras,
+					},
+				)
+				.await?;
+		}
 
 		let mut requested_type = None;
 
@@ -50,77 +52,8 @@ impl Conductor {
 			.query_websockets(settings.websocket_poll_interval)
 			.await
 		{
-			match request {
-				EdgeRequests::SetNameCamera(cam_name_req) => {
-					if let Some(meta) = self.persistence.get_mut(cam_name_req.camera_id) {
-						meta.name = cam_name_req.name
-					}
-				},
-				EdgeRequests::StartViewingCamera(start_view_cam_req) => {
-					if let Some(meta) = self.persistence.get_mut(start_view_cam_req.camera_id) {
-						meta.currently_viewed = true
-					}
-				},
-				EdgeRequests::StopViewingCamera(stop_view_cam_req) => {
-					if let Some(meta) = self.persistence.get_mut(stop_view_cam_req.camera_id) {
-						meta.currently_viewed = false
-					}
-				},
-				EdgeRequests::Configuration(set_config_req) => {
-					if let Some(meta) = self.persistence.get_mut(set_config_req.camera_id) {
-						let Some(camera) = meta.camera_mut() else {
-							continue;
-						};
-						logger()
-							.lock()
-							.unwrap()
-							.log_error("", &EdgeError::CameraNotPresent);
-						match serde_json::from_str(&set_config_req.configuration) {
-							Ok(map) => {
-								if let Err(why) = camera.set_controls(map) {
-									logger().lock().unwrap().log_error(
-										"Failed to set requested cntrols from server",
-										&why,
-									);
-								};
-							},
-							Err(why) => {
-								logger().lock().unwrap().log_error(
-									"Failed to parse requested configuration",
-									&EdgeError::DecodeControls { reason: why },
-								);
-							},
-						};
-					}
-				},
-				EdgeRequests::ViewCameraConfig(view_config_req) => {
-					if let Some(meta) = self.persistence.get_mut(view_config_req.camera_id) {
-						let Some(camera) = meta.get_camera() else {
-							logger()
-								.lock()
-								.unwrap()
-								.log_error("", &EdgeError::CameraNotPresent);
-							continue;
-						};
-						let important_controls = camera.get_controls().stripped();
-						let configuration = Configuration::build_response(
-							view_config_req,
-							important_controls.serialise(),
-						);
-						let _ = websocket
-							.send_text("Configuration:".into(), configuration)
-							.await;
-					}
-				},
-				EdgeRequests::Setpoint(calibration_req) => {
-					if let Some(meta) = self.persistence.get_mut(calibration_req.camera_id) {
-						meta.request_calibration();
-					}
-				},
-				EdgeRequests::SetProcessingType(processing_req) => {
-					requested_type = Some(processing_req.processing_type);
-				},
-			}
+			self.handle_request(request, &mut websocket, &mut requested_type)
+				.await;
 		}
 		logger().lock().unwrap().send_logs();
 
@@ -217,6 +150,85 @@ impl Conductor {
 		limit_interval.tick().await;
 
 		Ok((websocket, settings, vision_processor))
+	}
+
+	async fn handle_request(
+		&mut self,
+		request: EdgeRequests,
+		websocket: &mut WebSocket,
+		requested_type: &mut Option<VisionTechnique>,
+	) {
+		match request {
+			EdgeRequests::SetNameCamera(cam_name_req) => {
+				if let Some(meta) = self.persistence.get_mut(cam_name_req.camera_id) {
+					meta.name = cam_name_req.name
+				}
+			},
+			EdgeRequests::StartViewingCamera(start_view_cam_req) => {
+				if let Some(meta) = self.persistence.get_mut(start_view_cam_req.camera_id) {
+					meta.currently_viewed = true
+				}
+			},
+			EdgeRequests::StopViewingCamera(stop_view_cam_req) => {
+				if let Some(meta) = self.persistence.get_mut(stop_view_cam_req.camera_id) {
+					meta.currently_viewed = false
+				}
+			},
+			EdgeRequests::Configuration(set_config_req) => {
+				if let Some(meta) = self.persistence.get_mut(set_config_req.camera_id) {
+					let Some(camera) = meta.camera_mut() else {
+						return;
+					};
+					logger()
+						.lock()
+						.unwrap()
+						.log_error("", &EdgeError::CameraNotPresent);
+					match serde_json::from_str(&set_config_req.configuration) {
+						Ok(map) => {
+							if let Err(why) = camera.set_controls(map) {
+								logger()
+									.lock()
+									.unwrap()
+									.log_error("Failed to set requested cntrols from server", &why);
+							};
+						},
+						Err(why) => {
+							logger().lock().unwrap().log_error(
+								"Failed to parse requested configuration",
+								&EdgeError::DecodeControls { reason: why },
+							);
+						},
+					};
+				}
+			},
+			EdgeRequests::ViewCameraConfig(view_config_req) => {
+				if let Some(meta) = self.persistence.get_mut(view_config_req.camera_id) {
+					let Some(camera) = meta.camera() else {
+						logger()
+							.lock()
+							.unwrap()
+							.log_error("", &EdgeError::CameraNotPresent);
+						return;
+					};
+					let important_controls = camera.get_controls().stripped();
+					let configuration = Configuration::build_response(
+						view_config_req,
+						important_controls.serialise(),
+					);
+					let _ = websocket
+						.send_text("Configuration:".into(), configuration)
+						.await;
+				}
+			},
+			EdgeRequests::Setpoint(calibration_req) => {
+				if let Some(meta) = self.persistence.get_mut(calibration_req.camera_id) {
+					meta.request_calibration();
+				}
+			},
+			EdgeRequests::SetProcessingType(processing_req) => {
+				requested_type.replace(processing_req.processing_type);
+			},
+		}
 	}
 }
 
