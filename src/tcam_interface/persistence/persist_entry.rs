@@ -12,11 +12,6 @@ use super::{
 #[allow(unused_imports, reason = "Needed for docstring")]
 use crate::tcam_interface::Identifier;
 
-/// Named type for clarity.
-pub type InsertWasSuccessful = bool;
-/// Named type for clarity.
-type InitialiseWasSuccessful = bool;
-
 /// This is the value associated with an [`Identifier`].
 pub struct PersistEntry {
 	inner: ConnectionStatus,
