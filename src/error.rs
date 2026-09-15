@@ -27,7 +27,7 @@ pub enum EdgeError {
 	#[error("Nokhwa does not have a backend to use")]
 	NokhwaNoBackend,
 	#[error("The nokhwa camera could not be initialised at index `{index}`: '{reason}'")]
-	NokhwaInitialisation { index: u32, reason: String },
+	NokhwaInitialisation { index: String, reason: String },
 	#[error("The nokhwa camera stream could not be started: '{reason}'")]
 	StreamOpen { reason: String },
 	#[error("The frame was not able to be read by nokhwa")]
@@ -48,6 +48,8 @@ pub enum EdgeError {
 	IdentifyNetwork,
 	#[error("Failed to get a response: {reason}")]
 	ReqwestError { reason: String },
+	#[error("This device connection could not be established at any of the indices")]
+	InvalidDeviceConnection,
 }
 
 impl Clone for EdgeError {
@@ -64,7 +66,7 @@ impl Clone for EdgeError {
 			Self::ServerConnection => Self::ServerConnection,
 			Self::NokhwaNoBackend => Self::NokhwaNoBackend,
 			Self::NokhwaInitialisation { index, reason } => Self::NokhwaInitialisation {
-				index: *index,
+				index: index.clone(),
 				reason: reason.clone(),
 			},
 			Self::StreamOpen { reason } => Self::StreamOpen {
@@ -84,6 +86,7 @@ impl Clone for EdgeError {
 			Self::ReqwestError { reason } => Self::ReqwestError {
 				reason: reason.clone(),
 			},
+			Self::InvalidDeviceConnection => Self::InvalidDeviceConnection,
 		}
 	}
 }

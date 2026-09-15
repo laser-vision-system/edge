@@ -31,14 +31,20 @@ pub struct CameraDevice {
 }
 
 impl CameraDevice {
-	pub fn new(index: u32) -> Result<Self> {
-		// TODO: Handle potential error cases.
-		let opened = open(CameraIndex::Index(index), OpenRequest::any()).map_err(|why| {
-			EdgeError::NokhwaInitialisation {
-				index,
+	pub fn new(index: CameraIndex) -> Result<Self> {
+		// TODO: Modify CameraIndex with Cow support.
+		let opened = open(index.clone(), OpenRequest::any())
+			.map_err(|why| EdgeError::NokhwaInitialisation {
+				index: index.to_string(),
 				reason: why.to_string(),
-			}
-		})?;
+			})
+			.inspect_err(|why| {
+				logger()
+					.lock()
+					.unwrap()
+					.log_error("Could not initialise camera", &why)
+			})?;
+
 		let OpenedCamera::Stream(mut camera) = opened else {
 			// TODO: Discuss how we handle this.
 			logger::logger()
@@ -47,9 +53,23 @@ impl CameraDevice {
 				.log_warn("Camera is not a webcam...?");
 			panic!("AA")
 		};
-		camera.open().map_err(|why| EdgeError::StreamOpen {
-			reason: why.to_string(),
-		})?;
+
+		camera
+			.open()
+			.map_err(|why| EdgeError::StreamOpen {
+				reason: why.to_string(),
+			})
+			.inspect_err(|why| {
+				logger()
+					.lock()
+					.unwrap()
+					.log_error("Could not initialise camera", &why)
+			})?;
+
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("Camera successfully initialised");
 
 		Ok(Self { inner: camera })
 	}
@@ -59,6 +79,14 @@ impl CameraDevice {
 		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
 		enc.encode_image(&data).unwrap();
 		buff.into_inner()
+	}
+
+	pub fn get_info(&self) -> &CameraInfo {
+		self.inner.info()
+	}
+
+	pub fn get_index(&self) -> &CameraIndex {
+		self.inner.info().index()
 	}
 
 	// == Images ==
@@ -345,54 +373,54 @@ mod tests {
 
 	#[test]
 	fn new() -> Result<CameraDevice> {
-		CameraDevice::new(0)
+		CameraDevice::new(CameraIndex::Index(0))
 	}
 
 	#[test]
 	fn print_camera_details() {
-		let cam = CameraDevice::new(0).unwrap();
+		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		println!("{:#?}", cam.inner.info());
 	}
 
 	// Can't implement `Termination` for `RgbImage`.
 	#[test]
 	fn get_frame() {
-		let mut cam = CameraDevice::new(0).unwrap();
+		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let _ = cam.get_frame().unwrap();
 		let _ = cam.get_frame().unwrap();
 	}
 
 	#[test]
 	fn decode_image() {
-		let mut cam = CameraDevice::new(0).unwrap();
+		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let frame = cam.get_frame().unwrap();
 		let _ = cam.decode_image(frame);
 	}
 
 	#[test]
 	fn get_raw_controls() {
-		let cam = CameraDevice::new(0).unwrap();
+		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let c = cam.get_raw_controls();
 		println!("{c:#?}");
 	}
 
 	#[test]
 	fn get_all_available_controls() {
-		let cam = CameraDevice::new(0).unwrap();
+		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let c = cam.get_controls();
 		println!("{c}");
 	}
 
 	#[test]
 	fn get_stripped_controls() {
-		let cam = CameraDevice::new(0).unwrap();
+		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let c = cam.get_controls().stripped();
 		println!("{c}");
 	}
 
 	#[test]
 	fn set_control() -> Result<()> {
-		let mut cam = CameraDevice::new(0).unwrap();
+		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let id = KnownCameraControl::Brightness;
 
 		// Assume it will always be this variant.
@@ -425,7 +453,7 @@ mod tests {
 
 	#[test]
 	fn set_control_exposure() -> Result<()> {
-		let mut cam = CameraDevice::new(0).unwrap();
+		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let id = KnownCameraControl::AutoExposure;
 		let desired = 1;
 
@@ -470,7 +498,7 @@ mod tests {
 
 	#[test]
 	fn reset_controls_to_default() {
-		let mut cam = CameraDevice::new(0).unwrap();
+		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		cam.reset_controls_to_default();
 	}
 }

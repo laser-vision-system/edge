@@ -52,22 +52,22 @@ impl Conductor {
 		{
 			match request {
 				EdgeRequests::SetNameCamera(cam_name_req) => {
-					if let Some(meta) = self.persistence.get_with_id(cam_name_req.camera_id) {
+					if let Some(meta) = self.persistence.get_mut(cam_name_req.camera_id) {
 						meta.name = cam_name_req.name
 					}
 				},
 				EdgeRequests::StartViewingCamera(start_view_cam_req) => {
-					if let Some(meta) = self.persistence.get_with_id(start_view_cam_req.camera_id) {
+					if let Some(meta) = self.persistence.get_mut(start_view_cam_req.camera_id) {
 						meta.currently_viewed = true
 					}
 				},
 				EdgeRequests::StopViewingCamera(stop_view_cam_req) => {
-					if let Some(meta) = self.persistence.get_with_id(stop_view_cam_req.camera_id) {
+					if let Some(meta) = self.persistence.get_mut(stop_view_cam_req.camera_id) {
 						meta.currently_viewed = false
 					}
 				},
 				EdgeRequests::Configuration(set_config_req) => {
-					if let Some(meta) = self.persistence.get_with_id(set_config_req.camera_id) {
+					if let Some(meta) = self.persistence.get_mut(set_config_req.camera_id) {
 						let Some(camera) = meta.camera_mut() else {
 							continue;
 						};
@@ -94,8 +94,8 @@ impl Conductor {
 					}
 				},
 				EdgeRequests::ViewCameraConfig(view_config_req) => {
-					if let Some(meta) = self.persistence.get_with_id(view_config_req.camera_id) {
-						let Some(camera) = meta.camera() else {
+					if let Some(meta) = self.persistence.get_mut(view_config_req.camera_id) {
+						let Some(camera) = meta.get_camera() else {
 							logger()
 								.lock()
 								.unwrap()
@@ -113,7 +113,7 @@ impl Conductor {
 					}
 				},
 				EdgeRequests::Setpoint(calibration_req) => {
-					if let Some(meta) = self.persistence.get_with_id(calibration_req.camera_id) {
+					if let Some(meta) = self.persistence.get_mut(calibration_req.camera_id) {
 						meta.request_calibration();
 					}
 				},
@@ -131,7 +131,12 @@ impl Conductor {
 			None => vision_processor,
 		};
 
-		let batch_items = self.persistence.run_on_active(settings.clone());
+		// TODO: There should be something in between this call that does the below.
+		let batch_items = self.persistence.run_on_active(
+			settings.camera_err_increment,
+			settings.camera_err_threshold,
+			settings.camera_err_decrement,
+		);
 
 		let mut items = Vec::with_capacity(batch_items.len());
 

@@ -8,7 +8,7 @@ mod persistence;
 
 pub use camera_device::CameraDevice;
 pub use identifier::Identifier;
-pub use persistence::{PerpetualInfo, Persistence};
+pub use persistence::{PerpetualInfo, PersistEntry, Persistence};
 use server_edge_datatypes::shared::CameraId;
 
 #[derive(Clone, Debug)]
