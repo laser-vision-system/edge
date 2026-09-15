@@ -33,7 +33,7 @@ impl AddressComp {
 			"http://".to_string(),
 			"127.0.0.1".to_string(),
 			":8080".to_string(),
-			"/is_api".to_string()
+			"/is_api".to_string(),
 		)
 	}
 }
@@ -49,61 +49,75 @@ impl fmt::Display for AddressComp {
 }
 
 async fn identify_network() -> Result<Vec<AddressComp>> {
-	let host_interfaces = interfaces();
-	let host_active_interfaces = host_interfaces.iter().filter(|network| !network.ips.is_empty() && network.is_up() == true).collect::<Vec<_>>();
-	let mut network_addresses = Vec::with_capacity(host_active_interfaces.len());
-	for interface in host_active_interfaces {
-		if interface.is_loopback() == true {
-			network_addresses.push(AddressComp::local_host());
-			continue
-		}
-		if !interface.ips.is_empty() && interface.is_up() == true {
-			let _interface = interface.ips.iter()
-				.filter(|ip| ip.is_ipv4() == true)
-				.map(|ip| network_addresses.push(AddressComp::new(
-					"http://".to_string(),
-					"127.0.0.1".to_string(),
-					":8080".to_string(),
-					"/is_api".to_string(),)));
-		}
-	}
+	let mut network_addresses = interfaces()
+		.into_iter()
+		.filter(|network| network.is_up() && !network.is_loopback() && !network.ips.is_empty())
+		.flat_map(|network| network.ips)
+		.filter(|ip| ip.is_ipv4())
+		.map(|ip| {
+			AddressComp::new(
+				"http://".to_string(),
+				ip.ip().to_string(),
+				":8080".to_string(),
+				"/is_api".to_string(),
+			)
+		})
+		.collect::<Vec<_>>();
+
+	network_addresses.push(AddressComp::local_host());
+
 	if network_addresses.len() > 0 {
 		Ok(network_addresses.clone())
-	}
-	else {
+	} else {
 		Err(EdgeError::IdentifyNetwork)
 	}
 }
 
-pub async fn websocket_connect_automatic() -> Result<String> {
-	let client = Client::new();
-	let urls: Vec<_> = identify_network().await?;
+struct WebSocketResponse {
+	pub url: AddressComp,
+	pub message: String,
+}
 
+async fn get_response(url: AddressComp, client: Client) -> Result<WebSocketResponse> {
+	let message = client
+		.get(&url.to_string())
+		.send()
+		.await
+		.map_err(|why| EdgeError::ReqwestError {
+			reason: why.to_string(),
+		})?
+		.text()
+		.await
+		.map_err(|_| EdgeError::WebSocketUnpack)?;
+
+	Ok(WebSocketResponse { url, message })
+}
+
+async fn get_websocket_url(urls: Vec<AddressComp>) -> Result<String> {
+	let client = Client::new();
 	let mut set = JoinSet::new();
 
 	for url in urls {
 		set.spawn(get_response(url, client.clone()));
 	}
 
-	async fn get_response(url: AddressComp, client: Client) -> Result<(AddressComp, String)> {
-		let result = client.get(&url.to_string()).send().await;
-		match result {
-			Ok(a) => Ok((url, a.text().await.map_err(|_| EdgeError::WebSocketUnpack)?)),
-			Err(e) => Err(EdgeError::ReqwestError {
-				reason: e.to_string(),
-			}),
-		}
-	}
-
 	while let Some(result) = set.join_next().await {
 		match result {
-			Ok(Ok(a)) => {
-				if a.1 == "This is an API for the laser intensity analysis project" {
-					let idk = a.0;
-					let new_url = format!("ws://{}{}/edge_ws", idk.host, idk.port);
+			Ok(Ok(response)) => {
+				if response.message == "This is an API for the laser intensity analysis project" {
+					let url = response.url;
+					let new_url = format!("ws://{}{}/edge_ws", url.host, url.port);
 					return Ok(new_url);
 				}
 			},
+			#[cfg(debug_assertions)]
+			Ok(Err(why)) => {
+				logger()
+					.lock()
+					.unwrap()
+					.log_error(&format!("Incorrect message response"), &why);
+			},
+			// Ignore failures silently
 			_ => {},
 		}
 	}
@@ -112,7 +126,7 @@ pub async fn websocket_connect_automatic() -> Result<String> {
 }
 
 /// When call,
-pub async fn connect_loop(
+pub async fn assert_connection(
 	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
 ) -> (WebSocket, Settings) {
@@ -120,13 +134,14 @@ pub async fn connect_loop(
 		// All good, normal operation.
 		(Some(socket), Some(settings)) => (socket, settings),
 		// Lost connection to server
-		(None, _) => new_connection().await,
+		(None, _) => loop_until_connection().await,
 		// Fallback
-		_ => new_connection().await,
+		_ => loop_until_connection().await,
 	}
 }
 
-async fn new_connection() -> (WebSocket, Settings) {
+async fn loop_until_connection() -> (WebSocket, Settings) {
+	// TODO: Loop here, with delay.
 	match try_connect_once().await {
 		Ok(yay) => yay,
 		Err(err) => {
@@ -137,15 +152,16 @@ async fn new_connection() -> (WebSocket, Settings) {
 }
 
 async fn try_connect_once() -> Result<(WebSocket, Settings)> {
-	let url = websocket_connect_automatic().await?;
+	let urls = identify_network().await?;
+	let websocket_url = get_websocket_url(urls).await?;
 	let (stream, _) =
-		connect_async(url.clone())
+		connect_async(websocket_url.clone())
 			.await
 			.map_err(|why| EdgeError::AutoConnectUrl {
 				reason: why.to_string(),
 			})?;
 	let return_websocket = WebSocket::new(stream);
-	let return_settings = get_default_settings(&url.to_string()).await?;
+	let return_settings = get_default_settings(&websocket_url.to_string()).await?;
 	Ok((return_websocket, return_settings))
 }
 
@@ -175,6 +191,7 @@ async fn get_default_settings(url: &str) -> Result<Settings> {
 
 #[cfg(test)]
 mod tests {
+	use super::*;
 	use crate::settings;
 
 	#[test]
@@ -193,5 +210,13 @@ mod tests {
 		please.push_str(settings::API);
 
 		println!("{please}");
+	}
+
+	#[test]
+	fn print_interfaces() {
+		interfaces()
+			.into_iter()
+			.filter(|network| network.is_up() && !network.is_loopback() && !network.ips.is_empty())
+			.for_each(|interface| println!("{}", interface));
 	}
 }
