@@ -11,14 +11,8 @@ use server_edge_datatypes::{edge::NewCameraInfo, shared::CameraId};
 
 use super::{
 	super::{CameraDevice, Identifier},
-	Persistence,
-	persist_entry::PersistEntry,
+	KeyType, Persistence, ValType,
 };
-
-// Internal mapping types.
-type KeyType = Identifier;
-type ValType = PersistEntry;
-type MapType = HashMap<Identifier, PersistEntry>;
 
 // Potential inputs:
 // - Camera device.
