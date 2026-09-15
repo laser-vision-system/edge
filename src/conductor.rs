@@ -160,73 +160,73 @@ impl Conductor {
 	) {
 		match request {
 			EdgeRequests::SetNameCamera(cam_name_req) => {
-				if let Some(meta) = self.persistence.get_mut(cam_name_req.camera_id) {
-					meta.name = cam_name_req.name
+				if let Some(entry) = self.persistence.get_mut(cam_name_req.camera_id) {
+					entry.set_name(cam_name_req.name);
 				}
 			},
 			EdgeRequests::StartViewingCamera(start_view_cam_req) => {
-				if let Some(meta) = self.persistence.get_mut(start_view_cam_req.camera_id) {
-					meta.currently_viewed = true
+				if let Some(entry) = self.persistence.get_mut(start_view_cam_req.camera_id) {
+					entry.set_currently_viewed(true);
 				}
 			},
 			EdgeRequests::StopViewingCamera(stop_view_cam_req) => {
-				if let Some(meta) = self.persistence.get_mut(stop_view_cam_req.camera_id) {
-					meta.currently_viewed = false
+				if let Some(entry) = self.persistence.get_mut(stop_view_cam_req.camera_id) {
+					entry.set_currently_viewed(false);
 				}
 			},
 			EdgeRequests::Configuration(set_config_req) => {
-				if let Some(meta) = self.persistence.get_mut(set_config_req.camera_id) {
-					let Some(camera) = meta.camera_mut() else {
-						return;
-					};
-					logger()
-						.lock()
-						.unwrap()
-						.log_error("", &EdgeError::CameraNotPresent);
-					match serde_json::from_str(&set_config_req.configuration) {
-						Ok(map) => {
-							if let Err(why) = camera.set_controls(map) {
-								logger()
-									.lock()
-									.unwrap()
-									.log_error("Failed to set requested cntrols from server", &why);
-							};
-						},
-						Err(why) => {
-							logger().lock().unwrap().log_error(
-								"Failed to parse requested configuration",
-								&EdgeError::DecodeControls { reason: why },
-							);
-						},
-					};
-				}
+				let Some(entry) = self.persistence.get_mut(set_config_req.camera_id) else {
+					logger().lock().unwrap().log_warn("no camera found with id");
+					return;
+				};
+				let Some(active) = entry.get_active_mut() else {
+					return;
+				};
+				match serde_json::from_str(&set_config_req.configuration) {
+					Ok(map) => {
+						if let Err(why) = active.get_camera_mut().set_controls(map) {
+							logger()
+								.lock()
+								.unwrap()
+								.log_error("Failed to set requested cntrols from server", &why);
+						};
+					},
+					Err(why) => {
+						logger().lock().unwrap().log_error(
+							"Failed to parse requested configuration",
+							&EdgeError::DecodeControls { reason: why },
+						);
+					},
+				};
 			},
 			EdgeRequests::ViewCameraConfig(view_config_req) => {
-				if let Some(meta) = self.persistence.get_mut(view_config_req.camera_id) {
-					let Some(camera) = meta.camera() else {
-						logger()
-							.lock()
-							.unwrap()
-							.log_error("", &EdgeError::CameraNotPresent);
-						return;
-					};
-					let important_controls = camera.get_controls().stripped();
-					let configuration = Configuration::build_response(
-						view_config_req,
-						important_controls.serialise(),
-					);
-					let _ = websocket
-						.send_text("Configuration:".into(), configuration)
-						.await;
-				}
+				let Some(entry) = self.persistence.get_mut(view_config_req.camera_id) else {
+					logger().lock().unwrap().log_warn("no camera found with id");
+					return;
+				};
+				let Some(active) = entry.get_active_mut() else {
+					return;
+				};
+				let important_controls = active.get_camera_mut().get_controls().stripped();
+				let configuration =
+					Configuration::build_response(view_config_req, important_controls.serialise());
+				let _ = websocket
+					.send_text("Configuration:".into(), configuration)
+					.await;
 			},
 			EdgeRequests::Setpoint(calibration_req) => {
-				if let Some(meta) = self.persistence.get_mut(calibration_req.camera_id) {
-					meta.request_calibration();
+				if let Some(entry) = self.persistence.get_mut(calibration_req.camera_id) {
+					entry.request_calibration();
 				}
 			},
 			EdgeRequests::SetProcessingType(processing_req) => {
 				requested_type.replace(processing_req.processing_type);
+			},
+			_ => {
+				logger()
+					.lock()
+					.unwrap()
+					.log_warn("received request that is not currently supported");
 			},
 		}
 	}

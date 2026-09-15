@@ -138,6 +138,63 @@ impl PersistEntry {
 	}
 }
 
+// Setters.
+impl PersistEntry {
+	pub fn set_name(&mut self, name: String) {
+		match &mut self.inner {
+			ConnectionStatus::Active { active } => active
+				.as_mut()
+				.expect("active status should never remain None")
+				.set_name(name),
+			ConnectionStatus::Broken { broken } => broken.set_name(name),
+			ConnectionStatus::Disconnected { disconnected } => disconnected.set_name(name),
+			ConnectionStatus::Limbo { limbo } => limbo.set_name(name),
+			ConnectionStatus::Invalid { .. } => logger()
+				.lock()
+				.unwrap()
+				.log_warn("Attempted to change name of an invalid connection"),
+		}
+	}
+
+	pub fn set_currently_viewed(&mut self, state: bool) {
+		match &mut self.inner {
+			ConnectionStatus::Active { active } => active
+				.as_mut()
+				.expect("active status should never remain None")
+				.set_currently_viewed(state),
+
+			// TODO: Technically, these two should be a logic error.
+			ConnectionStatus::Disconnected { disconnected } => {
+				disconnected.set_currently_viewed(state)
+			},
+			ConnectionStatus::Limbo { limbo } => limbo.set_currently_viewed(state),
+
+			ConnectionStatus::Broken { .. } | ConnectionStatus::Invalid { .. } => logger()
+				.lock()
+				.unwrap()
+				.log_warn("Attempted to change currently_viewed of an invalid connection"),
+		}
+	}
+
+	pub fn request_calibration(&mut self) {
+		match &mut self.inner {
+			ConnectionStatus::Active { active } => active
+				.as_mut()
+				.expect("active status should never remain None")
+				.set_calibrate(true),
+
+			// TODO: Technically, these two should be a logic error.
+			ConnectionStatus::Disconnected { disconnected } => disconnected.set_calibrate(true),
+			ConnectionStatus::Limbo { limbo } => limbo.set_calibrate(true),
+
+			ConnectionStatus::Broken { .. } | ConnectionStatus::Invalid { .. } => logger()
+				.lock()
+				.unwrap()
+				.log_warn("Attempted to set calibrate of an invalid connection"),
+		}
+	}
+}
+
 // Operations.
 impl PersistEntry {
 	pub fn update(&mut self, points: &HashSet<AccessPoint>) {
@@ -221,7 +278,7 @@ impl PersistEntry {
 	//	if self.try_insert_index(index) {
 	//		return None;
 	//	}
-
+	//
 	//	// Stop now if this is a metadata device.
 	//	if is_metadata {
 	//		logger().lock().unwrap().log_warn(&format!(
@@ -230,11 +287,11 @@ impl PersistEntry {
 	//		));
 	//		return None;
 	//	}
-
+	//
 	//	if !self.initialise_camera(index) {
 	//		return None;
 	//	}
-
+	//
 	//	let name = self.get_name().to_owned().to_string();
 	//	let status = self.status();
 	//	let device = NewCameraInfo::new(name, status);
