@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use nokhwa::utils::CameraIndex;
+use server_edge_datatypes::shared::CameraStatus;
 
 use crate::{error::EdgeError, logger::logger, tcam_interface::CameraDevice};
 
@@ -131,6 +132,11 @@ impl PersistEntry {
 			_ => None,
 		}
 	}
+
+	/// Map this type to a [`CameraStatus`].
+	pub fn get_status(&self) -> CameraStatus {
+		self.inner.get_status()
+	}
 }
 
 // Setters.
@@ -192,7 +198,7 @@ impl PersistEntry {
 
 // Operations.
 impl PersistEntry {
-	pub fn update(&mut self, points: &HashSet<AccessPoint>) {
+	pub fn update(&mut self, points: &HashSet<AccessPoint>) -> Option<CameraStatus> {
 		//todo!("First, check if main index is gone. Then update and log extra indices.");
 		match &mut self.inner {
 			ConnectionStatus::Active { active } => {
@@ -210,11 +216,15 @@ impl PersistEntry {
 						.take()
 						.expect("active camera should never remain None");
 					let disconnected = Disconnected::from(temp);
-					self.inner = ConnectionStatus::Disconnected { disconnected }
+					self.inner = ConnectionStatus::Disconnected { disconnected };
+					Some(CameraStatus::Disconnected)
+				} else {
+					None
 				}
 			},
 			ConnectionStatus::Broken { broken: _ } => {
 				// Do nothing.
+				None
 			},
 			ConnectionStatus::Disconnected { disconnected } => {
 				let res = Self::try_make_camera_from_points(points);
@@ -231,14 +241,17 @@ impl PersistEntry {
 						self.inner = ConnectionStatus::Active {
 							active: Some(active),
 						};
+						Some(CameraStatus::Active)
 					},
 					None => {
 						// Unsucessful reconnection.
+						None
 					},
 				}
 			},
 			ConnectionStatus::Invalid { invalid: _ } => {
 				// Do nothing.
+				None
 			},
 			ConnectionStatus::Limbo { limbo } => {
 				let res = Self::try_make_camera_from_points(points);
@@ -249,47 +262,14 @@ impl PersistEntry {
 						self.inner = ConnectionStatus::Active {
 							active: Some(active),
 						};
+						Some(CameraStatus::Active)
 					},
 					None => {
 						// Unsucessful reconnection.
+						None
 					},
 				}
 			},
 		}
 	}
-
-	// Attempt to add a device to this instance.
-	//
-	// Returns [`None`] if:
-	//
-	// - The index is already registered
-	// - This is a metadata device
-	// - The camera failed to intialise
-	//pub fn try_register_device(
-	//	&mut self,
-	//	index: CameraIndex,
-	//	is_metadata: bool,
-	//) -> Option<NewCameraInfo> {
-	//	if self.try_insert_index(index) {
-	//		return None;
-	//	}
-	//
-	//	// Stop now if this is a metadata device.
-	//	if is_metadata {
-	//		logger().lock().unwrap().log_warn(&format!(
-	//			"This index ({}) represents a metadata device",
-	//			index
-	//		));
-	//		return None;
-	//	}
-	//
-	//	if !self.initialise_camera(index) {
-	//		return None;
-	//	}
-	//
-	//	let name = self.get_name().to_owned().to_string();
-	//	let status = self.status();
-	//	let device = NewCameraInfo::new(name, status);
-	//	Some(device)
-	//}
 }

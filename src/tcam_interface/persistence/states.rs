@@ -5,6 +5,7 @@ pub mod invalid;
 pub mod limbo;
 
 use nokhwa::utils::CameraIndex;
+use server_edge_datatypes::shared::CameraStatus;
 
 use crate::tcam_interface::CameraDevice;
 
@@ -59,6 +60,19 @@ impl ConnectionStatus {
 	pub fn new_invalid(occupied_indices: OccupiedIndices) -> Self {
 		let invalid = Invalid::new(occupied_indices);
 		Self::Invalid { invalid }
+	}
+}
+
+impl ConnectionStatus {
+	/// Map this type to a [`CameraStatus`].
+	pub fn get_status(&self) -> CameraStatus {
+		match self {
+			ConnectionStatus::Active { .. } => CameraStatus::Active,
+			ConnectionStatus::Broken { .. } => CameraStatus::Broken,
+			ConnectionStatus::Disconnected { .. } => CameraStatus::Broken,
+			ConnectionStatus::Invalid { .. } => CameraStatus::Invalid,
+			ConnectionStatus::Limbo { .. } => CameraStatus::Limbo,
+		}
 	}
 }
 

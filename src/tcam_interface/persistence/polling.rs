@@ -7,7 +7,12 @@ use std::{
 };
 
 use nokhwa::utils::{CameraIndex, CameraInfo};
-use server_edge_datatypes::{edge::NewCameraInfo, shared::CameraId};
+use server_edge_datatypes::{
+	edge::NewCameraInfo,
+	shared::{CameraId, CameraStatus},
+};
+
+use crate::logger::logger;
 
 use super::{
 	super::{CameraDevice, Identifier},
@@ -86,6 +91,11 @@ impl From<(Identifier, HashSet<AccessPoint>)> for DeviceConnection {
 	}
 }
 
+pub enum ConnectionDetail {
+	New { info: NewCameraInfo },
+	Update { status: CameraStatus },
+}
+
 fn convert_to_intermediaries(devices: Vec<CameraInfo>) -> IntermediaryMap {
 	let mut map = HashMap::with_capacity_and_hasher(devices.len(), RandomState::new());
 
@@ -106,17 +116,20 @@ impl Persistence {
 	/// Poll all devices to instantiate newly connected cameras.
 	///
 	/// Returns a list of information about newly added cameras.
-	pub fn poll_for_new_cameras(&mut self) -> HashMap<CameraId, NewCameraInfo> {
+	pub fn poll_for_new_cameras(&mut self) -> HashMap<CameraId, ConnectionDetail> {
 		let all_devices = CameraDevice::query_for_available_cameras();
 		let inter = convert_to_intermediaries(all_devices);
 		self.get_new_from_inter(inter)
 	}
 
-	fn get_new_from_inter(&mut self, inter: IntermediaryMap) -> HashMap<CameraId, NewCameraInfo> {
+	fn get_new_from_inter(
+		&mut self,
+		inter: IntermediaryMap,
+	) -> HashMap<CameraId, ConnectionDetail> {
 		inter
 			.into_iter()
 			// TODO: Filter for disconnections here.
-			.filter_map(|(ident, points)| -> Option<(CameraId, NewCameraInfo)> {
+			.filter_map(|(ident, points)| -> Option<(CameraId, ConnectionDetail)> {
 				self.on_each_connection(DeviceConnection::from((ident, points)))
 			})
 			.collect::<HashMap<_, _>>()
@@ -130,37 +143,53 @@ impl Persistence {
 	fn on_each_connection(
 		&mut self,
 		connection: DeviceConnection,
-	) -> Option<(CameraId, NewCameraInfo)> {
-		//let index = match info.index() {
-		//	CameraIndex::Index(index) => index,
-		//	CameraIndex::String(url) => {
-		//		logger()
-		//			.lock()
-		//			.unwrap()
-		//			.log_info(&format!("non-index camera found: {url}"));
-		//		// TODO: Set this entry to invalid.
-		//		return None;
-		//	},
-		//};
-
-		//let entry = self.contrast(identifier.clone());
-		//let entry = self.inner.entry(ident.clone()).or_insert_with_key(|ident| {
-		//	logger()
-		//		.lock()
-		//		.unwrap()
-		//		.log_info(&format!("New identifier added: {ident}"));
-		//	Self::on_new_entry(connection)
-		//});
+	) -> Option<(CameraId, ConnectionDetail)> {
+		let mut before = CameraStatus::Invalid;
+		let mut update = None;
+		let mut new = false;
 
 		let entry = self
 			.inner
 			.entry(connection.identifier.clone())
-			.and_modify(|entry| entry.update(&connection.points))
-			.or_insert_with(|| ValType::new(&connection.points));
+			.and_modify(|entry| before = entry.get_status())
+			.and_modify(|entry| update = entry.update(&connection.points))
+			.or_insert_with(|| {
+				logger()
+					.lock()
+					.unwrap()
+					.log_info(&format!("New identifier added: {}", connection.identifier));
+				new = true;
+				ValType::new(&connection.points)
+			});
 
 		//Self::on_all_entries(entry, &connection.points);
 
-		None
+		return if new {
+			match entry.get_active() {
+				Some(active) => {
+					let id = connection.identifier.as_ref();
+					let name = active.get_name().to_string();
+					let info = NewCameraInfo::new(name, CameraStatus::Active);
+					let new = ConnectionDetail::New { info };
+					Some((*id, new))
+				},
+				None => None,
+			}
+		} else {
+			match update {
+				Some(after) => {
+					if before != after {
+						let id = connection.identifier.as_ref();
+						let status = after;
+						let update = ConnectionDetail::Update { status };
+						Some((*id, update))
+					} else {
+						None
+					}
+				},
+				None => None,
+			}
+		};
 	}
 
 	//fn on_all_entries(entry: &mut PersistEntry, points: &HashSet<AccessPoint>)
@@ -172,16 +201,38 @@ impl Persistence {
 	//	Some((hashed_id, device))
 	//}
 
-	// Get the entry by the key with logging.
+	// Attempt to add a device to this instance.
 	//
-	// Create a new entry if it does not exist.
-	//fn contrast(&mut self, ident: KeyType) -> &mut ValType {
-	//	self.inner.entry(ident.clone()).or_insert_with(|| {
-	//		logger()
-	//			.lock()
-	//			.unwrap()
-	//			.log_info(&format!("New identifier added: {ident}"));
-	//		ValType::Invalid
-	//	})
+	// Returns [`None`] if:
+	//
+	// - The index is already registered
+	// - This is a metadata device
+	// - The camera failed to intialise
+	//pub fn try_register_device(
+	//	&mut self,
+	//	index: CameraIndex,
+	//	is_metadata: bool,
+	//) -> Option<NewCameraInfo> {
+	//	if self.try_insert_index(index) {
+	//		return None;
+	//	}
+	//
+	//	// Stop now if this is a metadata device.
+	//	if is_metadata {
+	//		logger().lock().unwrap().log_warn(&format!(
+	//			"This index ({}) represents a metadata device",
+	//			index
+	//		));
+	//		return None;
+	//	}
+	//
+	//	if !self.initialise_camera(index) {
+	//		return None;
+	//	}
+	//
+	//	let name = self.get_name().to_owned().to_string();
+	//	let status = self.status();
+	//	let device = NewCameraInfo::new(name, status);
+	//	Some(device)
 	//}
 }

@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use server_edge_datatypes::{
-	edge::{EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
+	edge::{EdgeRequests, ImageAnalysis, NewCameraInfo, RegisterCameras, UpdateCameraStatus},
 	shared::{CameraStatus, Configuration, VisionTechnique},
 };
 use tokio::time::interval;
@@ -9,7 +11,7 @@ use crate::{
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
-	tcam_interface::{CameraDevice, Persistence, WhyNo},
+	tcam_interface::{CameraDevice, Persistence, WhyNo, polling::ConnectionDetail},
 	vision_processor::{VisionInterface, VisionVariant, vision},
 	websocket::WebSocket,
 };
@@ -30,20 +32,46 @@ impl Conductor {
 	) -> Result<(WebSocket, Settings, VisionVariant), Box<dyn std::error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
 
-		// TODO: Delay for polling cameras, so it doesn't happen every loop.
+		{
+			// TODO: Delay for polling cameras, so it doesn't happen every loop.
 
-		// This function detects new cameras and instantiates them.
-		let new_cameras = self.persistence.poll_for_new_cameras();
+			let mut results = self.persistence.poll_for_new_cameras();
 
-		if !new_cameras.is_empty() {
-			websocket
-				.send_text(
-					"RegisterCameras:".into(),
-					RegisterCameras {
-						cameras: new_cameras,
-					},
-				)
-				.await?;
+			let new_cameras = results.extract_if(|_, value| match value {
+				ConnectionDetail::New { .. } => true,
+				ConnectionDetail::Update { .. } => false,
+			});
+
+			let new_cameras: HashMap<_, _> = new_cameras
+				.into_iter()
+				.filter_map(|(key, value)| match value {
+					ConnectionDetail::New { info } => Some((key, info)),
+					ConnectionDetail::Update { .. } => None,
+				})
+				.collect();
+
+			for (camera_id, update) in results {
+				let ConnectionDetail::Update { status } = update else {
+					continue;
+				};
+				let _ = websocket
+					.send_text(
+						"UpdateCameraStatus:".into(),
+						UpdateCameraStatus { camera_id, status },
+					)
+					.await;
+			}
+
+			if !new_cameras.is_empty() {
+				websocket
+					.send_text(
+						"RegisterCameras:".into(),
+						RegisterCameras {
+							cameras: new_cameras,
+						},
+					)
+					.await?;
+			}
 		}
 
 		let mut requested_type = None;
