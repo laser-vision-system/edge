@@ -222,7 +222,7 @@ mod tests {
 		let third = Identifier::from(IdentMetaInfo::new("nope", "nuh uh", "hell no"));
 
 		assert_eq!(first.partial_cmp(&second), Some(first.cmp(&second)));
+		assert_eq!(first.cmp(&third), second.cmp(&third));
 		assert_ne!(first.cmp(&second), first.cmp(&third));
-		assert_ne!(first.cmp(&third), second.cmp(&third));
 	}
 }
