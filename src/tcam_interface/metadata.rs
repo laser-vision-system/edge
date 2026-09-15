@@ -243,7 +243,7 @@ impl Default for Metadata {
 	fn default() -> Self {
 		Self {
 			name: String::from("unnamed camera"),
-			status: Default::default(),
+			status: CameraStatus::Invalid,
 			currently_viewed: false,
 			err_accumulation: 0,
 			calibrate: false,
@@ -262,7 +262,7 @@ mod tests {
 	fn default_values_as_expected() {
 		let meta = Metadata::default();
 		assert_eq!(meta.name, String::from("unnamed camera"));
-		assert_eq!(meta.status, CameraStatus::Uninitialised);
+		assert_eq!(meta.status, CameraStatus::Invalid);
 		assert_eq!(meta.currently_viewed, false);
 		assert_eq!(meta.err_accumulation, 0);
 		assert!(meta.indices.is_none());
@@ -280,7 +280,7 @@ mod tests {
 	#[test]
 	fn status_set_and_read() {
 		let mut meta = Metadata::default();
-		assert_eq!(meta.status, CameraStatus::Uninitialised);
+		assert_eq!(meta.status, CameraStatus::Invalid);
 		meta.status = CameraStatus::Active;
 		assert_eq!(meta.status(), CameraStatus::Active);
 	}

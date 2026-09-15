@@ -223,6 +223,12 @@ impl Conductor {
 			EdgeRequests::SetProcessingType(processing_req) => {
 				requested_type.replace(processing_req.processing_type);
 			},
+			_ => {
+				logger()
+					.lock()
+					.unwrap()
+					.log_warn("received request that is not currently supported");
+			},
 		}
 	}
 }

@@ -104,6 +104,13 @@ impl VisionVariant {
 			VisionTechnique::Demonstration => Self::Demonstration(Demonstration::new()),
 			VisionTechnique::Cnn => Self::Cnn(Cnn::new()),
 			VisionTechnique::Diff => Self::Diff(Diff::new()),
+			_ => {
+				logger()
+					.lock()
+					.unwrap()
+					.log_warn("Attempting to swap to an unsupported vison technique");
+				self
+			},
 		}
 	}
 
