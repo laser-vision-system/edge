@@ -35,9 +35,25 @@ pub trait IndexOccupier: AsRef<OccupiedIndices> + AsMut<OccupiedIndices> {
 	}
 }
 
+/// The current status of a known connection.
+///
+/// Acceptable switches are:
+/// - Active -> Broken
+/// - Active -> Disconnected
+/// - Active -> Limbo
+///
+/// - Broken -> Disconnected
+///
+/// - Disconnected -> Active
+/// - Disconnected -> Limbo
+///
+/// - Limbo -> Active
+/// - Limbo -> Broken
+/// - Limbo -> Disconnected
+///
+/// Invalid is locked into that state.
 pub enum ConnectionStatus {
-	// HACK: To work around camera not being cloneable.
-	Active { active: Option<Active> },
+	Active { active: Active },
 	Broken { broken: Broken },
 	Disconnected { disconnected: Disconnected },
 	Invalid { invalid: Invalid },
@@ -52,9 +68,7 @@ impl ConnectionStatus {
 		name: String,
 	) -> Self {
 		let active = Active::new(camera, occupied_indices, name);
-		Self::Active {
-			active: Some(active),
-		}
+		Self::Active { active }
 	}
 
 	pub fn new_invalid(occupied_indices: OccupiedIndices) -> Self {
@@ -78,9 +92,7 @@ impl ConnectionStatus {
 
 impl From<Active> for ConnectionStatus {
 	fn from(active: Active) -> Self {
-		Self::Active {
-			active: Some(active),
-		}
+		Self::Active { active }
 	}
 }
 

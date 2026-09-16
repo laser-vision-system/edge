@@ -6,6 +6,7 @@ use server_edge_datatypes::shared::CameraStatus;
 use crate::{error::EdgeError, logger::logger, tcam_interface::CameraDevice};
 
 use super::{
+	OccupiedIndices,
 	polling::AccessPoint,
 	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo, active::MaybeBatch},
 };
@@ -15,10 +16,9 @@ use crate::tcam_interface::Identifier;
 
 /// This is the value associated with an [`Identifier`].
 pub struct PersistEntry {
-	inner: ConnectionStatus,
+	// Wrapped in option to allow status switching.
+	inner: Option<ConnectionStatus>,
 }
-
-// TODO: Easy status swapping logic.
 
 // Constructors.
 impl PersistEntry {
@@ -31,7 +31,7 @@ impl PersistEntry {
 			Some(camera) => {
 				let name = camera.get_info().to_string();
 				let new = ConnectionStatus::new_active(camera, occupied_indices, name);
-				Self { inner: new }
+				Self { inner: Some(new) }
 			},
 			None => {
 				// Use warn because this isn't an explicit error case.
@@ -41,7 +41,7 @@ impl PersistEntry {
 					.unwrap()
 					.log_warn(&format!("Invalid device found: {}", err));
 				let new = ConnectionStatus::new_invalid(occupied_indices);
-				Self { inner: new }
+				Self { inner: Some(new) }
 			},
 		}
 	}
@@ -84,94 +84,215 @@ impl PersistEntry {
 	}
 }
 
+// Inner operations.
+impl PersistEntry {
+	fn as_inner(&self) -> &ConnectionStatus {
+		self.inner
+			.as_ref()
+			.expect("the inner value should only be None for brief switching operations")
+	}
+
+	fn as_inner_mut(&mut self) -> &mut ConnectionStatus {
+		self.inner
+			.as_mut()
+			.expect("the inner value should only be None for brief switching operations")
+	}
+
+	/// Remove and return the inner value for use in conversion.
+	///
+	/// This is the only case where the inner value will become [`None`].
+	/// Replace it with a new value ASAP.
+	fn take_inner(&mut self) -> ConnectionStatus {
+		self.inner
+			.take()
+			.expect("the inner value should only be None for brief switching operations")
+	}
+
+	pub fn active_to_broken(&mut self) {
+		let inner = self.take_inner();
+		let new_inner = match inner {
+			ConnectionStatus::Active { active } => ConnectionStatus::from(Broken::from(active)),
+			other => other,
+		};
+		self.inner.replace(new_inner);
+	}
+
+	pub fn active_to_disconnected(&mut self) {
+		let inner = self.take_inner();
+		let new_inner = match inner {
+			ConnectionStatus::Active { active } => {
+				ConnectionStatus::from(Disconnected::from(active))
+			},
+			other => other,
+		};
+		self.inner.replace(new_inner);
+	}
+
+	pub fn active_to_limbo(&mut self) {
+		let inner = self.take_inner();
+		let new_inner = match inner {
+			ConnectionStatus::Active { active } => ConnectionStatus::from(Limbo::from(active)),
+			other => other,
+		};
+		self.inner.replace(new_inner);
+	}
+
+	pub fn broken_to_disconnected(&mut self) {
+		let inner = self.take_inner();
+		let new_inner = match inner {
+			ConnectionStatus::Broken { broken } => {
+				ConnectionStatus::from(Disconnected::from(broken))
+			},
+			other => other,
+		};
+		self.inner.replace(new_inner);
+	}
+
+	pub fn disconnected_to_active(
+		&mut self,
+		camera: CameraDevice,
+		occupied_indices: OccupiedIndices,
+	) {
+		let inner = self.take_inner();
+		let new_inner = match inner {
+			ConnectionStatus::Disconnected { disconnected } => {
+				// TODO
+				ConnectionStatus::from(Active::from_disconnected(
+					disconnected,
+					camera,
+					occupied_indices,
+				))
+			},
+			other => other,
+		};
+		self.inner.replace(new_inner);
+	}
+
+	pub fn disconnected_to_limbo(&mut self, occupied_indices: OccupiedIndices) {
+		let inner = self.take_inner();
+		let new_inner = match inner {
+			ConnectionStatus::Disconnected { disconnected } => {
+				ConnectionStatus::from(Limbo::from_disconnected(disconnected, occupied_indices))
+			},
+			other => other,
+		};
+		self.inner.replace(new_inner);
+	}
+
+	pub fn limbo_to_active(&mut self, camera: CameraDevice, occupied_indices: OccupiedIndices) {
+		let inner = self.take_inner();
+		let new_inner = match inner {
+			ConnectionStatus::Limbo { limbo } => {
+				// TODO
+				ConnectionStatus::from(Active::from_limbo(limbo, camera, occupied_indices))
+			},
+			other => other,
+		};
+		self.inner.replace(new_inner);
+	}
+
+	pub fn limbo_to_broken(&mut self) {
+		let inner = self.take_inner();
+		let new_inner = match inner {
+			ConnectionStatus::Limbo { limbo } => ConnectionStatus::from(Broken::from(limbo)),
+			other => other,
+		};
+		self.inner.replace(new_inner);
+	}
+
+	pub fn limbo_to_disconnected(&mut self) {
+		let inner = self.take_inner();
+		let new_inner = match inner {
+			ConnectionStatus::Limbo { limbo } => ConnectionStatus::from(Disconnected::from(limbo)),
+			other => other,
+		};
+		self.inner.replace(new_inner);
+	}
+}
+
 // Accessors.
 impl PersistEntry {
 	pub fn get_active(&self) -> Option<&Active> {
-		match self.inner {
-			ConnectionStatus::Active { ref active } => active.as_ref(),
+		match self.as_inner() {
+			ConnectionStatus::Active { active } => Some(active),
 			_ => None,
 		}
 	}
 
 	pub fn get_active_mut(&mut self) -> Option<&mut Active> {
-		match self.inner {
-			ConnectionStatus::Active { ref mut active } => active.as_mut(),
+		match self.as_inner_mut() {
+			ConnectionStatus::Active { active } => Some(active),
 			_ => None,
 		}
 	}
 
 	pub fn get_broken(&self) -> Option<&Broken> {
-		match self.inner {
-			ConnectionStatus::Broken { ref broken } => Some(broken),
+		match self.as_inner() {
+			ConnectionStatus::Broken { broken } => Some(broken),
 			_ => None,
 		}
 	}
 
 	pub fn get_broken_mut(&mut self) -> Option<&mut Broken> {
-		match self.inner {
-			ConnectionStatus::Broken { ref mut broken } => Some(broken),
+		match self.as_inner_mut() {
+			ConnectionStatus::Broken { broken } => Some(broken),
 			_ => None,
 		}
 	}
 
 	pub fn get_disconnected(&self) -> Option<&Disconnected> {
-		match self.inner {
-			ConnectionStatus::Disconnected { ref disconnected } => Some(disconnected),
+		match self.as_inner() {
+			ConnectionStatus::Disconnected { disconnected } => Some(disconnected),
 			_ => None,
 		}
 	}
 
 	pub fn get_disconnected_mut(&mut self) -> Option<&mut Disconnected> {
-		match self.inner {
-			ConnectionStatus::Disconnected {
-				ref mut disconnected,
-			} => Some(disconnected),
+		match self.as_inner_mut() {
+			ConnectionStatus::Disconnected { disconnected } => Some(disconnected),
 			_ => None,
 		}
 	}
 
 	pub fn get_invalid(&self) -> Option<&Invalid> {
-		match self.inner {
-			ConnectionStatus::Invalid { ref invalid } => Some(invalid),
+		match self.as_inner() {
+			ConnectionStatus::Invalid { invalid } => Some(invalid),
 			_ => None,
 		}
 	}
 
 	pub fn get_invalid_mut(&mut self) -> Option<&mut Invalid> {
-		match self.inner {
-			ConnectionStatus::Invalid { ref mut invalid } => Some(invalid),
+		match self.as_inner_mut() {
+			ConnectionStatus::Invalid { invalid } => Some(invalid),
 			_ => None,
 		}
 	}
 
 	pub fn get_limbo(&self) -> Option<&Limbo> {
-		match self.inner {
-			ConnectionStatus::Limbo { ref limbo } => Some(limbo),
+		match self.as_inner() {
+			ConnectionStatus::Limbo { limbo } => Some(limbo),
 			_ => None,
 		}
 	}
 
 	pub fn get_limbo_mut(&mut self) -> Option<&mut Limbo> {
-		match self.inner {
-			ConnectionStatus::Limbo { ref mut limbo } => Some(limbo),
+		match self.as_inner_mut() {
+			ConnectionStatus::Limbo { limbo } => Some(limbo),
 			_ => None,
 		}
 	}
 
 	/// Map this type to a [`CameraStatus`].
 	pub fn get_status(&self) -> CameraStatus {
-		self.inner.get_status()
+		self.as_inner().get_status()
 	}
 }
 
 // Setters.
 impl PersistEntry {
 	pub fn set_name(&mut self, name: String) {
-		match &mut self.inner {
-			ConnectionStatus::Active { active } => active
-				.as_mut()
-				.expect("active status should never remain None")
-				.set_name(name),
+		match self.as_inner_mut() {
+			ConnectionStatus::Active { active } => active.set_name(name),
 			ConnectionStatus::Broken { broken } => broken.set_name(name),
 			ConnectionStatus::Disconnected { disconnected } => disconnected.set_name(name),
 			ConnectionStatus::Limbo { limbo } => limbo.set_name(name),
@@ -183,11 +304,8 @@ impl PersistEntry {
 	}
 
 	pub fn set_currently_viewed(&mut self, state: bool) {
-		match &mut self.inner {
-			ConnectionStatus::Active { active } => active
-				.as_mut()
-				.expect("active status should never remain None")
-				.set_currently_viewed(state),
+		match self.as_inner_mut() {
+			ConnectionStatus::Active { active } => active.set_currently_viewed(state),
 
 			// TODO: Technically, these two should be a logic error.
 			ConnectionStatus::Disconnected { disconnected } => {
@@ -203,11 +321,8 @@ impl PersistEntry {
 	}
 
 	pub fn request_calibration(&mut self) {
-		match &mut self.inner {
-			ConnectionStatus::Active { active } => active
-				.as_mut()
-				.expect("active status should never remain None")
-				.set_calibrate(true),
+		match self.as_inner_mut() {
+			ConnectionStatus::Active { active } => active.set_calibrate(true),
 
 			// TODO: Technically, these two should be a logic error.
 			ConnectionStatus::Disconnected { disconnected } => disconnected.set_calibrate(true),
@@ -241,85 +356,45 @@ impl PersistEntry {
 		Some(maybebatch)
 	}
 
-	pub fn active_to_disconnected(&mut self) {
-		todo!()
-	}
-
-	pub fn active_to_broken(&mut self) {
-		todo!()
-	}
-
 	pub fn update(&mut self, points: &HashSet<AccessPoint>) -> Option<CameraStatus> {
 		//todo!("First, check if main index is gone. Then update and log extra indices.");
-		match &mut self.inner {
+		match self.as_inner_mut() {
 			ConnectionStatus::Active { active } => {
 				// Check if it needs to go to limbo.
 				let occupied_indices: HashSet<_> =
 					points.iter().map(|point| &point.index).collect();
-				let index = &active
-					.as_ref()
-					.expect("active status should never remain None")
-					.get_camera()
-					.get_index();
+				let index = &active.get_camera().get_index();
 				if !occupied_indices.contains(index) {
 					// Camera has disconnected.
-					let temp = active
-						.take()
-						.expect("active camera should never remain None");
-					let disconnected = Disconnected::from(temp);
-					self.inner = ConnectionStatus::Disconnected { disconnected };
+					self.active_to_disconnected();
 					Some(CameraStatus::Disconnected)
 				} else {
 					None
 				}
 			},
-			ConnectionStatus::Broken { broken: _ } => {
+			ConnectionStatus::Broken { .. } => {
 				// Do nothing.
 				None
 			},
-			ConnectionStatus::Disconnected { disconnected } => {
-				let res = Self::try_make_camera_from_points(points);
-				match res {
-					Some(camera) => {
-						// Succesful reconnection.
-						let occupied_indices: HashSet<_> =
-							points.iter().map(|point| point.index.clone()).collect();
-						let active = Active::from_disconnected(
-							disconnected.clone(),
-							camera,
-							occupied_indices,
-						);
-						self.inner = ConnectionStatus::Active {
-							active: Some(active),
-						};
-						Some(CameraStatus::Active)
-					},
-					None => {
-						// Unsucessful reconnection.
-						None
-					},
-				}
+			ConnectionStatus::Disconnected { .. } => {
+				let camera = Self::try_make_camera_from_points(points)?;
+				// Succesful reconnection.
+				let occupied_indices: HashSet<_> =
+					points.iter().map(|point| point.index.clone()).collect();
+				self.disconnected_to_active(camera, occupied_indices);
+				Some(CameraStatus::Active)
 			},
 			ConnectionStatus::Invalid { invalid: _ } => {
 				// Do nothing.
 				None
 			},
-			ConnectionStatus::Limbo { limbo } => {
-				let res = Self::try_make_camera_from_points(points);
-				match res {
-					Some(camera) => {
-						// Succesful reconnection.
-						let active = Active::from_limbo(limbo.clone(), camera);
-						self.inner = ConnectionStatus::Active {
-							active: Some(active),
-						};
-						Some(CameraStatus::Active)
-					},
-					None => {
-						// Unsucessful reconnection.
-						None
-					},
-				}
+			ConnectionStatus::Limbo { .. } => {
+				let camera = Self::try_make_camera_from_points(points)?;
+				// Succesful reconnection.
+				let occupied_indices: HashSet<_> =
+					points.iter().map(|point| point.index.clone()).collect();
+				self.limbo_to_active(camera, occupied_indices);
+				Some(CameraStatus::Active)
 			},
 		}
 	}
