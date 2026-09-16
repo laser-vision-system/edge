@@ -1,4 +1,4 @@
-use crate::vision_processor::VisionState;
+use crate::vision_processor::{VisionInterface, VisionState, vision};
 
 use super::ErrAccType;
 
@@ -56,6 +56,12 @@ impl PerpetualInfo {
 
 	pub fn set_calibrate(&mut self, state: bool) {
 		self.calibrate = state
+	}
+
+	pub fn refresh_vision_state(&mut self) {
+		if !self.vision_state.is_valid() {
+			self.vision_state = vision().interact(|vision| vision.new_state())
+		}
 	}
 
 	pub fn get_vision_state(&mut self) -> &mut VisionState {
