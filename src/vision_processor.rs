@@ -1,4 +1,5 @@
 use std::{
+	cell::RefCell,
 	fmt,
 	sync::{Arc, Mutex, OnceLock, Weak},
 };
@@ -18,12 +19,50 @@ pub use demonstration::Demonstration;
 pub use diff::Diff;
 pub use empty::Empty;
 
-pub type VisionRef = &'static Mutex<VisionVariant>;
+pub type VisionRef = &'static VisionGuard;
 
-static VISION: OnceLock<Mutex<VisionVariant>> = OnceLock::new();
+static VISION: OnceLock<VisionGuard> = OnceLock::new();
 
 pub fn vision() -> VisionRef {
-	VISION.get_or_init(|| Mutex::new(VisionVariant::default()))
+	VISION.get_or_init(|| VisionGuard::new())
+}
+
+#[derive(Debug)]
+pub struct VisionGuard {
+	inner: Mutex<RefCell<Option<VisionVariant>>>,
+}
+
+impl VisionGuard {
+	fn new() -> Self {
+		Self {
+			inner: Mutex::new(RefCell::new(Some(VisionVariant::new()))),
+		}
+	}
+
+	pub fn swap(&self, swap_to: VisionTechnique) {
+		let old_vision = self
+			.inner
+			.lock()
+			.unwrap()
+			.take()
+			.expect("vision should never be None outside of this method");
+		let new_vision = old_vision.swap(swap_to);
+		self.inner.lock().unwrap().borrow_mut().replace(new_vision);
+	}
+
+	pub fn interact<F, R>(&self, func: F) -> R
+	where
+		F: FnOnce(&mut VisionVariant) -> R,
+	{
+		func(
+			self.inner
+				.lock()
+				.unwrap()
+				.borrow_mut()
+				.as_mut()
+				.expect("vision should never be None outside of VisionGuard::swap_to"),
+		)
+	}
 }
 
 #[derive(Clone)]
@@ -71,6 +110,11 @@ pub enum VisionVariant {
 }
 
 impl VisionVariant {
+	/// Private constructor.
+	fn new() -> Self {
+		Self::Empty(Default::default())
+	}
+
 	/// Request to switch this variant with another one.
 	///
 	/// If the requested type is the same as the current, this is a no-op.
@@ -84,7 +128,7 @@ impl VisionVariant {
 	///
 	/// This method statically asserts exhaustiveness between
 	/// [this](VisionVariant) and [VisionTechnique].
-	pub fn swap(self, swap_to: VisionTechnique) -> Self {
+	fn swap(self, swap_to: VisionTechnique) -> Self {
 		if self.identifier() == swap_to {
 			logger()
 				.lock()
@@ -145,20 +189,14 @@ impl VisionInterface for VisionVariant {
 	}
 }
 
-impl Default for VisionVariant {
-	fn default() -> Self {
-		Self::Empty(Default::default())
-	}
-}
-
 // Pass-through implementation.
 impl fmt::Display for VisionVariant {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			Self::Empty(empty) => write!(f, "{}", empty),
-			Self::Demonstration(demonstration) => write!(f, "{}", demonstration),
-			Self::Cnn(cnn) => write!(f, "{}", cnn),
-			Self::Diff(diff) => write!(f, "{}", diff),
+			Self::Empty(empty) => empty.fmt(f),
+			Self::Demonstration(demonstration) => demonstration.fmt(f),
+			Self::Cnn(cnn) => cnn.fmt(f),
+			Self::Diff(diff) => diff.fmt(f),
 		}
 	}
 }
@@ -207,7 +245,7 @@ impl VisionState {
 
 impl Default for VisionState {
 	fn default() -> Self {
-		vision().lock().unwrap().new_state()
+		vision().interact(|vision| vision.new_state())
 	}
 }
 
@@ -247,7 +285,7 @@ mod tests {
 
 	#[test]
 	fn swap() {
-		let mut variant = VisionVariant::default();
+		let mut variant = VisionVariant::new();
 		variant = variant.swap(VisionTechnique::Demonstration);
 		println!("Current variant: {}", variant)
 	}
