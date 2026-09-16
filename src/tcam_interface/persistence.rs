@@ -9,7 +9,6 @@ use std::{
 	hash::RandomState,
 };
 
-use image::RgbImage;
 use nokhwa::utils::CameraIndex;
 use server_edge_datatypes::{
 	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
@@ -18,10 +17,12 @@ use server_edge_datatypes::{
 
 use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
 
-use self::states::Active;
-pub use self::{perpetual_info::PerpetualInfo, persist_entry::PersistEntry};
+pub use self::{
+	perpetual_info::PerpetualInfo,
+	persist_entry::{MaybeImage, PersistEntry, WhyNo},
+};
 
-use super::{Identifier, WhyNo};
+use super::Identifier;
 
 pub type ErrAccType = u16;
 
@@ -30,6 +31,22 @@ type KeyType = Identifier;
 type ValType = PersistEntry;
 type MapType = HashMap<KeyType, ValType>;
 type OccupiedIndices = HashSet<CameraIndex>;
+
+pub enum MaybeBatch<'a> {
+	Batch(BatchItem<'a>),
+	WhyNo(WhyNo),
+}
+
+pub struct StatusChange {
+	pub id: CameraId,
+	pub why: WhyNo,
+}
+
+impl StatusChange {
+	fn new(id: CameraId, why: WhyNo) -> Self {
+		Self { id, why }
+	}
+}
 
 /// Persistence data for camera devices.
 ///
@@ -164,97 +181,57 @@ impl Persistence {
 }
 
 impl Persistence {
-	pub fn run_on_active(
-		&mut self,
+	pub fn poll_active_entries<'a>(
+		&'a mut self,
 		camera_err_increment: u16,
 		camera_err_threshold: u16,
 		camera_err_decrement: u16,
-	) -> Vec<std::result::Result<BatchItem<'_>, (EdgeError, WhyNo)>> {
-		let batch: Vec<_> = self
+	) -> (Vec<BatchItem<'a>>, Vec<StatusChange>) {
+		let (maybe_batch_items, maybe_status_changes): (Vec<_>, Vec<_>) = self
 			.inner
 			.iter_mut()
 			.filter_map(|(ident, entry)| {
-				if let Some(active) = entry.get_active_mut() {
-					Some(Self::on_active_camera(
-						CameraId::from(ident.clone()),
-						active,
-						camera_err_increment,
-						camera_err_threshold,
-						camera_err_decrement,
-					))
-				} else {
-					None
+				let maybe_image = entry.try_get_image(
+					camera_err_increment,
+					camera_err_threshold,
+					camera_err_decrement,
+				)?;
+
+				// Non-destructively read the result and adjust entry state.
+				if let MaybeImage::WhyNo(whynot) = &maybe_image {
+					match whynot {
+						WhyNo::Broken => {
+							entry.active_to_broken();
+						},
+						WhyNo::Disconnected => {
+							entry.active_to_disconnected();
+						},
+					}
+				}
+
+				match maybe_image {
+					MaybeImage::Image(image) => {
+						let batch_item = entry.try_make_batch_item_with(ident, image)?;
+						Some((Some(batch_item), None))
+					},
+					MaybeImage::WhyNo(whyno) => Some((
+						None,
+						Some(StatusChange::new(CameraId::from(ident.clone()), whyno)),
+					)),
 				}
 			})
+			.unzip();
+
+		let batch_items = maybe_batch_items
+			.into_iter()
+			.filter_map(|item| item)
+			.collect();
+		let status_changes = maybe_status_changes
+			.into_iter()
+			.filter_map(|status| status)
 			.collect();
 
-		batch
-	}
-
-	fn on_active_camera(
-		id: CameraId,
-		entry: &mut Active,
-		camera_err_increment: u16,
-		camera_err_threshold: u16,
-		camera_err_decrement: u16,
-	) -> std::result::Result<BatchItem<'_>, (EdgeError, WhyNo)> {
-		let image = match Self::imahe_glgo(
-			id,
-			entry,
-			camera_err_increment,
-			camera_err_threshold,
-			camera_err_decrement,
-		) {
-			Ok(image) => image,
-			Err(why) => return Err(why),
-		};
-
-		logger().lock().unwrap().log_info("YAY!!!!");
-
-		logger().lock().unwrap().log_warn(&format!(
-			"Camera at id: {} has {} errors",
-			id,
-			entry.err_accumulation()
-		));
-
-		let batch = entry.make_batch_item(image, id);
-
-		Ok(batch)
-	}
-
-	fn imahe_glgo(
-		id: CameraId,
-		entry: &mut Active,
-		camera_err_increment: u16,
-		camera_err_threshold: u16,
-		camera_err_decrement: u16,
-	) -> std::result::Result<RgbImage, (EdgeError, WhyNo)> {
-		match entry.get_image(camera_err_decrement) {
-			Ok(image) => Ok(image),
-			Err(why) => Err((
-				why,
-				Self::on_error(id, entry, camera_err_increment, camera_err_threshold),
-			)),
-		}
-	}
-
-	fn on_error(
-		id: CameraId,
-		entry: &mut Active,
-		camera_err_increment: u16,
-		camera_err_threshold: u16,
-	) -> WhyNo {
-		entry.add_error(camera_err_increment);
-
-		if entry.err_accumulation() < camera_err_threshold {
-			//entry.status = CameraStatus::Disconnected;
-			logger().lock().unwrap().log_warn("disconnetcted");
-			return WhyNo::Disconnected(id);
-		} else {
-			//entry.status = CameraStatus::Broken;
-			logger().lock().unwrap().log_warn("bokrne");
-			return WhyNo::Broken(id);
-		}
+		(batch_items, status_changes)
 	}
 }
 

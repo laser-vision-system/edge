@@ -11,10 +11,7 @@ use crate::{
 	logger::logger,
 	tcam_interface::{
 		CameraDevice, PerpetualInfo,
-		persistence::{
-			ErrAccType, OccupiedIndices,
-			polling::{AccessPoint, DeviceConnection},
-		},
+		persistence::{ErrAccType, OccupiedIndices},
 	},
 	vision_processor::BatchItem,
 };
@@ -68,9 +65,17 @@ impl Active {
 		}
 	}
 
-	pub fn from_limbo(limbo: Limbo, camera: CameraDevice) -> Self {
+	pub fn from_limbo(
+		limbo: Limbo,
+		camera: CameraDevice,
+		mut occupied_indices: OccupiedIndices,
+	) -> Self {
+		// The parameter contains more indices than limbo.
+		if !occupied_indices.is_subset(&limbo.occupied_indices) {
+			occupied_indices.extend(limbo.occupied_indices);
+		}
 		Self {
-			occupied_indices: limbo.occupied_indices,
+			occupied_indices,
 			data: limbo.data,
 			name: limbo.name,
 			camera,
@@ -109,13 +114,7 @@ impl Active {
 // Operational.
 impl Active {
 	pub fn get_image(&mut self, camera_err_decrement: ErrAccType) -> Result<RgbImage> {
-		let frame = match self.get_camera_mut().get_frame() {
-			Ok(frame) => frame,
-			Err(why) => {
-				logger().lock().unwrap().log_error("", &why);
-				return Err(why);
-			},
-		};
+		let frame = self.get_camera_mut().get_frame()?;
 
 		logger()
 			.lock()
@@ -123,20 +122,23 @@ impl Active {
 			.log_info("Successfully read frame from camera");
 		self.data.reduce_error(camera_err_decrement);
 
-		let image = match self.get_camera_mut().decode_image(frame) {
-			Ok(image) => image,
-			Err(why) => {
-				// TODO: If out of memory, send log and panic.
-				logger().lock().unwrap().log_error("", &why);
-				return Err(why);
-			},
-		};
+		// TODO: Inspect error reason. If out of memory, send log and panic.
+		let image = self.get_camera_mut().decode_image(frame)?;
+
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("Successfully decoded image from camera");
 
 		Ok(image)
 	}
 
 	pub fn make_batch_item(&mut self, image: RgbImage, id: CameraId) -> BatchItem<'_> {
-		self.data.create_batch_item(image, id)
+		let calibrate = self.data.get_calibrate();
+		self.data.set_calibrate(false);
+		let currently_viewed = self.data.get_currently_viewed();
+		let state = self.data.get_vision_state();
+		BatchItem::new(id, state, image, calibrate, currently_viewed)
 	}
 }
 

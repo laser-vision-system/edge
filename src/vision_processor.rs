@@ -26,8 +26,6 @@ pub fn vision() -> VisionRef {
 	VISION.get_or_init(|| Mutex::new(VisionVariant::default()))
 }
 
-// NOTE: If we do multithreading, this has to be swapped for `std::sync::Arc`.
-
 #[derive(Clone)]
 pub struct SessionToken(Arc<()>);
 
@@ -204,6 +202,12 @@ impl VisionState {
 			Self::Cnn { data, .. } => data.deviation,
 			Self::Diff { data, .. } => data.deviation,
 		}
+	}
+}
+
+impl Default for VisionState {
+	fn default() -> Self {
+		vision().lock().unwrap().new_state()
 	}
 }
 
