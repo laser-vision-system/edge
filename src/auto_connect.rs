@@ -1,5 +1,5 @@
 use std::{collections::HashSet, fmt};
-
+use std::time::Duration;
 use crate::logger::logger;
 use crate::{
 	error::{EdgeError, Result},
@@ -9,6 +9,7 @@ use pnet_datalink::interfaces;
 use reqwest::Client;
 use server_edge_datatypes::edge::Settings;
 use tokio::task::JoinSet;
+use tokio::time::interval;
 use tokio_tungstenite::connect_async;
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
@@ -103,6 +104,10 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 				if response.message == "This is an API for the laser intensity analysis project" {
 					let url = response.url;
 					let new_url = format!("ws://{}{}/edge_ws", url.host, url.port);
+					logger()
+						.lock()
+						.unwrap()
+						.log_info(&format!("Correct message response recived from: {}", new_url));
 					return Ok(new_url);
 				}
 			},
@@ -128,7 +133,12 @@ pub async fn assert_connection(
 ) -> (WebSocket, Settings) {
 	match (websocket, settings) {
 		// All good, normal operation.
-		(Some(socket), Some(settings)) => (socket, settings),
+		(Some(socket), Some(settings)) => {
+			if socket.is_active() {
+				return loop_until_connection().await
+			}
+			(socket, settings)
+		},
 		// Lost connection to server
 		(None, _) => loop_until_connection().await,
 		// Fallback
@@ -137,13 +147,15 @@ pub async fn assert_connection(
 }
 
 async fn loop_until_connection() -> (WebSocket, Settings) {
-	// TODO: Loop here, with delay.
-	match try_connect_once().await {
-		Ok(yay) => yay,
-		Err(err) => {
-			logger().lock().unwrap().log_error("PLEASE", &err);
-			panic!("SERVER FAILED TO CONNECT")
-		},
+	let mut limit_interval = interval(Duration::from_secs(5));
+	loop {
+		match try_connect_once().await {
+			Ok(yay) => return yay,
+			Err(err) => {
+				logger().lock().unwrap().log_error("PLEASE", &err);
+			},
+		}
+		limit_interval.tick().await;
 	}
 }
 

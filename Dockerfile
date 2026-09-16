@@ -10,12 +10,10 @@ RUN apt-get update && apt-get install -y clang && apt-get install -y cargo && ap
 RUN rustup default stable
 RUN rustup target add aarch64-unknown-linux-gnu
 
-
 # Copy your application's source code.
 COPY . .
 
-RUN cargo build --target=aarch64-unknown-linux-gnu --release
-
+RUN cargo install --path .
 
 
 # ---- Final Stage ----
@@ -24,8 +22,8 @@ FROM ubuntu
 
 RUN apt-get update && apt-get install -y cargo
 
-# Copy the compiled binary from the builder stage
-COPY --from=builder /usr/src/edge/target/aarch64-unknown-linux-gnu/release/edge /edge
+COPY --from=builder /usr/src/edge/target/release/edge /edge
 
-CMD cargo run
+# CMD cargo run
+CMD ["/edge"]
 # Set the entrypoint for the container
