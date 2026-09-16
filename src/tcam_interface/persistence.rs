@@ -11,7 +11,10 @@ use std::{
 
 use image::RgbImage;
 use nokhwa::utils::CameraIndex;
-use server_edge_datatypes::shared::CameraId;
+use server_edge_datatypes::{
+	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
+	shared::{CameraId, Configuration, ViewCameraConfig},
+};
 
 use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
 
@@ -59,6 +62,104 @@ impl Persistence {
 
 	pub fn get_mut(&mut self, ident: CameraId) -> Option<&mut PersistEntry> {
 		self.inner.get_mut(&ident)
+	}
+}
+
+// Setters.
+impl Persistence {
+	// TODO: Server should send a single request to change viewing state.
+	fn set_currently_viewed(&mut self, id: CameraId, state: bool) {
+		if let Some(entry) = self.get_mut(id) {
+			entry.set_currently_viewed(state);
+		} else {
+			logger()
+				.lock()
+				.unwrap()
+				.log_error("", &EdgeError::UnknownCameraId);
+		}
+	}
+
+	pub fn set_entry_name(&mut self, request: SetNameCamera) {
+		if let Some(entry) = self.get_mut(request.camera_id) {
+			entry.set_name(request.name);
+		} else {
+			logger()
+				.lock()
+				.unwrap()
+				.log_error("", &EdgeError::UnknownCameraId);
+		}
+	}
+
+	pub fn start_viewing_camera(&mut self, request: StartViewingCamera) {
+		self.set_currently_viewed(request.camera_id, true);
+	}
+
+	pub fn stop_viewing_camera(&mut self, request: StopViewingCamera) {
+		self.set_currently_viewed(request.camera_id, false);
+	}
+
+	pub fn set_configuration(&mut self, request: Configuration) {
+		let Some(entry) = self.get_mut(request.camera_id) else {
+			logger()
+				.lock()
+				.unwrap()
+				.log_error("", &EdgeError::UnknownCameraId);
+			return;
+		};
+		let Some(active) = entry.get_active_mut() else {
+			logger()
+				.lock()
+				.unwrap()
+				.log_error("Not active", &EdgeError::IncorrectConnectionStatus);
+			return;
+		};
+		match serde_json::from_str(&request.configuration) {
+			Ok(map) => {
+				if let Err(why) = active.get_camera_mut().set_controls(map) {
+					logger()
+						.lock()
+						.unwrap()
+						.log_error("Failed to apply request controls to the camera", &why);
+				};
+			},
+			Err(why) => {
+				logger().lock().unwrap().log_error(
+					"Failed to parse requested configuration",
+					&EdgeError::DecodeControls { reason: why },
+				);
+			},
+		};
+	}
+
+	pub fn get_configuration(&mut self, request: ViewCameraConfig) -> Option<Configuration> {
+		let Some(entry) = self.get_mut(request.camera_id) else {
+			logger()
+				.lock()
+				.unwrap()
+				.log_error("", &EdgeError::UnknownCameraId);
+			return None;
+		};
+		let Some(active) = entry.get_active_mut() else {
+			logger()
+				.lock()
+				.unwrap()
+				.log_error("Not active", &EdgeError::IncorrectConnectionStatus);
+			return None;
+		};
+		let important_controls = active.get_camera_mut().get_controls().stripped();
+		let configuration = Configuration::build_response(request, important_controls.serialise());
+		Some(configuration)
+	}
+
+	pub fn request_calibration(&mut self, request: Setpoint) {
+		if let Some(entry) = self.get_mut(request.camera_id) {
+			entry.request_calibration();
+		} else {
+			logger()
+				.lock()
+				.unwrap()
+				.log_error("", &EdgeError::UnknownCameraId);
+		}
 	}
 }
 

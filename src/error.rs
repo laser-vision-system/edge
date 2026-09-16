@@ -50,6 +50,10 @@ pub enum EdgeError {
 	ReqwestError { reason: String },
 	#[error("This device connection could not be established at any of the indices")]
 	InvalidDeviceConnection,
+	#[error("The connection status was not correct for this request")]
+	IncorrectConnectionStatus,
+	#[error("Attempting to operate on an unknown camera id")]
+	UnknownCameraId,
 }
 
 impl Clone for EdgeError {
@@ -87,6 +91,8 @@ impl Clone for EdgeError {
 				reason: reason.clone(),
 			},
 			Self::InvalidDeviceConnection => Self::InvalidDeviceConnection,
+			Self::IncorrectConnectionStatus => Self::IncorrectConnectionStatus,
+			Self::UnknownCameraId => Self::UnknownCameraId,
 		}
 	}
 }
