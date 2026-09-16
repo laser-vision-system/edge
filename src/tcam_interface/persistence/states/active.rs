@@ -137,6 +137,7 @@ impl Active {
 		let calibrate = self.data.get_calibrate();
 		self.data.set_calibrate(false);
 		let currently_viewed = self.data.get_currently_viewed();
+		self.data.refresh_vision_state();
 		let state = self.data.get_vision_state();
 		BatchItem::new(id, state, image, calibrate, currently_viewed)
 	}
