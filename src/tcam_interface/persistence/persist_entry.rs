@@ -1,18 +1,44 @@
 use std::collections::HashSet;
 
+use image::RgbImage;
 use nokhwa::utils::CameraIndex;
-use server_edge_datatypes::shared::CameraStatus;
+use server_edge_datatypes::shared::{CameraId, CameraStatus};
 
-use crate::{error::EdgeError, logger::logger, tcam_interface::CameraDevice};
+use crate::{
+	error::EdgeError, logger::logger, tcam_interface::CameraDevice, vision_processor::BatchItem,
+};
 
 use super::{
 	OccupiedIndices,
 	polling::AccessPoint,
-	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo, active::MaybeBatch},
+	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
 };
 
 #[allow(unused_imports, reason = "Needed for docstring")]
 use crate::tcam_interface::Identifier;
+
+#[derive(Clone, Debug)]
+pub enum WhyNo {
+	Broken,
+	Disconnected,
+}
+
+pub enum MaybeImage {
+	Image(RgbImage),
+	WhyNo(WhyNo),
+}
+
+impl From<RgbImage> for MaybeImage {
+	fn from(image: RgbImage) -> Self {
+		Self::Image(image)
+	}
+}
+
+impl From<WhyNo> for MaybeImage {
+	fn from(whyno: WhyNo) -> Self {
+		Self::WhyNo(whyno)
+	}
+}
 
 /// This is the value associated with an [`Identifier`].
 pub struct PersistEntry {
@@ -338,22 +364,53 @@ impl PersistEntry {
 
 // Operations.
 impl PersistEntry {
-	pub fn try_get_batch_item<'a>(
-		&'a mut self,
-		ident: &Identifier,
+	pub fn try_get_image(
+		&mut self,
 		camera_err_increment: u16,
 		camera_err_threshold: u16,
 		camera_err_decrement: u16,
-	) -> Option<MaybeBatch<'a>> {
+	) -> Option<MaybeImage> {
 		let active = self.get_active_mut()?;
 
-		let maybebatch = active.try_get_batch_item(
+		let maybeimage = active
+			.get_image(camera_err_decrement)
+			.inspect_err(|why| logger().lock().unwrap().log_error("", &why))
+			.map_or_else(
+				|_| {
+					active.add_error(camera_err_increment);
+
+					if active.err_accumulation() < camera_err_threshold {
+						logger().lock().unwrap().log_warn("disconnetcted");
+						MaybeImage::WhyNo(WhyNo::Disconnected)
+					} else {
+						logger().lock().unwrap().log_warn("bokrne");
+						MaybeImage::WhyNo(WhyNo::Broken)
+					}
+				},
+				MaybeImage::from,
+			);
+
+		Some(maybeimage)
+	}
+
+	/// Has to be a separate method, so that the failures can be dropped before
+	/// creating the batch item.
+	pub fn try_make_batch_item_with(
+		&mut self,
+		ident: &Identifier,
+		image: RgbImage,
+	) -> Option<BatchItem<'_>> {
+		let active = self.get_active_mut()?;
+
+		logger().lock().unwrap().log_warn(&format!(
+			"Camera at id `{}` has an err accumulation of `{}`",
 			ident,
-			camera_err_increment,
-			camera_err_threshold,
-			camera_err_decrement,
-		);
-		Some(maybebatch)
+			active.err_accumulation()
+		));
+
+		let batch = active.make_batch_item(image, CameraId::from(ident.clone()));
+
+		Some(batch)
 	}
 
 	pub fn update(&mut self, points: &HashSet<AccessPoint>) -> Option<CameraStatus> {

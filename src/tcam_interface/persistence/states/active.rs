@@ -10,29 +10,13 @@ use crate::{
 	error::Result,
 	logger::logger,
 	tcam_interface::{
-		CameraDevice, Identifier, PerpetualInfo,
+		CameraDevice, PerpetualInfo,
 		persistence::{ErrAccType, OccupiedIndices},
 	},
 	vision_processor::BatchItem,
 };
 
 use super::{Disconnected, IndexOccupier, Limbo};
-
-#[derive(Clone, Debug)]
-pub enum WhyNo {
-	Broken,
-	Disconnected,
-}
-
-pub enum MaybeImage {
-	Image(RgbImage),
-	WhyNo(WhyNo),
-}
-
-pub enum MaybeBatch<'a> {
-	Batch(BatchItem<'a>),
-	WhyNo(WhyNo),
-}
 
 /// A connection in an active state.
 ///
@@ -129,64 +113,7 @@ impl Active {
 
 // Operational.
 impl Active {
-	pub fn try_get_batch_item<'a>(
-		&'a mut self,
-		ident: &Identifier,
-		camera_err_increment: u16,
-		camera_err_threshold: u16,
-		camera_err_decrement: u16,
-	) -> MaybeBatch<'a> {
-		let maybeimage = self.imahe_glgo(
-			camera_err_increment,
-			camera_err_threshold,
-			camera_err_decrement,
-		);
-
-		let image = match maybeimage {
-			MaybeImage::Image(image) => image,
-			MaybeImage::WhyNo(whyno) => return MaybeBatch::WhyNo(whyno),
-		};
-
-		logger().lock().unwrap().log_warn(&format!(
-			"Camera at id `{}` has an err accumulation of `{}`",
-			ident,
-			self.err_accumulation()
-		));
-
-		let batch = self.make_batch_item(image, CameraId::from(ident.clone()));
-
-		MaybeBatch::Batch(batch)
-	}
-
-	fn imahe_glgo(
-		&mut self,
-		camera_err_increment: u16,
-		camera_err_threshold: u16,
-		camera_err_decrement: u16,
-	) -> MaybeImage {
-		match self.get_image(camera_err_decrement) {
-			Ok(image) => MaybeImage::Image(image),
-			Err(why) => {
-				logger().lock().unwrap().log_error("", &why);
-				let whyno = self.on_error(camera_err_increment, camera_err_threshold);
-				MaybeImage::WhyNo(whyno)
-			},
-		}
-	}
-
-	fn on_error(&mut self, camera_err_increment: u16, camera_err_threshold: u16) -> WhyNo {
-		self.add_error(camera_err_increment);
-
-		if self.err_accumulation() < camera_err_threshold {
-			logger().lock().unwrap().log_warn("disconnetcted");
-			WhyNo::Disconnected
-		} else {
-			logger().lock().unwrap().log_warn("bokrne");
-			WhyNo::Broken
-		}
-	}
-
-	fn get_image(&mut self, camera_err_decrement: ErrAccType) -> Result<RgbImage> {
+	pub fn get_image(&mut self, camera_err_decrement: ErrAccType) -> Result<RgbImage> {
 		let frame = self.get_camera_mut().get_frame()?;
 
 		logger()
@@ -206,7 +133,7 @@ impl Active {
 		Ok(image)
 	}
 
-	fn make_batch_item(&mut self, image: RgbImage, id: CameraId) -> BatchItem<'_> {
+	pub fn make_batch_item(&mut self, image: RgbImage, id: CameraId) -> BatchItem<'_> {
 		let calibrate = self.data.get_calibrate();
 		self.data.set_calibrate(false);
 		let currently_viewed = self.data.get_currently_viewed();

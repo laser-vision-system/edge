@@ -1,7 +1,7 @@
 mod perpetual_info;
 mod persist_entry;
 pub mod polling;
-pub mod states;
+mod states;
 
 use std::{
 	borrow::{Borrow, BorrowMut},
@@ -15,10 +15,12 @@ use server_edge_datatypes::{
 	shared::{CameraId, Configuration, ViewCameraConfig},
 };
 
-use crate::{error::EdgeError, logger::logger};
+use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
 
-use self::states::active::MaybeBatch;
-pub use self::{perpetual_info::PerpetualInfo, persist_entry::PersistEntry};
+pub use self::{
+	perpetual_info::PerpetualInfo,
+	persist_entry::{MaybeImage, PersistEntry, WhyNo},
+};
 
 use super::Identifier;
 
@@ -29,6 +31,22 @@ type KeyType = Identifier;
 type ValType = PersistEntry;
 type MapType = HashMap<KeyType, ValType>;
 type OccupiedIndices = HashSet<CameraIndex>;
+
+pub enum MaybeBatch<'a> {
+	Batch(BatchItem<'a>),
+	WhyNo(WhyNo),
+}
+
+pub struct StatusChange {
+	pub id: CameraId,
+	pub why: WhyNo,
+}
+
+impl StatusChange {
+	fn new(id: CameraId, why: WhyNo) -> Self {
+		Self { id, why }
+	}
+}
 
 /// Persistence data for camera devices.
 ///
@@ -163,27 +181,57 @@ impl Persistence {
 }
 
 impl Persistence {
-	pub fn poll_active_entries(
-		&mut self,
+	pub fn poll_active_entries<'a>(
+		&'a mut self,
 		camera_err_increment: u16,
 		camera_err_threshold: u16,
 		camera_err_decrement: u16,
-	) -> Vec<(MaybeBatch<'_>, CameraId)> {
-		let batch: Vec<_> = self
+	) -> (Vec<BatchItem<'a>>, Vec<StatusChange>) {
+		let (maybe_batch_items, maybe_status_changes): (Vec<_>, Vec<_>) = self
 			.inner
 			.iter_mut()
 			.filter_map(|(ident, entry)| {
-				let maybebatch = entry.try_get_batch_item(
-					ident,
+				let maybe_image = entry.try_get_image(
 					camera_err_increment,
 					camera_err_threshold,
 					camera_err_decrement,
 				)?;
-				Some((maybebatch, CameraId::from(ident.clone())))
+
+				// Non-destructively read the result and adjust entry state.
+				if let MaybeImage::WhyNo(whynot) = &maybe_image {
+					match whynot {
+						WhyNo::Broken => {
+							entry.active_to_broken();
+						},
+						WhyNo::Disconnected => {
+							entry.active_to_disconnected();
+						},
+					}
+				}
+
+				match maybe_image {
+					MaybeImage::Image(image) => {
+						let batch_item = entry.try_make_batch_item_with(ident, image)?;
+						Some((Some(batch_item), None))
+					},
+					MaybeImage::WhyNo(whyno) => Some((
+						None,
+						Some(StatusChange::new(CameraId::from(ident.clone()), whyno)),
+					)),
+				}
 			})
+			.unzip();
+
+		let batch_items = maybe_batch_items
+			.into_iter()
+			.filter_map(|item| item)
+			.collect();
+		let status_changes = maybe_status_changes
+			.into_iter()
+			.filter_map(|status| status)
 			.collect();
 
-		batch
+		(batch_items, status_changes)
 	}
 }
 

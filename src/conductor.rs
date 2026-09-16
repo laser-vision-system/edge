@@ -11,11 +11,7 @@ use crate::{
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
-	tcam_interface::{
-		CameraDevice, Persistence,
-		active::{MaybeBatch, WhyNo},
-		polling::ConnectionDetail,
-	},
+	tcam_interface::{CameraDevice, Persistence, WhyNo, polling::ConnectionDetail},
 	vision_processor::{VisionInterface, VisionVariant, vision},
 	websocket::WebSocket,
 };
@@ -59,41 +55,35 @@ impl Conductor {
 		};
 
 		// TODO: There should be something in between this call that does the below.
-		let batch_items = self.persistence.poll_active_entries(
+		let (mut batch_items, status_changes) = self.persistence.poll_active_entries(
 			settings.camera_err_increment,
 			settings.camera_err_threshold,
 			settings.camera_err_decrement,
 		);
 
-		let mut items = Vec::with_capacity(batch_items.len());
-
-		// TODO: Currently, the actual camera status is not being updated.
-		for (maybebatch, cam_id) in batch_items {
-			match maybebatch {
-				MaybeBatch::Batch(batch) => items.push(batch),
-				MaybeBatch::WhyNo(whyno) => match whyno {
-					WhyNo::Disconnected => {
-						let _ = websocket
-							.send_text(
-								"UpdateCameraStatus:".into(),
-								UpdateCameraStatus {
-									camera_id: cam_id,
-									status: CameraStatus::Disconnected,
-								},
-							)
-							.await;
-					},
-					WhyNo::Broken => {
-						let _ = websocket
-							.send_text(
-								"UpdateCameraStatus:".into(),
-								UpdateCameraStatus {
-									camera_id: cam_id,
-									status: CameraStatus::Broken,
-								},
-							)
-							.await;
-					},
+		for status_change in status_changes {
+			match status_change.why {
+				WhyNo::Disconnected => {
+					let _ = websocket
+						.send_text(
+							"UpdateCameraStatus:".into(),
+							UpdateCameraStatus {
+								camera_id: status_change.id,
+								status: CameraStatus::Disconnected,
+							},
+						)
+						.await;
+				},
+				WhyNo::Broken => {
+					let _ = websocket
+						.send_text(
+							"UpdateCameraStatus:".into(),
+							UpdateCameraStatus {
+								camera_id: status_change.id,
+								status: CameraStatus::Broken,
+							},
+						)
+						.await;
 				},
 			}
 		}
@@ -102,10 +92,10 @@ impl Conductor {
 		logger().lock().unwrap().send_logs();
 
 		// Vision
-		vision().lock().unwrap().process(&mut items);
+		vision().lock().unwrap().process(&mut batch_items);
 
 		// Send result
-		for item in items.iter() {
+		for item in batch_items.iter() {
 			let deviation_maybe = item.state.get_deviation();
 			let camid = item.camera_id;
 			if let Some(deviation) = deviation_maybe {
