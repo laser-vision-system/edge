@@ -59,6 +59,29 @@ impl PersistEntry {
 	}
 }
 
+// Variant checkers.
+impl PersistEntry {
+	pub fn is_active(&self) -> bool {
+		self.get_status() == CameraStatus::Active
+	}
+
+	pub fn is_broken(&self) -> bool {
+		self.get_status() == CameraStatus::Broken
+	}
+
+	pub fn is_disconnected(&self) -> bool {
+		self.get_status() == CameraStatus::Disconnected
+	}
+
+	pub fn is_invalid(&self) -> bool {
+		self.get_status() == CameraStatus::Invalid
+	}
+
+	pub fn is_limbo(&self) -> bool {
+		self.get_status() == CameraStatus::Limbo
+	}
+}
+
 // Accessors.
 impl PersistEntry {
 	pub fn get_active(&self) -> Option<&Active> {
