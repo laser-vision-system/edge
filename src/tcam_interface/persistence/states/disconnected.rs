@@ -57,6 +57,7 @@ impl From<Active> for Disconnected {
 		}
 	}
 }
+
 impl From<Broken> for Disconnected {
 	fn from(broken: Broken) -> Self {
 		Self {
@@ -65,6 +66,7 @@ impl From<Broken> for Disconnected {
 		}
 	}
 }
+
 impl From<Limbo> for Disconnected {
 	fn from(limbo: Limbo) -> Self {
 		Self {
