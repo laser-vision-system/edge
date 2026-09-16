@@ -30,6 +30,7 @@ impl Conductor {
 		settings: Settings,
 	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
+		limit_interval.tick().await;
 
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
 		self.update_camera_device_connections(&mut websocket).await;
