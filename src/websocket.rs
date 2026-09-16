@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use futures_util::{SinkExt, StreamExt};
+use futures_util::stream::FusedStream;
 use serde::Serialize;
 use server_edge_datatypes::edge::EdgeRequests;
 use tokio::{self, net::TcpStream, time::interval};
@@ -31,6 +32,9 @@ impl WebSocket {
 		Self { inner: stream }
 	}
 
+	pub fn is_terminated(&self) -> bool {
+		self.inner.is_terminated()
+	}
 	pub async fn websocket_connect_static() -> Self {
 		let url = "ws://".to_string() + HOST + ":" + PORT + API;
 		Self::websocket_connect(&url).await
