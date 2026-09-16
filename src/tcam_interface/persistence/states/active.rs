@@ -81,9 +81,17 @@ impl Active {
 		}
 	}
 
-	pub fn from_limbo(limbo: Limbo, camera: CameraDevice) -> Self {
+	pub fn from_limbo(
+		limbo: Limbo,
+		camera: CameraDevice,
+		mut occupied_indices: OccupiedIndices,
+	) -> Self {
+		// The parameter contains more indices than limbo.
+		if !occupied_indices.is_subset(&limbo.occupied_indices) {
+			occupied_indices.extend(limbo.occupied_indices);
+		}
 		Self {
-			occupied_indices: limbo.occupied_indices,
+			occupied_indices,
 			data: limbo.data,
 			name: limbo.name,
 			camera,
