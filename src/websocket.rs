@@ -32,7 +32,7 @@ impl WebSocket {
 		Self { inner: stream }
 	}
 
-	pub fn is_active(&self) -> bool {
+	pub fn is_terminated(&self) -> bool {
 		self.inner.is_terminated()
 	}
 	pub async fn websocket_connect_static() -> Self {

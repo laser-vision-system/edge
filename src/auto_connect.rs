@@ -1,9 +1,9 @@
 use std::{collections::HashSet, fmt};
-use std::time::Duration;
 use crate::logger::logger;
 use crate::{
 	error::{EdgeError, Result},
 	websocket::WebSocket,
+	settings::AUTO_CONNECT_DELAY
 };
 use pnet_datalink::interfaces;
 use reqwest::Client;
@@ -134,7 +134,7 @@ pub async fn assert_connection(
 	match (websocket, settings) {
 		// All good, normal operation.
 		(Some(socket), Some(settings)) => {
-			if socket.is_active() {
+			if socket.is_terminated() {
 				return loop_until_connection().await
 			}
 			(socket, settings)
@@ -147,7 +147,7 @@ pub async fn assert_connection(
 }
 
 async fn loop_until_connection() -> (WebSocket, Settings) {
-	let mut limit_interval = interval(Duration::from_secs(5));
+	let mut limit_interval = interval(AUTO_CONNECT_DELAY);
 	loop {
 		match try_connect_once().await {
 			Ok(yay) => return yay,
