@@ -7,7 +7,7 @@ use crate::{error::EdgeError, logger::logger, tcam_interface::CameraDevice};
 
 use super::{
 	polling::AccessPoint,
-	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
+	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo, active::MaybeBatch},
 };
 
 #[allow(unused_imports, reason = "Needed for docstring")]
@@ -17,6 +17,8 @@ use crate::tcam_interface::Identifier;
 pub struct PersistEntry {
 	inner: ConnectionStatus,
 }
+
+// TODO: Easy status swapping logic.
 
 // Constructors.
 impl PersistEntry {
@@ -221,6 +223,32 @@ impl PersistEntry {
 
 // Operations.
 impl PersistEntry {
+	pub fn try_get_batch_item<'a>(
+		&'a mut self,
+		ident: &Identifier,
+		camera_err_increment: u16,
+		camera_err_threshold: u16,
+		camera_err_decrement: u16,
+	) -> Option<MaybeBatch<'a>> {
+		let active = self.get_active_mut()?;
+
+		let maybebatch = active.try_get_batch_item(
+			ident,
+			camera_err_increment,
+			camera_err_threshold,
+			camera_err_decrement,
+		);
+		Some(maybebatch)
+	}
+
+	pub fn active_to_disconnected(&mut self) {
+		todo!()
+	}
+
+	pub fn active_to_broken(&mut self) {
+		todo!()
+	}
+
 	pub fn update(&mut self, points: &HashSet<AccessPoint>) -> Option<CameraStatus> {
 		//todo!("First, check if main index is gone. Then update and log extra indices.");
 		match &mut self.inner {

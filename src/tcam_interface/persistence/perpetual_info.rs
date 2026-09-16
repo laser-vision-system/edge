@@ -1,7 +1,4 @@
-use image::RgbImage;
-use server_edge_datatypes::shared::CameraId;
-
-use crate::vision_processor::{BatchItem, VisionState};
+use crate::vision_processor::VisionState;
 
 use super::ErrAccType;
 
@@ -63,13 +60,6 @@ impl PerpetualInfo {
 
 	pub fn get_vision_state(&mut self) -> &mut VisionState {
 		&mut self.vision_state
-	}
-
-	pub fn create_batch_item(&mut self, image: RgbImage, id: CameraId) -> BatchItem<'_> {
-		let calibrate = self.calibrate;
-		self.calibrate = false;
-		let state = &mut self.vision_state;
-		BatchItem::new(id, state, image, calibrate, self.currently_viewed)
 	}
 }
 

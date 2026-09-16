@@ -11,7 +11,11 @@ use crate::{
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
-	tcam_interface::{CameraDevice, Persistence, WhyNo, polling::ConnectionDetail},
+	tcam_interface::{
+		CameraDevice, Persistence,
+		active::{MaybeBatch, WhyNo},
+		polling::ConnectionDetail,
+	},
 	vision_processor::{VisionInterface, VisionVariant, vision},
 	websocket::WebSocket,
 };
@@ -55,7 +59,7 @@ impl Conductor {
 		};
 
 		// TODO: There should be something in between this call that does the below.
-		let batch_items = self.persistence.run_on_active(
+		let batch_items = self.persistence.poll_active_entries(
 			settings.camera_err_increment,
 			settings.camera_err_threshold,
 			settings.camera_err_decrement,
@@ -63,27 +67,28 @@ impl Conductor {
 
 		let mut items = Vec::with_capacity(batch_items.len());
 
-		for item in batch_items {
-			match item {
-				Ok(batch) => items.push(batch),
-				Err((_, details)) => match details {
-					WhyNo::Disconnected(id) => {
+		// TODO: Currently, the actual camera status is not being updated.
+		for (maybebatch, cam_id) in batch_items {
+			match maybebatch {
+				MaybeBatch::Batch(batch) => items.push(batch),
+				MaybeBatch::WhyNo(whyno) => match whyno {
+					WhyNo::Disconnected => {
 						let _ = websocket
 							.send_text(
 								"UpdateCameraStatus:".into(),
 								UpdateCameraStatus {
-									camera_id: id,
+									camera_id: cam_id,
 									status: CameraStatus::Disconnected,
 								},
 							)
 							.await;
 					},
-					WhyNo::Broken(id) => {
+					WhyNo::Broken => {
 						let _ = websocket
 							.send_text(
 								"UpdateCameraStatus:".into(),
 								UpdateCameraStatus {
-									camera_id: id,
+									camera_id: cam_id,
 									status: CameraStatus::Broken,
 								},
 							)
