@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use server_edge_datatypes::{
 	edge::{EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
-	shared::{CameraStatus, Configuration, VisionTechnique},
+	shared::{CameraStatus, VisionTechnique},
 };
 use tokio::time::interval;
 
@@ -9,7 +11,7 @@ use crate::{
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
-	tcam_interface::{Camera, Persistence, WhyNo},
+	tcam_interface::{CameraDevice, Persistence, WhyNo, polling::ConnectionDetail},
 	vision_processor::{VisionInterface, VisionVariant, vision},
 	websocket::WebSocket,
 };
@@ -31,40 +33,33 @@ impl Conductor {
 		let mut limit_interval = interval(settings.update_delay);
 
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
+		self.update_camera_device_connections(&mut websocket).await;
 
-		// This function detects new cameras and instantiates them.
-		let new_cameras = self.persistence.poll_for_new_cameras();
-
-		if !new_cameras.is_empty() {
-			websocket
-				.send_text(
-					"RegisterCameras:".into(),
-					RegisterCameras {
-						cameras: new_cameras,
-					},
-				)
-				.await?;
-		}
-
-		let mut requested_type = None;
-
+		// Save the most recent vision swap request, instead of trying to swap
+		// more than once.
+		let mut requested_vision_type = None;
 		while let Some(request) = websocket
 			.query_websockets(settings.websocket_poll_interval)
 			.await
 		{
-			self.handle_request(request, &mut websocket, &mut requested_type)
+			self.handle_request(request, &mut websocket, &mut requested_vision_type)
 				.await;
 		}
 		logger().lock().unwrap().send_logs();
 
-		websocket.keep_alive().await?;
+		let _ = websocket.keep_alive().await;
 
-		let vision_processor = match requested_type {
+		let vision_processor = match requested_vision_type {
 			Some(swap_to) => vision_processor.swap(swap_to),
 			None => vision_processor,
 		};
 
-		let batch_items = self.persistence.run_on_active(settings.clone());
+		// TODO: There should be something in between this call that does the below.
+		let batch_items = self.persistence.run_on_active(
+			settings.camera_err_increment,
+			settings.camera_err_threshold,
+			settings.camera_err_decrement,
+		);
 
 		let mut items = Vec::with_capacity(batch_items.len());
 
@@ -128,7 +123,7 @@ impl Conductor {
 			};
 
 			if item.send_to_server {
-				let mut encoded = Camera::encode_image(item.image.clone());
+				let mut encoded = CameraDevice::encode_image(item.image.clone());
 				let result = websocket.send_image(item.camera_id, &mut encoded).await;
 				let _ = result.inspect_err(|why| {
 					logger().lock().unwrap().log_error(
@@ -151,77 +146,39 @@ impl Conductor {
 		&mut self,
 		request: EdgeRequests,
 		websocket: &mut WebSocket,
-		requested_type: &mut Option<VisionTechnique>,
+		requested_vision_type: &mut Option<VisionTechnique>,
 	) {
 		match request {
 			EdgeRequests::SetNameCamera(cam_name_req) => {
-				if let Some(meta) = self.persistence.get_with_id(cam_name_req.camera_id) {
-					meta.name = cam_name_req.name
-				}
+				self.persistence.set_entry_name(cam_name_req);
 			},
 			EdgeRequests::StartViewingCamera(start_view_cam_req) => {
-				if let Some(meta) = self.persistence.get_with_id(start_view_cam_req.camera_id) {
-					meta.currently_viewed = true
-				}
+				self.persistence.start_viewing_camera(start_view_cam_req);
 			},
 			EdgeRequests::StopViewingCamera(stop_view_cam_req) => {
-				if let Some(meta) = self.persistence.get_with_id(stop_view_cam_req.camera_id) {
-					meta.currently_viewed = false
-				}
+				self.persistence.stop_viewing_camera(stop_view_cam_req);
 			},
 			EdgeRequests::Configuration(set_config_req) => {
-				if let Some(meta) = self.persistence.get_with_id(set_config_req.camera_id) {
-					let Some(camera) = meta.camera_mut() else {
-						return;
-					};
-					logger()
-						.lock()
-						.unwrap()
-						.log_error("", &EdgeError::CameraNotPresent);
-					match serde_json::from_str(&set_config_req.configuration) {
-						Ok(map) => {
-							if let Err(why) = camera.set_controls(map) {
-								logger()
-									.lock()
-									.unwrap()
-									.log_error("Failed to set requested cntrols from server", &why);
-							};
-						},
-						Err(why) => {
-							logger().lock().unwrap().log_error(
-								"Failed to parse requested configuration",
-								&EdgeError::DecodeControls { reason: why },
-							);
-						},
-					};
-				}
+				self.persistence.set_configuration(set_config_req);
 			},
 			EdgeRequests::ViewCameraConfig(view_config_req) => {
-				if let Some(meta) = self.persistence.get_with_id(view_config_req.camera_id) {
-					let Some(camera) = meta.camera() else {
-						logger()
-							.lock()
-							.unwrap()
-							.log_error("", &EdgeError::CameraNotPresent);
-						return;
-					};
-					let important_controls = camera.get_controls().stripped();
-					let configuration = Configuration::build_response(
-						view_config_req,
-						important_controls.serialise(),
-					);
-					let _ = websocket
+				if let Some(configuration) = self.persistence.get_configuration(view_config_req) {
+					if let Err(_) = websocket
 						.send_text("Configuration:".into(), configuration)
-						.await;
+						.await
+					{
+						logger().lock().unwrap().log_error(
+							"Failed to send configuration request",
+							&EdgeError::WebSocketConnection,
+						);
+					}
 				}
 			},
 			EdgeRequests::Setpoint(calibration_req) => {
-				if let Some(meta) = self.persistence.get_with_id(calibration_req.camera_id) {
-					meta.request_calibration();
-				}
+				self.persistence.request_calibration(calibration_req);
 			},
 			EdgeRequests::SetProcessingType(processing_req) => {
-				requested_type.replace(processing_req.processing_type);
+				requested_vision_type.replace(processing_req.processing_type);
 			},
 			_ => {
 				logger()
@@ -229,6 +186,46 @@ impl Conductor {
 					.unwrap()
 					.log_warn("received request that is not currently supported");
 			},
+		}
+	}
+
+	async fn update_camera_device_connections(&mut self, websocket: &mut WebSocket) {
+		let mut results = self.persistence.poll_for_new_cameras();
+
+		let new_cameras = results.extract_if(|_, value| match value {
+			ConnectionDetail::New { .. } => true,
+			ConnectionDetail::Update { .. } => false,
+		});
+
+		let new_cameras: HashMap<_, _> = new_cameras
+			.into_iter()
+			.filter_map(|(key, value)| match value {
+				ConnectionDetail::New { info } => Some((key, info)),
+				ConnectionDetail::Update { .. } => None,
+			})
+			.collect();
+
+		for (camera_id, update) in results {
+			let ConnectionDetail::Update { status } = update else {
+				continue;
+			};
+			let _ = websocket
+				.send_text(
+					"UpdateCameraStatus:".into(),
+					UpdateCameraStatus { camera_id, status },
+				)
+				.await;
+		}
+
+		if !new_cameras.is_empty() {
+			let _ = websocket
+				.send_text(
+					"RegisterCameras:".into(),
+					RegisterCameras {
+						cameras: new_cameras,
+					},
+				)
+				.await;
 		}
 	}
 }

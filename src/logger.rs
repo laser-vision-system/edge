@@ -292,7 +292,7 @@ mod test {
 			.log_error("This is an ERROR log test.", &error);
 
 		error = NokhwaInitialisation {
-			index: 69,
+			index: "69".into(),
 			reason: "*Generic reason*".to_string(),
 		};
 		logger()
