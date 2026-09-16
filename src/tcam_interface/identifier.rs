@@ -176,11 +176,11 @@ impl Ord for Identifier {
 }
 
 #[cfg(test)]
-mod tests {
-	use super::*;
+pub mod common {
+	use super::IdentMetaInfo;
 
 	impl IdentMetaInfo {
-		fn new(
+		pub fn new(
 			name: impl Into<String>,
 			description: impl Into<String>,
 			misc: impl Into<String>,
@@ -192,6 +192,11 @@ mod tests {
 			}
 		}
 	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
 
 	#[test]
 	fn identmetainfo_eq() {
