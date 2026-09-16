@@ -183,9 +183,31 @@ impl BorrowMut<MapType> for Persistence {
 
 impl Default for Persistence {
 	fn default() -> Self {
-		// TODO: Test if the hashed keys will match.
 		Self {
 			inner: HashMap::with_hasher(RandomState::new()),
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::tcam_interface::identifier::*;
+
+	use super::*;
+
+	#[test]
+	fn matching_entries() {
+		let mut persist_map = Persistence::default();
+		let points = HashSet::new();
+
+		let first_key = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let first_entry = PersistEntry::new(&points);
+		persist_map.inner.insert(first_key, first_entry);
+
+		let second_key = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let second_entry = PersistEntry::new(&points);
+		persist_map.inner.insert(second_key, second_entry);
+
+		assert_eq!(persist_map.inner.len(), 1)
 	}
 }
