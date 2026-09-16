@@ -32,62 +32,24 @@ impl Conductor {
 	) -> Result<(WebSocket, Settings, VisionVariant), Box<dyn std::error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
 
-		{
-			// TODO: Delay for polling cameras, so it doesn't happen every loop.
+		// TODO: Delay for polling cameras, so it doesn't happen every loop.
+		self.update_camera_device_connections(&mut websocket).await;
 
-			let mut results = self.persistence.poll_for_new_cameras();
-
-			let new_cameras = results.extract_if(|_, value| match value {
-				ConnectionDetail::New { .. } => true,
-				ConnectionDetail::Update { .. } => false,
-			});
-
-			let new_cameras: HashMap<_, _> = new_cameras
-				.into_iter()
-				.filter_map(|(key, value)| match value {
-					ConnectionDetail::New { info } => Some((key, info)),
-					ConnectionDetail::Update { .. } => None,
-				})
-				.collect();
-
-			for (camera_id, update) in results {
-				let ConnectionDetail::Update { status } = update else {
-					continue;
-				};
-				let _ = websocket
-					.send_text(
-						"UpdateCameraStatus:".into(),
-						UpdateCameraStatus { camera_id, status },
-					)
-					.await;
-			}
-
-			if !new_cameras.is_empty() {
-				websocket
-					.send_text(
-						"RegisterCameras:".into(),
-						RegisterCameras {
-							cameras: new_cameras,
-						},
-					)
-					.await?;
-			}
-		}
-
-		let mut requested_type = None;
-
+		// Save the most recent vision swap request, instead of trying to swap
+		// more than once.
+		let mut requested_vision_type = None;
 		while let Some(request) = websocket
 			.query_websockets(settings.websocket_poll_interval)
 			.await
 		{
-			self.handle_request(request, &mut websocket, &mut requested_type)
+			self.handle_request(request, &mut websocket, &mut requested_vision_type)
 				.await;
 		}
 		logger().lock().unwrap().send_logs();
 
-		websocket.keep_alive().await?;
+		let _ = websocket.keep_alive().await;
 
-		let vision_processor = match requested_type {
+		let vision_processor = match requested_vision_type {
 			Some(swap_to) => vision_processor.swap(swap_to),
 			None => vision_processor,
 		};
@@ -184,7 +146,7 @@ impl Conductor {
 		&mut self,
 		request: EdgeRequests,
 		websocket: &mut WebSocket,
-		requested_type: &mut Option<VisionTechnique>,
+		requested_vision_type: &mut Option<VisionTechnique>,
 	) {
 		match request {
 			EdgeRequests::SetNameCamera(cam_name_req) => {
@@ -216,7 +178,7 @@ impl Conductor {
 				self.persistence.request_calibration(calibration_req);
 			},
 			EdgeRequests::SetProcessingType(processing_req) => {
-				requested_type.replace(processing_req.processing_type);
+				requested_vision_type.replace(processing_req.processing_type);
 			},
 			_ => {
 				logger()
@@ -224,6 +186,46 @@ impl Conductor {
 					.unwrap()
 					.log_warn("received request that is not currently supported");
 			},
+		}
+	}
+
+	async fn update_camera_device_connections(&mut self, websocket: &mut WebSocket) {
+		let mut results = self.persistence.poll_for_new_cameras();
+
+		let new_cameras = results.extract_if(|_, value| match value {
+			ConnectionDetail::New { .. } => true,
+			ConnectionDetail::Update { .. } => false,
+		});
+
+		let new_cameras: HashMap<_, _> = new_cameras
+			.into_iter()
+			.filter_map(|(key, value)| match value {
+				ConnectionDetail::New { info } => Some((key, info)),
+				ConnectionDetail::Update { .. } => None,
+			})
+			.collect();
+
+		for (camera_id, update) in results {
+			let ConnectionDetail::Update { status } = update else {
+				continue;
+			};
+			let _ = websocket
+				.send_text(
+					"UpdateCameraStatus:".into(),
+					UpdateCameraStatus { camera_id, status },
+				)
+				.await;
+		}
+
+		if !new_cameras.is_empty() {
+			let _ = websocket
+				.send_text(
+					"RegisterCameras:".into(),
+					RegisterCameras {
+						cameras: new_cameras,
+					},
+				)
+				.await;
 		}
 	}
 }
