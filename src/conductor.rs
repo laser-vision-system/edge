@@ -12,7 +12,7 @@ use crate::{
 	logger::logger,
 	settings::Settings,
 	tcam_interface::{CameraDevice, Persistence, WhyNo, polling::ConnectionDetail},
-	vision_processor::{VisionInterface, VisionVariant, vision},
+	vision_processor::{VisionInterface, vision},
 	websocket::WebSocket,
 };
 
@@ -28,8 +28,7 @@ impl Conductor {
 		&mut self,
 		mut websocket: WebSocket,
 		settings: Settings,
-		vision_processor: VisionVariant,
-	) -> Result<(WebSocket, Settings, VisionVariant), Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
 
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
@@ -49,10 +48,9 @@ impl Conductor {
 
 		let _ = websocket.keep_alive().await;
 
-		let vision_processor = match requested_vision_type {
-			Some(swap_to) => vision_processor.swap(swap_to),
-			None => vision_processor,
-		};
+		if let Some(swap_to) = requested_vision_type {
+			vision().swap(swap_to);
+		}
 
 		// TODO: There should be something in between this call that does the below.
 		let (mut batch_items, status_changes) = self.persistence.poll_active_entries(
@@ -92,7 +90,9 @@ impl Conductor {
 		logger().lock().unwrap().send_logs();
 
 		// Vision
-		vision().lock().unwrap().process(&mut batch_items);
+		vision().interact(|vision| {
+			vision.process(&mut batch_items);
+		});
 
 		// Send result
 		for item in batch_items.iter() {
@@ -134,7 +134,7 @@ impl Conductor {
 		// This should guarantee that the loop will take at least this long.
 		limit_interval.tick().await;
 
-		Ok((websocket, settings, vision_processor))
+		Ok((websocket, settings))
 	}
 
 	async fn handle_request(
@@ -238,15 +238,11 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let mut websocket: Option<WebSocket> = None;
 	let mut settings: Option<Settings> = None;
 	let mut conductor = Conductor::default();
-	let mut vision_processor = VisionVariant::default();
 
 	loop {
 		let (loop_websocket, loop_settings) = assert_connection(websocket, settings).await;
-		let result = conductor
-			.loop_once(loop_websocket, loop_settings, vision_processor)
-			.await?;
+		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);
-		vision_processor = result.2;
 	}
 }
