@@ -22,7 +22,7 @@ pub struct PerpetualInfo {
 
 	/// Local holding of the vision processor state.
 	/// IDEA: Instead of Option, leave it to the default variant.
-	vision_state: Option<VisionState>,
+	vision_state: VisionState,
 }
 
 impl PerpetualInfo {
@@ -61,18 +61,14 @@ impl PerpetualInfo {
 		self.calibrate = state
 	}
 
-	pub fn get_vision_state(&mut self) -> Option<&mut VisionState> {
-		self.vision_state.as_mut()
+	pub fn get_vision_state(&mut self) -> &mut VisionState {
+		&mut self.vision_state
 	}
 
 	pub fn create_batch_item(&mut self, image: RgbImage, id: CameraId) -> BatchItem<'_> {
 		let calibrate = self.calibrate;
 		self.calibrate = false;
-		let state = self
-			.vision_state
-			.as_mut()
-			.expect("vision state expected while status is active");
-		// TODO: Allow this to accept an optional value.
+		let state = &mut self.vision_state;
 		BatchItem::new(id, state, image, calibrate, self.currently_viewed)
 	}
 }
