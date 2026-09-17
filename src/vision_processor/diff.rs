@@ -4,6 +4,10 @@ use image::{DynamicImage, GrayImage};
 
 use image_compare::{Algorithm, Metric, gray_similarity_histogram, gray_similarity_structure};
 
+use crate::vision_processor::tests;
+
+use crate::logger::logger;
+
 use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
 struct DiffModel {
@@ -172,7 +176,7 @@ impl VisionInterface for Diff {
 					data.deviation = Some(1.0 - relative_intensity as f32);
 				},
 				None => {
-					logger::logger().log_warn("Could not calculate deviation as there is no setpoint!");
+					logger().log_warn("Could not calculate deviation as there is no setpoint!");
 					continue;
 				},
 			}
@@ -227,3 +231,4 @@ impl fmt::Display for ExternalData {
 		)
 	}
 }
+
