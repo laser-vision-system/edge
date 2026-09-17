@@ -4,8 +4,6 @@ use image::{DynamicImage, GrayImage};
 
 use image_compare::{Algorithm, Metric, gray_similarity_histogram, gray_similarity_structure};
 
-use crate::vision_processor::tests;
-
 use crate::logger::logger;
 
 use super::{BatchItem, SessionToken, VisionInterface, VisionState};
@@ -231,4 +229,3 @@ impl fmt::Display for ExternalData {
 		)
 	}
 }
-
