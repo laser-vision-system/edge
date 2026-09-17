@@ -28,21 +28,21 @@ impl DiffModel {
 		correlation: f32,
 		intersection: f32,
 	) -> f32 {
-		self.intercept +
-		self.peak * peak +
-		self.mean * mean +
-		self.std_dev * std_dev +
-		self.luma_ssim * luma_ssim +
-		self. hellinger * hellinger +
-		self.correlation * correlation +
-		self.intersection * intersection
+		self.intercept
+			+ self.peak * peak
+			+ self.mean * mean
+			+ self.std_dev * std_dev
+			+ self.luma_ssim * luma_ssim
+			+ self.hellinger * hellinger
+			+ self.correlation * correlation
+			+ self.intersection * intersection
 	}
 }
 
 impl Default for DiffModel {
 	fn default() -> Self {
 		DiffModel {
-			intercept: 0.0.5819997604631103,
+			intercept: 0.5819997604631103,
 			peak: -0.027890896459691977,
 			mean: 0.03606082141430921,
 			std_dev: -0.21063533527616005,
@@ -53,7 +53,7 @@ impl Default for DiffModel {
 		}
 	}
 }
-#[derive(Clone)]
+
 pub struct Diff {
 	session: SessionToken,
 	model: DiffModel,
@@ -73,6 +73,7 @@ impl Diff {
 			data: ExternalData::default(),
 		}
 	}
+
 	fn compute_brightness_stats(&self, img: &GrayImage) -> (u8, f32, f32) {
 		let pixels: Vec<u8> = img.pixels().map(|p| p.0[0]).collect();
 		let n = pixels.len() as f32;
@@ -95,6 +96,7 @@ impl Diff {
 
 		(peak, mean, std_dev)
 	}
+
 	fn collect_metrics(
 		&self,
 		image: &GrayImage,
@@ -132,6 +134,7 @@ impl VisionInterface for Diff {
 				// TODO: This should raise an error.
 				continue;
 			};
+
 			if item.calibrate {
 				let grey_image = Some(DynamicImage::ImageRgb8(item.image.clone()).into_luma8());
 				data.image = grey_image.clone();
@@ -141,7 +144,9 @@ impl VisionInterface for Diff {
 				data.std_dev = Some(std_dev);
 				continue;
 			}
+
 			let grey_image = DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
+
 			let (
 				peak_diff,
 				mean_diff,
@@ -150,8 +155,18 @@ impl VisionInterface for Diff {
 				hellinger,
 				correlation,
 				intersection,
-			) = self.collect_metrics(&grey_image, &data.image.unwrap());
-			let relative_intensity = model.predict(peak_diff, mean_diff, std_dev_diff, luma_ssim, hellinger, correlation, intersection);
+			) = self.collect_metrics(&grey_image, &data.image.clone().unwrap());
+
+			let relative_intensity = self.model.predict(
+				peak_diff,
+				mean_diff,
+				std_dev_diff,
+				luma_ssim,
+				hellinger,
+				correlation,
+				intersection,
+			);
+
 			data.deviation = Some(1.0 - relative_intensity as f32);
 		}
 	}

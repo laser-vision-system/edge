@@ -1,20 +1,19 @@
+use std::collections::HashMap;
+
 use server_edge_datatypes::{
-	edge::{ImageAnalysis, RegisterCameras, UpdateCameraStatus},
-	shared::{CameraStatus, Configuration, ViewCameraConfig},
+	edge::{EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
+	shared::{CameraStatus, VisionTechnique},
 };
-
-use futures_util::StreamExt;
-
 use tokio::time::interval;
-use tokio_tungstenite::tungstenite::Message;
 
 use crate::{
-	client::{Client, WebSocket},
+	auto_connect::assert_connection,
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
-	tcam_interface::{Camera, Persistence, WhyNo},
-	vision_processor::{VisionInterface, VisionVariant, vision},
+	tcam_interface::{CameraDevice, Persistence, WhyNo, polling::ConnectionDetail},
+	vision_processor::{VisionInterface, vision},
+	websocket::WebSocket,
 };
 
 /// # Conductor
@@ -22,74 +21,68 @@ use crate::{
 /// The main execution context.
 pub struct Conductor {
 	persistence: Persistence,
-	client: Client,
 }
 
 impl Conductor {
 	async fn loop_once(
 		&mut self,
+		mut websocket: WebSocket,
 		settings: Settings,
-		stream: &mut WebSocket,
-	) -> Result<Settings, Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
+		limit_interval.tick().await;
 
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
+		self.update_camera_device_connections(&mut websocket).await;
 
-		// This function detects new cameras and instantiates them.
-		let new_cameras = self.persistence.poll_for_new_cameras();
+		// Save the most recent vision swap request, instead of trying to swap
+		// more than once.
+		let mut requested_vision_type = None;
+		while let Some(request) = websocket
+			.query_websockets(settings.websocket_poll_interval)
+			.await
+		{
+			self.handle_request(request, &mut websocket, &mut requested_vision_type)
+				.await;
+		}
+		logger().lock().unwrap().send_logs();
 
-		self.client
-			.send_text(
-				stream,
-				"RegisterCameras:".into(),
-				RegisterCameras {
-					cameras: new_cameras,
+		let _ = websocket.keep_alive().await;
+
+		if let Some(swap_to) = requested_vision_type {
+			vision().swap(swap_to);
+		}
+
+		// TODO: There should be something in between this call that does the below.
+		let (mut batch_items, status_changes) = self.persistence.poll_active_entries(
+			settings.camera_err_increment,
+			settings.camera_err_threshold,
+			settings.camera_err_decrement,
+		);
+
+		for status_change in status_changes {
+			match status_change.why {
+				WhyNo::Disconnected => {
+					let _ = websocket
+						.send_text(
+							"UpdateCameraStatus:".into(),
+							UpdateCameraStatus {
+								camera_id: status_change.id,
+								status: CameraStatus::Disconnected,
+							},
+						)
+						.await;
 				},
-			)
-			.await?;
-
-		while self.query_websockets(settings.clone(), stream).await {}
-
-		self.client.keep_alive(stream).await?;
-
-		//placeholder_config_request(&mut self.persistence);
-
-		//placeholder_send_config(&mut self.persistence);
-
-		let batch_items = self.persistence.run_on_active(settings.clone());
-
-		let mut items = Vec::with_capacity(batch_items.len());
-
-		for item in batch_items {
-			match item {
-				Ok(batch) => items.push(batch),
-				Err((_, details)) => match details {
-					WhyNo::Disconnected(id) => {
-						let _ = self
-							.client
-							.send_text(
-								stream,
-								"UpdateCameraStatus:".into(),
-								UpdateCameraStatus {
-									camera_id: id,
-									status: CameraStatus::Disconnected,
-								},
-							)
-							.await;
-					},
-					WhyNo::Broken(id) => {
-						let _ = self
-							.client
-							.send_text(
-								stream,
-								"UpdateCameraStatus:".into(),
-								UpdateCameraStatus {
-									camera_id: id,
-									status: CameraStatus::Broken,
-								},
-							)
-							.await;
-					},
+				WhyNo::Broken => {
+					let _ = websocket
+						.send_text(
+							"UpdateCameraStatus:".into(),
+							UpdateCameraStatus {
+								camera_id: status_change.id,
+								status: CameraStatus::Broken,
+							},
+						)
+						.await;
 				},
 			}
 		}
@@ -98,17 +91,17 @@ impl Conductor {
 		logger().lock().unwrap().send_logs();
 
 		// Vision
-		vision().lock().unwrap().process(&mut items);
+		vision().interact(|vision| {
+			vision.process(&mut batch_items);
+		});
 
 		// Send result
-		for item in items.iter() {
+		for item in batch_items.iter() {
 			let deviation_maybe = item.state.get_deviation();
 			let camid = item.camera_id;
 			if let Some(deviation) = deviation_maybe {
-				let result = self
-					.client
+				let result = websocket
 					.send_text(
-						stream,
 						"ImageAnalysis:".into(),
 						ImageAnalysis {
 							camera_id: camid,
@@ -126,11 +119,8 @@ impl Conductor {
 			};
 
 			if item.send_to_server {
-				let mut encoded = Camera::encode_image(item.image.clone());
-				let result = self
-					.client
-					.send_image(stream, item.camera_id, &mut encoded)
-					.await;
+				let mut encoded = CameraDevice::encode_image(item.image.clone());
+				let result = websocket.send_image(item.camera_id, &mut encoded).await;
 				let _ = result.inspect_err(|why| {
 					logger().lock().unwrap().log_error(
 						&format!("failed to image send to server: {why}"),
@@ -145,24 +135,93 @@ impl Conductor {
 		// This should guarantee that the loop will take at least this long.
 		limit_interval.tick().await;
 
-		Ok(settings)
+		Ok((websocket, settings))
 	}
 
-	async fn query_websockets(&mut self, settings: Settings, stream: &mut WebSocket) -> bool {
-		let mut interval = interval(settings.websocket_poll_interval);
-		tokio::select! {
-			Some(Ok(msg)) = stream.next() => {
-				match msg {
-					Message::Text(text) => {
-						println!("{}", text );
-						// TODO
-						self.client.websocket_incoming_data(&text).await;
-						true
+	async fn handle_request(
+		&mut self,
+		request: EdgeRequests,
+		websocket: &mut WebSocket,
+		requested_vision_type: &mut Option<VisionTechnique>,
+	) {
+		match request {
+			EdgeRequests::SetNameCamera(cam_name_req) => {
+				self.persistence.set_entry_name(cam_name_req);
+			},
+			EdgeRequests::StartViewingCamera(start_view_cam_req) => {
+				self.persistence.start_viewing_camera(start_view_cam_req);
+			},
+			EdgeRequests::StopViewingCamera(stop_view_cam_req) => {
+				self.persistence.stop_viewing_camera(stop_view_cam_req);
+			},
+			EdgeRequests::Configuration(set_config_req) => {
+				self.persistence.set_configuration(set_config_req);
+			},
+			EdgeRequests::ViewCameraConfig(view_config_req) => {
+				if let Some(configuration) = self.persistence.get_configuration(view_config_req) {
+					if let Err(_) = websocket
+						.send_text("Configuration:".into(), configuration)
+						.await
+					{
+						logger().lock().unwrap().log_error(
+							"Failed to send configuration request",
+							&EdgeError::WebSocketConnection,
+						);
 					}
-					_ => {true},
 				}
-			}
-			_ = interval.tick() => false
+			},
+			EdgeRequests::Setpoint(calibration_req) => {
+				self.persistence.request_calibration(calibration_req);
+			},
+			EdgeRequests::SetProcessingType(processing_req) => {
+				requested_vision_type.replace(processing_req.processing_type);
+			},
+			_ => {
+				logger()
+					.lock()
+					.unwrap()
+					.log_warn("received request that is not currently supported");
+			},
+		}
+	}
+
+	async fn update_camera_device_connections(&mut self, websocket: &mut WebSocket) {
+		let mut results = self.persistence.poll_for_new_cameras();
+
+		let new_cameras = results.extract_if(|_, value| match value {
+			ConnectionDetail::New { .. } => true,
+			ConnectionDetail::Update { .. } => false,
+		});
+
+		let new_cameras: HashMap<_, _> = new_cameras
+			.into_iter()
+			.filter_map(|(key, value)| match value {
+				ConnectionDetail::New { info } => Some((key, info)),
+				ConnectionDetail::Update { .. } => None,
+			})
+			.collect();
+
+		for (camera_id, update) in results {
+			let ConnectionDetail::Update { status } = update else {
+				continue;
+			};
+			let _ = websocket
+				.send_text(
+					"UpdateCameraStatus:".into(),
+					UpdateCameraStatus { camera_id, status },
+				)
+				.await;
+		}
+
+		if !new_cameras.is_empty() {
+			let _ = websocket
+				.send_text(
+					"RegisterCameras:".into(),
+					RegisterCameras {
+						cameras: new_cameras,
+					},
+				)
+				.await;
 		}
 	}
 }
@@ -170,120 +229,21 @@ impl Conductor {
 impl Default for Conductor {
 	fn default() -> Self {
 		let persistence = Persistence::default();
-		let client = Client::new();
 
-		Self {
-			persistence,
-			client,
-		}
+		Self { persistence }
 	}
 }
 
 /// Call this function to begin the system.
 pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	let mut websocket: Option<WebSocket> = None;
 	let mut settings: Option<Settings> = None;
 	let mut conductor = Conductor::default();
 
-	let mut stream = conductor.client.websocket_connect_manual().await;
-
 	loop {
-		let loop_settings = placeholder_autoconnect(settings);
-		settings = Some(conductor.loop_once(loop_settings, &mut stream).await?)
+		let (loop_websocket, loop_settings) = assert_connection(websocket, settings).await;
+		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
+		websocket = Some(result.0);
+		settings = Some(result.1);
 	}
-}
-
-// Not a proper spot for these, but they demontrate the general flow.
-
-// TODO: Place this in a more suitable module (not client).
-fn placeholder_autoconnect(settings: Option<Settings>) -> Settings {
-	let connection_established = true;
-
-	if !connection_established {
-		todo!("connect to the server");
-
-		#[allow(unreachable_code)]
-		placeholder_get_default_settings(settings);
-	}
-
-	Settings::default()
-}
-
-// TODO: Place this in a more suitable module (not client).
-fn placeholder_get_default_settings(settings: Option<Settings>) -> Settings {
-	// TODO: Get the default settings from the server
-	// Build the settings struct from the received data.
-	// If the server fails to send correct settings, use Settings::default() as
-	// a fallback and report the issue to the server in as much detail as
-	// possible.
-	Settings::default()
-}
-
-fn placeholder_config_request(persistence: &mut Persistence) {
-	// TODO: Check if we have a request to modify camera config.
-	let example = Configuration {
-			camera_id: 598275214,
-			conn_id: 12,
-			configuration: "{\"Saturation\":{\"IntegerRange\":{\"control_type\":\"Saturation\",\"value\":64,\"default\":64,\"step\":1,\"min\":0,\"max\":128}},\"Brightness\":{\"IntegerRange\":{\"control_type\":\"Brightness\",\"value\":0,\"default\":0,\"step\":1,\"min\":-64,\"max\":64}},\"Contrast\":{\"IntegerRange\":{\"control_type\":\"Contrast\",\"value\":32,\"default\":32,\"step\":1,\"min\":0,\"max\":64}},\"Gain\":{\"IntegerRange\":{\"control_type\":\"Gain\",\"value\":0,\"default\":0,\"step\":1,\"min\":0,\"max\":100}},\"Gamma\":{\"IntegerRange\":{\"control_type\":\"Gamma\",\"value\":100,\"default\":100,\"step\":1,\"min\":72,\"max\":500}},\"Hue\":{\"IntegerRange\":{\"control_type\":\"Hue\",\"value\":0,\"default\":0,\"step\":1,\"min\":-40,\"max\":40}}}".into(),
-		};
-	for (id, entry) in persistence.inner().iter_mut() {
-		if id.calculate_hash() == example.camera_id {
-			let Some(camera) = entry.camera_mut() else {
-				logger()
-					.lock()
-					.unwrap()
-					.log_error("", &EdgeError::CameraNotPresent);
-				break;
-			};
-			match serde_json::from_str(&example.configuration) {
-				Ok(map) => {
-					if let Err(why) = camera.set_controls(map) {
-						logger()
-							.lock()
-							.unwrap()
-							.log_error("Failed to set requested cntrols from server", &why);
-					};
-				},
-				Err(why) => {
-					logger().lock().unwrap().log_error(
-						"Failed to parse requested configuration",
-						&EdgeError::DecodeControls { reason: why },
-					);
-				},
-			};
-
-			logger()
-				.lock()
-				.unwrap()
-				.log_info("We've found the correct camera by id");
-			break;
-		}
-	}
-	logger().lock().unwrap().send_logs();
-}
-
-fn placeholder_send_config(persistence: &mut Persistence) {
-	// TODO: Check if we should send a camera config.
-	let example = ViewCameraConfig {
-		camera_id: 9825723522,
-		conn_id: 21,
-	};
-	for (id, entry) in persistence.inner().iter_mut() {
-		if id.calculate_hash() == example.camera_id {
-			let Some(camera) = entry.camera() else {
-				logger()
-					.lock()
-					.unwrap()
-					.log_error("", &EdgeError::CameraNotPresent);
-				break;
-			};
-			let important_controls = camera.get_controls().stripped();
-			let configuration =
-				Configuration::build_response(example, important_controls.serialise());
-			//self.client
-			//	.send_configuration(stream, configuration)
-			//	.await?;
-			break;
-		}
-	}
-	logger().lock().unwrap().send_logs();
 }
