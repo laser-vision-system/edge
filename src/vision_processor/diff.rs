@@ -145,29 +145,37 @@ impl VisionInterface for Diff {
 				continue;
 			}
 
-			let grey_image = DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
+			match &data.image {
+				Some(setpoint) => {
+					let grey_image = DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
 
-			let (
-				peak_diff,
-				mean_diff,
-				std_dev_diff,
-				luma_ssim,
-				hellinger,
-				correlation,
-				intersection,
-			) = self.collect_metrics(&grey_image, &data.image.clone().unwrap());
+					let (
+						peak_diff,
+						mean_diff,
+						std_dev_diff,
+						luma_ssim,
+						hellinger,
+						correlation,
+						intersection,
+					) = self.collect_metrics(&grey_image, setpoint);
 
-			let relative_intensity = self.model.predict(
-				peak_diff,
-				mean_diff,
-				std_dev_diff,
-				luma_ssim,
-				hellinger,
-				correlation,
-				intersection,
-			);
+					let relative_intensity = self.model.predict(
+						peak_diff,
+						mean_diff,
+						std_dev_diff,
+						luma_ssim,
+						hellinger,
+						correlation,
+						intersection,
+					);
 
-			data.deviation = Some(1.0 - relative_intensity as f32);
+					data.deviation = Some(1.0 - relative_intensity as f32);
+				},
+				None => {
+					logger::logger().log_warn("Could not calculate deviation as there is no setpoint!");
+					continue;
+				},
+			}
 		}
 	}
 
