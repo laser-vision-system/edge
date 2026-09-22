@@ -56,6 +56,7 @@ impl ControlMap {
 		self.inner
 	}
 
+	#[must_use]
 	pub fn stripped(self) -> Self {
 		let inner = self
 			.inner
