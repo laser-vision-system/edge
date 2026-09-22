@@ -5,9 +5,8 @@ use std::{
 
 use server_edge_datatypes::shared::CameraStatus;
 
-use crate::tcam_interface::PerpetualInfo;
-
 use super::{Active, Broken, Limbo};
+use crate::tcam_interface::PerpetualInfo;
 
 /// A connection in a disconnected state.
 ///

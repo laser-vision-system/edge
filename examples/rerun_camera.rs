@@ -2,7 +2,9 @@ use std::error::Error;
 
 use edge::{
 	tcam_interface::CameraDevice,
-	vision_processor::{BatchItem, Demonstration, VisionInterface, VisionState},
+	vision_processor::{
+		BatchItem, Demonstration, VisionInterface, VisionState,
+	},
 };
 use image::RgbImage;
 use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
@@ -15,7 +17,8 @@ struct Context {
 
 impl Context {
 	fn new() -> Result<Self, Box<dyn Error>> {
-		let rec: RecordingStream = RecordingStreamBuilder::new("cam_test_harness").spawn()?;
+		let rec: RecordingStream =
+			RecordingStreamBuilder::new("cam_test_harness").spawn()?;
 		let demo = Demonstration::default();
 		let state = demo.new_state();
 		Ok(Context { rec, demo, state })
@@ -30,8 +33,11 @@ impl Context {
 	}
 
 	pub fn log_frame(&mut self, path: &str, frame: RgbImage, incr: u8) {
-		let rerun_image =
-			Image::from_elements(&frame, [frame.width(), frame.height()], ColorModel::RGB);
+		let rerun_image = Image::from_elements(
+			&frame,
+			[frame.width(), frame.height()],
+			ColorModel::RGB,
+		);
 		self.send_image(path, &rerun_image);
 
 		let batch = BatchItem {

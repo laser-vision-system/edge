@@ -1,25 +1,28 @@
 use std::hash::Hash;
 
-use nokhwa::utils::{CameraControl, ControlValueDescription, KnownCameraControl, MenuEntry};
+use nokhwa::utils::{
+	CameraControl, ControlValueDescription, KnownCameraControl, MenuEntry,
+};
+use serde::{Deserialize, Serialize};
 
 use super::{
 	traits::{
-		ControlDefault, ControlDescription, ControlItems, ControlMax, ControlMin, ControlPossible,
-		ControlStep, ControlValue,
+		ControlDefault, ControlDescription, ControlItems, ControlMax,
+		ControlMin, ControlPossible, ControlStep, ControlValue,
 	},
 	types::{
-		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue,
-		ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
+		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
+		ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 	},
 	values::{
-		ConValueBoolean, ConValueBooleanType, ConValueBytes, ConValueBytesType, ConValueEnum,
-		ConValueEnumType, ConValueFloat, ConValueFloatType, ConValueInteger, ConValueIntegerType,
-		ConValueKeyValue, ConValueKeyValueType, ConValueMenu, ConValueMenuType, ConValuePoint,
-		ConValuePointType, ConValueRGB, ConValueRGBType, ConValueString, ConValueStringType,
+		ConValueBoolean, ConValueBooleanType, ConValueBytes, ConValueBytesType,
+		ConValueEnum, ConValueEnumType, ConValueFloat, ConValueFloatType,
+		ConValueInteger, ConValueIntegerType, ConValueKeyValue,
+		ConValueKeyValueType, ConValueMenu, ConValueMenuType, ConValuePoint,
+		ConValuePointType, ConValueRGB, ConValueRGBType, ConValueString,
+		ConValueStringType,
 	},
 };
-
-use serde::{Deserialize, Serialize};
 
 // ===== Field relationship bounds =====
 // (step, min, max, key): value
@@ -33,10 +36,21 @@ use serde::{Deserialize, Serialize};
 /// Represents one type of camera control.
 ///
 /// Maps to [`ControlValueDescription`].
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
 pub enum CamControl {
 	#[default]
-	None, //None(NoneControl),
+	None, // None(NoneControl),
 	Integer(IntegerControl),
 	IntegerRange(IntegerRangeControl),
 	Float(FloatControl),
@@ -105,9 +119,13 @@ impl From<CameraControl> for CamControl {
 				*min,
 				*max,
 			)),
-			ControlValueDescription::Boolean { value, default } => CamControl::Boolean(
-				BooleanControl::new(control_type, ConValueBoolean::from(*value), *default),
-			),
+			ControlValueDescription::Boolean { value, default } => {
+				CamControl::Boolean(BooleanControl::new(
+					control_type,
+					ConValueBoolean::from(*value),
+					*default,
+				))
+			},
 			ControlValueDescription::String { value, default } => {
 				CamControl::String(StringControl::new(
 					control_type,
@@ -179,7 +197,7 @@ impl From<CameraControl> for CamControl {
 ///
 /// Maps to [`ControlValueDescription::None`].
 //#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-//pub struct NoneControl;
+// pub struct NoneControl;
 
 /// A camera control that consists of a value, default, and step.
 ///
@@ -209,8 +227,8 @@ impl IntegerControl {
 }
 
 impl ControlDescription for IntegerControl {
-	type ValueType = ConValueInteger;
 	type ConType = ConTypeInt;
+	type ValueType = ConValueInteger;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -244,7 +262,8 @@ impl ControlDefault for IntegerControl {
 }
 
 impl ControlStep for IntegerControl {
-	// Default should be based on ValueType, so this makes sure they can be compared.
+	// Default should be based on ValueType, so this makes sure they can be
+	// compared.
 	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
@@ -253,7 +272,8 @@ impl ControlStep for IntegerControl {
 
 	fn valid(&self, value: Self::StepType) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0
-			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0
+			|| (value - self.get_value().get_value()).abs() % self.get_step()
+				== 0
 	}
 }
 
@@ -292,8 +312,8 @@ impl IntegerRangeControl {
 }
 
 impl ControlDescription for IntegerRangeControl {
-	type ValueType = ConValueInteger;
 	type ConType = ConTypeInt;
+	type ValueType = ConValueInteger;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -330,7 +350,8 @@ impl ControlDefault for IntegerRangeControl {
 }
 
 impl ControlStep for IntegerRangeControl {
-	// Default should be based on ValueType, so this makes sure they can be compared.
+	// Default should be based on ValueType, so this makes sure they can be
+	// compared.
 	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
@@ -339,7 +360,8 @@ impl ControlStep for IntegerRangeControl {
 
 	fn valid(&self, value: Self::StepType) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0
-			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0
+			|| (value - self.get_value().get_value()).abs() % self.get_step()
+				== 0
 	}
 }
 
@@ -388,8 +410,8 @@ impl FloatControl {
 }
 
 impl ControlDescription for FloatControl {
-	type ValueType = ConValueFloat;
 	type ConType = ConTypeFloat;
+	type ValueType = ConValueFloat;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -423,7 +445,8 @@ impl ControlDefault for FloatControl {
 }
 
 impl ControlStep for FloatControl {
-	// Default should be based on ValueType, so this makes sure they can be compared.
+	// Default should be based on ValueType, so this makes sure they can be
+	// compared.
 	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
@@ -432,7 +455,8 @@ impl ControlStep for FloatControl {
 
 	fn valid(&self, value: Self::StepType) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0.0
-			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0.0
+			|| (value - self.get_value().get_value()).abs() % self.get_step()
+				== 0.0
 	}
 }
 
@@ -471,8 +495,8 @@ impl FloatRangeControl {
 }
 
 impl ControlDescription for FloatRangeControl {
-	type ValueType = ConValueFloat;
 	type ConType = ConTypeFloat;
+	type ValueType = ConValueFloat;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -509,7 +533,8 @@ impl ControlDefault for FloatRangeControl {
 }
 
 impl ControlStep for FloatRangeControl {
-	// Default should be based on ValueType, so this makes sure they can be compared.
+	// Default should be based on ValueType, so this makes sure they can be
+	// compared.
 	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
@@ -518,7 +543,8 @@ impl ControlStep for FloatRangeControl {
 
 	fn valid(&self, value: Self::StepType) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0.0
-			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0.0
+			|| (value - self.get_value().get_value()).abs() % self.get_step()
+				== 0.0
 	}
 }
 
@@ -564,8 +590,8 @@ impl BooleanControl {
 }
 
 impl ControlDescription for BooleanControl {
-	type ValueType = ConValueBoolean;
 	type ConType = ConTypeBool;
+	type ValueType = ConValueBoolean;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -620,8 +646,8 @@ impl StringControl {
 }
 
 impl ControlDescription for StringControl {
-	type ValueType = ConValueString;
 	type ConType = ConTypeString;
+	type ValueType = ConValueString;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -676,8 +702,8 @@ impl BytesControl {
 }
 
 impl ControlDescription for BytesControl {
-	type ValueType = ConValueBytes;
 	type ConType = ConTypeBytes;
+	type ValueType = ConValueBytes;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -732,8 +758,8 @@ impl KeyValuePairControl {
 }
 
 impl ControlDescription for KeyValuePairControl {
-	type ValueType = ConValueKeyValue;
 	type ConType = ConTypeKeyValue;
+	type ValueType = ConValueKeyValue;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -788,8 +814,8 @@ impl PointControl {
 }
 
 impl ControlDescription for PointControl {
-	type ValueType = ConValuePoint;
 	type ConType = ConTypePoint;
+	type ValueType = ConValuePoint;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -818,7 +844,8 @@ impl ControlDefault for PointControl {
 	}
 }
 
-/// A camera control that consists of a value, default, and a vector of possible options.
+/// A camera control that consists of a value, default, and a vector of possible
+/// options.
 ///
 /// Maps to [`ControlValueDescription::Enum`]
 
@@ -847,8 +874,8 @@ impl EnumControl {
 }
 
 impl ControlDescription for EnumControl {
-	type ValueType = ConValueEnum;
 	type ConType = ConTypeEnum;
+	type ValueType = ConValueEnum;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -920,8 +947,8 @@ impl RGBControl {
 }
 
 impl ControlDescription for RGBControl {
-	type ValueType = ConValueRGB;
 	type ConType = ConTypeRGB;
+	type ValueType = ConValueRGB;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -987,8 +1014,8 @@ impl MenuControl {
 }
 
 impl ControlDescription for MenuControl {
-	type ValueType = ConValueMenu;
 	type ConType = ConTypeMenu;
+	type ValueType = ConValueMenu;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -1033,7 +1060,8 @@ impl ControlItems for MenuControl {
 	}
 }
 
-/// Automatically implement [`Hash`], [`PartialEq`], [`Eq`], [`PartialOrd`], and [`Ord`] on a struct by its control id.
+/// Automatically implement [`Hash`], [`PartialEq`], [`Eq`], [`PartialOrd`], and
+/// [`Ord`] on a struct by its control id.
 macro_rules! impl_identifiable {
 	($type:ty) => {
 		impl Hash for $type {

@@ -17,10 +17,9 @@
 use std::sync::{Mutex, OnceLock};
 
 use chrono::{Duration, Local, NaiveDate};
+use serde::{Deserialize, Serialize};
 
 use crate::error::EdgeError::{self};
-
-use serde::{Deserialize, Serialize};
 
 // Declare a type alias for easy imports
 pub type LoggerRef = &'static Mutex<Logger>;
@@ -60,7 +59,8 @@ enum LogLevel {
 // 	}
 // }
 
-// The logger struct that holds each unsent (buffered) log entry and the log count.
+// The logger struct that holds each unsent (buffered) log entry and the log
+// count.
 //
 // Each log entry is stored in a Vector.
 //
@@ -179,13 +179,12 @@ impl LogCounter {
 
 #[cfg(test)]
 mod test {
-	use crate::error::EdgeError::{
-		AutoConnect, FrameDecodeCorruption, FrameDecodeOutOfMemory, FrameRead, General,
-		NokhwaInitialisation, NokhwaNoBackend, ServerConnection, SetControl, StreamOpen,
-		WebSocketConnection,
-	};
-
 	use super::logger;
+	use crate::error::EdgeError::{
+		AutoConnect, FrameDecodeCorruption, FrameDecodeOutOfMemory, FrameRead,
+		General, NokhwaInitialisation, NokhwaNoBackend, ServerConnection,
+		SetControl, StreamOpen, WebSocketConnection,
+	};
 
 	#[test]
 	fn info() {

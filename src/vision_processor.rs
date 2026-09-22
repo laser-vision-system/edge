@@ -4,10 +4,10 @@ use std::{
 	sync::{Arc, Mutex, OnceLock, Weak},
 };
 
-use crate::logger::logger;
-
 use image::RgbImage;
 use server_edge_datatypes::shared::{CameraId, VisionTechnique};
+
+use crate::logger::logger;
 
 pub mod cnn;
 pub mod demonstration;
@@ -54,14 +54,9 @@ impl VisionGuard {
 	where
 		F: FnOnce(&mut VisionVariant) -> R,
 	{
-		func(
-			self.inner
-				.lock()
-				.unwrap()
-				.borrow_mut()
-				.as_mut()
-				.expect("vision should never be None outside of VisionGuard::swap_to"),
-		)
+		func(self.inner.lock().unwrap().borrow_mut().as_mut().expect(
+			"vision should never be None outside of VisionGuard::swap_to",
+		))
 	}
 }
 
@@ -137,20 +132,21 @@ impl VisionVariant {
 			return self;
 		}
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info(&format!("Swapping VisionTechnique to: {:?}...", swap_to));
+		logger().lock().unwrap().log_info(&format!(
+			"Swapping VisionTechnique to: {:?}...",
+			swap_to
+		));
 		match swap_to {
 			VisionTechnique::Empty => Self::Empty(Empty::new()),
-			VisionTechnique::Demonstration => Self::Demonstration(Demonstration::new()),
+			VisionTechnique::Demonstration => {
+				Self::Demonstration(Demonstration::new())
+			},
 			VisionTechnique::Cnn => Self::Cnn(Cnn::new()),
 			VisionTechnique::Diff => Self::Diff(Diff::new()),
 			_ => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_warn("Attempting to swap to an unsupported vison technique");
+				logger().lock().unwrap().log_warn(
+					"Attempting to swap to an unsupported vison technique",
+				);
 				self
 			},
 		}
@@ -223,7 +219,8 @@ pub enum VisionState {
 }
 
 impl VisionState {
-	/// Returns true only if the owning vision processor variant is still active.
+	/// Returns true only if the owning vision processor variant is still
+	/// active.
 	pub fn is_valid(&self) -> bool {
 		match self {
 			Self::Empty { handle, .. }
@@ -252,7 +249,8 @@ impl Default for VisionState {
 /// A single record that is passed into `process_frame`.
 ///
 /// Currently holds a reference to the vision state, but should probably be
-/// swapped to using an [`mpsc`](std::sync::mpsc) for multithreading. The [`VisionState`] would be sent back through it.
+/// swapped to using an [`mpsc`](std::sync::mpsc) for multithreading. The
+/// [`VisionState`] would be sent back through it.
 pub struct BatchItem<'a> {
 	pub camera_id: CameraId,
 	pub state: &'a mut VisionState,

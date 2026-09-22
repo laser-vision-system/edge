@@ -2,9 +2,8 @@ use std::borrow::Cow;
 
 use server_edge_datatypes::shared::CameraStatus;
 
-use crate::tcam_interface::persistence::OccupiedIndices;
-
 use super::{Active, IndexOccupier, Limbo};
+use crate::tcam_interface::persistence::OccupiedIndices;
 
 /// A connection in a broken state.
 ///

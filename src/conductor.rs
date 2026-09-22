@@ -11,7 +11,9 @@ use crate::{
 	error::EdgeError,
 	logger::logger,
 	settings::Settings,
-	tcam_interface::{CameraDevice, Persistence, WhyNo, polling::ConnectionDetail},
+	tcam_interface::{
+		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
+	},
 	vision_processor::{VisionInterface, vision},
 	websocket::WebSocket,
 };
@@ -28,7 +30,8 @@ impl Conductor {
 		&mut self,
 		mut websocket: WebSocket,
 		settings: Settings,
-	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>>
+	{
 		let mut limit_interval = interval(settings.update_delay);
 		limit_interval.tick().await;
 
@@ -42,8 +45,12 @@ impl Conductor {
 			.query_websockets(settings.websocket_poll_interval)
 			.await
 		{
-			self.handle_request(request, &mut websocket, &mut requested_vision_type)
-				.await;
+			self.handle_request(
+				request,
+				&mut websocket,
+				&mut requested_vision_type,
+			)
+			.await;
 		}
 		logger().lock().unwrap().send_logs();
 
@@ -53,12 +60,14 @@ impl Conductor {
 			vision().swap(swap_to);
 		}
 
-		// TODO: There should be something in between this call that does the below.
-		let (mut batch_items, status_changes) = self.persistence.poll_active_entries(
-			settings.camera_err_increment,
-			settings.camera_err_threshold,
-			settings.camera_err_decrement,
-		);
+		// TODO: There should be something in between this call that does the
+		// below.
+		let (mut batch_items, status_changes) =
+			self.persistence.poll_active_entries(
+				settings.camera_err_increment,
+				settings.camera_err_threshold,
+				settings.camera_err_decrement,
+			);
 
 		for status_change in status_changes {
 			match status_change.why {
@@ -119,8 +128,10 @@ impl Conductor {
 			};
 
 			if item.send_to_server {
-				let mut encoded = CameraDevice::encode_image(item.image.clone());
-				let result = websocket.send_image(item.camera_id, &mut encoded).await;
+				let mut encoded =
+					CameraDevice::encode_image(item.image.clone());
+				let result =
+					websocket.send_image(item.camera_id, &mut encoded).await;
 				let _ = result.inspect_err(|why| {
 					logger().lock().unwrap().log_error(
 						&format!("failed to image send to server: {why}"),
@@ -158,7 +169,9 @@ impl Conductor {
 				self.persistence.set_configuration(set_config_req);
 			},
 			EdgeRequests::ViewCameraConfig(view_config_req) => {
-				if let Some(configuration) = self.persistence.get_configuration(view_config_req) {
+				if let Some(configuration) =
+					self.persistence.get_configuration(view_config_req)
+				{
 					if let Err(_) = websocket
 						.send_text("Configuration:".into(), configuration)
 						.await
@@ -177,15 +190,17 @@ impl Conductor {
 				requested_vision_type.replace(processing_req.processing_type);
 			},
 			_ => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_warn("received request that is not currently supported");
+				logger().lock().unwrap().log_warn(
+					"received request that is not currently supported",
+				);
 			},
 		}
 	}
 
-	async fn update_camera_device_connections(&mut self, websocket: &mut WebSocket) {
+	async fn update_camera_device_connections(
+		&mut self,
+		websocket: &mut WebSocket,
+	) {
 		let mut results = self.persistence.poll_for_new_cameras();
 
 		let new_cameras = results.extract_if(|_, value| match value {
@@ -241,7 +256,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let mut conductor = Conductor::default();
 
 	loop {
-		let (loop_websocket, loop_settings) = assert_connection(websocket, settings).await;
+		let (loop_websocket, loop_settings) =
+			assert_connection(websocket, settings).await;
 		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);

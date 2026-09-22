@@ -1,8 +1,7 @@
 use server_edge_datatypes::shared::CameraStatus;
 
-use crate::tcam_interface::persistence::OccupiedIndices;
-
 use super::IndexOccupier;
+use crate::tcam_interface::persistence::OccupiedIndices;
 
 /// A connection in an invalid state.
 ///

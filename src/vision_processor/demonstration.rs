@@ -18,8 +18,8 @@ impl Demonstration {
 		}
 	}
 
-	// NOTE: Clippy complains about indexing the slice without asserting, but the
-	// par_chunk_exact guarantees this won't panic.
+	// NOTE: Clippy complains about indexing the slice without asserting, but
+	// the par_chunk_exact guarantees this won't panic.
 	#[allow(clippy::missing_asserts_for_indexing)]
 	#[allow(clippy::indexing_slicing)]
 	#[allow(clippy::cast_precision_loss)]
@@ -43,7 +43,8 @@ impl Demonstration {
 impl VisionInterface for Demonstration {
 	fn process(&mut self, batch: &mut [BatchItem]) {
 		for item in batch {
-			let VisionState::Demonstration { data, .. } = &mut item.state else {
+			let VisionState::Demonstration { data, .. } = &mut item.state
+			else {
 				// TODO: This should raise an error.
 				continue;
 			};

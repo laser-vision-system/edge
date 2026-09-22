@@ -1,23 +1,23 @@
 //! Core traits for camera controls.
 
-#[allow(unused_imports, reason = "Needed for trait docstring")]
-use nokhwa::utils::ControlValueSetter;
+use std::fmt::Debug;
 #[allow(unused_imports, reason = "Needed for trait docstring")]
 use std::hash::Hash;
 
-use std::fmt::Debug;
-
+#[allow(unused_imports, reason = "Needed for trait docstring")]
+use nokhwa::utils::ControlValueSetter;
 use nokhwa::{
 	self,
 	utils::{KnownCameraControl, MenuEntry},
 };
 
 use super::types::{
-	ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue, ConTypeMenu,
-	ConTypePoint, ConTypeRGB, ConTypeString,
+	ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
+	ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 };
 
-/// A marker trait that determines what is acceptable to use within a [`ControlValue`].
+/// A marker trait that determines what is acceptable to use within a
+/// [`ControlValue`].
 ///
 /// Cannot be bounded by ...; due to:
 ///
@@ -40,22 +40,22 @@ impl ValidControlValue for ConTypeRGB {} // KeyValuePair
 impl ValidControlValue for ConTypeMenu {} // Menu
 // TODO: Would these be better than the implicit?
 // TODO: Would it be better to use an array in either case?
-//impl ValidControlValue for (f64, f64) {} // Point
-//impl ValidControlValue for [f64; 2] {} // Point
-//impl ValidControlValue for (f64, f64, f64) {} // RGB
-//impl ValidControlValue for [f64; 3] {} // RGB
+// impl ValidControlValue for (f64, f64) {} // Point
+// impl ValidControlValue for [f64; 2] {} // Point
+// impl ValidControlValue for (f64, f64, f64) {} // RGB
+// impl ValidControlValue for [f64; 3] {} // RGB
 
 // ----- Implicit -----
 // Guarantees that Point and RGB will be tuples of matching types.
-//impl<T> ValidControlValue for (T, T) where T: ValidControlValue {} // Point
-//impl<T> ValidControlValue for (T, T, T) where T: ValidControlValue {} // RGB
-//impl<T> ValidControlValue for [T; 2] where T: ValidControlValue {} // Point
-//impl<T> ValidControlValue for [T; 3] where T: ValidControlValue {} // RGB
+// impl<T> ValidControlValue for (T, T) where T: ValidControlValue {} // Point
+// impl<T> ValidControlValue for (T, T, T) where T: ValidControlValue {} // RGB
+// impl<T> ValidControlValue for [T; 2] where T: ValidControlValue {} // Point
+// impl<T> ValidControlValue for [T; 3] where T: ValidControlValue {} // RGB
 
 // ===== Other fields =====
-//impl ValidControlValue for Vec<i64> {} // Enum: possible
-//impl ValidControlValue for Option<String> {} // String: default
-//impl ValidControlValue for (i128, i128) {} // KeyValuePair: default
+// impl ValidControlValue for Vec<i64> {} // Enum: possible
+// impl ValidControlValue for Option<String> {} // String: default
+// impl ValidControlValue for (i128, i128) {} // KeyValuePair: default
 
 pub trait ValidDefaultValue: Clone + Debug + PartialEq + PartialOrd {}
 
@@ -73,7 +73,8 @@ pub trait ValidItemValue: Clone + Debug + PartialEq + PartialOrd {}
 
 impl ValidItemValue for Vec<MenuEntry> {}
 
-/// The type that is use to report the control's current value as well as apply a new value.
+/// The type that is use to report the control's current value as well as apply
+/// a new value.
 ///
 /// Maps to [`nokhwa`]'s [`ControlValueSetter`].
 pub trait ControlValue {
@@ -98,7 +99,7 @@ pub trait ControlDescription {
 ///
 /// Bound by [`ControlValue`].
 pub trait ControlDefault: ControlDescription {
-	//type DefaultType = Self::ValueType;
+	// type DefaultType = Self::ValueType;
 	type DefaultType: ValidDefaultValue;
 
 	fn get_default(&self) -> Self::DefaultType;
@@ -109,7 +110,7 @@ pub trait ControlDefault: ControlDescription {
 ///
 /// Equal to [`ControlValue`].
 pub trait ControlMin: ControlDescription {
-	//type MinType = Self::ValueType;
+	// type MinType = Self::ValueType;
 	type MinType: ValidControlValue;
 
 	fn get_min(&self) -> Self::MinType;
@@ -123,7 +124,7 @@ pub trait ControlMin: ControlDescription {
 ///
 /// Equal to [`ControlValue`].
 pub trait ControlMax: ControlDescription {
-	//type MaxType = Self::ValueType;
+	// type MaxType = Self::ValueType;
 	type MaxType: ValidControlValue;
 
 	fn get_max(&self) -> Self::MaxType;
@@ -137,7 +138,7 @@ pub trait ControlMax: ControlDescription {
 ///
 /// Equal to [`ControlValue`].
 pub trait ControlStep: ControlDescription {
-	//type StepType = Self::ValueType;
+	// type StepType = Self::ValueType;
 	type StepType: ValidControlValue;
 
 	fn get_step(&self) -> Self::StepType;
@@ -149,7 +150,7 @@ pub trait ControlStep: ControlDescription {
 ///
 /// Bound by [`ControlValue`].
 pub trait ControlPossible: ControlDescription {
-	//type PossibleType = Self::ValueType;
+	// type PossibleType = Self::ValueType;
 	type PossibleType: ValidPossibleValue;
 
 	fn get_possible(&self) -> Self::PossibleType;

@@ -1,7 +1,6 @@
 //! Low level and higher level types used for camera control values.
 
 use nokhwa::utils::ControlValueSetter;
-
 use serde::{Deserialize, Serialize};
 
 #[allow(unused_imports, reason = "Needed for docstring")]
@@ -24,9 +23,20 @@ type _ConTypeKeyValue = i128;
 type _ConTypePoint = f64;
 type _ConTypeRGB = f64;
 
-/// Represents a key and value use by [`ConValueKeyValue`] and by extention, [`KeyValuePairControl`].
+/// Represents a key and value use by [`ConValueKeyValue`] and by extention,
+/// [`KeyValuePairControl`].
 #[derive(
-	Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
+	Clone,
+	Copy,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
 )]
 pub struct ConTypeKeyValue(_ConTypeKeyValue, _ConTypeKeyValue);
 
@@ -58,8 +68,11 @@ impl From<ConTypeKeyValue> for ControlValueSetter {
 	}
 }
 
-/// Represents a point value use by [`ConValuePoint`] and by extention, [`PointControl`].
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize)]
+/// Represents a point value use by [`ConValuePoint`] and by extention,
+/// [`PointControl`].
+#[derive(
+	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
+)]
 pub struct ConTypePoint(_ConTypePoint, _ConTypePoint);
 
 impl ConTypePoint {
@@ -90,8 +103,11 @@ impl From<ConTypePoint> for ControlValueSetter {
 	}
 }
 
-/// Represents an RGB value use by [`ConValueRGB`] and by extention, [`RGBControl`].
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize)]
+/// Represents an RGB value use by [`ConValueRGB`] and by extention,
+/// [`RGBControl`].
+#[derive(
+	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
+)]
 pub struct ConTypeRGB(_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
 
 impl ConTypeRGB {

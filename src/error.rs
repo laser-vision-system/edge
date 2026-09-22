@@ -1,5 +1,4 @@
 use serde_json::error::Error as SerdeError;
-
 use thiserror::Error;
 
 /// Specialised [`Result`] type for the Edge tier.
@@ -26,7 +25,9 @@ pub enum EdgeError {
 	ServerConnection,
 	#[error("Nokhwa does not have a backend to use")]
 	NokhwaNoBackend,
-	#[error("The nokhwa camera could not be initialised at index `{index}`: '{reason}'")]
+	#[error(
+		"The nokhwa camera could not be initialised at index `{index}`: '{reason}'"
+	)]
 	NokhwaInitialisation { index: String, reason: String },
 	#[error("The nokhwa camera stream could not be started: '{reason}'")]
 	StreamOpen { reason: String },
@@ -34,7 +35,9 @@ pub enum EdgeError {
 	FrameRead,
 	#[error("The frame could not be decoded because it is invalid")]
 	FrameDecodeCorruption,
-	#[error("The frame could not be decoded because not more memory could be allocated")]
+	#[error(
+		"The frame could not be decoded because not more memory could be allocated"
+	)]
 	FrameDecodeOutOfMemory,
 	#[error("The control could not be set on a camera")]
 	SetControl,
@@ -48,7 +51,9 @@ pub enum EdgeError {
 	IdentifyNetwork,
 	#[error("Failed to get a response: {reason}")]
 	ReqwestError { reason: String },
-	#[error("This device connection could not be established at any of the indices")]
+	#[error(
+		"This device connection could not be established at any of the indices"
+	)]
 	InvalidDeviceConnection,
 	#[error("The connection status was not correct for this request")]
 	IncorrectConnectionStatus,
@@ -69,9 +74,11 @@ impl Clone for EdgeError {
 			Self::WebSocketConnection => Self::WebSocketConnection,
 			Self::ServerConnection => Self::ServerConnection,
 			Self::NokhwaNoBackend => Self::NokhwaNoBackend,
-			Self::NokhwaInitialisation { index, reason } => Self::NokhwaInitialisation {
-				index: index.clone(),
-				reason: reason.clone(),
+			Self::NokhwaInitialisation { index, reason } => {
+				Self::NokhwaInitialisation {
+					index: index.clone(),
+					reason: reason.clone(),
+				}
 			},
 			Self::StreamOpen { reason } => Self::StreamOpen {
 				reason: reason.clone(),
@@ -80,9 +87,12 @@ impl Clone for EdgeError {
 			Self::FrameDecodeCorruption => Self::FrameDecodeCorruption,
 			Self::FrameDecodeOutOfMemory => Self::FrameDecodeOutOfMemory,
 			Self::SetControl => Self::SetControl,
-			// Down-convert this to a general error because serde_json's error doesn't implement clone.
+			// Down-convert this to a general error because serde_json's error
+			// doesn't implement clone.
 			Self::DecodeControls { reason } => Self::General {
-				reason: format!("Failed to decode the controls sent by the server: {reason}",),
+				reason: format!(
+					"Failed to decode the controls sent by the server: {reason}",
+				),
 			},
 			Self::CameraNotPresent => Self::CameraNotPresent,
 			Self::WebSocketUnpack => Self::WebSocketUnpack,

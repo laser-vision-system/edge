@@ -6,12 +6,10 @@ use nokhwa::{
 	format_types::Mjpeg,
 	frame::{Frame, IntoRgb},
 	open,
-	utils::{CameraControl, CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
-};
-
-use crate::{
-	error::{EdgeError, Result},
-	logger::logger,
+	utils::{
+		CameraControl, CameraIndex, CameraInfo, ControlValueSetter,
+		KnownCameraControl,
+	},
 };
 
 use super::controls::{
@@ -19,12 +17,17 @@ use super::controls::{
 	descriptions::CamControl,
 	traits::{ControlDefault, ControlDescription, ControlValue},
 };
-
-use crate::logger;
+use crate::{
+	error::{EdgeError, Result},
+	logger,
+	logger::logger,
+};
 
 /// An abstraction over the nokhwa camera objects.
 ///
-/// TODO: The `frame()` function seems to copy the data into a buffer, and then calls decode image which will copy the data again. It may be a good idea to use `frame_raw()` to avoid pointless copy operations.
+/// TODO: The `frame()` function seems to copy the data into a buffer, and then
+/// calls decode image which will copy the data again. It may be a good idea to
+/// use `frame_raw()` to avoid pointless copy operations.
 #[must_use]
 pub struct CameraDevice {
 	inner: nokhwa::StreamCamera,
@@ -166,7 +169,11 @@ impl CameraDevice {
 	}
 
 	/// Set a camera control
-	pub fn set_control<T>(&mut self, id: KnownCameraControl, value: T) -> Result<()>
+	pub fn set_control<T>(
+		&mut self,
+		id: KnownCameraControl,
+		value: T,
+	) -> Result<()>
 	where
 		T: Into<ControlValueSetter> + Clone,
 	{
@@ -182,7 +189,11 @@ impl CameraDevice {
 			.map_err(|_| EdgeError::SetControl)
 			.inspect_err(|why| {
 				logger().lock().unwrap().log_error(
-					&format!("Failed to set control {} to {}", id, value.into()),
+					&format!(
+						"Failed to set control {} to {}",
+						id,
+						value.into()
+					),
 					&why,
 				)
 			})
@@ -212,7 +223,9 @@ impl CameraDevice {
 	/// Set every control on the camera back to its default value.
 	pub fn reset_controls_to_default(&mut self) {
 		let mut controls = self.get_controls();
-		if let Some(control) = controls.get_mut(&KnownCameraControl::AutoExposure) {
+		if let Some(control) =
+			controls.get_mut(&KnownCameraControl::AutoExposure)
+		{
 			let CamControl::Menu(control) = control else {
 				panic!("Sorry, I didn't hardcode this setting for your camera")
 			};
@@ -223,17 +236,24 @@ impl CameraDevice {
 				.unwrap();
 		}
 
-		if let Some(control) = controls.get_mut(&KnownCameraControl::ExposureAbsolute) {
+		if let Some(control) =
+			controls.get_mut(&KnownCameraControl::ExposureAbsolute)
+		{
 			let CamControl::IntegerRange(control) = control else {
 				panic!("Sorry, I didn't hardcode this setting for your camera")
 			};
 
 			control.reset_to_default();
-			self.set_control(KnownCameraControl::ExposureAbsolute, control.get_value())
-				.unwrap();
+			self.set_control(
+				KnownCameraControl::ExposureAbsolute,
+				control.get_value(),
+			)
+			.unwrap();
 		}
 
-		if let Some(control) = controls.get_mut(&KnownCameraControl::AutoExposure) {
+		if let Some(control) =
+			controls.get_mut(&KnownCameraControl::AutoExposure)
+		{
 			let CamControl::Menu(control) = control else {
 				panic!("Sorry, I didn't hardcode this setting for your camera")
 			};
@@ -276,13 +296,19 @@ impl CameraDevice {
 				},
 				CamControl::String(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), (&control.get_value()).clone())
-						.expect("default controls should always be valid")
+					self.set_control(
+						control.get_id(),
+						(&control.get_value()).clone(),
+					)
+					.expect("default controls should always be valid")
 				},
 				CamControl::Bytes(mut control) => {
 					control.reset_to_default();
-					self.set_control(control.get_id(), (&control.get_value()).clone())
-						.expect("default controls should always be valid")
+					self.set_control(
+						control.get_id(),
+						(&control.get_value()).clone(),
+					)
+					.expect("default controls should always be valid")
 				},
 				CamControl::KeyValuePair(mut control) => {
 					control.reset_to_default();
@@ -316,9 +342,11 @@ impl CameraDevice {
 
 	// The setting of camera controls is handled by the controls themselves.
 
-	/// Query [`nokhwa`] for all available cameras and then sort them by their index.
+	/// Query [`nokhwa`] for all available cameras and then sort them by their
+	/// index.
 	pub fn query_for_available_cameras() -> Vec<CameraInfo> {
-		let mut cameras = nokhwa::query(nokhwa::utils::ApiBackend::Auto).unwrap();
+		let mut cameras =
+			nokhwa::query(nokhwa::utils::ApiBackend::Auto).unwrap();
 		cameras.sort_by(|a, b| -> Ordering {
 			let a_ind = a.index().as_index().unwrap_or(u32::MAX);
 			let b_ind = b.index().as_index().unwrap_or(u32::MAX);
@@ -338,11 +366,11 @@ impl CameraDevice {
 mod tests {
 	use std::process::{ExitCode, Termination};
 
-	use crate::tcam_interface::controls::traits::{
-		ControlDefault, ControlDescription, ControlItems, ControlMax, ControlStep, ControlValue,
-	};
-
 	use super::*;
+	use crate::tcam_interface::controls::traits::{
+		ControlDefault, ControlDescription, ControlItems, ControlMax,
+		ControlStep, ControlValue,
+	};
 
 	impl Termination for CameraDevice {
 		fn report(self) -> ExitCode {
@@ -511,8 +539,10 @@ mod nokhwa_test {
 	//!
 	//! - Queries available camera devices, selecting the first one for use
 	//! - Displays configuration options
-	//! - Creates a polled camera, accessing 5 frames and printing image dimensions
-	//! - Creates a callback camera, printing image dimensions. Simultaneously polls the camera 5 times and saves the images.
+	//! - Creates a polled camera, accessing 5 frames and printing image
+	//!   dimensions
+	//! - Creates a callback camera, printing image dimensions. Simultaneously
+	//!   polls the camera 5 times and saves the images.
 	use std::{
 		fs::{self, OpenOptions},
 		io::Write,
@@ -522,8 +552,8 @@ mod nokhwa_test {
 	};
 
 	use nokhwa::{
-		self, Buffer, CameraRunner, NokhwaError, OpenRequest, OpenedCamera, RunnerConfig,
-		StreamCamera,
+		self, Buffer, CameraRunner, NokhwaError, OpenRequest, OpenedCamera,
+		RunnerConfig, StreamCamera,
 		format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
 		frame::{Frame, IntoRgb, IntoRgba, RgbaConversion},
 		open,
@@ -587,8 +617,9 @@ mod nokhwa_test {
 
 	/// Helper function to create a [`StreamCamera`].
 	fn create_camera(camera_index: CameraIndex) -> StreamCamera {
-		let expect_msg =
-			format!("the supplied camera index should be a valid camera: {camera_index:?}");
+		let expect_msg = format!(
+			"the supplied camera index should be a valid camera: {camera_index:?}"
+		);
 		let opened = open(camera_index, OpenRequest::any()).expect(&expect_msg);
 		let OpenedCamera::Stream(stream_cam) = opened else {
 			panic!("AA")
@@ -597,8 +628,8 @@ mod nokhwa_test {
 	}
 
 	///// Helper function for the camera format.
-	//fn get_format() -> RequestedFormat<'static> {
-	//	RequestedFormat::new::<RgbFormat>(RequestedFormatType::AbsoluteHighestFrameRate)
+	// fn get_format() -> RequestedFormat<'static> {
+	// 	RequestedFormat::new::<RgbFormat>(RequestedFormatType::AbsoluteHighestFrameRate)
 	//}
 
 	/// Uses a camera that must be polled for frames.
@@ -631,23 +662,25 @@ mod nokhwa_test {
 	fn nokhwa_callback_example(camera_index: CameraIndex) {
 		make_sure_output_exists();
 
-		//fn callback(buffer: Buffer) {
-		//	let image = buffer.decode_image::<RgbAFormat>().unwrap();
-		//	println!(
-		//		"Frame callback @ {}x{} ({} bytes)",
-		//		image.width(),
-		//		image.height(),
-		//		image.len()
-		//	);
+		// fn callback(buffer: Buffer) {
+		// 	let image = buffer.decode_image::<RgbAFormat>().unwrap();
+		// 	println!(
+		// 		"Frame callback @ {}x{} ({} bytes)",
+		// 		image.width(),
+		// 		image.height(),
+		// 		image.len()
+		// 	);
 		//}
 
 		let opened = open(camera_index, OpenRequest::any()).unwrap();
-		let runner = CameraRunner::spawn(opened, RunnerConfig::default()).unwrap();
+		let runner =
+			CameraRunner::spawn(opened, RunnerConfig::default()).unwrap();
 		let frames = runner.frames().unwrap();
 
-		//let mut callback_camera =
-		//	CallbackCamera::new(camera_index, get_format(), callback).expect(&expect_msg);
-		//callback_camera.open_stream().unwrap();
+		// let mut callback_camera =
+		// 	CallbackCamera::new(camera_index, get_format(),
+		// callback).expect(&expect_msg); callback_camera.open_stream().
+		// unwrap();
 
 		for _ in 0..5 {
 			let buffer = frames.recv_timeout(Duration::from_secs(2)).unwrap();
@@ -663,13 +696,13 @@ mod nokhwa_test {
 				image.len()
 			);
 
-			//let frame = callback_camera.poll_frame().unwrap();
-			//let image = frame.decode_image::<RgbAFormat>().unwrap();
-			//let path = format!("{OUTPUT_PATH}{i}.png");
-			//println!("Asynchronously saved frame to `{path}`");
-			//image
-			//	.save(path)
-			//	.expect("output path should be a valid path");
+			// let frame = callback_camera.poll_frame().unwrap();
+			// let image = frame.decode_image::<RgbAFormat>().unwrap();
+			// let path = format!("{OUTPUT_PATH}{i}.png");
+			// println!("Asynchronously saved frame to `{path}`");
+			// image
+			// 	.save(path)
+			// 	.expect("output path should be a valid path");
 			thread::sleep(Duration::from_millis(POLL_INTERVAL));
 		}
 
@@ -678,7 +711,9 @@ mod nokhwa_test {
 
 	fn make_sure_output_exists() {
 		let output_folder = Path::new(OUTPUT_PATH);
-		let expect_msg = format!("the output path should be a valid location: {OUTPUT_PATH}");
+		let expect_msg = format!(
+			"the output path should be a valid location: {OUTPUT_PATH}"
+		);
 		fs::create_dir_all(&output_folder).expect(&expect_msg);
 
 		let ignore_file = output_folder.join(".gitignore");
@@ -708,8 +743,12 @@ mod nokhwa_test {
 			FrameFormat::MJPEG => Ok(Frame::<Mjpeg>::try_new(buf)?.into_rgba()),
 			FrameFormat::YUYV => Ok(Frame::<Yuyv>::try_new(buf)?.into_rgba()),
 			FrameFormat::NV12 => Ok(Frame::<Nv12>::try_new(buf)?.into_rgba()),
-			FrameFormat::RAWRGB => Ok(Frame::<RawRgb>::try_new(buf)?.into_rgba()),
-			FrameFormat::RAWBGR => Ok(Frame::<RawBgr>::try_new(buf)?.into_rgba()),
+			FrameFormat::RAWRGB => {
+				Ok(Frame::<RawRgb>::try_new(buf)?.into_rgba())
+			},
+			FrameFormat::RAWBGR => {
+				Ok(Frame::<RawBgr>::try_new(buf)?.into_rgba())
+			},
 			FrameFormat::GRAY => Err(NokhwaError::general(
 				"threaded-capture does not support GRAY/Luma cameras",
 			)),

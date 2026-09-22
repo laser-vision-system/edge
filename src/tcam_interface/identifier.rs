@@ -24,11 +24,14 @@ use server_edge_datatypes::shared::CameraId;
 /// You are probably looking for [`Identifier`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IdentMetaInfo {
-	/// The internal name of the device. On v4l, taken from the "Card type" and "Driver name" values.
+	/// The internal name of the device. On v4l, taken from the "Card type" and
+	/// "Driver name" values.
 	name: String,
-	/// The internal description of the device. On v4l, taken from the "Bus info" value.
+	/// The internal description of the device. On v4l, taken from the "Bus
+	/// info" value.
 	description: String,
-	/// Additional miscellaneous information about the device. On v4l, taken from the "Driver version" value.
+	/// Additional miscellaneous information about the device. On v4l, taken
+	/// from the "Driver version" value.
 	misc: String,
 }
 
@@ -84,7 +87,8 @@ impl PartialEq<IdentMetaInfo> for CameraId {
 
 /// The `Identifier` type.
 ///
-/// The `meta_info` field is not used when performing [`Hash`], [`PartialEq`], [`PartialOrd`], and [`Ord`].
+/// The `meta_info` field is not used when performing [`Hash`], [`PartialEq`],
+/// [`PartialOrd`], and [`Ord`].
 ///
 /// See the [module level documentation](self) for more information.
 #[derive(Clone, Debug)]
@@ -211,9 +215,11 @@ mod tests {
 
 	#[test]
 	fn identifier_eq() {
-		let first = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let first =
+			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
 		let second = first.clone();
-		let third = Identifier::from(IdentMetaInfo::new("nope", "nuh uh", "hell no"));
+		let third =
+			Identifier::from(IdentMetaInfo::new("nope", "nuh uh", "hell no"));
 
 		assert_eq!(first, second);
 		assert_ne!(first, third);
@@ -222,9 +228,11 @@ mod tests {
 
 	#[test]
 	fn identifier_ord() {
-		let first = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let first =
+			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
 		let second = first.clone();
-		let third = Identifier::from(IdentMetaInfo::new("nope", "nuh uh", "hell no"));
+		let third =
+			Identifier::from(IdentMetaInfo::new("nope", "nuh uh", "hell no"));
 
 		assert_eq!(first.partial_cmp(&second), Some(first.cmp(&second)));
 		assert_eq!(first.cmp(&third), second.cmp(&third));

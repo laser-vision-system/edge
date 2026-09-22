@@ -15,14 +15,12 @@ use server_edge_datatypes::{
 	shared::{CameraId, Configuration, ViewCameraConfig},
 };
 
-use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
-
 pub use self::{
 	perpetual_info::PerpetualInfo,
 	persist_entry::{MaybeImage, PersistEntry, WhyNo},
 };
-
 use super::Identifier;
+use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
 
 pub type ErrAccType = u16;
 
@@ -50,7 +48,8 @@ impl StatusChange {
 
 /// Persistence data for camera devices.
 ///
-/// This type holds details about all currently and previously connected camera devices.
+/// This type holds details about all currently and previously connected camera
+/// devices.
 pub struct Persistence {
 	inner: MapType,
 }
@@ -58,7 +57,10 @@ pub struct Persistence {
 // Access methods.
 impl Persistence {
 	/// Filter peristence with an arbitrary function.
-	pub fn filter_by(&mut self, filter: Box<dyn Fn(&PersistEntry) -> bool>) -> Vec<&PersistEntry> {
+	pub fn filter_by(
+		&mut self,
+		filter: Box<dyn Fn(&PersistEntry) -> bool>,
+	) -> Vec<&PersistEntry> {
 		self.inner.values().filter(|entry| filter(entry)).collect()
 	}
 
@@ -133,10 +135,10 @@ impl Persistence {
 		match serde_json::from_str(&request.configuration) {
 			Ok(map) => {
 				if let Err(why) = active.get_camera_mut().set_controls(map) {
-					logger()
-						.lock()
-						.unwrap()
-						.log_error("Failed to apply request controls to the camera", &why);
+					logger().lock().unwrap().log_error(
+						"Failed to apply request controls to the camera",
+						&why,
+					);
 				};
 			},
 			Err(why) => {
@@ -148,7 +150,10 @@ impl Persistence {
 		};
 	}
 
-	pub fn get_configuration(&mut self, request: ViewCameraConfig) -> Option<Configuration> {
+	pub fn get_configuration(
+		&mut self,
+		request: ViewCameraConfig,
+	) -> Option<Configuration> {
 		let Some(entry) = self.get_mut(request.camera_id) else {
 			logger()
 				.lock()
@@ -163,8 +168,12 @@ impl Persistence {
 				.log_error("Not active", &EdgeError::IncorrectConnectionStatus);
 			return None;
 		};
-		let important_controls = active.get_camera_mut().get_controls().stripped();
-		let configuration = Configuration::build_response(request, important_controls.serialise());
+		let important_controls =
+			active.get_camera_mut().get_controls().stripped();
+		let configuration = Configuration::build_response(
+			request,
+			important_controls.serialise(),
+		);
 		Some(configuration)
 	}
 
@@ -211,12 +220,16 @@ impl Persistence {
 
 				match maybe_image {
 					MaybeImage::Image(image) => {
-						let batch_item = entry.try_make_batch_item_with(ident, image)?;
+						let batch_item =
+							entry.try_make_batch_item_with(ident, image)?;
 						Some((Some(batch_item), None))
 					},
 					MaybeImage::WhyNo(whyno) => Some((
 						None,
-						Some(StatusChange::new(CameraId::from(ident.clone()), whyno)),
+						Some(StatusChange::new(
+							CameraId::from(ident.clone()),
+							whyno,
+						)),
 					)),
 				}
 			})
@@ -269,20 +282,21 @@ impl Default for Persistence {
 
 #[cfg(test)]
 mod tests {
-	use crate::tcam_interface::identifier::*;
-
 	use super::*;
+	use crate::tcam_interface::identifier::*;
 
 	#[test]
 	fn matching_entries() {
 		let mut persist_map = Persistence::default();
 		let points = HashSet::new();
 
-		let first_key = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let first_key =
+			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
 		let first_entry = PersistEntry::new(&points);
 		persist_map.inner.insert(first_key, first_entry);
 
-		let second_key = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let second_key =
+			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
 		let second_entry = PersistEntry::new(&points);
 		persist_map.inner.insert(second_key, second_entry);
 

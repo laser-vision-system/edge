@@ -1,12 +1,12 @@
 use std::fmt;
 
 use image::{DynamicImage, GrayImage};
-
-use image_compare::{Algorithm, Metric, gray_similarity_histogram, gray_similarity_structure};
-
-use crate::logger::logger;
+use image_compare::{
+	Algorithm, Metric, gray_similarity_histogram, gray_similarity_structure,
+};
 
 use super::{BatchItem, SessionToken, VisionInterface, VisionState};
+use crate::logger::logger;
 
 struct DiffModel {
 	intercept: f32,
@@ -104,18 +104,23 @@ impl Diff {
 		image: &GrayImage,
 		setpoint: &GrayImage,
 	) -> (f32, f32, f32, f32, f32, f32, f32) {
-		let (image_peak, image_mean, image_std_dev) = self.compute_brightness_stats(image);
+		let (image_peak, image_mean, image_std_dev) =
+			self.compute_brightness_stats(image);
 		let (setpoint_peak, setpoint_mean, setpoint_std_dev) =
 			self.compute_brightness_stats(setpoint);
-		let luma_ssim = gray_similarity_structure(&Algorithm::MSSIMSimple, image, setpoint)
-			.unwrap()
-			.score as f32;
+		let luma_ssim =
+			gray_similarity_structure(&Algorithm::MSSIMSimple, image, setpoint)
+				.unwrap()
+				.score as f32;
 		let hellinger =
-			gray_similarity_histogram(Metric::Hellinger, image, setpoint).unwrap() as f32;
+			gray_similarity_histogram(Metric::Hellinger, image, setpoint)
+				.unwrap() as f32;
 		let correlation =
-			gray_similarity_histogram(Metric::Correlation, image, setpoint).unwrap() as f32;
+			gray_similarity_histogram(Metric::Correlation, image, setpoint)
+				.unwrap() as f32;
 		let intersection =
-			gray_similarity_histogram(Metric::Intersection, image, setpoint).unwrap() as f32;
+			gray_similarity_histogram(Metric::Intersection, image, setpoint)
+				.unwrap() as f32;
 
 		return (
 			setpoint_peak as f32 - image_peak as f32,
@@ -138,9 +143,12 @@ impl VisionInterface for Diff {
 			};
 
 			if item.calibrate {
-				let grey_image = Some(DynamicImage::ImageRgb8(item.image.clone()).into_luma8());
+				let grey_image = Some(
+					DynamicImage::ImageRgb8(item.image.clone()).into_luma8(),
+				);
 				data.image = grey_image.clone();
-				let (peak, mean, std_dev) = self.compute_brightness_stats(&grey_image.unwrap());
+				let (peak, mean, std_dev) =
+					self.compute_brightness_stats(&grey_image.unwrap());
 				data.peak = Some(peak as f32);
 				data.mean = Some(mean);
 				data.std_dev = Some(std_dev);
@@ -149,7 +157,9 @@ impl VisionInterface for Diff {
 
 			match &data.image {
 				Some(setpoint) => {
-					let grey_image = DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
+					let grey_image =
+						DynamicImage::ImageRgb8(item.image.clone())
+							.into_luma8();
 
 					let (
 						peak_diff,
@@ -174,10 +184,9 @@ impl VisionInterface for Diff {
 					data.deviation = Some(1.0 - relative_intensity as f32);
 				},
 				None => {
-					logger()
-						.lock()
-						.unwrap()
-						.log_warn("Could not calculate deviation as there is no setpoint!");
+					logger().lock().unwrap().log_warn(
+						"Could not calculate deviation as there is no setpoint!",
+					);
 					continue;
 				},
 			}

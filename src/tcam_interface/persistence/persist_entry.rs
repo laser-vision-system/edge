@@ -4,18 +4,17 @@ use image::RgbImage;
 use nokhwa::utils::CameraIndex;
 use server_edge_datatypes::shared::{CameraId, CameraStatus};
 
-use crate::{
-	error::EdgeError, logger::logger, tcam_interface::CameraDevice, vision_processor::BatchItem,
-};
-
 use super::{
 	OccupiedIndices,
 	polling::AccessPoint,
 	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
 };
-
 #[allow(unused_imports, reason = "Needed for docstring")]
 use crate::tcam_interface::Identifier;
+use crate::{
+	error::EdgeError, logger::logger, tcam_interface::CameraDevice,
+	vision_processor::BatchItem,
+};
 
 #[derive(Clone, Debug)]
 pub enum WhyNo {
@@ -56,7 +55,11 @@ impl PersistEntry {
 		match res {
 			Some(camera) => {
 				let name = camera.get_info().to_string();
-				let new = ConnectionStatus::new_active(camera, occupied_indices, name);
+				let new = ConnectionStatus::new_active(
+					camera,
+					occupied_indices,
+					name,
+				);
 				Self { inner: Some(new) }
 			},
 			None => {
@@ -72,7 +75,9 @@ impl PersistEntry {
 		}
 	}
 
-	fn try_make_camera_from_points(points: &HashSet<AccessPoint>) -> Option<CameraDevice> {
+	fn try_make_camera_from_points(
+		points: &HashSet<AccessPoint>,
+	) -> Option<CameraDevice> {
 		for point in points {
 			if point.is_metadata {
 				continue;
@@ -113,15 +118,15 @@ impl PersistEntry {
 // Inner operations.
 impl PersistEntry {
 	fn as_inner(&self) -> &ConnectionStatus {
-		self.inner
-			.as_ref()
-			.expect("the inner value should only be None for brief switching operations")
+		self.inner.as_ref().expect(
+			"the inner value should only be None for brief switching operations",
+		)
 	}
 
 	fn as_inner_mut(&mut self) -> &mut ConnectionStatus {
-		self.inner
-			.as_mut()
-			.expect("the inner value should only be None for brief switching operations")
+		self.inner.as_mut().expect(
+			"the inner value should only be None for brief switching operations",
+		)
 	}
 
 	/// Remove and return the inner value for use in conversion.
@@ -129,15 +134,17 @@ impl PersistEntry {
 	/// This is the only case where the inner value will become [`None`].
 	/// Replace it with a new value ASAP.
 	fn take_inner(&mut self) -> ConnectionStatus {
-		self.inner
-			.take()
-			.expect("the inner value should only be None for brief switching operations")
+		self.inner.take().expect(
+			"the inner value should only be None for brief switching operations",
+		)
 	}
 
 	pub fn active_to_broken(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Active { active } => ConnectionStatus::from(Broken::from(active)),
+			ConnectionStatus::Active { active } => {
+				ConnectionStatus::from(Broken::from(active))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -157,7 +164,9 @@ impl PersistEntry {
 	pub fn active_to_limbo(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Active { active } => ConnectionStatus::from(Limbo::from(active)),
+			ConnectionStatus::Active { active } => {
+				ConnectionStatus::from(Limbo::from(active))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -198,19 +207,30 @@ impl PersistEntry {
 		let inner = self.take_inner();
 		let new_inner = match inner {
 			ConnectionStatus::Disconnected { disconnected } => {
-				ConnectionStatus::from(Limbo::from_disconnected(disconnected, occupied_indices))
+				ConnectionStatus::from(Limbo::from_disconnected(
+					disconnected,
+					occupied_indices,
+				))
 			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
 	}
 
-	pub fn limbo_to_active(&mut self, camera: CameraDevice, occupied_indices: OccupiedIndices) {
+	pub fn limbo_to_active(
+		&mut self,
+		camera: CameraDevice,
+		occupied_indices: OccupiedIndices,
+	) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
 			ConnectionStatus::Limbo { limbo } => {
 				// TODO
-				ConnectionStatus::from(Active::from_limbo(limbo, camera, occupied_indices))
+				ConnectionStatus::from(Active::from_limbo(
+					limbo,
+					camera,
+					occupied_indices,
+				))
 			},
 			other => other,
 		};
@@ -220,7 +240,9 @@ impl PersistEntry {
 	pub fn limbo_to_broken(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Limbo { limbo } => ConnectionStatus::from(Broken::from(limbo)),
+			ConnectionStatus::Limbo { limbo } => {
+				ConnectionStatus::from(Broken::from(limbo))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -229,7 +251,9 @@ impl PersistEntry {
 	pub fn limbo_to_disconnected(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Limbo { limbo } => ConnectionStatus::from(Disconnected::from(limbo)),
+			ConnectionStatus::Limbo { limbo } => {
+				ConnectionStatus::from(Disconnected::from(limbo))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -268,14 +292,18 @@ impl PersistEntry {
 
 	pub fn get_disconnected(&self) -> Option<&Disconnected> {
 		match self.as_inner() {
-			ConnectionStatus::Disconnected { disconnected } => Some(disconnected),
+			ConnectionStatus::Disconnected { disconnected } => {
+				Some(disconnected)
+			},
 			_ => None,
 		}
 	}
 
 	pub fn get_disconnected_mut(&mut self) -> Option<&mut Disconnected> {
 		match self.as_inner_mut() {
-			ConnectionStatus::Disconnected { disconnected } => Some(disconnected),
+			ConnectionStatus::Disconnected { disconnected } => {
+				Some(disconnected)
+			},
 			_ => None,
 		}
 	}
@@ -320,7 +348,9 @@ impl PersistEntry {
 		match self.as_inner_mut() {
 			ConnectionStatus::Active { active } => active.set_name(name),
 			ConnectionStatus::Broken { broken } => broken.set_name(name),
-			ConnectionStatus::Disconnected { disconnected } => disconnected.set_name(name),
+			ConnectionStatus::Disconnected { disconnected } => {
+				disconnected.set_name(name)
+			},
 			ConnectionStatus::Limbo { limbo } => limbo.set_name(name),
 			ConnectionStatus::Invalid { .. } => logger()
 				.lock()
@@ -331,18 +361,22 @@ impl PersistEntry {
 
 	pub fn set_currently_viewed(&mut self, state: bool) {
 		match self.as_inner_mut() {
-			ConnectionStatus::Active { active } => active.set_currently_viewed(state),
+			ConnectionStatus::Active { active } => {
+				active.set_currently_viewed(state)
+			},
 
 			// TODO: Technically, these two should be a logic error.
 			ConnectionStatus::Disconnected { disconnected } => {
 				disconnected.set_currently_viewed(state)
 			},
-			ConnectionStatus::Limbo { limbo } => limbo.set_currently_viewed(state),
+			ConnectionStatus::Limbo { limbo } => {
+				limbo.set_currently_viewed(state)
+			},
 
-			ConnectionStatus::Broken { .. } | ConnectionStatus::Invalid { .. } => logger()
-				.lock()
-				.unwrap()
-				.log_warn("Attempted to change currently_viewed of an invalid connection"),
+			ConnectionStatus::Broken { .. }
+			| ConnectionStatus::Invalid { .. } => logger().lock().unwrap().log_warn(
+				"Attempted to change currently_viewed of an invalid connection",
+			),
 		}
 	}
 
@@ -351,13 +385,15 @@ impl PersistEntry {
 			ConnectionStatus::Active { active } => active.set_calibrate(true),
 
 			// TODO: Technically, these two should be a logic error.
-			ConnectionStatus::Disconnected { disconnected } => disconnected.set_calibrate(true),
+			ConnectionStatus::Disconnected { disconnected } => {
+				disconnected.set_calibrate(true)
+			},
 			ConnectionStatus::Limbo { limbo } => limbo.set_calibrate(true),
 
-			ConnectionStatus::Broken { .. } | ConnectionStatus::Invalid { .. } => logger()
-				.lock()
-				.unwrap()
-				.log_warn("Attempted to set calibrate of an invalid connection"),
+			ConnectionStatus::Broken { .. }
+			| ConnectionStatus::Invalid { .. } => logger().lock().unwrap().log_warn(
+				"Attempted to set calibrate of an invalid connection",
+			),
 		}
 	}
 }
@@ -408,13 +444,18 @@ impl PersistEntry {
 			active.err_accumulation()
 		));
 
-		let batch = active.make_batch_item(image, CameraId::from(ident.clone()));
+		let batch =
+			active.make_batch_item(image, CameraId::from(ident.clone()));
 
 		Some(batch)
 	}
 
-	pub fn update(&mut self, points: &HashSet<AccessPoint>) -> Option<CameraStatus> {
-		//todo!("First, check if main index is gone. Then update and log extra indices.");
+	pub fn update(
+		&mut self,
+		points: &HashSet<AccessPoint>,
+	) -> Option<CameraStatus> {
+		// todo!("First, check if main index is gone. Then update and log extra
+		// indices.");
 		match self.as_inner_mut() {
 			ConnectionStatus::Active { active } => {
 				// Check if it needs to go to limbo.

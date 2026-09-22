@@ -12,12 +12,11 @@ use server_edge_datatypes::{
 	shared::{CameraId, CameraStatus},
 };
 
-use crate::logger::logger;
-
 use super::{
 	super::{CameraDevice, Identifier},
 	KeyType, Persistence, ValType,
 };
+use crate::logger::logger;
 
 // Potential inputs:
 // - Camera device.
@@ -97,7 +96,8 @@ pub enum ConnectionDetail {
 }
 
 fn convert_to_intermediaries(devices: Vec<CameraInfo>) -> IntermediaryMap {
-	let mut map = HashMap::with_capacity_and_hasher(devices.len(), RandomState::new());
+	let mut map =
+		HashMap::with_capacity_and_hasher(devices.len(), RandomState::new());
 
 	for device in devices.into_iter() {
 		let index = device.index().to_owned();
@@ -116,7 +116,9 @@ impl Persistence {
 	/// Poll all devices to instantiate newly connected cameras.
 	///
 	/// Returns a list of information about newly added cameras.
-	pub fn poll_for_new_cameras(&mut self) -> HashMap<CameraId, ConnectionDetail> {
+	pub fn poll_for_new_cameras(
+		&mut self,
+	) -> HashMap<CameraId, ConnectionDetail> {
 		let all_devices = CameraDevice::query_for_available_cameras();
 		let inter = convert_to_intermediaries(all_devices);
 		self.get_new_from_inter(inter)
@@ -154,15 +156,15 @@ impl Persistence {
 			.and_modify(|entry| before = entry.get_status())
 			.and_modify(|entry| update = entry.update(&connection.points))
 			.or_insert_with(|| {
-				logger()
-					.lock()
-					.unwrap()
-					.log_info(&format!("New identifier added: {}", connection.identifier));
+				logger().lock().unwrap().log_info(&format!(
+					"New identifier added: {}",
+					connection.identifier
+				));
 				new = true;
 				ValType::new(&connection.points)
 			});
 
-		//Self::on_all_entries(entry, &connection.points);
+		// Self::on_all_entries(entry, &connection.points);
 
 		return if new {
 			match entry.get_active() {
@@ -192,13 +194,14 @@ impl Persistence {
 		};
 	}
 
-	//fn on_all_entries(entry: &mut PersistEntry, points: &HashSet<AccessPoint>)
+	// fn on_all_entries(entry: &mut PersistEntry, points:
+	// &HashSet<AccessPoint>)
 	//-> Option<(CameraId, NewCameraInfo)>
 	//{
-	//	let device = entry.try_register_device(index, is_metadata)?;
+	// 	let device = entry.try_register_device(index, is_metadata)?;
 	//
-	//	let hashed_id = identifier.as_ref().to_owned();
-	//	Some((hashed_id, device))
+	// 	let hashed_id = identifier.as_ref().to_owned();
+	// 	Some((hashed_id, device))
 	//}
 
 	// Attempt to add a device to this instance.
@@ -208,31 +211,31 @@ impl Persistence {
 	// - The index is already registered
 	// - This is a metadata device
 	// - The camera failed to intialise
-	//pub fn try_register_device(
-	//	&mut self,
-	//	index: CameraIndex,
-	//	is_metadata: bool,
+	// pub fn try_register_device(
+	// 	&mut self,
+	// 	index: CameraIndex,
+	// 	is_metadata: bool,
 	//) -> Option<NewCameraInfo> {
-	//	if self.try_insert_index(index) {
-	//		return None;
-	//	}
+	// 	if self.try_insert_index(index) {
+	// 		return None;
+	// 	}
 	//
-	//	// Stop now if this is a metadata device.
-	//	if is_metadata {
-	//		logger().lock().unwrap().log_warn(&format!(
-	//			"This index ({}) represents a metadata device",
-	//			index
-	//		));
-	//		return None;
-	//	}
+	// 	// Stop now if this is a metadata device.
+	// 	if is_metadata {
+	// 		logger().lock().unwrap().log_warn(&format!(
+	// 			"This index ({}) represents a metadata device",
+	// 			index
+	// 		));
+	// 		return None;
+	// 	}
 	//
-	//	if !self.initialise_camera(index) {
-	//		return None;
-	//	}
+	// 	if !self.initialise_camera(index) {
+	// 		return None;
+	// 	}
 	//
-	//	let name = self.get_name().to_owned().to_string();
-	//	let status = self.status();
-	//	let device = NewCameraInfo::new(name, status);
-	//	Some(device)
+	// 	let name = self.get_name().to_owned().to_string();
+	// 	let status = self.status();
+	// 	let device = NewCameraInfo::new(name, status);
+	// 	Some(device)
 	//}
 }
