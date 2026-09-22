@@ -132,7 +132,7 @@ impl Persistence {
 			.into_iter()
 			// TODO: Filter for disconnections here.
 			.filter_map(|(ident, points)| -> Option<(CameraId, ConnectionDetail)> {
-				self.on_each_connection(DeviceConnection::from((ident, points)))
+				self.on_each_connection(&DeviceConnection::from((ident, points)))
 			})
 			.collect::<HashMap<_, _>>()
 
@@ -144,7 +144,7 @@ impl Persistence {
 	/// Attempt to create a new device from a device info entry.
 	fn on_each_connection(
 		&mut self,
-		connection: DeviceConnection,
+		connection: &DeviceConnection,
 	) -> Option<(CameraId, ConnectionDetail)> {
 		let mut before = CameraStatus::Invalid;
 		let mut update = None;

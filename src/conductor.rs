@@ -128,8 +128,7 @@ impl Conductor {
 			};
 
 			if item.send_to_server {
-				let mut encoded =
-					CameraDevice::encode_image(item.image.clone());
+				let mut encoded = CameraDevice::encode_image(&item.image);
 				let result =
 					websocket.send_image(item.camera_id, &mut encoded).await;
 				let _ = result.inspect_err(|why| {
