@@ -154,9 +154,7 @@ pub async fn assert_connection(
 			}
 			(socket, settings)
 		},
-		// Lost connection to server
-		(None, _) => loop_until_connection().await,
-		// Fallback
+		// First time calling.
 		_ => loop_until_connection().await,
 	}
 }
