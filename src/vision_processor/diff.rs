@@ -56,6 +56,7 @@ impl Default for DiffModel {
 	}
 }
 
+#[derive(Default)]
 pub struct Diff {
 	session: SessionToken,
 	model: DiffModel,
@@ -201,14 +202,6 @@ impl VisionInterface for Diff {
 	}
 }
 
-impl Default for Diff {
-	fn default() -> Self {
-		Self {
-			session: SessionToken::new(),
-			model: DiffModel::default(),
-		}
-	}
-}
 
 impl fmt::Debug for Diff {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

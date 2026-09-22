@@ -2,7 +2,7 @@ use std::fmt;
 
 use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Empty {
 	session: SessionToken,
 }
@@ -23,15 +23,7 @@ impl VisionInterface for Empty {
 	fn new_state(&self) -> VisionState {
 		VisionState::Empty {
 			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
-	}
-}
-
-impl Default for Empty {
-	fn default() -> Self {
-		Self {
-			session: SessionToken::new(),
+			data: ExternalData,
 		}
 	}
 }

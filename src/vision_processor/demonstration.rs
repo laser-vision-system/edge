@@ -6,7 +6,7 @@ use rayon::prelude::*;
 
 use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Demonstration {
 	session: SessionToken,
 }
@@ -71,14 +71,6 @@ impl VisionInterface for Demonstration {
 		VisionState::Demonstration {
 			handle: self.session.downgrade(),
 			data: ExternalData::default(),
-		}
-	}
-}
-
-impl Default for Demonstration {
-	fn default() -> Self {
-		Self {
-			session: SessionToken::new(),
 		}
 	}
 }

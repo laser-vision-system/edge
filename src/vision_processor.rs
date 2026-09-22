@@ -63,6 +63,12 @@ impl VisionGuard {
 #[derive(Clone)]
 pub struct SessionToken(Arc<()>);
 
+impl Default for SessionToken {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 impl SessionToken {
 	pub fn new() -> Self {
 		Self(Arc::new(()))
@@ -107,7 +113,7 @@ pub enum VisionVariant {
 impl VisionVariant {
 	/// Private constructor.
 	fn new() -> Self {
-		Self::Empty(Default::default())
+		Self::Empty(Empty::default())
 	}
 
 	/// Request to switch this variant with another one.
