@@ -82,13 +82,6 @@ impl Diff {
 		}
 	}
 
-	pub fn new_state(&self) -> VisionState {
-		VisionState::Diff {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
-	}
-
 	#[expect(
 		clippy::cast_precision_loss,
 		reason = "The pixel count should never exceed the limits of a f32"
