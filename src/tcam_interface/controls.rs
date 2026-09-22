@@ -32,7 +32,7 @@ use std::{
 	ops::{Deref, DerefMut},
 };
 
-#[allow(unused_imports, reason = "Needed for module docstring")]
+#[expect(unused_imports, reason = "Needed for module docstring")]
 use nokhwa::utils::ControlValueSetter;
 use nokhwa::utils::{CameraControl, KnownCameraControl};
 

@@ -68,6 +68,10 @@ pub enum CamControl {
 
 impl From<CameraControl> for CamControl {
 	/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
+	#[expect(
+		clippy::too_many_lines,
+		reason = "Necessary to map from one type to the other"
+	)]
 	fn from(value: CameraControl) -> Self {
 		let control_type = value.control();
 		match value.description() {

@@ -40,6 +40,10 @@ impl PerpetualInfo {
 		self.err_accumulation += increment;
 	}
 
+	#[expect(
+		clippy::else_if_without_else,
+		reason = "This should be a no-op when err_accumulation is at 0"
+	)]
 	/// Reduce the error by up to an amount.
 	pub fn reduce_error(&mut self, amount: ErrAccType) {
 		if self.err_accumulation > amount {

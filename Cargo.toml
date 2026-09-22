@@ -59,6 +59,8 @@ missing_panics_doc = "allow" # Consider upgrading in the future.
 duration_suboptimal_units = "allow"
 
 # Lints from the restriction group:
+allow_attributes = "warn"
+allow_attributes_without_reason = "deny"
 else_if_without_else = "warn"
 empty_structs_with_brackets = "allow" # This should be upgraded to warn in the future.
 indexing_slicing = "warn" # This may be upgraded to forbid in the future.

@@ -1,10 +1,10 @@
 //! Core traits for camera controls.
 
 use std::fmt::Debug;
-#[allow(unused_imports, reason = "Needed for trait docstring")]
+#[expect(unused_imports, reason = "Needed for trait docstring")]
 use std::hash::Hash;
 
-#[allow(unused_imports, reason = "Needed for trait docstring")]
+#[expect(unused_imports, reason = "Needed for trait docstring")]
 use nokhwa::utils::ControlValueSetter;
 use nokhwa::{
 	self,

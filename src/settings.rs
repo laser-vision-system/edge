@@ -2,6 +2,12 @@
 //!
 //! TODO: Replace constants with values from environment variables.
 
+// TODO: Resolve this.
+#![allow(
+	unused,
+	reason = "Temporarily allow these until environment variables are implemented"
+)]
+
 use std::time::Duration;
 
 // ============================================================================

@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::{
 	cell::RefCell,
 	fmt,

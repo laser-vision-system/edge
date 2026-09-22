@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::{collections::HashSet, fmt};
 
 use pnet_datalink::interfaces;
@@ -186,7 +189,10 @@ async fn try_connect_once() -> Result<(WebSocket, Settings)> {
 }
 
 // TODO: Remove this once the server request is implemented.
-#[expect(clippy::unused_async)]
+#[expect(
+	clippy::unused_async,
+	reason = "Async will be needed once this function is re-enabled"
+)]
 async fn get_default_settings(_url: &str) -> Result<Settings> {
 	// TODO: Get the default settings from the server
 	// Build the settings struct from the received data.

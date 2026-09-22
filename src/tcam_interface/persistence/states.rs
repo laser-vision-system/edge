@@ -19,6 +19,10 @@ use crate::tcam_interface::CameraDevice;
 pub type InsertWasSuccessful = bool;
 
 /// Additional methods for types that represent occupied indices.
+#[expect(
+	dead_code,
+	reason = "Currently not used, but provides the option if needed"
+)]
 pub trait IndexOccupier:
 	AsRef<OccupiedIndices> + AsMut<OccupiedIndices>
 {

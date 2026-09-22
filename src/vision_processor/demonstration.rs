@@ -18,11 +18,15 @@ impl Demonstration {
 		}
 	}
 
-	// NOTE: Clippy complains about indexing the slice without asserting, but
-	// the par_chunk_exact guarantees this won't panic.
-	#[allow(clippy::missing_asserts_for_indexing)]
-	#[allow(clippy::indexing_slicing)]
-	#[allow(clippy::cast_precision_loss)]
+	#[expect(
+		clippy::missing_asserts_for_indexing,
+		clippy::indexing_slicing,
+		reason = "`par_chunk_exact` guarantees this won't panic"
+	)]
+	#[expect(
+		clippy::cast_precision_loss,
+		reason = "The pixel count should never exceed the limits of a f32"
+	)]
 	fn average_lightness(frame: &RgbImage) -> f32 {
 		let raw_bytes = frame.as_raw();
 		let pixel_count = raw_bytes.len() as f32 / 3.0;

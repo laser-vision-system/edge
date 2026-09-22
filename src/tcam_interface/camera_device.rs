@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::{cmp::Ordering, io::Cursor};
 
 use image::{DynamicImage, RgbImage};
@@ -211,6 +214,7 @@ impl CameraDevice {
 	}
 
 	/// Set every control on the camera back to its default value.
+	#[expect(clippy::too_many_lines, reason = "WIP development")]
 	pub fn reset_controls_to_default(&mut self) {
 		let mut controls = self.get_controls();
 		if let Some(control) =

@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::time::Duration;
 
 use futures_util::{SinkExt, StreamExt, stream::FusedStream};
@@ -27,6 +30,10 @@ impl WebSocket {
 		Self { inner }
 	}
 
+	#[expect(
+		dead_code,
+		reason = "Needs to be better integrated with autonnect"
+	)]
 	pub async fn websocket_connect(url: &str) -> Self {
 		let (stream, _) = connect_async(url).await.expect("Failed to connect");
 		Self { inner: stream }
@@ -36,6 +43,10 @@ impl WebSocket {
 		self.inner.is_terminated()
 	}
 
+	#[expect(
+		dead_code,
+		reason = "Needs to be better integrated with autonnect"
+	)]
 	pub async fn websocket_connect_static() -> Self {
 		let url = "ws://".to_string() + HOST + ":" + PORT + API;
 		Self::websocket_connect(&url).await

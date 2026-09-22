@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 mod perpetual_info;
 mod persist_entry;
 pub mod polling;
@@ -109,14 +112,26 @@ impl Persistence {
 		}
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn start_viewing_camera(&mut self, request: StartViewingCamera) {
 		self.set_currently_viewed(request.camera_id, true);
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn stop_viewing_camera(&mut self, request: StopViewingCamera) {
 		self.set_currently_viewed(request.camera_id, false);
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn set_configuration(&mut self, request: Configuration) {
 		let Some(entry) = self.get_mut(request.camera_id) else {
 			logger()
@@ -177,6 +192,10 @@ impl Persistence {
 		Some(configuration)
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn request_calibration(&mut self, request: Setpoint) {
 		if let Some(entry) = self.get_mut(request.camera_id) {
 			entry.request_calibration();

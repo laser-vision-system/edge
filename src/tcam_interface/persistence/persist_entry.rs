@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::collections::HashSet;
 
 use image::RgbImage;
@@ -443,6 +446,10 @@ impl PersistEntry {
 		Some(batch)
 	}
 
+	#[expect(
+		clippy::if_not_else,
+		reason = "Checking against not is clearer than the inverse"
+	)]
 	pub fn update(
 		&mut self,
 		points: &HashSet<AccessPoint>,
@@ -455,6 +462,7 @@ impl PersistEntry {
 				let occupied_indices: HashSet<_> =
 					points.iter().map(|point| &point.index).collect();
 				let index = &active.get_camera().get_index();
+				// Raises the `clippy::if_not_else` warning.
 				if !occupied_indices.contains(index) {
 					// Camera has disconnected.
 					self.active_to_disconnected();

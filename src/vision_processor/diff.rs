@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::fmt;
 
 use image::{DynamicImage, GrayImage};
@@ -20,6 +23,10 @@ struct DiffModel {
 }
 
 impl DiffModel {
+	#[expect(
+		clippy::too_many_arguments,
+		reason = "Necessary for this function"
+	)]
 	fn predict(
 		&self,
 		peak: f32,
@@ -42,6 +49,11 @@ impl DiffModel {
 }
 
 impl Default for DiffModel {
+	#[expect(
+		clippy::excessive_precision,
+		clippy::unreadable_literal,
+		reason = "These are raw model weights"
+	)]
 	fn default() -> Self {
 		DiffModel {
 			intercept: 0.5819997604631103,
@@ -77,6 +89,10 @@ impl Diff {
 		}
 	}
 
+	#[expect(
+		clippy::cast_precision_loss,
+		reason = "The pixel count should never exceed the limits of a f32"
+	)]
 	fn compute_brightness_stats(img: &GrayImage) -> (u8, f32, f32) {
 		let pixels: Vec<u8> = img.pixels().map(|p| p.0[0]).collect();
 		let n = pixels.len() as f32;
@@ -100,6 +116,10 @@ impl Diff {
 		(peak, mean, std_dev)
 	}
 
+	#[expect(
+		clippy::cast_possible_truncation,
+		reason = "Value is used at f32, so full size not needed"
+	)]
 	fn collect_metrics(
 		image: &GrayImage,
 		setpoint: &GrayImage,

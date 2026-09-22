@@ -1,5 +1,8 @@
 //! Polling logic for the [`Persistence`] struct.
 
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::{
 	collections::{HashMap, HashSet},
 	fmt,
@@ -142,6 +145,10 @@ impl Persistence {
 	}
 
 	/// Attempt to create a new device from a device info entry.
+	#[expect(
+		clippy::if_not_else,
+		reason = "Checking against not is clearer than the inverse"
+	)]
 	fn on_each_connection(
 		&mut self,
 		connection: &DeviceConnection,
@@ -180,6 +187,7 @@ impl Persistence {
 		} else {
 			match update {
 				Some(after) => {
+					// Raises the `clippy::if_not_else` warning.
 					if before != after {
 						let id = connection.identifier.as_ref();
 						let status = after;
