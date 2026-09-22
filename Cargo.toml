@@ -66,5 +66,6 @@ missing_asserts_for_indexing = "warn" # Contention with the above.
 must_use_candidate = "allow" # Consider upgrading in the future.
 pattern_type_mismatch = "allow" # Consider upgrading in the future.
 print_stderr = "allow" # This should be upgraded to forbid in the future.
+return_and_then = "warn"
 unwrap_used = "warn" # This should be upgraded to forbid in the future.
 # TODO Add more from https://rust-lang.github.io/rust-clippy/master/index.html?groups=restriction

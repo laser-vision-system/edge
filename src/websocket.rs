@@ -101,60 +101,57 @@ fn process_incoming(text: &str) -> Option<EdgeRequests> {
 	let mut args = msg.splitn(2, ':');
 
 	match args.next().unwrap() {
-		"SetNameCamera" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::SetNameCamera(inner))
-				})
-			}),
+		"SetNameCamera" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked
+				.map_or(None, |inner| Some(EdgeRequests::SetNameCamera(inner)))
 		},
-		"StartViewingCamera" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::StartViewingCamera(inner))
-				})
-			}),
+		"StartViewingCamera" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| {
+				Some(EdgeRequests::StartViewingCamera(inner))
+			})
 		},
-		"StopViewingCamera" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::StopViewingCamera(inner))
-				})
-			}),
+		"StopViewingCamera" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| {
+				Some(EdgeRequests::StopViewingCamera(inner))
+			})
 		},
-		"Configuration" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::Configuration(inner))
-				})
-			}),
+		"Configuration" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked
+				.map_or(None, |inner| Some(EdgeRequests::Configuration(inner)))
 		},
-		"ViewCameraConfig" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::ViewCameraConfig(inner))
-				})
-			}),
+		"ViewCameraConfig" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| {
+				Some(EdgeRequests::ViewCameraConfig(inner))
+			})
 		},
-		"Setpoint" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked
-					.map_or(None, |inner| Some(EdgeRequests::Setpoint(inner)))
-			}),
+		"Setpoint" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| Some(EdgeRequests::Setpoint(inner)))
 		},
-		"SetProcessingType" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::SetProcessingType(inner))
-				})
-			}),
+		"SetProcessingType" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| {
+				Some(EdgeRequests::SetProcessingType(inner))
+			})
 		},
 		_ => None,
 	}
