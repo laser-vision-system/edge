@@ -469,10 +469,6 @@ impl PersistEntry {
 					None
 				}
 			},
-			ConnectionStatus::Broken { .. } => {
-				// Do nothing.
-				None
-			},
 			ConnectionStatus::Disconnected { .. } => {
 				let camera = Self::try_make_camera_from_points(points)?;
 				// Succesful reconnection.
@@ -481,10 +477,6 @@ impl PersistEntry {
 				self.disconnected_to_active(camera, occupied_indices);
 				Some(CameraStatus::Active)
 			},
-			ConnectionStatus::Invalid { invalid: _ } => {
-				// Do nothing.
-				None
-			},
 			ConnectionStatus::Limbo { .. } => {
 				let camera = Self::try_make_camera_from_points(points)?;
 				// Succesful reconnection.
@@ -492,6 +484,11 @@ impl PersistEntry {
 					points.iter().map(|point| point.index.clone()).collect();
 				self.limbo_to_active(camera, occupied_indices);
 				Some(CameraStatus::Active)
+			},
+			ConnectionStatus::Broken { .. }
+			| ConnectionStatus::Invalid { invalid: _ } => {
+				// Do nothing.
+				None
 			},
 		}
 	}
