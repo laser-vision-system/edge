@@ -6,10 +6,7 @@ use nokhwa::{
 	format_types::Mjpeg,
 	frame::{Frame, IntoRgb},
 	open,
-	utils::{
-		CameraControl, CameraIndex, CameraInfo, ControlValueSetter,
-		KnownCameraControl,
-	},
+	utils::{CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
 
 use super::controls::{
@@ -212,11 +209,6 @@ impl CameraDevice {
 		Ok(())
 	}
 
-	#[allow(dead_code)]
-	fn get_raw_controls(&self) -> Vec<CameraControl> {
-		self.inner.controls().unwrap()
-	}
-
 	/// Set every control on the camera back to its default value.
 	pub fn reset_controls_to_default(&mut self) {
 		let mut controls = self.get_controls();
@@ -363,11 +355,19 @@ impl CameraDevice {
 mod tests {
 	use std::process::{ExitCode, Termination};
 
+	use nokhwa::utils::CameraControl;
+
 	use super::*;
 	use crate::tcam_interface::controls::traits::{
 		ControlDefault, ControlDescription, ControlItems, ControlMax,
 		ControlStep, ControlValue,
 	};
+
+	impl CameraDevice {
+		fn get_raw_controls(&self) -> Vec<CameraControl> {
+			self.inner.controls().unwrap()
+		}
+	}
 
 	impl Termination for CameraDevice {
 		fn report(self) -> ExitCode {
