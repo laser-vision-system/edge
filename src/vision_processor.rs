@@ -128,7 +128,7 @@ impl VisionVariant {
 	/// manage setpoints.
 	///
 	/// This method statically asserts exhaustiveness between
-	/// [this](VisionVariant) and [VisionTechnique].
+	/// [this](VisionVariant) and [`VisionTechnique`].
 	fn swap(self, swap_to: VisionTechnique) -> Self {
 		if self.identifier() == swap_to {
 			logger()

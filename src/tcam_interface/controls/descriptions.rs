@@ -194,12 +194,6 @@ impl From<CameraControl> for CamControl {
 // Every variant has a value and default.
 // There are no hard correllations for the other fields.
 
-/// A camera control that consists of nothing.
-///
-/// Maps to [`ControlValueDescription::None`].
-//#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-// pub struct NoneControl;
-
 /// A camera control that consists of a value, default, and step.
 ///
 /// Maps to [`ControlValueDescription::Integer`]

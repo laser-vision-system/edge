@@ -2,17 +2,18 @@
 //!
 //! Provides logging support for the edge.
 //!
-//! This module can only be accessed by calling importing the logger() function.
+//! This module can only be accessed by calling importing the `logger()`
+//! function.
 //!
 //! To create a log, call one of the following functions:
 //!
-//! - logger().log_info(message: &str)
-//! - logger().log_warn(message: &str)
-//! - logger().log_error(message: &str, error: EdgeError)
+//! - `logger().log_info(message: &str)`
+//! - `logger().log_warn(message: &str)`
+//! - `logger().log_error(message: &str, error: EdgeError)`
 //!
 //! To send all buffered logs to the server, use:
 //!
-//! - logger().send_logs()
+//! - `logger().send_logs()`
 
 use std::sync::{Mutex, OnceLock};
 

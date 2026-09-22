@@ -8,12 +8,12 @@
 //! - The order of the collection does not matter.
 //!
 //! - Each control will be unique to a [`KnownCameraControl`] (ID), condusive to
-//!   a HashMap or Set.
+//!   a `HashMap` or Set.
 //!
 //! - Every [`CamControl`] ([`ControlValueDescription`]) maps non-commutatively
 //!   to a [`ControlValue`] ([`ControlValueSetter`]), but cannot be determined
-//!   at runtime.
-//! This can be handled either by generic or trait objects (`dyn`).
+//!   at runtime. This can be handled either by generic or trait objects
+//!   (`dyn`).
 //!
 //! - There seems to be a weak and unclear mapping between
 //!   [`KnownCameraControl`] and [`CamControl`] ([`ControlValueDescription`]).
