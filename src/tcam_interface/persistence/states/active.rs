@@ -109,7 +109,7 @@ impl Active {
 	}
 
 	/// Map this type to a [`CameraStatus`].
-	pub fn get_status(&self) -> CameraStatus {
+	pub fn get_status() -> CameraStatus {
 		CameraStatus::Active
 	}
 }

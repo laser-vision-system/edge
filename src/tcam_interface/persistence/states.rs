@@ -83,7 +83,7 @@ impl ConnectionStatus {
 		match self {
 			ConnectionStatus::Active { .. } => CameraStatus::Active,
 			ConnectionStatus::Broken { .. } => CameraStatus::Broken,
-			ConnectionStatus::Disconnected { .. } => CameraStatus::Broken,
+			ConnectionStatus::Disconnected { .. } => CameraStatus::Disconnected,
 			ConnectionStatus::Invalid { .. } => CameraStatus::Invalid,
 			ConnectionStatus::Limbo { .. } => CameraStatus::Limbo,
 		}

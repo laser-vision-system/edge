@@ -22,8 +22,8 @@ impl Invalid {
 	}
 
 	/// Map this type to a [`CameraStatus`].
-	pub fn get_status(&self) -> CameraStatus {
-		CameraStatus::Active
+	pub fn get_status() -> CameraStatus {
+		CameraStatus::Invalid
 	}
 }
 
