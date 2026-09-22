@@ -23,7 +23,7 @@ impl Demonstration {
 	#[allow(clippy::missing_asserts_for_indexing)]
 	#[allow(clippy::indexing_slicing)]
 	#[allow(clippy::cast_precision_loss)]
-	fn average_lightness(&self, frame: &RgbImage) -> f32 {
+	fn average_lightness(frame: &RgbImage) -> f32 {
 		let raw_bytes = frame.as_raw();
 		let pixel_count = raw_bytes.len() as f32 / 3.0;
 
@@ -49,7 +49,7 @@ impl VisionInterface for Demonstration {
 				continue;
 			};
 
-			let lightness = self.average_lightness(&item.image) as f32;
+			let lightness = Self::average_lightness(&item.image);
 
 			if item.calibrate {
 				data.setpoint = Some(lightness);
