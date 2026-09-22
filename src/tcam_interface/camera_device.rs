@@ -33,9 +33,10 @@ pub struct CameraDevice {
 impl CameraDevice {
 	pub fn new(index: CameraIndex) -> Result<Self> {
 		// TODO: Modify CameraIndex with Cow support.
-		let opened = open(index.clone(), OpenRequest::any())
+		let index_str = index.to_string();
+		let opened = open(index, OpenRequest::any())
 			.map_err(|why| EdgeError::NokhwaInitialisation {
-				index: index.to_string(),
+				index: index_str,
 				reason: why.to_string(),
 			})
 			.inspect_err(|why| {
