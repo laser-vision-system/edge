@@ -177,10 +177,7 @@ impl CameraDevice {
 	where
 		T: Into<ControlValueSetter> + Clone,
 	{
-		if match id {
-			KnownCameraControl::WhiteBalance => true,
-			_ => false,
-		} {
+		if matches!(id, KnownCameraControl::WhiteBalance) {
 			// HACK: Cheekily skip controls that may be inactive/disabled.
 			return Ok(());
 		}
