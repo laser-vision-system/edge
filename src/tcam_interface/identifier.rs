@@ -169,7 +169,7 @@ impl PartialEq for Identifier {
 
 impl PartialOrd for Identifier {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-		self.hashed_id.partial_cmp(&other.hashed_id)
+		Some(self.cmp(other))
 	}
 }
 
