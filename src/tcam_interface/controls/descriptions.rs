@@ -23,6 +23,7 @@ use super::{
 		ConValueStringType,
 	},
 };
+use crate::error::EdgeError;
 
 // ===== Field relationship bounds =====
 // (step, min, max, key): value
@@ -234,12 +235,12 @@ impl ControlDescription for IntegerControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -319,7 +320,7 @@ impl ControlDescription for IntegerRangeControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
@@ -327,7 +328,7 @@ impl ControlDescription for IntegerRangeControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -417,12 +418,12 @@ impl ControlDescription for FloatControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -502,7 +503,7 @@ impl ControlDescription for FloatRangeControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
@@ -510,7 +511,7 @@ impl ControlDescription for FloatRangeControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -597,7 +598,7 @@ impl ControlDescription for BooleanControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -653,7 +654,7 @@ impl ControlDescription for StringControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -709,7 +710,7 @@ impl ControlDescription for BytesControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -765,7 +766,7 @@ impl ControlDescription for KeyValuePairControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -821,7 +822,7 @@ impl ControlDescription for PointControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -881,7 +882,7 @@ impl ControlDescription for EnumControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -954,12 +955,12 @@ impl ControlDescription for RGBControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -1021,12 +1022,12 @@ impl ControlDescription for MenuControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 

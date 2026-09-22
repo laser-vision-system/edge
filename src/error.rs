@@ -59,6 +59,8 @@ pub enum EdgeError {
 	IncorrectConnectionStatus,
 	#[error("Attempting to operate on an unknown camera id")]
 	UnknownCameraId,
+	#[error("Attempting to set an invalid control value")]
+	InvalidControlValue,
 }
 
 impl Clone for EdgeError {
@@ -103,6 +105,7 @@ impl Clone for EdgeError {
 			Self::InvalidDeviceConnection => Self::InvalidDeviceConnection,
 			Self::IncorrectConnectionStatus => Self::IncorrectConnectionStatus,
 			Self::UnknownCameraId => Self::UnknownCameraId,
+			Self::InvalidControlValue => Self::InvalidControlValue,
 		}
 	}
 }
