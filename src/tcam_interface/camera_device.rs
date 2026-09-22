@@ -45,7 +45,7 @@ impl CameraDevice {
 				logger()
 					.lock()
 					.unwrap()
-					.log_error("Could not initialise camera", &why)
+					.log_error("Could not initialise camera", why);
 			})?;
 
 		let OpenedCamera::Stream(mut camera) = opened else {
@@ -66,7 +66,7 @@ impl CameraDevice {
 				logger()
 					.lock()
 					.unwrap()
-					.log_error("Could not initialise camera", &why)
+					.log_error("Could not initialise camera", why);
 			})?;
 
 		logger()
@@ -109,7 +109,7 @@ impl CameraDevice {
 			},
 			Err(why) => {
 				logger::logger().lock().unwrap().log_error("", &why);
-				return Err(why);
+				Err(why)
 			},
 		}
 	}
@@ -148,7 +148,7 @@ impl CameraDevice {
 			.controls()
 			.unwrap()
 			.iter()
-			.map(|con| con.control())
+			.map(nokhwa::utils::CameraControl::control)
 			.collect()
 	}
 
@@ -194,8 +194,8 @@ impl CameraDevice {
 						id,
 						value.into()
 					),
-					&why,
-				)
+					why,
+				);
 			})
 	}
 
@@ -272,71 +272,71 @@ impl CameraDevice {
 				CamControl::Integer(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::IntegerRange(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Float(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::FloatRange(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Boolean(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::String(mut control) => {
 					control.reset_to_default();
 					self.set_control(
 						control.get_id(),
-						(&control.get_value()).clone(),
+						control.get_value().clone(),
 					)
-					.expect("default controls should always be valid")
+					.expect("default controls should always be valid");
 				},
 				CamControl::Bytes(mut control) => {
 					control.reset_to_default();
 					self.set_control(
 						control.get_id(),
-						(&control.get_value()).clone(),
+						control.get_value().clone(),
 					)
-					.expect("default controls should always be valid")
+					.expect("default controls should always be valid");
 				},
 				CamControl::KeyValuePair(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Point(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Enum(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::RGB(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Menu(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::None => (),
-			};
+			}
 		}
 	}
 

@@ -89,7 +89,7 @@ async fn get_response(
 	client: Client,
 ) -> Result<WebSocketResponse> {
 	let message = client
-		.get(&url.to_string())
+		.get(url.to_string())
 		.send()
 		.await
 		.map_err(|why| EdgeError::ReqwestError {
@@ -120,8 +120,7 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 					let new_url =
 						format!("ws://{}{}/edge_ws", url.host, url.port);
 					logger().lock().unwrap().log_info(&format!(
-						"Correct message response recived from: {}",
-						new_url
+						"Correct message response recived from: {new_url}"
 					));
 					return Ok(new_url);
 				}
@@ -131,7 +130,7 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 				logger()
 					.lock()
 					.unwrap()
-					.log_error(&format!("Incorrect message response"), &why);
+					.log_error("Incorrect message response", &why);
 			},
 			// Ignore failures silently
 			_ => {},
@@ -182,8 +181,7 @@ async fn try_connect_once() -> Result<(WebSocket, Settings)> {
 			}
 		})?;
 	let return_websocket = WebSocket::new(stream);
-	let return_settings =
-		get_default_settings(&websocket_url.to_string()).await?;
+	let return_settings = get_default_settings(&websocket_url.clone()).await?;
 	Ok((return_websocket, return_settings))
 }
 

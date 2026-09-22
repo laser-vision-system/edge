@@ -16,9 +16,7 @@ impl Empty {
 }
 
 impl VisionInterface for Empty {
-	fn process(&mut self, _: &mut [BatchItem]) {
-		return;
-	}
+	fn process(&mut self, _: &mut [BatchItem]) {}
 
 	fn new_state(&self) -> VisionState {
 		VisionState::Empty {

@@ -54,7 +54,7 @@ impl WebSocket {
 		mut prefix: String,
 		data: T,
 	) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		prefix.push_str(&*serde_json::to_string(&data)?);
+		prefix.push_str(&serde_json::to_string(&data)?);
 		self.inner
 			.send(Message::Text(Utf8Bytes::from(prefix)))
 			.await?;
@@ -82,7 +82,7 @@ impl WebSocket {
 				match msg {
 					Message::Text(text) => {
 						#[cfg(debug_assertions)]
-						logger().lock().unwrap().log_info(&format!("Received message: {}", text));
+						logger().lock().unwrap().log_info(&format!("Received message: {text}"));
 						process_incoming(&text)
 					}
 					_ => None,
@@ -96,7 +96,7 @@ impl WebSocket {
 fn process_incoming(text: &str) -> Option<EdgeRequests> {
 	let msg = text.trim();
 
-	println!("Received from Server: {}", msg);
+	println!("Received from Server: {msg}");
 
 	let mut args = msg.splitn(2, ':');
 

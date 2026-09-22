@@ -252,7 +252,7 @@ impl ControlDefault for IntegerControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -340,7 +340,7 @@ impl ControlDefault for IntegerRangeControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -435,7 +435,7 @@ impl ControlDefault for FloatControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -523,7 +523,7 @@ impl ControlDefault for FloatRangeControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -611,7 +611,7 @@ impl ControlDefault for BooleanControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -666,8 +666,8 @@ impl ControlDefault for StringControl {
 	}
 
 	fn reset_to_default(&mut self) {
-		self.set_value(self.get_default().unwrap_or("".to_string()).into())
-			.expect("default value should never be invalid")
+		self.set_value(self.get_default().unwrap_or_default().into())
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -723,7 +723,7 @@ impl ControlDefault for BytesControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -779,7 +779,7 @@ impl ControlDefault for KeyValuePairControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -835,7 +835,7 @@ impl ControlDefault for PointControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -895,7 +895,7 @@ impl ControlDefault for EnumControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -972,7 +972,7 @@ impl ControlDefault for RGBControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -1039,7 +1039,7 @@ impl ControlDefault for MenuControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 

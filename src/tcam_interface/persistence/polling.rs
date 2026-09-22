@@ -75,7 +75,7 @@ impl fmt::Display for DeviceConnection {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "{}", self.identifier)?;
 		for point in &self.points {
-			write!(f, "\n\t{}", point)?;
+			write!(f, "\n\t{point}")?;
 		}
 		Ok(())
 	}
@@ -99,7 +99,7 @@ fn convert_to_intermediaries(devices: Vec<CameraInfo>) -> IntermediaryMap {
 	let mut map =
 		HashMap::with_capacity_and_hasher(devices.len(), RandomState::new());
 
-	for device in devices.into_iter() {
+	for device in devices {
 		let index = device.index().to_owned();
 		let is_metadata = device.is_metadata();
 		let accesspoint = AccessPoint { index, is_metadata };
@@ -166,7 +166,7 @@ impl Persistence {
 
 		// Self::on_all_entries(entry, &connection.points);
 
-		return if new {
+		if new {
 			match entry.get_active() {
 				Some(active) => {
 					let id = connection.identifier.as_ref();
@@ -191,7 +191,7 @@ impl Persistence {
 				},
 				None => None,
 			}
-		};
+		}
 	}
 
 	// fn on_all_entries(entry: &mut PersistEntry, points:

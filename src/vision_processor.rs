@@ -24,7 +24,7 @@ pub type VisionRef = &'static VisionGuard;
 static VISION: OnceLock<VisionGuard> = OnceLock::new();
 
 pub fn vision() -> VisionRef {
-	VISION.get_or_init(|| VisionGuard::new())
+	VISION.get_or_init(VisionGuard::new)
 }
 
 #[derive(Debug)]
@@ -138,10 +138,10 @@ impl VisionVariant {
 			return self;
 		}
 
-		logger().lock().unwrap().log_info(&format!(
-			"Swapping VisionTechnique to: {:?}...",
-			swap_to
-		));
+		logger()
+			.lock()
+			.unwrap()
+			.log_info(&format!("Swapping VisionTechnique to: {swap_to:?}..."));
 		match swap_to {
 			VisionTechnique::Empty => Self::Empty(Empty::new()),
 			VisionTechnique::Demonstration => {

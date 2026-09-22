@@ -55,7 +55,7 @@ impl Limbo {
 
 	/// Update the name of this device.
 	pub fn set_name(&mut self, name: String) {
-		self.name = name
+		self.name = name;
 	}
 
 	/// Map this type to a [`CameraStatus`].

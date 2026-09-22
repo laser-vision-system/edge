@@ -43,8 +43,7 @@ impl Demonstration {
 impl VisionInterface for Demonstration {
 	fn process(&mut self, batch: &mut [BatchItem]) {
 		for item in batch {
-			let VisionState::Demonstration { data, .. } = &mut item.state
-			else {
+			let VisionState::Demonstration { data, .. } = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
@@ -56,10 +55,10 @@ impl VisionInterface for Demonstration {
 			}
 
 			let mut deviation = 0.0;
-			if let Some(setpoint) = data.setpoint {
-				if setpoint > 0.0 {
-					deviation = lightness / setpoint;
-				}
+			if let Some(setpoint) = data.setpoint
+				&& setpoint > 0.0
+			{
+				deviation = lightness / setpoint;
 			}
 
 			data.intensity = Some(lightness);

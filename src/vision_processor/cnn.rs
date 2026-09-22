@@ -18,11 +18,11 @@ impl Cnn {
 impl VisionInterface for Cnn {
 	fn process(&mut self, batch: &mut [BatchItem]) {
 		for item in batch {
-			let VisionState::Cnn { data, .. } = &mut item.state else {
+			let VisionState::Cnn { data, .. } = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
-			data.deviation = Some(0.0)
+			data.deviation = Some(0.0);
 		}
 	}
 

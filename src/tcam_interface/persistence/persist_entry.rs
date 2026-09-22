@@ -50,27 +50,21 @@ impl PersistEntry {
 		let occupied_indices: HashSet<CameraIndex> =
 			points.iter().map(|point| point.index.clone()).collect();
 
-		let res = Self::try_make_camera_from_points(&points);
-		match res {
-			Some(camera) => {
-				let name = camera.get_info().to_string();
-				let new = ConnectionStatus::new_active(
-					camera,
-					occupied_indices,
-					name,
-				);
-				Self { inner: Some(new) }
-			},
-			None => {
-				// Use warn because this isn't an explicit error case.
-				let err = EdgeError::InvalidDeviceConnection;
-				logger()
-					.lock()
-					.unwrap()
-					.log_warn(&format!("Invalid device found: {}", err));
-				let new = ConnectionStatus::new_invalid(occupied_indices);
-				Self { inner: Some(new) }
-			},
+		let res = Self::try_make_camera_from_points(points);
+		if let Some(camera) = res {
+			let name = camera.get_info().to_string();
+			let new =
+				ConnectionStatus::new_active(camera, occupied_indices, name);
+			Self { inner: Some(new) }
+		} else {
+			// Use warn because this isn't an explicit error case.
+			let err = EdgeError::InvalidDeviceConnection;
+			logger()
+				.lock()
+				.unwrap()
+				.log_warn(&format!("Invalid device found: {err}"));
+			let new = ConnectionStatus::new_invalid(occupied_indices);
+			Self { inner: Some(new) }
 		}
 	}
 
@@ -348,7 +342,7 @@ impl PersistEntry {
 			ConnectionStatus::Active { active } => active.set_name(name),
 			ConnectionStatus::Broken { broken } => broken.set_name(name),
 			ConnectionStatus::Disconnected { disconnected } => {
-				disconnected.set_name(name)
+				disconnected.set_name(name);
 			},
 			ConnectionStatus::Limbo { limbo } => limbo.set_name(name),
 			ConnectionStatus::Invalid { .. } => logger()
@@ -361,15 +355,15 @@ impl PersistEntry {
 	pub fn set_currently_viewed(&mut self, state: bool) {
 		match self.as_inner_mut() {
 			ConnectionStatus::Active { active } => {
-				active.set_currently_viewed(state)
+				active.set_currently_viewed(state);
 			},
 
 			// TODO: Technically, these two should be a logic error.
 			ConnectionStatus::Disconnected { disconnected } => {
-				disconnected.set_currently_viewed(state)
+				disconnected.set_currently_viewed(state);
 			},
 			ConnectionStatus::Limbo { limbo } => {
-				limbo.set_currently_viewed(state)
+				limbo.set_currently_viewed(state);
 			},
 
 			ConnectionStatus::Broken { .. }
@@ -385,7 +379,7 @@ impl PersistEntry {
 
 			// TODO: Technically, these two should be a logic error.
 			ConnectionStatus::Disconnected { disconnected } => {
-				disconnected.set_calibrate(true)
+				disconnected.set_calibrate(true);
 			},
 			ConnectionStatus::Limbo { limbo } => limbo.set_calibrate(true),
 
@@ -409,7 +403,7 @@ impl PersistEntry {
 
 		let maybeimage = active
 			.get_image(camera_err_decrement)
-			.inspect_err(|why| logger().lock().unwrap().log_error("", &why))
+			.inspect_err(|why| logger().lock().unwrap().log_error("", why))
 			.map_or_else(
 				|_| {
 					active.add_error(camera_err_increment);

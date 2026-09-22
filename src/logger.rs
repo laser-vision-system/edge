@@ -85,11 +85,11 @@ impl Logger {
 			self.counter.next(),
 			Local::now().to_rfc3339(),
 			LogLevel::Info,
-			message.to_string(),
+			message,
 		);
 
 		#[cfg(debug_assertions)]
-		println!("{}", log_entry);
+		println!("{log_entry}");
 
 		self.logs.push(log_entry);
 	}
@@ -100,11 +100,11 @@ impl Logger {
 			self.counter.next(),
 			Local::now().to_rfc3339(),
 			LogLevel::Warn,
-			message.to_string(),
+			message,
 		);
 
 		#[cfg(debug_assertions)]
-		println!("{}", log_entry);
+		println!("{log_entry}");
 
 		self.logs.push(log_entry);
 	}
@@ -121,7 +121,7 @@ impl Logger {
 		);
 
 		#[cfg(debug_assertions)]
-		println!("{}", log_entry);
+		println!("{log_entry}");
 
 		self.logs.push(log_entry);
 	}
@@ -131,7 +131,7 @@ impl Logger {
 
 		for log in logs {
 			// TODO: Actually send the logs to the server
-			println!("{}", log);
+			println!("{log}");
 		}
 	}
 }
@@ -152,11 +152,11 @@ impl LogCounter {
 	fn next(&mut self) -> u32 {
 		let today = Local::now().date_naive();
 
-		if today != self.date {
+		if today == self.date {
+			self.counter += 1;
+		} else {
 			self.date = today;
 			self.counter = 1;
-		} else {
-			self.counter += 1;
 		}
 
 		self.counter
