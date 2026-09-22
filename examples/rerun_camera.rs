@@ -58,7 +58,7 @@ impl Context {
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut context = Context::new()?;
-	let mut camera = CameraDevice::new(0)?;
+	let mut camera = CameraDevice::new(nokhwa::utils::CameraIndex::Index(0))?;
 
 	let mut incr: u8 = 0;
 
