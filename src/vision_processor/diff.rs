@@ -143,12 +143,11 @@ impl VisionInterface for Diff {
 			};
 
 			if item.calibrate {
-				let grey_image = Some(
-					DynamicImage::ImageRgb8(item.image.clone()).into_luma8(),
-				);
-				data.image = grey_image.clone();
+				let grey_image =
+					DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
+				data.image = Some(grey_image.clone());
 				let (peak, mean, std_dev) =
-					Self::compute_brightness_stats(&grey_image.unwrap());
+					Self::compute_brightness_stats(&grey_image);
 				data.peak = Some(peak as f32);
 				data.mean = Some(mean);
 				data.std_dev = Some(std_dev);
