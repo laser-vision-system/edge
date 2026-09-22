@@ -9,11 +9,10 @@ use super::{
 	polling::AccessPoint,
 	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
 };
-#[allow(unused_imports, reason = "Needed for docstring")]
-use crate::tcam_interface::Identifier;
+
 use crate::{
 	error::EdgeError, logger::logger, tcam_interface::CameraDevice,
-	vision_processor::BatchItem,
+	tcam_interface::Identifier, vision_processor::BatchItem,
 };
 
 #[derive(Clone, Debug)]
