@@ -77,7 +77,7 @@ impl Diff {
 		}
 	}
 
-	fn compute_brightness_stats(&self, img: &GrayImage) -> (u8, f32, f32) {
+	fn compute_brightness_stats(img: &GrayImage) -> (u8, f32, f32) {
 		let pixels: Vec<u8> = img.pixels().map(|p| p.0[0]).collect();
 		let n = pixels.len() as f32;
 
@@ -101,14 +101,13 @@ impl Diff {
 	}
 
 	fn collect_metrics(
-		&self,
 		image: &GrayImage,
 		setpoint: &GrayImage,
 	) -> (f32, f32, f32, f32, f32, f32, f32) {
 		let (image_peak, image_mean, image_std_dev) =
-			self.compute_brightness_stats(image);
+			Self::compute_brightness_stats(image);
 		let (setpoint_peak, setpoint_mean, setpoint_std_dev) =
-			self.compute_brightness_stats(setpoint);
+			Self::compute_brightness_stats(setpoint);
 		let luma_ssim =
 			gray_similarity_structure(&Algorithm::MSSIMSimple, image, setpoint)
 				.unwrap()
@@ -149,7 +148,7 @@ impl VisionInterface for Diff {
 				);
 				data.image = grey_image.clone();
 				let (peak, mean, std_dev) =
-					self.compute_brightness_stats(&grey_image.unwrap());
+					Self::compute_brightness_stats(&grey_image.unwrap());
 				data.peak = Some(peak as f32);
 				data.mean = Some(mean);
 				data.std_dev = Some(std_dev);
@@ -170,7 +169,7 @@ impl VisionInterface for Diff {
 						hellinger,
 						correlation,
 						intersection,
-					) = self.collect_metrics(&grey_image, setpoint);
+					) = Self::collect_metrics(&grey_image, setpoint);
 
 					let relative_intensity = self.model.predict(
 						peak_diff,
