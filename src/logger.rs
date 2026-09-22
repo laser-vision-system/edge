@@ -32,9 +32,9 @@ pub fn logger() -> LoggerRef {
 
 #[derive(Debug, Serialize, Deserialize)]
 enum LogLevel {
-	INFO,
-	WARN,
-	ERROR,
+	Info,
+	Warn,
+	Error,
 }
 
 // #[derive(Serialize, Deserialize)]
@@ -83,7 +83,7 @@ impl Logger {
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
 			Local::now().to_rfc3339(),
-			LogLevel::INFO,
+			LogLevel::Info,
 			message.to_string(),
 		);
 
@@ -98,7 +98,7 @@ impl Logger {
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
 			Local::now().to_rfc3339(),
-			LogLevel::WARN,
+			LogLevel::Warn,
 			message.to_string(),
 		);
 
@@ -113,7 +113,7 @@ impl Logger {
 			"[{:05}] {}\n{:?}\n{:?}: {}\n{}\n----------",
 			self.counter.next(),
 			Local::now().to_rfc3339(),
-			LogLevel::ERROR,
+			LogLevel::Error,
 			error,
 			error,
 			message,
