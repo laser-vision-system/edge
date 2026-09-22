@@ -56,7 +56,7 @@ impl fmt::Display for AddressComp {
 	}
 }
 
-async fn identify_network() -> HashSet<AddressComp> {
+fn identify_network() -> HashSet<AddressComp> {
 	let mut network_addresses = interfaces()
 		.into_iter()
 		.filter(|network| {
@@ -175,7 +175,7 @@ async fn loop_until_connection() -> (WebSocket, Settings) {
 }
 
 async fn try_connect_once() -> Result<(WebSocket, Settings)> {
-	let urls = identify_network().await;
+	let urls = identify_network();
 	let websocket_url = get_websocket_url(urls).await?;
 	let (stream, _) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {
@@ -189,7 +189,9 @@ async fn try_connect_once() -> Result<(WebSocket, Settings)> {
 	Ok((return_websocket, return_settings))
 }
 
-async fn get_default_settings(url: &str) -> Result<Settings> {
+// TODO: Remove this once the server request is implemented.
+#[expect(clippy::unused_async)]
+async fn get_default_settings(_url: &str) -> Result<Settings> {
 	// TODO: Get the default settings from the server
 	// Build the settings struct from the received data.
 	// If the server fails to send correct settings, use Settings::default() as

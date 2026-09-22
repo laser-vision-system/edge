@@ -83,7 +83,7 @@ impl WebSocket {
 					Message::Text(text) => {
 						#[cfg(debug_assertions)]
 						logger().lock().unwrap().log_info(&format!("Received message: {}", text));
-						process_incoming(&text).await
+						process_incoming(&text)
 					}
 					_ => None,
 				}
@@ -93,7 +93,7 @@ impl WebSocket {
 	}
 }
 
-async fn process_incoming(text: &str) -> Option<EdgeRequests> {
+fn process_incoming(text: &str) -> Option<EdgeRequests> {
 	let msg = text.trim();
 
 	println!("Received from Server: {}", msg);
