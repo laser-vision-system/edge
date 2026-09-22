@@ -15,12 +15,17 @@
 //!
 //! - `logger().send_logs()`
 
+#![expect(
+	clippy::print_stderr,
+	clippy::print_stdout,
+	reason = "This is the logger module, where this is expected behaviour"
+)]
 use std::sync::{Mutex, OnceLock};
 
 use chrono::{Duration, Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
-use crate::error::EdgeError::{self};
+use crate::error::EdgeError;
 
 // Declare a type alias for easy imports
 pub type LoggerRef = &'static Mutex<Logger>;

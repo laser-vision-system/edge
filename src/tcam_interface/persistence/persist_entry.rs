@@ -482,7 +482,7 @@ impl PersistEntry {
 				Some(CameraStatus::Active)
 			},
 			ConnectionStatus::Broken { .. }
-			| ConnectionStatus::Invalid { invalid: _ } => {
+			| ConnectionStatus::Invalid { .. } => {
 				// Do nothing.
 				None
 			},

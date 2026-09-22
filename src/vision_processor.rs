@@ -42,6 +42,10 @@ impl VisionGuard {
 		}
 	}
 
+	#[expect(
+		clippy::expect_used,
+		reason = "Closely protected internal option type"
+	)]
 	pub fn swap(&self, swap_to: VisionTechnique) {
 		let old_vision = self
 			.inner
@@ -53,6 +57,10 @@ impl VisionGuard {
 		self.inner.lock().unwrap().borrow_mut().replace(new_vision);
 	}
 
+	#[expect(
+		clippy::expect_used,
+		reason = "Closely protected internal option type"
+	)]
 	pub fn interact<F, R>(&self, func: F) -> R
 	where
 		F: FnOnce(&mut VisionVariant) -> R,

@@ -1,5 +1,9 @@
 // TODO: Remove all unwraps and then this.
-#![expect(clippy::unwrap_used, reason = "WIP development")]
+#![expect(
+	clippy::unwrap_used,
+	clippy::unwrap_in_result,
+	reason = "WIP development"
+)]
 
 use std::{cmp::Ordering, io::Cursor};
 
@@ -55,7 +59,8 @@ impl CameraDevice {
 				.lock()
 				.unwrap()
 				.log_warn("Camera is not a webcam...?");
-			panic!("AA")
+			// TEMP
+			return Err(EdgeError::CameraNotPresent);
 		};
 
 		camera
@@ -214,7 +219,7 @@ impl CameraDevice {
 	}
 
 	/// Set every control on the camera back to its default value.
-	#[expect(clippy::too_many_lines, reason = "WIP development")]
+	#[expect(clippy::too_many_lines, clippy::panic, reason = "WIP development")]
 	pub fn reset_controls_to_default(&mut self) {
 		let mut controls = self.get_controls();
 		if let Some(control) =

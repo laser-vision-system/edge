@@ -1,5 +1,9 @@
 // TODO: Remove all unwraps and then this.
-#![expect(clippy::unwrap_used, reason = "WIP development")]
+#![expect(
+	clippy::unwrap_used,
+	clippy::unwrap_in_result,
+	reason = "WIP development"
+)]
 
 use std::time::Duration;
 
@@ -75,6 +79,10 @@ impl WebSocket {
 		Ok(())
 	}
 
+	#[expect(
+		clippy::big_endian_bytes,
+		reason = "This data is intended to be sent to the server"
+	)]
 	pub async fn send_image(
 		&mut self,
 		camera_id: u64,
@@ -110,7 +118,10 @@ impl WebSocket {
 fn process_incoming(text: &str) -> Option<EdgeRequests> {
 	let msg = text.trim();
 
-	println!("Received from Server: {msg}");
+	logger()
+		.lock()
+		.unwrap()
+		.log_info(&format!("Received from Server: {msg}"));
 
 	let mut args = msg.splitn(2, ':');
 
