@@ -145,10 +145,6 @@ impl Persistence {
 	}
 
 	/// Attempt to create a new device from a device info entry.
-	#[expect(
-		clippy::if_not_else,
-		reason = "Checking against not is clearer than the inverse"
-	)]
 	fn on_each_connection(
 		&mut self,
 		connection: &DeviceConnection,
@@ -186,17 +182,12 @@ impl Persistence {
 			}
 		} else {
 			match update {
-				Some(after) => {
-					// Raises the `clippy::if_not_else` warning.
-					if before != after {
-						let id = connection.identifier.as_ref();
-						let status = after;
-						let update = ConnectionDetail::Update { status };
-						Some((*id, update))
-					} else {
-						None
-					}
-				},
+				Some(after) => (before != after).then(|| {
+					let id = connection.identifier.as_ref();
+					let status = after;
+					let update = ConnectionDetail::Update { status };
+					(*id, update)
+				}),
 				None => None,
 			}
 		}

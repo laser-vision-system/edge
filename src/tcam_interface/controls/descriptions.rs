@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use super::{
 	traits::{
 		ControlDefault, ControlDescription, ControlItems, ControlMax,
-		ControlMin, ControlPossible, ControlStep, ControlValue,
+		ControlMin, ControlPossible, ControlStep, ControlValue as _,
 	},
 	types::{
 		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
@@ -1064,7 +1064,10 @@ impl ControlItems for MenuControl {
 macro_rules! impl_identifiable {
 	($type:ty) => {
 		impl Hash for $type {
-			fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+			fn hash<H>(&self, state: &mut H)
+			where
+				H: std::hash::Hasher,
+			{
 				self.get_id().hash(state);
 			}
 		}

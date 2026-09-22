@@ -12,10 +12,11 @@ use super::{
 	polling::AccessPoint,
 	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
 };
-
 use crate::{
-	error::EdgeError, logger::logger, tcam_interface::CameraDevice,
-	tcam_interface::Identifier, vision_processor::BatchItem,
+	error::EdgeError,
+	logger::logger,
+	tcam_interface::{CameraDevice, Identifier},
+	vision_processor::BatchItem,
 };
 
 #[derive(Clone, Debug)]
@@ -446,10 +447,6 @@ impl PersistEntry {
 		Some(batch)
 	}
 
-	#[expect(
-		clippy::if_not_else,
-		reason = "Checking against not is clearer than the inverse"
-	)]
 	pub fn update(
 		&mut self,
 		points: &HashSet<AccessPoint>,
@@ -462,14 +459,11 @@ impl PersistEntry {
 				let occupied_indices: HashSet<_> =
 					points.iter().map(|point| &point.index).collect();
 				let index = &active.get_camera().get_index();
-				// Raises the `clippy::if_not_else` warning.
-				if !occupied_indices.contains(index) {
+				(!occupied_indices.contains(index)).then(|| {
 					// Camera has disconnected.
 					self.active_to_disconnected();
-					Some(CameraStatus::Disconnected)
-				} else {
-					None
-				}
+					CameraStatus::Disconnected
+				})
 			},
 			ConnectionStatus::Disconnected { .. } => {
 				let camera = Self::try_make_camera_from_points(points)?;

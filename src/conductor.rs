@@ -17,7 +17,7 @@ use crate::{
 	tcam_interface::{
 		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
 	},
-	vision_processor::{VisionInterface, vision},
+	vision_processor::{VisionInterface as _, vision},
 	websocket::WebSocket,
 };
 

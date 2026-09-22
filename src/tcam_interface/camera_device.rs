@@ -7,7 +7,7 @@ use image::{DynamicImage, RgbImage};
 use nokhwa::{
 	self, OpenRequest, OpenedCamera,
 	format_types::Mjpeg,
-	frame::{Frame, IntoRgb},
+	frame::{Frame, IntoRgb as _},
 	open,
 	utils::{CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
@@ -15,7 +15,7 @@ use nokhwa::{
 use super::controls::{
 	ControlMap,
 	descriptions::CamControl,
-	traits::{ControlDefault, ControlDescription, ControlValue},
+	traits::{ControlDefault as _, ControlDescription as _, ControlValue as _},
 };
 use crate::{
 	error::{EdgeError, Result},

@@ -3,7 +3,7 @@
 
 use std::time::Duration;
 
-use futures_util::{SinkExt, StreamExt, stream::FusedStream};
+use futures_util::{SinkExt as _, StreamExt as _, stream::FusedStream as _};
 use serde::Serialize;
 use server_edge_datatypes::edge::EdgeRequests;
 use tokio::{self, net::TcpStream, time::interval};
@@ -48,7 +48,7 @@ impl WebSocket {
 		reason = "Needs to be better integrated with autonnect"
 	)]
 	pub async fn websocket_connect_static() -> Self {
-		let url = "ws://".to_string() + HOST + ":" + PORT + API;
+		let url = "ws://".to_owned() + HOST + ":" + PORT + API;
 		Self::websocket_connect(&url).await
 	}
 
@@ -60,11 +60,14 @@ impl WebSocket {
 		Ok(())
 	}
 
-	pub async fn send_text<T: Serialize>(
+	pub async fn send_text<T>(
 		&mut self,
 		mut prefix: String,
 		data: T,
-	) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
+	where
+		T: Serialize,
+	{
 		prefix.push_str(&serde_json::to_string(&data)?);
 		self.inner
 			.send(Message::Text(Utf8Bytes::from(prefix)))

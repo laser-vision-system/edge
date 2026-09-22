@@ -41,10 +41,10 @@ impl AddressComp {
 
 	fn local_host() -> Self {
 		Self::new(
-			"http://".to_string(),
-			"127.0.0.1".to_string(),
-			":8080".to_string(),
-			"/is_api".to_string(),
+			"http://".to_owned(),
+			"127.0.0.1".to_owned(),
+			":8080".to_owned(),
+			"/is_api".to_owned(),
 		)
 	}
 }
@@ -70,10 +70,10 @@ fn identify_network() -> HashSet<AddressComp> {
 		.flat_map(|ip| ip.iter())
 		.map(|ip| {
 			AddressComp::new(
-				"http://".to_string(),
+				"http://".to_owned(),
 				ip.to_string(),
-				":8080".to_string(),
-				"/is_api".to_string(),
+				":8080".to_owned(),
+				"/is_api".to_owned(),
 			)
 		})
 		.collect::<HashSet<_>>();
