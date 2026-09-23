@@ -135,7 +135,8 @@ impl Logger {
 		let logs = std::mem::take(&mut self.logs);
 
 		for log in logs {
-			// TODO: Actually send the logs to the server
+			// TODO: Actually send the logs to the server.
+			// TODO: When this happens, the IO bound test must be ignored.
 			println!("{log}");
 		}
 	}
