@@ -1,0 +1,36 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" , "feat/docker-automated-workflow" ]
+  pull_request:
+    branches: [ "main" ]
+
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+           submodules: true
+           token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
+
+    
+      - uses: actions/checkout@v4.2.2
+      - name: Setup submodule
+        run: docker buildx create \
+           --name container-builder \
+           --driver docker-container \
+           --bootstrap --use
+
+      - uses: actions/checkout@v4.2.2
+      - name: configure docker builder 
+        run: git submodule update --init --recursive
+
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: docker buildx build . --load --tag stable:$(date +%s) --platform linux/arm64
