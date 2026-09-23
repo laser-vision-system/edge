@@ -22,6 +22,11 @@ pub const PORT: &str = "8080";
 pub const RETRY_DELAY: Duration = Duration::from_secs(1);
 pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
 
+/// How many buffers are used for camera device input.
+///
+/// High number increases latency and memory usage.
+pub const CAMERA_BUFFER_COUNT: u32 = 2;
+
 // ============================================================================
 // All other settings values should be defined within this struct.
 // ============================================================================
