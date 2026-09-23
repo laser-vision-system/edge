@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 mod perpetual_info;
 mod persist_entry;
 pub mod polling;
@@ -59,7 +62,7 @@ impl Persistence {
 	/// Filter peristence with an arbitrary function.
 	pub fn filter_by(
 		&mut self,
-		filter: Box<dyn Fn(&PersistEntry) -> bool>,
+		filter: &dyn Fn(&PersistEntry) -> bool,
 	) -> Vec<&PersistEntry> {
 		self.inner.values().filter(|entry| filter(entry)).collect()
 	}
@@ -67,7 +70,7 @@ impl Persistence {
 	/// Filter peristence with an arbitrary function.
 	pub fn filter_by_mut(
 		&mut self,
-		filter: Box<dyn Fn(&PersistEntry) -> bool>,
+		filter: &dyn Fn(&PersistEntry) -> bool,
 	) -> Vec<&mut PersistEntry> {
 		self.inner
 			.values_mut()
@@ -109,14 +112,26 @@ impl Persistence {
 		}
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn start_viewing_camera(&mut self, request: StartViewingCamera) {
 		self.set_currently_viewed(request.camera_id, true);
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn stop_viewing_camera(&mut self, request: StopViewingCamera) {
 		self.set_currently_viewed(request.camera_id, false);
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn set_configuration(&mut self, request: Configuration) {
 		let Some(entry) = self.get_mut(request.camera_id) else {
 			logger()
@@ -139,7 +154,7 @@ impl Persistence {
 						"Failed to apply request controls to the camera",
 						&why,
 					);
-				};
+				}
 			},
 			Err(why) => {
 				logger().lock().unwrap().log_error(
@@ -147,7 +162,7 @@ impl Persistence {
 					&EdgeError::DecodeControls { reason: why },
 				);
 			},
-		};
+		}
 	}
 
 	pub fn get_configuration(
@@ -177,6 +192,10 @@ impl Persistence {
 		Some(configuration)
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn request_calibration(&mut self, request: Setpoint) {
 		if let Some(entry) = self.get_mut(request.camera_id) {
 			entry.request_calibration();
@@ -190,12 +209,12 @@ impl Persistence {
 }
 
 impl Persistence {
-	pub fn poll_active_entries<'a>(
-		&'a mut self,
+	pub fn poll_active_entries(
+		&mut self,
 		camera_err_increment: u16,
 		camera_err_threshold: u16,
 		camera_err_decrement: u16,
-	) -> (Vec<BatchItem<'a>>, Vec<StatusChange>) {
+	) -> (Vec<BatchItem<'_>>, Vec<StatusChange>) {
 		let (maybe_batch_items, maybe_status_changes): (Vec<_>, Vec<_>) = self
 			.inner
 			.iter_mut()
@@ -235,14 +254,9 @@ impl Persistence {
 			})
 			.unzip();
 
-		let batch_items = maybe_batch_items
-			.into_iter()
-			.filter_map(|item| item)
-			.collect();
-		let status_changes = maybe_status_changes
-			.into_iter()
-			.filter_map(|status| status)
-			.collect();
+		let batch_items = maybe_batch_items.into_iter().flatten().collect();
+		let status_changes =
+			maybe_status_changes.into_iter().flatten().collect();
 
 		(batch_items, status_changes)
 	}

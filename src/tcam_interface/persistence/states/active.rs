@@ -1,3 +1,10 @@
+// TODO: Remove all unwraps and then this.
+#![expect(
+	clippy::unwrap_used,
+	clippy::unwrap_in_result,
+	reason = "WIP development"
+)]
+
 use std::{
 	borrow::Cow,
 	ops::{Deref, DerefMut},
@@ -95,7 +102,7 @@ impl Active {
 
 	/// Update the name of this device.
 	pub fn set_name(&mut self, name: String) {
-		self.name = name
+		self.name = name;
 	}
 
 	/// Get a reference to the current camera.
@@ -109,7 +116,7 @@ impl Active {
 	}
 
 	/// Map this type to a [`CameraStatus`].
-	pub fn get_status(&self) -> CameraStatus {
+	pub fn get_status() -> CameraStatus {
 		CameraStatus::Active
 	}
 }

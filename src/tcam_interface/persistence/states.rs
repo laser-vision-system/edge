@@ -19,6 +19,10 @@ use crate::tcam_interface::CameraDevice;
 pub type InsertWasSuccessful = bool;
 
 /// Additional methods for types that represent occupied indices.
+#[expect(
+	dead_code,
+	reason = "Currently not used, but provides the option if needed"
+)]
 pub trait IndexOccupier:
 	AsRef<OccupiedIndices> + AsMut<OccupiedIndices>
 {
@@ -83,7 +87,7 @@ impl ConnectionStatus {
 		match self {
 			ConnectionStatus::Active { .. } => CameraStatus::Active,
 			ConnectionStatus::Broken { .. } => CameraStatus::Broken,
-			ConnectionStatus::Disconnected { .. } => CameraStatus::Broken,
+			ConnectionStatus::Disconnected { .. } => CameraStatus::Disconnected,
 			ConnectionStatus::Invalid { .. } => CameraStatus::Invalid,
 			ConnectionStatus::Limbo { .. } => CameraStatus::Limbo,
 		}

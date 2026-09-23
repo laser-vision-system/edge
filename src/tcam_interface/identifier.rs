@@ -56,7 +56,10 @@ impl fmt::Display for IdentMetaInfo {
 }
 
 impl Hash for IdentMetaInfo {
-	fn hash<H: Hasher>(&self, state: &mut H) {
+	fn hash<H>(&self, state: &mut H)
+	where
+		H: Hasher,
+	{
 		self.name.hash(state);
 		self.description.hash(state);
 		self.misc.hash(state);
@@ -66,9 +69,9 @@ impl Hash for IdentMetaInfo {
 impl From<CameraInfo> for IdentMetaInfo {
 	fn from(value: CameraInfo) -> Self {
 		Self {
-			name: value.human_name().to_string(),
-			description: value.description().to_string(),
-			misc: value.misc().to_string(),
+			name: value.human_name().to_owned(),
+			description: value.description().to_owned(),
+			misc: value.misc().to_owned(),
 		}
 	}
 }
@@ -132,7 +135,10 @@ impl fmt::Display for Identifier {
 impl Eq for Identifier {}
 
 impl Hash for Identifier {
-	fn hash<H: Hasher>(&self, state: &mut H) {
+	fn hash<H>(&self, state: &mut H)
+	where
+		H: Hasher,
+	{
 		self.hashed_id.hash(state);
 	}
 }
@@ -169,7 +175,7 @@ impl PartialEq for Identifier {
 
 impl PartialOrd for Identifier {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-		self.hashed_id.partial_cmp(&other.hashed_id)
+		Some(self.cmp(other))
 	}
 }
 

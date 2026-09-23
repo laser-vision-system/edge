@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::{collections::HashSet, fmt};
 
 use pnet_datalink::interfaces;
@@ -38,10 +41,10 @@ impl AddressComp {
 
 	fn local_host() -> Self {
 		Self::new(
-			"http://".to_string(),
-			"127.0.0.1".to_string(),
-			":8080".to_string(),
-			"/is_api".to_string(),
+			"http://".to_owned(),
+			"127.0.0.1".to_owned(),
+			":8080".to_owned(),
+			"/is_api".to_owned(),
 		)
 	}
 }
@@ -56,7 +59,7 @@ impl fmt::Display for AddressComp {
 	}
 }
 
-async fn identify_network() -> HashSet<AddressComp> {
+fn identify_network() -> HashSet<AddressComp> {
 	let mut network_addresses = interfaces()
 		.into_iter()
 		.filter(|network| {
@@ -67,10 +70,10 @@ async fn identify_network() -> HashSet<AddressComp> {
 		.flat_map(|ip| ip.iter())
 		.map(|ip| {
 			AddressComp::new(
-				"http://".to_string(),
+				"http://".to_owned(),
 				ip.to_string(),
-				":8080".to_string(),
-				"/is_api".to_string(),
+				":8080".to_owned(),
+				"/is_api".to_owned(),
 			)
 		})
 		.collect::<HashSet<_>>();
@@ -89,7 +92,7 @@ async fn get_response(
 	client: Client,
 ) -> Result<WebSocketResponse> {
 	let message = client
-		.get(&url.to_string())
+		.get(url.to_string())
 		.send()
 		.await
 		.map_err(|why| EdgeError::ReqwestError {
@@ -120,8 +123,7 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 					let new_url =
 						format!("ws://{}{}/edge_ws", url.host, url.port);
 					logger().lock().unwrap().log_info(&format!(
-						"Correct message response recived from: {}",
-						new_url
+						"Correct message response recived from: {new_url}"
 					));
 					return Ok(new_url);
 				}
@@ -131,7 +133,7 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 				logger()
 					.lock()
 					.unwrap()
-					.log_error(&format!("Incorrect message response"), &why);
+					.log_error("Incorrect message response", &why);
 			},
 			// Ignore failures silently
 			_ => {},
@@ -154,9 +156,7 @@ pub async fn assert_connection(
 			}
 			(socket, settings)
 		},
-		// Lost connection to server
-		(None, _) => loop_until_connection().await,
-		// Fallback
+		// First time calling.
 		_ => loop_until_connection().await,
 	}
 }
@@ -175,7 +175,7 @@ async fn loop_until_connection() -> (WebSocket, Settings) {
 }
 
 async fn try_connect_once() -> Result<(WebSocket, Settings)> {
-	let urls = identify_network().await;
+	let urls = identify_network();
 	let websocket_url = get_websocket_url(urls).await?;
 	let (stream, _) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {
@@ -184,12 +184,16 @@ async fn try_connect_once() -> Result<(WebSocket, Settings)> {
 			}
 		})?;
 	let return_websocket = WebSocket::new(stream);
-	let return_settings =
-		get_default_settings(&websocket_url.to_string()).await?;
+	let return_settings = get_default_settings(&websocket_url.clone()).await?;
 	Ok((return_websocket, return_settings))
 }
 
-async fn get_default_settings(url: &str) -> Result<Settings> {
+// TODO: Remove this once the server request is implemented.
+#[expect(
+	clippy::unused_async,
+	reason = "Async will be needed once this function is re-enabled"
+)]
+async fn get_default_settings(_url: &str) -> Result<Settings> {
 	// TODO: Get the default settings from the server
 	// Build the settings struct from the received data.
 	// If the server fails to send correct settings, use Settings::default() as

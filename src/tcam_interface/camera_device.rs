@@ -1,21 +1,25 @@
+// TODO: Remove all unwraps and then this.
+#![expect(
+	clippy::unwrap_used,
+	clippy::unwrap_in_result,
+	reason = "WIP development"
+)]
+
 use std::{cmp::Ordering, io::Cursor};
 
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
 	self, OpenRequest, OpenedCamera,
 	format_types::Mjpeg,
-	frame::{Frame, IntoRgb},
+	frame::{Frame, IntoRgb as _},
 	open,
-	utils::{
-		CameraControl, CameraIndex, CameraInfo, ControlValueSetter,
-		KnownCameraControl,
-	},
+	utils::{CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
 
 use super::controls::{
 	ControlMap,
 	descriptions::CamControl,
-	traits::{ControlDefault, ControlDescription, ControlValue},
+	traits::{ControlDefault as _, ControlDescription as _, ControlValue as _},
 };
 use crate::{
 	error::{EdgeError, Result},
@@ -36,16 +40,17 @@ pub struct CameraDevice {
 impl CameraDevice {
 	pub fn new(index: CameraIndex) -> Result<Self> {
 		// TODO: Modify CameraIndex with Cow support.
-		let opened = open(index.clone(), OpenRequest::any())
+		let index_str = index.to_string();
+		let opened = open(index, OpenRequest::any())
 			.map_err(|why| EdgeError::NokhwaInitialisation {
-				index: index.to_string(),
+				index: index_str,
 				reason: why.to_string(),
 			})
 			.inspect_err(|why| {
 				logger()
 					.lock()
 					.unwrap()
-					.log_error("Could not initialise camera", &why)
+					.log_error("Could not initialise camera", why);
 			})?;
 
 		let OpenedCamera::Stream(mut camera) = opened else {
@@ -54,7 +59,8 @@ impl CameraDevice {
 				.lock()
 				.unwrap()
 				.log_warn("Camera is not a webcam...?");
-			panic!("AA")
+			// TEMP
+			return Err(EdgeError::CameraNotPresent);
 		};
 
 		camera
@@ -66,7 +72,7 @@ impl CameraDevice {
 				logger()
 					.lock()
 					.unwrap()
-					.log_error("Could not initialise camera", &why)
+					.log_error("Could not initialise camera", why);
 			})?;
 
 		logger()
@@ -77,10 +83,10 @@ impl CameraDevice {
 		Ok(Self { inner: camera })
 	}
 
-	pub fn encode_image(data: RgbImage) -> Vec<u8> {
+	pub fn encode_image(data: &RgbImage) -> Vec<u8> {
 		let mut buff = Cursor::new(Vec::new());
 		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
-		enc.encode_image(&data).unwrap();
+		enc.encode_image(data).unwrap();
 		buff.into_inner()
 	}
 
@@ -109,7 +115,7 @@ impl CameraDevice {
 			},
 			Err(why) => {
 				logger::logger().lock().unwrap().log_error("", &why);
-				return Err(why);
+				Err(why)
 			},
 		}
 	}
@@ -148,7 +154,7 @@ impl CameraDevice {
 			.controls()
 			.unwrap()
 			.iter()
-			.map(|con| con.control())
+			.map(nokhwa::utils::CameraControl::control)
 			.collect()
 	}
 
@@ -177,10 +183,7 @@ impl CameraDevice {
 	where
 		T: Into<ControlValueSetter> + Clone,
 	{
-		if match id {
-			KnownCameraControl::WhiteBalance => true,
-			_ => false,
-		} {
+		if matches!(id, KnownCameraControl::WhiteBalance) {
 			// HACK: Cheekily skip controls that may be inactive/disabled.
 			return Ok(());
 		}
@@ -194,8 +197,8 @@ impl CameraDevice {
 						id,
 						value.into()
 					),
-					&why,
-				)
+					why,
+				);
 			})
 	}
 
@@ -215,12 +218,8 @@ impl CameraDevice {
 		Ok(())
 	}
 
-	#[allow(dead_code)]
-	fn get_raw_controls(&self) -> Vec<CameraControl> {
-		self.inner.controls().unwrap()
-	}
-
 	/// Set every control on the camera back to its default value.
+	#[expect(clippy::too_many_lines, clippy::panic, reason = "WIP development")]
 	pub fn reset_controls_to_default(&mut self) {
 		let mut controls = self.get_controls();
 		if let Some(control) =
@@ -272,71 +271,71 @@ impl CameraDevice {
 				CamControl::Integer(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::IntegerRange(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Float(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::FloatRange(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Boolean(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::String(mut control) => {
 					control.reset_to_default();
 					self.set_control(
 						control.get_id(),
-						(&control.get_value()).clone(),
+						control.get_value().clone(),
 					)
-					.expect("default controls should always be valid")
+					.expect("default controls should always be valid");
 				},
 				CamControl::Bytes(mut control) => {
 					control.reset_to_default();
 					self.set_control(
 						control.get_id(),
-						(&control.get_value()).clone(),
+						control.get_value().clone(),
 					)
-					.expect("default controls should always be valid")
+					.expect("default controls should always be valid");
 				},
 				CamControl::KeyValuePair(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Point(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Enum(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::RGB(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::Menu(mut control) => {
 					control.reset_to_default();
 					self.set_control(control.get_id(), control.get_value())
-						.expect("default controls should always be valid")
+						.expect("default controls should always be valid");
 				},
 				CamControl::None => (),
-			};
+			}
 		}
 	}
 
@@ -366,11 +365,19 @@ impl CameraDevice {
 mod tests {
 	use std::process::{ExitCode, Termination};
 
+	use nokhwa::utils::CameraControl;
+
 	use super::*;
 	use crate::tcam_interface::controls::traits::{
 		ControlDefault, ControlDescription, ControlItems, ControlMax,
 		ControlStep, ControlValue,
 	};
+
+	impl CameraDevice {
+		fn get_raw_controls(&self) -> Vec<CameraControl> {
+			self.inner.controls().unwrap()
+		}
+	}
 
 	impl Termination for CameraDevice {
 		fn report(self) -> ExitCode {
