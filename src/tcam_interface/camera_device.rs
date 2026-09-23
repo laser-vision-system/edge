@@ -386,6 +386,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn print_devices() {
 		let cameras = CameraDevice::query_for_available_cameras();
 
@@ -407,11 +408,13 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn new() -> Result<CameraDevice> {
 		CameraDevice::new(CameraIndex::Index(0))
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn print_camera_details() {
 		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		println!("{:#?}", cam.inner.info());
@@ -419,6 +422,7 @@ mod tests {
 
 	// Can't implement `Termination` for `RgbImage`.
 	#[test]
+	#[ignore = "IO bound"]
 	fn get_frame() {
 		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let _ = cam.get_frame().unwrap();
@@ -426,6 +430,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn decode_image() {
 		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let frame = cam.get_frame().unwrap();
@@ -433,6 +438,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn get_raw_controls() {
 		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let c = cam.get_raw_controls();
@@ -440,6 +446,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn get_all_available_controls() {
 		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let c = cam.get_controls();
@@ -447,6 +454,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn get_stripped_controls() {
 		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let c = cam.get_controls().stripped();
@@ -454,6 +462,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn set_control() -> Result<()> {
 		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let id = KnownCameraControl::Brightness;
@@ -487,6 +496,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn set_control_exposure() -> Result<()> {
 		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		let id = KnownCameraControl::AutoExposure;
@@ -532,6 +542,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn reset_controls_to_default() {
 		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
 		cam.reset_controls_to_default();
@@ -571,6 +582,7 @@ mod nokhwa_test {
 	const OUTPUT_PATH: &str = "./temp/nokhwa_test_output/";
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn main() {
 		println!("\t==== NOKHWA TEST ====");
 		let cameras = super::CameraDevice::query_for_available_cameras();
