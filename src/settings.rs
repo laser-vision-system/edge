@@ -26,4 +26,11 @@ pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
 // All other settings values should be defined within this struct.
 // ============================================================================
 
+// Staging area, move to Settings struct.
+
+/// How many buffers are used for camera device input.
+///
+/// High number increases latency and memory usage.
+pub const CAMERA_BUFFER_COUNT: u32 = 1;
+
 pub use server_edge_datatypes::edge::Settings;
