@@ -8,11 +8,14 @@
 use std::{cmp::Ordering, io::Cursor};
 
 use image::{DynamicImage, RgbImage};
+#[cfg(not(target_os = "linux"))]
+use nokhwa::open;
+#[cfg(target_os = "linux")]
+use nokhwa::session::open_with_buffers;
 use nokhwa::{
 	self, OpenRequest, OpenedCamera,
 	format_types::Mjpeg,
 	frame::{Frame, IntoRgb as _},
-	open,
 	utils::{CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
 
@@ -21,6 +24,8 @@ use super::controls::{
 	descriptions::CamControl,
 	traits::{ControlDefault as _, ControlDescription as _, ControlValue as _},
 };
+#[cfg(target_os = "linux")]
+use crate::settings::CAMERA_BUFFER_COUNT;
 use crate::{
 	error::{EdgeError, Result},
 	logger,
@@ -41,6 +46,21 @@ impl CameraDevice {
 	pub fn new(index: CameraIndex) -> Result<Self> {
 		// TODO: Modify CameraIndex with Cow support.
 		let index_str = index.to_string();
+		#[cfg(target_os = "linux")]
+		let opened =
+			open_with_buffers(index, OpenRequest::any(), CAMERA_BUFFER_COUNT)
+				.map_err(|why| EdgeError::NokhwaInitialisation {
+					index: index_str,
+					reason: why.to_string(),
+				})
+				.inspect_err(|why| {
+					logger()
+						.lock()
+						.unwrap()
+						.log_error("Could not initialise camera", why);
+				})?;
+
+		#[cfg(not(target_os = "linux"))]
 		let opened = open(index, OpenRequest::any())
 			.map_err(|why| EdgeError::NokhwaInitialisation {
 				index: index_str,
