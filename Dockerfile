@@ -6,21 +6,21 @@ FROM rust:slim-bookworm AS builder
 WORKDIR /usr/src/edge
 
 # Install musl tools for static compilation.
-RUN apt-get update && apt-get install -y clang && apt-get install -y cargo && apt-get -f -y install nasm
-RUN rustup default stable
+RUN apt-get update && \
+    apt-get install -y clang  #&&  \
+    # apt-get -f -y install nasm
+
+# RUN rustup default stable
 RUN rustup target add aarch64-unknown-linux-gnu
 
 # Copy your application's source code.
 COPY . .
 
-RUN cargo install --path .
-
+RUN cargo build --target aarch64-unknown-linux-gnu --target-dir /usr/src/edge/target/release/edge
 
 # ---- Final Stage ----
 # Use the 'scratch' image, which is completely empty.
-FROM ubuntu
-
-RUN apt-get update && apt-get install -y cargo
+FROM scratch
 
 COPY --from=builder /usr/src/edge/target/release/edge /edge
 

@@ -44,6 +44,10 @@ rerun = { version = "0.35", features = [
 	"image"
 ] }
 
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+
 [lints.rust]
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.
 
@@ -57,6 +61,8 @@ pedantic = { level = "warn", priority = -1} # This should be upgraded to forbid 
 missing_errors_doc = "allow" # Consider upgrading in the future.
 missing_panics_doc = "allow" # Consider upgrading in the future.
 duration_suboptimal_units = "allow"
+
+
 
 # Lints from the restriction group:
 else_if_without_else = "warn"
