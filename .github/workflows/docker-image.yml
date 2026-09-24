@@ -19,14 +19,17 @@ jobs:
            submodules: true
            token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
 
-    
       - uses: actions/checkout@v4.2.2
-      - name: Setup submodule
+      - name: configure docker builder
         run: docker buildx create --name container-builder --driver docker-container --bootstrap --use
 
       - uses: actions/checkout@v4.2.2
-      - name: configure docker builder 
+      - name: Setup submodule
         run: git submodule update --init --recursive
+
+      - uses: Swatinem/rust-cache@v2
+      - name: build the cargo project
+        run: RUN cargo build --target=aarch64-unknown-linux-gnu --target-dir /release/edge
 
       - uses: actions/checkout@v4
       - name: Build the Docker image
