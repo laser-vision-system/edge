@@ -17,16 +17,17 @@ use nokhwa::{
 	utils::{CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
 };
 
-use super::controls::{
-	ControlMap,
-	descriptions::CamControl,
-	traits::{ControlDefault as _, ControlDescription as _, ControlValue as _},
+use super::{
+	CameraDeviceError,
+	controls::{
+		ControlMap,
+		descriptions::CamControl,
+		traits::{
+			ControlDefault as _, ControlDescription as _, ControlValue as _,
+		},
+	},
 };
-use crate::{
-	error::{CameraDeviceError, Result},
-	logger::logger,
-	settings::CAMERA_BUFFER_COUNT,
-};
+use crate::{error::Result, logger::logger, settings::CAMERA_BUFFER_COUNT};
 
 /// An abstraction over the nokhwa camera objects.
 ///

@@ -191,7 +191,10 @@ mod test {
 	#![expect(clippy::unwrap_used, reason = "Tests are allowed to unwrap")]
 
 	use super::logger;
-	use crate::error::{CameraDeviceError, EdgeError, NetworkError};
+	use crate::{
+		error::{EdgeError, NetworkError},
+		tcam_interface::CameraDeviceError,
+	};
 
 	#[test]
 	fn info() {

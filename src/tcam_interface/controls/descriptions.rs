@@ -23,7 +23,7 @@ use super::{
 		ConValueStringType,
 	},
 };
-use crate::error::{CameraDeviceError, EdgeError};
+use crate::{error::EdgeError, tcam_interface::CameraDeviceError};
 
 // ===== Field relationship bounds =====
 // (step, min, max, key): value
