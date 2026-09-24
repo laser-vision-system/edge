@@ -23,7 +23,7 @@
 # Use the 'scratch' image, which is completely empty.
 FROM scratch
 
-COPY /release/edge /edge
+COPY /edge /edge
 
 # CMD cargo run
 CMD ["/edge"]
