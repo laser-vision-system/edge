@@ -36,8 +36,8 @@ pub enum CameraDeviceError {
 		"The frame could not be decoded because not more memory could be allocated"
 	)]
 	FrameDecodeOutOfMemory,
-	#[error("The control could not be set on a camera")]
-	SetControl,
+	#[error("Failed to set control {id} to {value}")]
+	SetControl { id: String, value: String },
 	#[error("Attempted to access a camera that does not exist")]
 	CameraNotPresent,
 	#[error("Attempting to set an invalid control value")]

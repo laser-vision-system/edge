@@ -116,15 +116,13 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_error(&mut self, message: &str, error: &EdgeError) {
+	pub fn log_error(&mut self, error: &EdgeError) {
 		let log_entry = format!(
-			"[{:05}] {}\n{:?}\n{:?}: {}\n{}\n----------",
+			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
 			Local::now().to_rfc3339(),
 			LogLevel::Error,
 			error,
-			error,
-			message,
 		);
 
 		#[cfg(debug_assertions)]
@@ -275,81 +273,39 @@ mod test {
 	}
 
 	#[test]
-	fn all_error_types() {
-		let error = NetworkError::AutoConnect.into();
+	fn error() {
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 1.".to_owned().into());
 
-		let error = NetworkError::WebSocketConnection.into();
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 2.".to_owned().into());
 
-		let error = NetworkError::ServerConnection.into();
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 3.".to_owned().into());
 
-		let error = CameraDeviceError::NokhwaNoBackend.into();
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+		logger().lock().unwrap().send_logs();
+		logger().lock().unwrap().send_logs();
 
-		let error = CameraDeviceError::NokhwaInitialisation {
-			index: "69".into(),
-			reason: "*Generic reason*".to_owned(),
-		}
-		.into();
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 1.".to_owned().into());
 
-		let error = CameraDeviceError::StreamOpen {
-			reason: "*Generic reason*".to_owned(),
-		}
-		.into();
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 2.".to_owned().into());
 
-		let error = CameraDeviceError::FrameRead.into();
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
-
-		let error = CameraDeviceError::FrameDecodeCorruption.into();
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
-
-		let error = CameraDeviceError::FrameDecodeOutOfMemory.into();
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
-
-		let error = CameraDeviceError::SetControl.into();
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
-
-		let error = EdgeError::General {
-			reason: "*Generic reason*".to_owned(),
-		};
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 3.".to_owned().into());
 
 		logger().lock().unwrap().send_logs();
 		logger().lock().unwrap().send_logs();
