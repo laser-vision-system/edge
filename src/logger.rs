@@ -192,7 +192,7 @@ mod test {
 
 	use super::logger;
 	use crate::{
-		error::{EdgeError, NetworkError},
+		error::EdgeError, network::NetworkError,
 		tcam_interface::CameraDeviceError,
 	};
 

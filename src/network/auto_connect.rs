@@ -10,12 +10,8 @@ use server_edge_datatypes::edge::Settings;
 use tokio::{task::JoinSet, time::interval};
 use tokio_tungstenite::connect_async;
 
-use crate::{
-	error::{NetworkError, Result},
-	logger::logger,
-	settings::AUTO_CONNECT_DELAY,
-	websocket::WebSocket,
-};
+use super::{NetworkError, websocket::WebSocket};
+use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct AddressComp {

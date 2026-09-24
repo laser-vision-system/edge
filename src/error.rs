@@ -4,7 +4,7 @@
 )]
 use serde_json::error::Error as SerdeError;
 
-use crate::tcam_interface::CameraDeviceError;
+use crate::{network::NetworkError, tcam_interface::CameraDeviceError};
 
 /// Specialised [`Result`] type for the Edge tier.
 ///
@@ -59,26 +59,6 @@ impl From<String> for EdgeError {
 	fn from(value: String) -> Self {
 		EdgeError::General { reason: value }
 	}
-}
-
-/// Errors specific to networking operations.
-#[derive(Clone, Debug, thiserror::Error)]
-pub enum NetworkError {
-	#[error("The server could not be reached when trying initial connection")]
-	AutoConnect,
-	#[error("Fail connect: {reason}")]
-	AutoConnectUrl { reason: String },
-	#[error("The WebSocket connection could not be created")]
-	WebSocketConnection,
-	#[error("The server could not be reached")]
-	ServerConnection,
-	#[error("Failed to unpack data from the websocket")]
-	WebSocketUnpack,
-	// TODO: This variant is not used, find a place for it or remove.
-	#[error("Error while finding the default interface")]
-	IdentifyNetwork,
-	#[error("Failed to get a response: {reason}")]
-	ReqwestError { reason: String },
 }
 
 /// Errors specific to camera persistence logic.

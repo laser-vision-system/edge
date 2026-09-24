@@ -10,15 +10,15 @@ use server_edge_datatypes::{
 use tokio::time::interval;
 
 use crate::{
-	auto_connect::assert_connection,
-	error::NetworkError,
 	logger::logger,
+	network::{
+		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
+	},
 	settings::Settings,
 	tcam_interface::{
 		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
 	},
 	vision_processor::{VisionInterface as _, vision},
-	websocket::WebSocket,
 };
 
 /// # Conductor
