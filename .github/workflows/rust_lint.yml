@@ -2,8 +2,10 @@ name: Rust Lint
 
 on:
   workflow_dispatch:
-  push:
   pull_request:
+    paths:
+      - '**.rs'
+      - 'rustfmt.toml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

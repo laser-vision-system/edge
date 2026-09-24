@@ -2,8 +2,10 @@ name: Rust Test
 
 on:
   workflow_dispatch:
-  push:
   pull_request:
+    paths:
+      - '**.rs'
+      - '**.toml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
