@@ -79,16 +79,16 @@ mod tests {
 	#[test]
 	fn default_values_as_expected() {
 		let meta = PerpetualInfo::default();
-		assert_eq!(meta.currently_viewed, false);
+		assert!(!meta.currently_viewed);
 		assert_eq!(meta.err_accumulation, 0);
 	}
 
 	#[test]
 	fn currently_viewed_set_and_read() {
 		let mut meta = PerpetualInfo::default();
-		assert_eq!(meta.currently_viewed, false);
+		assert!(!meta.currently_viewed);
 		meta.currently_viewed = true;
-		assert_eq!(meta.currently_viewed, true);
+		assert!(meta.currently_viewed);
 	}
 
 	#[test]

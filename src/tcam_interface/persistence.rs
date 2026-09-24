@@ -314,6 +314,6 @@ mod tests {
 		let second_entry = PersistEntry::new(&points);
 		persist_map.inner.insert(second_key, second_entry);
 
-		assert_eq!(persist_map.inner.len(), 1)
+		assert_eq!(persist_map.inner.len(), 1);
 	}
 }

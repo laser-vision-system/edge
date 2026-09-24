@@ -219,16 +219,18 @@ async fn get_default_settings(_url: &str) -> Result<Settings> {
 
 #[cfg(test)]
 mod tests {
+	#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
+
 	use super::*;
 	use crate::settings;
 
 	#[test]
 	fn chop_end() {
-		let mut url = "http://".to_string();
+		let mut url = "http://".to_owned();
 		url.push_str("myweb.d.0.yay");
 		url.push_str(":8080/is_api");
 		let mut please = url
-			.rsplit("/")
+			.rsplit('/')
 			.skip(1)
 			.collect::<Vec<_>>()
 			.into_iter()
@@ -250,6 +252,6 @@ mod tests {
 					&& !network.is_loopback()
 					&& !network.ips.is_empty()
 			})
-			.for_each(|interface| println!("{}", interface));
+			.for_each(|interface| println!("{interface}"));
 	}
 }

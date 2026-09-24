@@ -20,6 +20,8 @@
 	clippy::print_stdout,
 	reason = "This is the logger module, where this is expected behaviour"
 )]
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
+
 use std::sync::{Mutex, OnceLock};
 
 use chrono::{Duration, Local, NaiveDate};
@@ -186,6 +188,8 @@ impl LogCounter {
 
 #[cfg(test)]
 mod test {
+	#![expect(clippy::unwrap_used, reason = "Tests are allowed to unwrap")]
+
 	use super::logger;
 	use crate::error::EdgeError::{
 		AutoConnect, FrameDecodeCorruption, FrameDecodeOutOfMemory, FrameRead,
@@ -299,7 +303,7 @@ mod test {
 
 		error = NokhwaInitialisation {
 			index: "69".into(),
-			reason: "*Generic reason*".to_string(),
+			reason: "*Generic reason*".to_owned(),
 		};
 		logger()
 			.lock()
@@ -307,7 +311,7 @@ mod test {
 			.log_error("This is an ERROR log test.", &error);
 
 		error = StreamOpen {
-			reason: "*Generic reason*".to_string(),
+			reason: "*Generic reason*".to_owned(),
 		};
 		logger()
 			.lock()
@@ -339,7 +343,7 @@ mod test {
 			.log_error("This is an ERROR log test.", &error);
 
 		error = General {
-			reason: "*Generic reason*".to_string(),
+			reason: "*Generic reason*".to_owned(),
 		};
 		logger()
 			.lock()
