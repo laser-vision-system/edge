@@ -1,7 +1,3 @@
-#![expect(
-	clippy::module_name_repetitions,
-	reason = "Distinct error type for clarity"
-)]
 use serde_json::error::Error as SerdeError;
 
 use crate::{
@@ -19,6 +15,10 @@ pub type Result<T> = std::result::Result<T, EdgeError>;
 /// The error type for all operations in the Edge tier.
 ///
 /// Any errors from underlying crates should be translated to this immediately.
+#[expect(
+	clippy::module_name_repetitions,
+	reason = "Distinct error type for clarity"
+)]
 #[derive(Debug, thiserror::Error)]
 pub enum EdgeError {
 	/// Non-specific error type, please create a dedicated variant instead.
