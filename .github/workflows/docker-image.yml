@@ -28,6 +28,14 @@ jobs:
         run: git submodule update --init --recursive
 
       - uses: Swatinem/rust-cache@v2
+      - name: install clang
+        run: apt-get install -y clang
+
+      - uses: Swatinem/rust-cache@v2
+      - name: configure rust up
+        run: rustup default stable
+
+      - uses: Swatinem/rust-cache@v2
       - name: add required build target
         run: rustup target add aarch64-unknown-linux-musl
 
