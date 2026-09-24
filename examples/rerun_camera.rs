@@ -1,9 +1,11 @@
+#![expect(clippy::unwrap_used, reason = "Quick and dirty example")]
+
 use std::error::Error;
 
 use edge::{
 	tcam_interface::CameraDevice,
 	vision_processor::{
-		BatchItem, Demonstration, VisionInterface, VisionState,
+		BatchItem, Demonstration, VisionInterface as _, VisionState,
 	},
 };
 use image::RgbImage;
@@ -55,10 +57,10 @@ impl Context {
 		};
 
 		let lightness_path = format!("{path}/lightness");
-		self.send_scalar(&lightness_path, data.intensity.unwrap() as f64);
+		self.send_scalar(&lightness_path, f64::from(data.intensity.unwrap()));
 
 		let deviation_path = format!("{path}/deviation");
-		self.send_scalar(&deviation_path, data.deviation.unwrap() as f64);
+		self.send_scalar(&deviation_path, f64::from(data.deviation.unwrap()));
 	}
 }
 

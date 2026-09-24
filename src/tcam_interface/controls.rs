@@ -8,12 +8,12 @@
 //! - The order of the collection does not matter.
 //!
 //! - Each control will be unique to a [`KnownCameraControl`] (ID), condusive to
-//!   a HashMap or Set.
+//!   a `HashMap` or Set.
 //!
 //! - Every [`CamControl`] ([`ControlValueDescription`]) maps non-commutatively
 //!   to a [`ControlValue`] ([`ControlValueSetter`]), but cannot be determined
-//!   at runtime.
-//! This can be handled either by generic or trait objects (`dyn`).
+//!   at runtime. This can be handled either by generic or trait objects
+//!   (`dyn`).
 //!
 //! - There seems to be a weak and unclear mapping between
 //!   [`KnownCameraControl`] and [`CamControl`] ([`ControlValueDescription`]).
@@ -32,7 +32,7 @@ use std::{
 	ops::{Deref, DerefMut},
 };
 
-#[allow(unused_imports, reason = "Needed for module docstring")]
+#[expect(unused_imports, reason = "Needed for module docstring")]
 use nokhwa::utils::ControlValueSetter;
 use nokhwa::utils::{CameraControl, KnownCameraControl};
 
@@ -56,6 +56,7 @@ impl ControlMap {
 		self.inner
 	}
 
+	#[must_use]
 	pub fn stripped(self) -> Self {
 		let inner = self
 			.inner

@@ -1,5 +1,7 @@
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
+
 use super::ErrAccType;
-use crate::vision_processor::{VisionInterface, VisionState, vision};
+use crate::vision_processor::{VisionInterface as _, VisionState, vision};
 
 /// Information about a camera that persists after the device is
 /// disconnected.
@@ -27,7 +29,7 @@ impl PerpetualInfo {
 	}
 
 	pub fn set_currently_viewed(&mut self, state: bool) {
-		self.currently_viewed = state
+		self.currently_viewed = state;
 	}
 
 	/// Get the current error accumulation value.
@@ -37,15 +39,19 @@ impl PerpetualInfo {
 
 	/// Mark that this camera has encountered an error.
 	pub fn add_error(&mut self, increment: ErrAccType) {
-		self.err_accumulation += increment
+		self.err_accumulation += increment;
 	}
 
+	#[expect(
+		clippy::else_if_without_else,
+		reason = "This should be a no-op when err_accumulation is at 0"
+	)]
 	/// Reduce the error by up to an amount.
 	pub fn reduce_error(&mut self, amount: ErrAccType) {
 		if self.err_accumulation > amount {
-			self.err_accumulation -= amount
+			self.err_accumulation -= amount;
 		} else if self.err_accumulation > 0 {
-			self.err_accumulation = 0
+			self.err_accumulation = 0;
 		}
 	}
 
@@ -54,12 +60,12 @@ impl PerpetualInfo {
 	}
 
 	pub fn set_calibrate(&mut self, state: bool) {
-		self.calibrate = state
+		self.calibrate = state;
 	}
 
 	pub fn refresh_vision_state(&mut self) {
 		if !self.vision_state.is_valid() {
-			self.vision_state = vision().interact(|vision| vision.new_state())
+			self.vision_state = vision().interact(|vision| vision.new_state());
 		}
 	}
 
@@ -75,16 +81,16 @@ mod tests {
 	#[test]
 	fn default_values_as_expected() {
 		let meta = PerpetualInfo::default();
-		assert_eq!(meta.currently_viewed, false);
+		assert!(!meta.currently_viewed);
 		assert_eq!(meta.err_accumulation, 0);
 	}
 
 	#[test]
 	fn currently_viewed_set_and_read() {
 		let mut meta = PerpetualInfo::default();
-		assert_eq!(meta.currently_viewed, false);
+		assert!(!meta.currently_viewed);
 		meta.currently_viewed = true;
-		assert_eq!(meta.currently_viewed, true);
+		assert!(meta.currently_viewed);
 	}
 
 	#[test]

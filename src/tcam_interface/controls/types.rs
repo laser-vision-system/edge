@@ -3,7 +3,7 @@
 use nokhwa::utils::ControlValueSetter;
 use serde::{Deserialize, Serialize};
 
-#[allow(unused_imports, reason = "Needed for docstring")]
+#[expect(unused_imports, reason = "Needed for docstring")]
 use super::{
 	descriptions::{KeyValuePairControl, PointControl, RGBControl},
 	values::{ConValueKeyValue, ConValuePoint, ConValueRGB},

@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::collections::HashMap;
 
 use server_edge_datatypes::{
@@ -14,7 +17,7 @@ use crate::{
 	tcam_interface::{
 		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
 	},
-	vision_processor::{VisionInterface, vision},
+	vision_processor::{VisionInterface as _, vision},
 	websocket::WebSocket,
 };
 
@@ -52,6 +55,7 @@ impl Conductor {
 			)
 			.await;
 		}
+
 		logger().lock().unwrap().send_logs();
 
 		let _ = websocket.keep_alive().await;
@@ -105,7 +109,7 @@ impl Conductor {
 		});
 
 		// Send result
-		for item in batch_items.iter() {
+		for item in &batch_items {
 			let deviation_maybe = item.state.get_deviation();
 			let camid = item.camera_id;
 			if let Some(deviation) = deviation_maybe {
@@ -123,20 +127,19 @@ impl Conductor {
 					logger().lock().unwrap().log_error(
 						&format!("failed to send to server: {why}"),
 						&EdgeError::ServerConnection,
-					)
+					);
 				});
-			};
+			}
 
 			if item.send_to_server {
-				let mut encoded =
-					CameraDevice::encode_image(item.image.clone());
+				let mut encoded = CameraDevice::encode_image(&item.image);
 				let result =
 					websocket.send_image(item.camera_id, &mut encoded).await;
 				let _ = result.inspect_err(|why| {
 					logger().lock().unwrap().log_error(
 						&format!("failed to image send to server: {why}"),
 						&EdgeError::ServerConnection,
-					)
+					);
 				});
 			}
 		}
@@ -171,16 +174,14 @@ impl Conductor {
 			EdgeRequests::ViewCameraConfig(view_config_req) => {
 				if let Some(configuration) =
 					self.persistence.get_configuration(view_config_req)
-				{
-					if let Err(_) = websocket
+					&& let Err(_) = websocket
 						.send_text("Configuration:".into(), configuration)
 						.await
-					{
-						logger().lock().unwrap().log_error(
-							"Failed to send configuration request",
-							&EdgeError::WebSocketConnection,
-						);
-					}
+				{
+					logger().lock().unwrap().log_error(
+						"Failed to send configuration request",
+						&EdgeError::WebSocketConnection,
+					);
 				}
 			},
 			EdgeRequests::Setpoint(calibration_req) => {

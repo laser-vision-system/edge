@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use super::{
 	traits::{
 		ControlDefault, ControlDescription, ControlItems, ControlMax,
-		ControlMin, ControlPossible, ControlStep, ControlValue,
+		ControlMin, ControlPossible, ControlStep, ControlValue as _,
 	},
 	types::{
 		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
@@ -23,6 +23,7 @@ use super::{
 		ConValueStringType,
 	},
 };
+use crate::error::EdgeError;
 
 // ===== Field relationship bounds =====
 // (step, min, max, key): value
@@ -67,6 +68,10 @@ pub enum CamControl {
 
 impl From<CameraControl> for CamControl {
 	/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
+	#[expect(
+		clippy::too_many_lines,
+		reason = "Necessary to map from one type to the other"
+	)]
 	fn from(value: CameraControl) -> Self {
 		let control_type = value.control();
 		match value.description() {
@@ -193,12 +198,6 @@ impl From<CameraControl> for CamControl {
 // Every variant has a value and default.
 // There are no hard correllations for the other fields.
 
-/// A camera control that consists of nothing.
-///
-/// Maps to [`ControlValueDescription::None`].
-//#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-// pub struct NoneControl;
-
 /// A camera control that consists of a value, default, and step.
 ///
 /// Maps to [`ControlValueDescription::Integer`]
@@ -234,12 +233,12 @@ impl ControlDescription for IntegerControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -257,7 +256,7 @@ impl ControlDefault for IntegerControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -319,7 +318,7 @@ impl ControlDescription for IntegerRangeControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
@@ -327,7 +326,7 @@ impl ControlDescription for IntegerRangeControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -345,7 +344,7 @@ impl ControlDefault for IntegerRangeControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -417,12 +416,12 @@ impl ControlDescription for FloatControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -440,7 +439,7 @@ impl ControlDefault for FloatControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -502,7 +501,7 @@ impl ControlDescription for FloatRangeControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
@@ -510,7 +509,7 @@ impl ControlDescription for FloatRangeControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -528,7 +527,7 @@ impl ControlDefault for FloatRangeControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -597,7 +596,7 @@ impl ControlDescription for BooleanControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -616,7 +615,7 @@ impl ControlDefault for BooleanControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -653,7 +652,7 @@ impl ControlDescription for StringControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -671,8 +670,8 @@ impl ControlDefault for StringControl {
 	}
 
 	fn reset_to_default(&mut self) {
-		self.set_value(self.get_default().unwrap_or("".to_string()).into())
-			.expect("default value should never be invalid")
+		self.set_value(self.get_default().unwrap_or_default().into())
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -709,7 +708,7 @@ impl ControlDescription for BytesControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -728,7 +727,7 @@ impl ControlDefault for BytesControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -765,7 +764,7 @@ impl ControlDescription for KeyValuePairControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -784,7 +783,7 @@ impl ControlDefault for KeyValuePairControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -821,7 +820,7 @@ impl ControlDescription for PointControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -840,7 +839,7 @@ impl ControlDefault for PointControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -881,7 +880,7 @@ impl ControlDescription for EnumControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -900,7 +899,7 @@ impl ControlDefault for EnumControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -954,12 +953,12 @@ impl ControlDescription for RGBControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -977,7 +976,7 @@ impl ControlDefault for RGBControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -1021,12 +1020,12 @@ impl ControlDescription for MenuControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(EdgeError::InvalidControlValue)
 		}
 	}
 
@@ -1044,7 +1043,7 @@ impl ControlDefault for MenuControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -1065,7 +1064,10 @@ impl ControlItems for MenuControl {
 macro_rules! impl_identifiable {
 	($type:ty) => {
 		impl Hash for $type {
-			fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+			fn hash<H>(&self, state: &mut H)
+			where
+				H: std::hash::Hasher,
+			{
 				self.get_id().hash(state);
 			}
 		}
@@ -1080,7 +1082,7 @@ macro_rules! impl_identifiable {
 
 		impl PartialOrd for $type {
 			fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-				self.get_id().partial_cmp(&other.get_id())
+				Some(self.cmp(other))
 			}
 		}
 

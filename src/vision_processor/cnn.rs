@@ -2,7 +2,7 @@ use std::fmt;
 
 use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Cnn {
 	session: SessionToken,
 }
@@ -18,11 +18,11 @@ impl Cnn {
 impl VisionInterface for Cnn {
 	fn process(&mut self, batch: &mut [BatchItem]) {
 		for item in batch {
-			let VisionState::Cnn { data, .. } = &mut item.state else {
+			let VisionState::Cnn { data, .. } = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
-			data.deviation = Some(0.0)
+			data.deviation = Some(0.0);
 		}
 	}
 
@@ -30,14 +30,6 @@ impl VisionInterface for Cnn {
 		VisionState::Cnn {
 			handle: self.session.downgrade(),
 			data: ExternalData::default(),
-		}
-	}
-}
-
-impl Default for Cnn {
-	fn default() -> Self {
-		Self {
-			session: SessionToken::new(),
 		}
 	}
 }
