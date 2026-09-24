@@ -1,5 +1,6 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
 use std::{collections::HashSet, fmt};
 

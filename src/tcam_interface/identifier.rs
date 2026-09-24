@@ -10,6 +10,8 @@
 //!
 //! All the necessary information is in the [`CameraInfo`] struct.
 
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
+
 use std::{
 	borrow::{Borrow, Cow},
 	fmt,
