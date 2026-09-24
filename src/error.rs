@@ -11,6 +11,10 @@ pub type Result<T> = std::result::Result<T, EdgeError>;
 /// The error type for all operations in the Edge tier.
 ///
 /// Any errors from underlying crates should be translated to this immediately.
+#[expect(
+	clippy::module_name_repetitions,
+	reason = "Distinct error type for clarity"
+)]
 #[derive(Debug, Error)]
 pub enum EdgeError {
 	#[error("{reason}")]
