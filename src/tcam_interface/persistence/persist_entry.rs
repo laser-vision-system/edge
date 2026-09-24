@@ -13,9 +13,8 @@ use super::{
 	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
 };
 use crate::{
-	error::PersistenceError,
 	logger::logger,
-	tcam_interface::{CameraDevice, Identifier},
+	tcam_interface::{CameraDevice, Identifier, PersistenceError},
 	vision_processor::BatchItem,
 };
 

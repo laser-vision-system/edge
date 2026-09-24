@@ -4,7 +4,10 @@
 )]
 use serde_json::error::Error as SerdeError;
 
-use crate::{network::NetworkError, tcam_interface::CameraDeviceError};
+use crate::{
+	network::NetworkError,
+	tcam_interface::{CameraDeviceError, PersistenceError},
+};
 
 /// Specialised [`Result`] type for the Edge tier.
 ///
@@ -59,17 +62,4 @@ impl From<String> for EdgeError {
 	fn from(value: String) -> Self {
 		EdgeError::General { reason: value }
 	}
-}
-
-/// Errors specific to camera persistence logic.
-#[derive(Clone, Debug, thiserror::Error)]
-pub enum PersistenceError {
-	#[error("Attempting to operate on an unknown camera id")]
-	UnknownCameraId,
-	#[error(
-		"This device connection could not be established at any of the indices"
-	)]
-	InvalidDeviceConnection,
-	#[error("The connection status was not correct for this request")]
-	IncorrectConnectionStatus,
 }

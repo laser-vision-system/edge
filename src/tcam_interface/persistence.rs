@@ -23,12 +23,8 @@ pub use self::{
 	perpetual_info::PerpetualInfo,
 	persist_entry::{MaybeImage, PersistEntry, WhyNo},
 };
-use super::Identifier;
-use crate::{
-	error::{EdgeError, PersistenceError},
-	logger::logger,
-	vision_processor::BatchItem,
-};
+use super::{Identifier, PersistenceError};
+use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
 
 pub type ErrAccType = u16;
 

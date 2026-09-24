@@ -43,3 +43,16 @@ pub enum CameraDeviceError {
 	#[error("Attempting to set an invalid control value")]
 	InvalidControlValue,
 }
+
+/// Errors specific to camera persistence logic.
+#[derive(Clone, Debug, thiserror::Error)]
+pub enum PersistenceError {
+	#[error("Attempting to operate on an unknown camera id")]
+	UnknownCameraId,
+	#[error(
+		"This device connection could not be established at any of the indices"
+	)]
+	InvalidDeviceConnection,
+	#[error("The connection status was not correct for this request")]
+	IncorrectConnectionStatus,
+}
