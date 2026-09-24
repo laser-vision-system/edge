@@ -28,8 +28,12 @@ jobs:
         run: git submodule update --init --recursive
 
       - uses: Swatinem/rust-cache@v2
+      - name: add required build target
+        run: rustup target add aarch64-unknown-linux-musl
+
+      - uses: Swatinem/rust-cache@v2
       - name: build the cargo project
-        run: cargo build --target=aarch64-unknown-linux-gnu
+        run: cargo build --target=aarch64-unknown-linux-musl
 
       - uses: actions/checkout@v4
       - name: Build the Docker image
