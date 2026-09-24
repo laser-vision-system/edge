@@ -2,23 +2,7 @@ name: Rust Lint
 
 on:
   push:
-    branches:
-    - main
-    - dev
-    - feat/**
-    - bugfix/**
-    - rework/**
-    - refactor/**
-    - temp/**
   pull_request:
-    branches:
-    - main
-    - dev
-    - feat/**
-    - bugfix/**
-    - rework/**
-    - refactor/**
-    - temp/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
