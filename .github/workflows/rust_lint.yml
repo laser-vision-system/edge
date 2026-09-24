@@ -12,8 +12,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  fmt:
-    name: rustfmt
+  rustfmt:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -25,3 +24,16 @@ jobs:
         toolchain: stable
         components: rustfmt
     - run: cargo fmt --all -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+          submodules: recursive
+          token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
+    - uses: dtolnay/rust-toolchain@v1
+      with:
+        toolchain: stable
+        components: clippy
+    - run: cargo clippy --all-targets
