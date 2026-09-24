@@ -23,8 +23,7 @@ use super::controls::{
 	traits::{ControlDefault as _, ControlDescription as _, ControlValue as _},
 };
 use crate::{
-	error::{EdgeError, Result},
-	logger,
+	error::{CameraDeviceError, Result},
 	logger::logger,
 	settings::CAMERA_BUFFER_COUNT,
 };
@@ -46,9 +45,12 @@ impl CameraDevice {
 
 		let opened =
 			open_with_buffers(index, OpenRequest::any(), CAMERA_BUFFER_COUNT)
-				.map_err(|why| EdgeError::NokhwaInitialisation {
-					index: index_str,
-					reason: why.to_string(),
+				.map_err(|why| {
+					CameraDeviceError::NokhwaInitialisation {
+						index: index_str,
+						reason: why.to_string(),
+					}
+					.into()
 				})
 				.inspect_err(|why| {
 					logger()
@@ -59,18 +61,21 @@ impl CameraDevice {
 
 		let OpenedCamera::Stream(mut camera) = opened else {
 			// TODO: Discuss how we handle this.
-			logger::logger()
+			logger()
 				.lock()
 				.unwrap()
 				.log_warn("Camera is not a webcam...?");
 			// TEMP
-			return Err(EdgeError::CameraNotPresent);
+			return Err(CameraDeviceError::CameraNotPresent.into());
 		};
 
 		camera
 			.open()
-			.map_err(|why| EdgeError::StreamOpen {
-				reason: why.to_string(),
+			.map_err(|why| {
+				CameraDeviceError::StreamOpen {
+					reason: why.to_string(),
+				}
+				.into()
 			})
 			.inspect_err(|why| {
 				logger()
@@ -108,17 +113,20 @@ impl CameraDevice {
 	///
 	/// There seems to be a 2 frame latency.
 	pub fn get_frame(&mut self) -> Result<Frame<Mjpeg>> {
-		let frame_res = self.inner.frame().map_err(|_| EdgeError::FrameRead);
+		let frame_res = self
+			.inner
+			.frame()
+			.map_err(|_| CameraDeviceError::FrameRead.into());
 		match frame_res {
 			Ok(buffer) => {
-				logger::logger()
+				logger()
 					.lock()
 					.unwrap()
 					.log_info("Frame was successfully read");
 				Ok(Frame::new(buffer))
 			},
 			Err(why) => {
-				logger::logger().lock().unwrap().log_error("", &why);
+				logger().lock().unwrap().log_error("", &why);
 				Err(why)
 			},
 		}
@@ -130,10 +138,10 @@ impl CameraDevice {
 			.into_rgb()
 			.materialize()
 			// We just assume it is always corruption for now.
-			.map_err(|_| EdgeError::FrameDecodeCorruption);
+			.map_err(|_| CameraDeviceError::FrameDecodeCorruption.into());
 		match decoded_res {
 			Ok(decoded) => {
-				logger::logger()
+				logger()
 					.lock()
 					.unwrap()
 					.log_info("Frame was successfully decoded");
@@ -144,7 +152,7 @@ impl CameraDevice {
 				Ok(new)
 			},
 			Err(why) => {
-				logger::logger().lock().unwrap().log_error("", &why);
+				logger().lock().unwrap().log_error("", &why);
 				Err(why)
 			},
 		}
@@ -193,7 +201,7 @@ impl CameraDevice {
 		}
 		self.inner
 			.set_control(id, value.clone().into())
-			.map_err(|_| EdgeError::SetControl)
+			.map_err(|_| CameraDeviceError::SetControl.into())
 			.inspect_err(|why| {
 				logger().lock().unwrap().log_error(
 					&format!(
@@ -211,7 +219,7 @@ impl CameraDevice {
 			let CamControl::IntegerRange(control) = val else {
 				logger().lock().unwrap().log_error(
 					"Attempting to set a control of an unsupported type.",
-					&EdgeError::SetControl,
+					&CameraDeviceError::SetControl.into(),
 				);
 				return;
 			};
@@ -376,8 +384,11 @@ mod tests {
 	use nokhwa::utils::CameraControl;
 
 	use super::*;
-	use crate::tcam_interface::controls::traits::{
-		ControlItems as _, ControlMax as _, ControlStep as _,
+	use crate::{
+		error::EdgeError,
+		tcam_interface::controls::traits::{
+			ControlItems as _, ControlMax as _, ControlStep as _,
+		},
 	};
 
 	impl CameraDevice {
@@ -576,8 +587,8 @@ mod tests {
 		//! - Displays configuration options
 		//! - Creates a polled camera, accessing 5 frames and printing image
 		//!   dimensions
-		//! - Creates a callback camera, printing image dimensions. Simultaneously
-		//!   polls the camera 5 times and saves the images.
+		//! - Creates a callback camera, printing image dimensions.
+		//!   Simultaneously polls the camera 5 times and saves the images.
 		use std::{
 			fs::{self, OpenOptions},
 			io::Write as _,
@@ -645,7 +656,8 @@ mod tests {
 			);
 		}
 
-		/// Print the known camera controls for a camera found at a [`CameraIndex`]
+		/// Print the known camera controls for a camera found at a
+		/// [`CameraIndex`]
 		fn get_known_camera_controls(camera_index: CameraIndex) -> String {
 			let cam_temp = create_camera(camera_index);
 			match cam_temp.controls() {
@@ -701,7 +713,8 @@ mod tests {
 			polling_camera.close().unwrap();
 		}
 
-		/// Uses a threaded camera that will automatically use a callback function.
+		/// Uses a threaded camera that will automatically use a callback
+		/// function.
 		///
 		/// Decodes the frame to an RGBA image.
 		///

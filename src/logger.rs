@@ -191,11 +191,7 @@ mod test {
 	#![expect(clippy::unwrap_used, reason = "Tests are allowed to unwrap")]
 
 	use super::logger;
-	use crate::error::EdgeError::{
-		AutoConnect, FrameDecodeCorruption, FrameDecodeOutOfMemory, FrameRead,
-		General, NokhwaInitialisation, NokhwaNoBackend, ServerConnection,
-		SetControl, StreamOpen, WebSocketConnection,
-	};
+	use crate::error::{CameraDeviceError, EdgeError, NetworkError};
 
 	#[test]
 	fn info() {
@@ -277,72 +273,74 @@ mod test {
 
 	#[test]
 	fn all_error_types() {
-		let mut error = AutoConnect;
+		let error = NetworkError::AutoConnect.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = WebSocketConnection;
+		let error = NetworkError::WebSocketConnection.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = ServerConnection;
+		let error = NetworkError::ServerConnection.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = NokhwaNoBackend;
+		let error = CameraDeviceError::NokhwaNoBackend.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = NokhwaInitialisation {
+		let error = CameraDeviceError::NokhwaInitialisation {
 			index: "69".into(),
 			reason: "*Generic reason*".to_owned(),
-		};
+		}
+		.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = StreamOpen {
+		let error = CameraDeviceError::StreamOpen {
 			reason: "*Generic reason*".to_owned(),
-		};
+		}
+		.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = FrameRead;
+		let error = CameraDeviceError::FrameRead.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = FrameDecodeCorruption;
+		let error = CameraDeviceError::FrameDecodeCorruption.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = FrameDecodeOutOfMemory;
+		let error = CameraDeviceError::FrameDecodeOutOfMemory.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = SetControl;
+		let error = CameraDeviceError::SetControl.into();
 		logger()
 			.lock()
 			.unwrap()
 			.log_error("This is an ERROR log test.", &error);
 
-		error = General {
+		let error = EdgeError::General {
 			reason: "*Generic reason*".to_owned(),
 		};
 		logger()

@@ -23,7 +23,7 @@ use super::{
 		ConValueStringType,
 	},
 };
-use crate::error::EdgeError;
+use crate::error::{CameraDeviceError, EdgeError};
 
 // ===== Field relationship bounds =====
 // (step, min, max, key): value
@@ -238,7 +238,7 @@ impl ControlDescription for IntegerControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(EdgeError::InvalidControlValue)
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -326,7 +326,7 @@ impl ControlDescription for IntegerRangeControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(EdgeError::InvalidControlValue)
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -421,7 +421,7 @@ impl ControlDescription for FloatControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(EdgeError::InvalidControlValue)
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -509,7 +509,7 @@ impl ControlDescription for FloatRangeControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(EdgeError::InvalidControlValue)
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -958,7 +958,7 @@ impl ControlDescription for RGBControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(EdgeError::InvalidControlValue)
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -1025,7 +1025,7 @@ impl ControlDescription for MenuControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(EdgeError::InvalidControlValue)
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 

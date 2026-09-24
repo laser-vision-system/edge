@@ -11,7 +11,7 @@ use tokio::time::interval;
 
 use crate::{
 	auto_connect::assert_connection,
-	error::EdgeError,
+	error::NetworkError,
 	logger::logger,
 	settings::Settings,
 	tcam_interface::{
@@ -126,7 +126,7 @@ impl Conductor {
 				let _ = result.inspect_err(|why| {
 					logger().lock().unwrap().log_error(
 						&format!("failed to send to server: {why}"),
-						&EdgeError::ServerConnection,
+						&NetworkError::ServerConnection.into(),
 					);
 				});
 			}
@@ -138,7 +138,7 @@ impl Conductor {
 				let _ = result.inspect_err(|why| {
 					logger().lock().unwrap().log_error(
 						&format!("failed to image send to server: {why}"),
-						&EdgeError::ServerConnection,
+						&NetworkError::ServerConnection.into(),
 					);
 				});
 			}
@@ -180,7 +180,7 @@ impl Conductor {
 				{
 					logger().lock().unwrap().log_error(
 						"Failed to send configuration request",
-						&EdgeError::WebSocketConnection,
+						&NetworkError::WebSocketConnection.into(),
 					);
 				}
 			},
