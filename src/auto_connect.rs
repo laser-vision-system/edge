@@ -241,6 +241,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "IO bound"]
 	fn print_interfaces() {
 		interfaces()
 			.into_iter()
