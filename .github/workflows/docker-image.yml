@@ -10,11 +10,6 @@ on:
 jobs:
   docker_build:
     runs-on: ${{ matrix.os }}
-    permissions:
-      id-token: write
-      contents: write
-      packages: write
-      repository-projects: read
     strategy:
       matrix:
         include:
@@ -25,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
            submodules: recursive
-           token: ${{ secrets.GITHUB_TOKEN }}
+           token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
 
       - uses: actions/checkout@v4.2.2
       - name: configure docker builder
@@ -55,3 +50,4 @@ jobs:
           platforms: linux/arm64
           cache-from: type=registry,ref=stable:buildcache
           cache-to: type=registry,ref=stable:buildcache,mode=max
+          github-token: '${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}'
