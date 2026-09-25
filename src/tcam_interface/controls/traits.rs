@@ -1,10 +1,10 @@
 //! Core traits for camera controls.
 
 use std::fmt::Debug;
-#[allow(unused_imports, reason = "Needed for trait docstring")]
+#[expect(unused_imports, reason = "Needed for trait docstring")]
 use std::hash::Hash;
 
-#[allow(unused_imports, reason = "Needed for trait docstring")]
+#[expect(unused_imports, reason = "Needed for trait docstring")]
 use nokhwa::utils::ControlValueSetter;
 use nokhwa::{
 	self,
@@ -15,6 +15,7 @@ use super::types::{
 	ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
 	ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 };
+use crate::error::EdgeError;
 
 /// A marker trait that determines what is acceptable to use within a
 /// [`ControlValue`].
@@ -91,7 +92,7 @@ pub trait ControlDescription {
 	type ConType: ValidControlValue;
 
 	fn get_id(&self) -> KnownCameraControl;
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()>;
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError>;
 	fn get_value(&self) -> Self::ValueType;
 }
 

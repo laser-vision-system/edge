@@ -11,6 +11,10 @@ pub type Result<T> = std::result::Result<T, EdgeError>;
 /// The error type for all operations in the Edge tier.
 ///
 /// Any errors from underlying crates should be translated to this immediately.
+#[expect(
+	clippy::module_name_repetitions,
+	reason = "Distinct error type for clarity"
+)]
 #[derive(Debug, Error)]
 pub enum EdgeError {
 	#[error("{reason}")]
@@ -59,6 +63,8 @@ pub enum EdgeError {
 	IncorrectConnectionStatus,
 	#[error("Attempting to operate on an unknown camera id")]
 	UnknownCameraId,
+	#[error("Attempting to set an invalid control value")]
+	InvalidControlValue,
 }
 
 impl Clone for EdgeError {
@@ -103,6 +109,7 @@ impl Clone for EdgeError {
 			Self::InvalidDeviceConnection => Self::InvalidDeviceConnection,
 			Self::IncorrectConnectionStatus => Self::IncorrectConnectionStatus,
 			Self::UnknownCameraId => Self::UnknownCameraId,
+			Self::InvalidControlValue => Self::InvalidControlValue,
 		}
 	}
 }

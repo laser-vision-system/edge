@@ -1,5 +1,8 @@
 //! Polling logic for the [`Persistence`] struct.
 
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::{
 	collections::{HashMap, HashSet},
 	fmt,
@@ -75,7 +78,7 @@ impl fmt::Display for DeviceConnection {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "{}", self.identifier)?;
 		for point in &self.points {
-			write!(f, "\n\t{}", point)?;
+			write!(f, "\n\t{point}")?;
 		}
 		Ok(())
 	}
@@ -99,7 +102,7 @@ fn convert_to_intermediaries(devices: Vec<CameraInfo>) -> IntermediaryMap {
 	let mut map =
 		HashMap::with_capacity_and_hasher(devices.len(), RandomState::new());
 
-	for device in devices.into_iter() {
+	for device in devices {
 		let index = device.index().to_owned();
 		let is_metadata = device.is_metadata();
 		let accesspoint = AccessPoint { index, is_metadata };
@@ -132,7 +135,7 @@ impl Persistence {
 			.into_iter()
 			// TODO: Filter for disconnections here.
 			.filter_map(|(ident, points)| -> Option<(CameraId, ConnectionDetail)> {
-				self.on_each_connection(DeviceConnection::from((ident, points)))
+				self.on_each_connection(&DeviceConnection::from((ident, points)))
 			})
 			.collect::<HashMap<_, _>>()
 
@@ -144,7 +147,7 @@ impl Persistence {
 	/// Attempt to create a new device from a device info entry.
 	fn on_each_connection(
 		&mut self,
-		connection: DeviceConnection,
+		connection: &DeviceConnection,
 	) -> Option<(CameraId, ConnectionDetail)> {
 		let mut before = CameraStatus::Invalid;
 		let mut update = None;
@@ -166,7 +169,7 @@ impl Persistence {
 
 		// Self::on_all_entries(entry, &connection.points);
 
-		return if new {
+		if new {
 			match entry.get_active() {
 				Some(active) => {
 					let id = connection.identifier.as_ref();
@@ -179,19 +182,15 @@ impl Persistence {
 			}
 		} else {
 			match update {
-				Some(after) => {
-					if before != after {
-						let id = connection.identifier.as_ref();
-						let status = after;
-						let update = ConnectionDetail::Update { status };
-						Some((*id, update))
-					} else {
-						None
-					}
-				},
+				Some(after) => (before != after).then(|| {
+					let id = connection.identifier.as_ref();
+					let status = after;
+					let update = ConnectionDetail::Update { status };
+					(*id, update)
+				}),
 				None => None,
 			}
-		};
+		}
 	}
 
 	// fn on_all_entries(entry: &mut PersistEntry, points:

@@ -2,24 +2,32 @@
 //!
 //! Provides logging support for the edge.
 //!
-//! This module can only be accessed by calling importing the logger() function.
+//! This module can only be accessed by calling importing the `logger()`
+//! function.
 //!
 //! To create a log, call one of the following functions:
 //!
-//! - logger().log_info(message: &str)
-//! - logger().log_warn(message: &str)
-//! - logger().log_error(message: &str, error: EdgeError)
+//! - `logger().log_info(message: &str)`
+//! - `logger().log_warn(message: &str)`
+//! - `logger().log_error(message: &str, error: EdgeError)`
 //!
 //! To send all buffered logs to the server, use:
 //!
-//! - logger().send_logs()
+//! - `logger().send_logs()`
+
+#![expect(
+	clippy::print_stderr,
+	clippy::print_stdout,
+	reason = "This is the logger module, where this is expected behaviour"
+)]
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
 use std::sync::{Mutex, OnceLock};
 
 use chrono::{Duration, Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
-use crate::error::EdgeError::{self};
+use crate::error::EdgeError;
 
 // Declare a type alias for easy imports
 pub type LoggerRef = &'static Mutex<Logger>;
@@ -32,9 +40,9 @@ pub fn logger() -> LoggerRef {
 
 #[derive(Debug, Serialize, Deserialize)]
 enum LogLevel {
-	INFO,
-	WARN,
-	ERROR,
+	Info,
+	Warn,
+	Error,
 }
 
 // #[derive(Serialize, Deserialize)]
@@ -83,12 +91,12 @@ impl Logger {
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
 			Local::now().to_rfc3339(),
-			LogLevel::INFO,
-			message.to_string(),
+			LogLevel::Info,
+			message,
 		);
 
 		#[cfg(debug_assertions)]
-		println!("{}", log_entry);
+		println!("{log_entry}");
 
 		self.logs.push(log_entry);
 	}
@@ -98,12 +106,12 @@ impl Logger {
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
 			Local::now().to_rfc3339(),
-			LogLevel::WARN,
-			message.to_string(),
+			LogLevel::Warn,
+			message,
 		);
 
 		#[cfg(debug_assertions)]
-		println!("{}", log_entry);
+		println!("{log_entry}");
 
 		self.logs.push(log_entry);
 	}
@@ -113,14 +121,14 @@ impl Logger {
 			"[{:05}] {}\n{:?}\n{:?}: {}\n{}\n----------",
 			self.counter.next(),
 			Local::now().to_rfc3339(),
-			LogLevel::ERROR,
+			LogLevel::Error,
 			error,
 			error,
 			message,
 		);
 
 		#[cfg(debug_assertions)]
-		println!("{}", log_entry);
+		println!("{log_entry}");
 
 		self.logs.push(log_entry);
 	}
@@ -129,8 +137,9 @@ impl Logger {
 		let logs = std::mem::take(&mut self.logs);
 
 		for log in logs {
-			// TODO: Actually send the logs to the server
-			println!("{}", log);
+			// TODO: Actually send the logs to the server.
+			// TODO: When this happens, the IO bound test must be ignored.
+			println!("{log}");
 		}
 	}
 }
@@ -151,11 +160,11 @@ impl LogCounter {
 	fn next(&mut self) -> u32 {
 		let today = Local::now().date_naive();
 
-		if today != self.date {
+		if today == self.date {
+			self.counter += 1;
+		} else {
 			self.date = today;
 			self.counter = 1;
-		} else {
-			self.counter += 1;
 		}
 
 		self.counter
@@ -179,6 +188,8 @@ impl LogCounter {
 
 #[cfg(test)]
 mod test {
+	#![expect(clippy::unwrap_used, reason = "Tests are allowed to unwrap")]
+
 	use super::logger;
 	use crate::error::EdgeError::{
 		AutoConnect, FrameDecodeCorruption, FrameDecodeOutOfMemory, FrameRead,
@@ -292,7 +303,7 @@ mod test {
 
 		error = NokhwaInitialisation {
 			index: "69".into(),
-			reason: "*Generic reason*".to_string(),
+			reason: "*Generic reason*".to_owned(),
 		};
 		logger()
 			.lock()
@@ -300,7 +311,7 @@ mod test {
 			.log_error("This is an ERROR log test.", &error);
 
 		error = StreamOpen {
-			reason: "*Generic reason*".to_string(),
+			reason: "*Generic reason*".to_owned(),
 		};
 		logger()
 			.lock()
@@ -332,7 +343,7 @@ mod test {
 			.log_error("This is an ERROR log test.", &error);
 
 		error = General {
-			reason: "*Generic reason*".to_string(),
+			reason: "*Generic reason*".to_owned(),
 		};
 		logger()
 			.lock()

@@ -1,6 +1,13 @@
+// TODO: Remove all unwraps and then this.
+#![expect(
+	clippy::unwrap_used,
+	clippy::unwrap_in_result,
+	reason = "WIP development"
+)]
+
 use std::time::Duration;
 
-use futures_util::{SinkExt, StreamExt, stream::FusedStream};
+use futures_util::{SinkExt as _, StreamExt as _, stream::FusedStream as _};
 use serde::Serialize;
 use server_edge_datatypes::edge::EdgeRequests;
 use tokio::{self, net::TcpStream, time::interval};
@@ -27,6 +34,10 @@ impl WebSocket {
 		Self { inner }
 	}
 
+	#[expect(
+		dead_code,
+		reason = "Needs to be better integrated with autonnect"
+	)]
 	pub async fn websocket_connect(url: &str) -> Self {
 		let (stream, _) = connect_async(url).await.expect("Failed to connect");
 		Self { inner: stream }
@@ -36,8 +47,12 @@ impl WebSocket {
 		self.inner.is_terminated()
 	}
 
+	#[expect(
+		dead_code,
+		reason = "Needs to be better integrated with autonnect"
+	)]
 	pub async fn websocket_connect_static() -> Self {
-		let url = "ws://".to_string() + HOST + ":" + PORT + API;
+		let url = "ws://".to_owned() + HOST + ":" + PORT + API;
 		Self::websocket_connect(&url).await
 	}
 
@@ -49,18 +64,25 @@ impl WebSocket {
 		Ok(())
 	}
 
-	pub async fn send_text<T: Serialize>(
+	pub async fn send_text<T>(
 		&mut self,
 		mut prefix: String,
 		data: T,
-	) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
-		prefix.push_str(&*serde_json::to_string(&data)?);
+	) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
+	where
+		T: Serialize,
+	{
+		prefix.push_str(&serde_json::to_string(&data)?);
 		self.inner
 			.send(Message::Text(Utf8Bytes::from(prefix)))
 			.await?;
 		Ok(())
 	}
 
+	#[expect(
+		clippy::big_endian_bytes,
+		reason = "This data is intended to be sent to the server"
+	)]
 	pub async fn send_image(
 		&mut self,
 		camera_id: u64,
@@ -82,8 +104,8 @@ impl WebSocket {
 				match msg {
 					Message::Text(text) => {
 						#[cfg(debug_assertions)]
-						logger().lock().unwrap().log_info(&format!("Received message: {}", text));
-						process_incoming(&text).await
+						logger().lock().unwrap().log_info(&format!("Received message: {text}"));
+						process_incoming(&text)
 					}
 					_ => None,
 				}
@@ -93,68 +115,68 @@ impl WebSocket {
 	}
 }
 
-async fn process_incoming(text: &str) -> Option<EdgeRequests> {
+fn process_incoming(text: &str) -> Option<EdgeRequests> {
 	let msg = text.trim();
 
-	println!("Received from Server: {}", msg);
+	logger()
+		.lock()
+		.unwrap()
+		.log_info(&format!("Received from Server: {msg}"));
 
 	let mut args = msg.splitn(2, ':');
 
 	match args.next().unwrap() {
-		"SetNameCamera" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::SetNameCamera(inner))
-				})
-			}),
+		"SetNameCamera" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked
+				.map_or(None, |inner| Some(EdgeRequests::SetNameCamera(inner)))
 		},
-		"StartViewingCamera" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::StartViewingCamera(inner))
-				})
-			}),
+		"StartViewingCamera" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| {
+				Some(EdgeRequests::StartViewingCamera(inner))
+			})
 		},
-		"StopViewingCamera" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::StopViewingCamera(inner))
-				})
-			}),
+		"StopViewingCamera" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| {
+				Some(EdgeRequests::StopViewingCamera(inner))
+			})
 		},
-		"Configuration" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::Configuration(inner))
-				})
-			}),
+		"Configuration" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked
+				.map_or(None, |inner| Some(EdgeRequests::Configuration(inner)))
 		},
-		"ViewCameraConfig" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::ViewCameraConfig(inner))
-				})
-			}),
+		"ViewCameraConfig" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| {
+				Some(EdgeRequests::ViewCameraConfig(inner))
+			})
 		},
-		"Setpoint" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked
-					.map_or(None, |inner| Some(EdgeRequests::Setpoint(inner)))
-			}),
+		"Setpoint" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| Some(EdgeRequests::Setpoint(inner)))
 		},
-		"SetProcessingType" => match args.next() {
-			data => data.map_or(None, |inner| {
-				let unpacked = unpack(inner);
-				unpacked.map_or(None, |inner| {
-					Some(EdgeRequests::SetProcessingType(inner))
-				})
-			}),
+		"SetProcessingType" => {
+			let data = args.next();
+			let inner = data?;
+			let unpacked = unpack(inner);
+			unpacked.map_or(None, |inner| {
+				Some(EdgeRequests::SetProcessingType(inner))
+			})
 		},
 		_ => None,
 	}

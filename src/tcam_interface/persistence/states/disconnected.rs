@@ -39,12 +39,12 @@ impl Disconnected {
 
 	/// Update the name of this device.
 	pub fn set_name(&mut self, name: String) {
-		self.name = name
+		self.name = name;
 	}
 
 	/// Map this type to a [`CameraStatus`].
-	pub fn get_status(&self) -> CameraStatus {
-		CameraStatus::Active
+	pub fn get_status() -> CameraStatus {
+		CameraStatus::Disconnected
 	}
 }
 

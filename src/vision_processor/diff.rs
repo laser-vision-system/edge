@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::fmt;
 
 use image::{DynamicImage, GrayImage};
@@ -20,6 +23,10 @@ struct DiffModel {
 }
 
 impl DiffModel {
+	#[expect(
+		clippy::too_many_arguments,
+		reason = "Necessary for this function"
+	)]
 	fn predict(
 		&self,
 		peak: f32,
@@ -42,6 +49,11 @@ impl DiffModel {
 }
 
 impl Default for DiffModel {
+	#[expect(
+		clippy::excessive_precision,
+		clippy::unreadable_literal,
+		reason = "These are raw model weights"
+	)]
 	fn default() -> Self {
 		DiffModel {
 			intercept: 0.5819997604631103,
@@ -56,6 +68,7 @@ impl Default for DiffModel {
 	}
 }
 
+#[derive(Default)]
 pub struct Diff {
 	session: SessionToken,
 	model: DiffModel,
@@ -69,24 +82,21 @@ impl Diff {
 		}
 	}
 
-	pub fn new_state(&self) -> VisionState {
-		VisionState::Diff {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
-	}
-
-	fn compute_brightness_stats(&self, img: &GrayImage) -> (u8, f32, f32) {
+	#[expect(
+		clippy::cast_precision_loss,
+		reason = "The pixel count should never exceed the limits of a f32"
+	)]
+	fn compute_brightness_stats(img: &GrayImage) -> (u8, f32, f32) {
 		let pixels: Vec<u8> = img.pixels().map(|p| p.0[0]).collect();
 		let n = pixels.len() as f32;
 
-		let sum: f32 = pixels.iter().map(|&p| p as f32).sum();
+		let sum: f32 = pixels.iter().map(|&p| f32::from(p)).sum();
 		let mean = sum / n;
 
 		let variance = pixels
 			.iter()
 			.map(|&p| {
-				let d = p as f32 - mean;
+				let d = f32::from(p) - mean;
 				d * d
 			})
 			.sum::<f32>()
@@ -99,15 +109,18 @@ impl Diff {
 		(peak, mean, std_dev)
 	}
 
+	#[expect(
+		clippy::cast_possible_truncation,
+		reason = "Value is used at f32, so full size not needed"
+	)]
 	fn collect_metrics(
-		&self,
 		image: &GrayImage,
 		setpoint: &GrayImage,
 	) -> (f32, f32, f32, f32, f32, f32, f32) {
 		let (image_peak, image_mean, image_std_dev) =
-			self.compute_brightness_stats(image);
+			Self::compute_brightness_stats(image);
 		let (setpoint_peak, setpoint_mean, setpoint_std_dev) =
-			self.compute_brightness_stats(setpoint);
+			Self::compute_brightness_stats(setpoint);
 		let luma_ssim =
 			gray_similarity_structure(&Algorithm::MSSIMSimple, image, setpoint)
 				.unwrap()
@@ -122,73 +135,67 @@ impl Diff {
 			gray_similarity_histogram(Metric::Intersection, image, setpoint)
 				.unwrap() as f32;
 
-		return (
-			setpoint_peak as f32 - image_peak as f32,
+		(
+			f32::from(setpoint_peak) - f32::from(image_peak),
 			setpoint_mean - image_mean,
 			setpoint_std_dev - image_std_dev,
 			luma_ssim,
 			hellinger,
 			correlation,
 			intersection,
-		);
+		)
 	}
 }
 
 impl VisionInterface for Diff {
 	fn process(&mut self, batch: &mut [BatchItem]) {
 		for item in batch {
-			let VisionState::Diff { data, .. } = &mut item.state else {
+			let VisionState::Diff { data, .. } = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
 
 			if item.calibrate {
-				let grey_image = Some(
-					DynamicImage::ImageRgb8(item.image.clone()).into_luma8(),
-				);
-				data.image = grey_image.clone();
+				let grey_image =
+					DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
+				data.image = Some(grey_image.clone());
 				let (peak, mean, std_dev) =
-					self.compute_brightness_stats(&grey_image.unwrap());
-				data.peak = Some(peak as f32);
+					Self::compute_brightness_stats(&grey_image);
+				data.peak = Some(f32::from(peak));
 				data.mean = Some(mean);
 				data.std_dev = Some(std_dev);
 				continue;
 			}
 
-			match &data.image {
-				Some(setpoint) => {
-					let grey_image =
-						DynamicImage::ImageRgb8(item.image.clone())
-							.into_luma8();
+			if let Some(setpoint) = &data.image {
+				let grey_image =
+					DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
 
-					let (
-						peak_diff,
-						mean_diff,
-						std_dev_diff,
-						luma_ssim,
-						hellinger,
-						correlation,
-						intersection,
-					) = self.collect_metrics(&grey_image, setpoint);
+				let (
+					peak_diff,
+					mean_diff,
+					std_dev_diff,
+					luma_ssim,
+					hellinger,
+					correlation,
+					intersection,
+				) = Self::collect_metrics(&grey_image, setpoint);
 
-					let relative_intensity = self.model.predict(
-						peak_diff,
-						mean_diff,
-						std_dev_diff,
-						luma_ssim,
-						hellinger,
-						correlation,
-						intersection,
-					);
+				let relative_intensity = self.model.predict(
+					peak_diff,
+					mean_diff,
+					std_dev_diff,
+					luma_ssim,
+					hellinger,
+					correlation,
+					intersection,
+				);
 
-					data.deviation = Some(1.0 - relative_intensity as f32);
-				},
-				None => {
-					logger().lock().unwrap().log_warn(
-						"Could not calculate deviation as there is no setpoint!",
-					);
-					continue;
-				},
+				data.deviation = Some(1.0 - relative_intensity);
+			} else {
+				logger().lock().unwrap().log_warn(
+					"Could not calculate deviation as there is no setpoint!",
+				);
 			}
 		}
 	}
@@ -197,15 +204,6 @@ impl VisionInterface for Diff {
 		VisionState::Diff {
 			handle: self.session.downgrade(),
 			data: ExternalData::default(),
-		}
-	}
-}
-
-impl Default for Diff {
-	fn default() -> Self {
-		Self {
-			session: SessionToken::new(),
-			model: DiffModel::default(),
 		}
 	}
 }

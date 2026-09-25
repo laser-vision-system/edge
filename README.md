@@ -12,4 +12,6 @@ Rust projects are managed by `Cargo`; you will need to install this to begin dev
 
 Deployment is done through Docker. You will also need to install it yourself.
 
+To enable the pre-commit hook, run `git config core.hooksPath .githooks`.
+
 See [CONTRIBUTING](docs/CONTRIBUTING.md).

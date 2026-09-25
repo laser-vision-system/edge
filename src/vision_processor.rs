@@ -1,3 +1,7 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
+
 use std::{
 	cell::RefCell,
 	fmt,
@@ -24,7 +28,7 @@ pub type VisionRef = &'static VisionGuard;
 static VISION: OnceLock<VisionGuard> = OnceLock::new();
 
 pub fn vision() -> VisionRef {
-	VISION.get_or_init(|| VisionGuard::new())
+	VISION.get_or_init(VisionGuard::new)
 }
 
 #[derive(Debug)]
@@ -39,6 +43,10 @@ impl VisionGuard {
 		}
 	}
 
+	#[expect(
+		clippy::expect_used,
+		reason = "Closely protected internal option type"
+	)]
 	pub fn swap(&self, swap_to: VisionTechnique) {
 		let old_vision = self
 			.inner
@@ -50,6 +58,10 @@ impl VisionGuard {
 		self.inner.lock().unwrap().borrow_mut().replace(new_vision);
 	}
 
+	#[expect(
+		clippy::expect_used,
+		reason = "Closely protected internal option type"
+	)]
 	pub fn interact<F, R>(&self, func: F) -> R
 	where
 		F: FnOnce(&mut VisionVariant) -> R,
@@ -62,6 +74,12 @@ impl VisionGuard {
 
 #[derive(Clone)]
 pub struct SessionToken(Arc<()>);
+
+impl Default for SessionToken {
+	fn default() -> Self {
+		Self::new()
+	}
+}
 
 impl SessionToken {
 	pub fn new() -> Self {
@@ -107,7 +125,7 @@ pub enum VisionVariant {
 impl VisionVariant {
 	/// Private constructor.
 	fn new() -> Self {
-		Self::Empty(Default::default())
+		Self::Empty(Empty::default())
 	}
 
 	/// Request to switch this variant with another one.
@@ -122,7 +140,7 @@ impl VisionVariant {
 	/// manage setpoints.
 	///
 	/// This method statically asserts exhaustiveness between
-	/// [this](VisionVariant) and [VisionTechnique].
+	/// [this](VisionVariant) and [`VisionTechnique`].
 	fn swap(self, swap_to: VisionTechnique) -> Self {
 		if self.identifier() == swap_to {
 			logger()
@@ -132,10 +150,10 @@ impl VisionVariant {
 			return self;
 		}
 
-		logger().lock().unwrap().log_info(&format!(
-			"Swapping VisionTechnique to: {:?}...",
-			swap_to
-		));
+		logger()
+			.lock()
+			.unwrap()
+			.log_info(&format!("Swapping VisionTechnique to: {swap_to:?}..."));
 		match swap_to {
 			VisionTechnique::Empty => Self::Empty(Empty::new()),
 			VisionTechnique::Demonstration => {
@@ -279,12 +297,14 @@ impl<'a> BatchItem<'a> {
 
 #[cfg(test)]
 mod tests {
+	#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
+
 	use super::*;
 
 	#[test]
 	fn swap() {
 		let mut variant = VisionVariant::new();
 		variant = variant.swap(VisionTechnique::Demonstration);
-		println!("Current variant: {}", variant)
+		println!("Current variant: {variant}");
 	}
 }
