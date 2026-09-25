@@ -29,7 +29,6 @@ use super::{
 };
 use crate::{
 	error::{EdgeError, Result},
-	logger::logger,
 	settings::CAMERA_BUFFER_COUNT,
 };
 
@@ -51,44 +50,24 @@ impl CameraDevice {
 		let opened =
 			open_with_buffers(index, OpenRequest::any(), CAMERA_BUFFER_COUNT)
 				.map_err(|why| {
-					let err = CameraDeviceError::NokhwaInitialisation {
-						index: index_str,
-						reason: why.to_string(),
-					};
-					EdgeError::from(err)
-				})
-				.inspect_err(|why| {
-					// TODO: Log outside this function.
-					logger().lock().unwrap().log_error(why);
-				})?;
+				let err = CameraDeviceError::NokhwaInitialisation {
+					index: index_str,
+					reason: why.to_string(),
+				};
+				EdgeError::from(err)
+			})?;
 
 		let OpenedCamera::Stream(mut camera) = opened else {
-			// TODO: Discuss how we handle this.
-			logger()
-				.lock()
-				.unwrap()
-				.log_warn("Camera is not a webcam...?");
 			// TEMP
 			return Err(CameraDeviceError::CameraNotPresent.into());
 		};
 
-		camera
-			.open()
-			.map_err(|why| {
-				let err = CameraDeviceError::StreamOpen {
-					reason: why.to_string(),
-				};
-				EdgeError::from(err)
-			})
-			.inspect_err(|why| {
-				// TODO: Log outside this function.
-				logger().lock().unwrap().log_error(why);
-			})?;
-
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Camera successfully initialised");
+		camera.open().map_err(|why| {
+			let err = CameraDeviceError::StreamOpen {
+				reason: why.to_string(),
+			};
+			EdgeError::from(err)
+		})?;
 
 		Ok(Self { inner: camera })
 	}
@@ -117,20 +96,8 @@ impl CameraDevice {
 		let frame_res = self
 			.inner
 			.frame()
-			.map_err(|_| CameraDeviceError::FrameRead.into());
-		match frame_res {
-			Ok(buffer) => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_info("Frame was successfully read");
-				Ok(Frame::new(buffer))
-			},
-			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
-				Err(why)
-			},
-		}
+			.map_err(|_| EdgeError::from(CameraDeviceError::FrameRead))?;
+		Ok(Frame::new(frame_res))
 	}
 
 	/// Decode an image.
@@ -139,24 +106,13 @@ impl CameraDevice {
 			.into_rgb()
 			.materialize()
 			// We just assume it is always corruption for now.
-			.map_err(|_| CameraDeviceError::FrameDecodeCorruption.into());
-		match decoded_res {
-			Ok(decoded) => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_info("Frame was successfully decoded");
-				let frame = DynamicImage::ImageRgb8(decoded);
-				let new = frame
-					.crop_imm(0, 0, frame.width(), frame.height())
-					.into_rgb8();
-				Ok(new)
-			},
-			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
-				Err(why)
-			},
-		}
+			.map_err(|_| EdgeError::from(CameraDeviceError::FrameDecodeCorruption))?;
+
+		let frame = DynamicImage::ImageRgb8(decoded_res);
+		let new = frame
+			.crop_imm(0, 0, frame.width(), frame.height())
+			.into_rgb8();
+		Ok(new)
 	}
 
 	// == Configurations ==
@@ -201,19 +157,13 @@ impl CameraDevice {
 			return Ok(());
 		}
 		let setter = value.into();
-		self.inner
-			.set_control(id, setter.clone())
-			.map_err(|_| {
-				CameraDeviceError::SetControl {
-					id: id.to_string(),
-					value: setter.to_string(),
-				}
-				.into()
-			})
-			.inspect_err(|why| {
-				// TODO: Log outside this function.
-				logger().lock().unwrap().log_error(why);
-			})
+		self.inner.set_control(id, setter.clone()).map_err(|_| {
+			let err = CameraDeviceError::SetControl {
+				id: id.to_string(),
+				value: setter.to_string(),
+			};
+			EdgeError::from(err)
+		})
 	}
 
 	pub fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
@@ -224,12 +174,8 @@ impl CameraDevice {
 				let err = CameraDeviceError::SetControl {
 					id: id.to_string(),
 					value: "unknown type".into(),
-				}
-				.into();
-
-				// TODO: Log outside this function.
-				logger().lock().unwrap().log_error(&err);
-				return Err(err);
+				};
+				return Err(EdgeError::from(err));
 			};
 			// TODO: Handle error. Maybe try make this operation atomic?
 			self.set_control(id, control.get_value())
