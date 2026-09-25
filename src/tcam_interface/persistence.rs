@@ -23,7 +23,7 @@ pub use self::{
 	perpetual_info::PerpetualInfo,
 	persist_entry::{MaybeImage, PersistEntry, WhyNo},
 };
-use super::Identifier;
+use super::{Identifier, PersistenceError};
 use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
 
 pub type ErrAccType = u16;
@@ -98,7 +98,7 @@ impl Persistence {
 			logger()
 				.lock()
 				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+				.log_error("", &PersistenceError::UnknownCameraId.into());
 		}
 	}
 
@@ -109,7 +109,7 @@ impl Persistence {
 			logger()
 				.lock()
 				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+				.log_error("", &PersistenceError::UnknownCameraId.into());
 		}
 	}
 
@@ -138,14 +138,14 @@ impl Persistence {
 			logger()
 				.lock()
 				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+				.log_error("", &PersistenceError::UnknownCameraId.into());
 			return;
 		};
 		let Some(active) = entry.get_active_mut() else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("Not active", &EdgeError::IncorrectConnectionStatus);
+			logger().lock().unwrap().log_error(
+				"Not active",
+				&PersistenceError::IncorrectConnectionStatus.into(),
+			);
 			return;
 		};
 		match serde_json::from_str(&request.configuration) {
@@ -174,14 +174,14 @@ impl Persistence {
 			logger()
 				.lock()
 				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+				.log_error("", &PersistenceError::UnknownCameraId.into());
 			return None;
 		};
 		let Some(active) = entry.get_active_mut() else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("Not active", &EdgeError::IncorrectConnectionStatus);
+			logger().lock().unwrap().log_error(
+				"Not active",
+				&PersistenceError::IncorrectConnectionStatus.into(),
+			);
 			return None;
 		};
 		let important_controls =
@@ -204,7 +204,7 @@ impl Persistence {
 			logger()
 				.lock()
 				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+				.log_error("", &PersistenceError::UnknownCameraId.into());
 		}
 	}
 }

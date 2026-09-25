@@ -13,9 +13,8 @@ use super::{
 	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
 };
 use crate::{
-	error::EdgeError,
 	logger::logger,
-	tcam_interface::{CameraDevice, Identifier},
+	tcam_interface::{CameraDevice, Identifier, PersistenceError},
 	vision_processor::BatchItem,
 };
 
@@ -62,7 +61,7 @@ impl PersistEntry {
 			Self { inner: Some(new) }
 		} else {
 			// Use warn because this isn't an explicit error case.
-			let err = EdgeError::InvalidDeviceConnection;
+			let err = PersistenceError::InvalidDeviceConnection;
 			logger()
 				.lock()
 				.unwrap()

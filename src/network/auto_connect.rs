@@ -10,12 +10,8 @@ use server_edge_datatypes::edge::Settings;
 use tokio::{task::JoinSet, time::interval};
 use tokio_tungstenite::connect_async;
 
-use crate::{
-	error::{EdgeError, Result},
-	logger::logger,
-	settings::AUTO_CONNECT_DELAY,
-	websocket::WebSocket,
-};
+use super::{NetworkError, websocket::WebSocket};
+use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct AddressComp {
@@ -96,12 +92,12 @@ async fn get_response(
 		.get(url.to_string())
 		.send()
 		.await
-		.map_err(|why| EdgeError::ReqwestError {
+		.map_err(|why| NetworkError::ReqwestError {
 			reason: why.to_string(),
 		})?
 		.text()
 		.await
-		.map_err(|_| EdgeError::WebSocketUnpack)?;
+		.map_err(|_| NetworkError::WebSocketUnpack)?;
 
 	Ok(WebSocketResponse { url, message })
 }
@@ -141,7 +137,7 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 		}
 	}
 
-	Err(EdgeError::AutoConnect)
+	Err(NetworkError::AutoConnect.into())
 }
 
 /// When call,
@@ -180,7 +176,7 @@ async fn try_connect_once() -> Result<(WebSocket, Settings)> {
 	let websocket_url = get_websocket_url(urls).await?;
 	let (stream, _) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {
-			EdgeError::AutoConnectUrl {
+			NetworkError::AutoConnectUrl {
 				reason: why.to_string(),
 			}
 		})?;
@@ -208,12 +204,12 @@ async fn get_default_settings(_url: &str) -> Result<Settings> {
 	// 	.get(url)
 	// 	.send()
 	// 	.await
-	// 	.map_err(|_| EdgeError::ServerConnection)?;
+	// 	.map_err(|_| NetworkError::ServerConnection)?;
 	// unpack(
 	// 	temp_settings
 	// 		.text()
 	// 		.await
-	// 		.map_err(|_| EdgeError::WebSocketUnpack)?
+	// 		.map_err(|_| NetworkError::WebSocketUnpack)?
 	// 		.as_str(),
 	//)
 }

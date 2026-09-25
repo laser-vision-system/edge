@@ -22,7 +22,7 @@ use crate::{
 	settings::{API, HOST, PORT},
 };
 
-pub type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
+type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 #[derive(Debug)]
 pub struct WebSocket {
