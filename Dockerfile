@@ -47,7 +47,7 @@
 ## Set the entrypoint for the container
 
 # syntax=docker/dockerfile:1
-FROM rust:1.85-bookworm AS chef
+FROM rust:bookworm AS chef
 RUN cargo install cargo-chef --locked
 WORKDIR /app
 
