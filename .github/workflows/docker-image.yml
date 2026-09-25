@@ -1,11 +1,12 @@
-name: Docker Image CI
+name: Docker Image Builder
 
 run-name: ${{ github.actor }} is building and pushing docker image
 
 on:
+  workflow_dispatch:
+
   push:
     branches: [ "main" , "feat/docker-automated-workflow" ]
-  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -74,6 +75,6 @@ jobs:
           tags: ghcr.io/cos40005-p12/edge/stable:test
           builder: container-builder
           platforms: linux/arm64
-          cache-from: type=registry,ref=stable:buildcache
-          cache-to: type=registry,ref=stable:buildcache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           # github-token: '${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}'
