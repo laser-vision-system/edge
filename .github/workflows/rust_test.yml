@@ -31,15 +31,15 @@ env:
 
 jobs:
   test-dev:
-    name: Tests on dev
+    name: Tests on `dev` config
     runs-on: ubuntu-latest
 
     # Run if one of:
-    # 1. Manually dispatched
+    # 1. Manually dispatched on `dev`
     # 2. Pushed to `dev`
     # 3. Pull request targetting `dev`
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.ref_name == 'dev') ||
       (github.event_name == 'push' && github.ref_name == 'dev') ||
       (github.event_name == 'pull_request' && github.base_ref == 'dev')
 
@@ -64,15 +64,15 @@ jobs:
       run: cargo test --profile dev --verbose
 
   test-release:
-    name: Tests on release
+    name: Tests on `release` config
     runs-on: ubuntu-latest
 
     # Run if one of:
-    # 1. Manually dispatched
+    # 1. Manually dispatched on `main`
     # 2. Pushed to `main` (should never happen)
     # 3. Pull request from `dev` into `main`
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.ref_name == 'main') ||
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && github.base_ref == 'main' && github.head_ref == 'dev')
 
