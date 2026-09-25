@@ -29,16 +29,16 @@ jobs:
     - uses: Swatinem/rust-cache@v2
     - run: cargo test --verbose
 
-  test-release:
-    name: Tests on release
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-          submodules: recursive
-          token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
-    - uses: dtolnay/rust-toolchain@v1
-      with:
-        toolchain: stable
-    - uses: Swatinem/rust-cache@v2
-    - run: cargo test -r --verbose
+  #test-release:
+  #  name: Tests on release
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #  - uses: actions/checkout@v4
+  #    with:
+  #        submodules: recursive
+  #        token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
+  #  - uses: dtolnay/rust-toolchain@v1
+  #    with:
+  #      toolchain: stable
+  #  - uses: Swatinem/rust-cache@v2
+  #  - run: cargo test -r --verbose
