@@ -47,7 +47,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
 
 #      - uses: actions/checkout@v4
 #      - name: Build the Docker image
