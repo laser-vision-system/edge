@@ -43,7 +43,7 @@ pub struct CameraDevice {
 }
 
 impl CameraDevice {
-	pub fn new(index: CameraIndex) -> Result<Self> {
+	pub fn try_new(index: CameraIndex) -> Result<Self> {
 		// TODO: Modify CameraIndex with Cow support.
 		let index_str = index.to_string();
 
@@ -383,13 +383,13 @@ mod tests {
 	#[test]
 	#[ignore = "IO bound"]
 	fn new() -> Result<CameraDevice> {
-		CameraDevice::new(CameraIndex::Index(0))
+		CameraDevice::try_new(CameraIndex::Index(0))
 	}
 
 	#[test]
 	#[ignore = "IO bound"]
 	fn print_camera_details() {
-		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 		println!("{:#?}", cam.inner.info());
 	}
 
@@ -397,7 +397,7 @@ mod tests {
 	#[test]
 	#[ignore = "IO bound"]
 	fn get_frame() {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
+		let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 		let _ = cam.get_frame().unwrap();
 		let _ = cam.get_frame().unwrap();
 	}
@@ -405,7 +405,7 @@ mod tests {
 	#[test]
 	#[ignore = "IO bound"]
 	fn decode_image() {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
+		let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 		let frame = cam.get_frame().unwrap();
 		let _ = cam.decode_image(frame);
 	}
@@ -413,7 +413,7 @@ mod tests {
 	#[test]
 	#[ignore = "IO bound"]
 	fn get_raw_controls() {
-		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 		let c = cam.get_raw_controls();
 		println!("{c:#?}");
 	}
@@ -421,7 +421,7 @@ mod tests {
 	#[test]
 	#[ignore = "IO bound"]
 	fn get_all_available_controls() {
-		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 		let c = cam.get_controls();
 		println!("{c}");
 	}
@@ -429,7 +429,7 @@ mod tests {
 	#[test]
 	#[ignore = "IO bound"]
 	fn get_stripped_controls() {
-		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 		let c = cam.get_controls().stripped();
 		println!("{c}");
 	}
@@ -437,7 +437,7 @@ mod tests {
 	#[test]
 	#[ignore = "IO bound"]
 	fn set_control() -> Result<()> {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
+		let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 		let id = KnownCameraControl::Brightness;
 
 		// Assume it will always be this variant.
@@ -477,7 +477,7 @@ mod tests {
 	#[test]
 	#[ignore = "IO bound"]
 	fn set_control_exposure() -> Result<()> {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
+		let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 		let id = KnownCameraControl::AutoExposure;
 		let desired = 1;
 
@@ -529,7 +529,7 @@ mod tests {
 	#[test]
 	#[ignore = "IO bound"]
 	fn reset_controls_to_default() {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
+		let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 		cam.reset_controls_to_default();
 	}
 
