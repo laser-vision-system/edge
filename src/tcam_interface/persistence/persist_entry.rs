@@ -13,6 +13,7 @@ use super::{
 	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
 };
 use crate::{
+	error::EdgeError,
 	logger::logger,
 	tcam_interface::{CameraDevice, Identifier, PersistenceError},
 	vision_processor::BatchItem,
@@ -58,16 +59,17 @@ impl PersistEntry {
 			let name = camera.get_info().to_string();
 			let new =
 				ConnectionStatus::new_active(camera, occupied_indices, name);
-			Self { inner: Some(new) }
-		} else {
-			// Use warn because this isn't an explicit error case.
-			let err = PersistenceError::InvalidDeviceConnection;
 			logger()
 				.lock()
 				.unwrap()
-				.log_warn(&format!("Invalid device found: {err}"));
+				.log_info("Camera successfully initialised");
+			let inner = Some(new);
+			Self { inner }
+		} else {
+			EdgeError::from(PersistenceError::InvalidDeviceConnection).log();
 			let new = ConnectionStatus::new_invalid(occupied_indices);
-			Self { inner: Some(new) }
+			let inner = Some(new);
+			Self { inner }
 		}
 	}
 
@@ -78,10 +80,13 @@ impl PersistEntry {
 			if point.is_metadata {
 				continue;
 			}
-			let res = CameraDevice::new(point.index.clone());
-			if let Ok(mut camera) = res {
-				camera.reset_controls_to_default();
-				return Some(camera);
+			let maybe_camera = CameraDevice::try_new_open(point.index.clone());
+			match maybe_camera {
+				Ok(camera) => {
+					return Some(camera);
+				},
+				// TODO: This might be better suited as a warn.
+				Err(why) => why.log(),
 			}
 		}
 		None

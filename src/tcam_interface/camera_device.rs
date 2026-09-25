@@ -10,15 +10,19 @@ use std::{cmp::Ordering, io::Cursor};
 
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
-	self, OpenRequest, OpenedCamera,
-	format_types::Mjpeg,
-	frame::{Frame, IntoRgb as _},
+	Buffer, NokhwaError, OpenRequest, OpenedCamera, StreamCamera,
+	format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
+	frame::{Frame, IntoRgb as _, RgbConversion},
 	session::open_with_buffers,
-	utils::{CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
+	utils::{
+		CameraIndex, CameraInfo, ControlValueSetter, FrameFormat,
+		KnownCameraControl,
+	},
 };
 
 use super::{
-	CameraDeviceError,
+	CameraDeviceError, FrameDecodeCorruption, FrameRead, NokhwaInitialisation,
+	SelectDecodeFormat, SetControl, StreamOpen,
 	controls::{
 		ControlMap,
 		descriptions::CamControl,
@@ -40,57 +44,63 @@ use crate::{
 /// use `frame_raw()` to avoid pointless copy operations.
 #[must_use]
 pub struct CameraDevice {
-	inner: nokhwa::StreamCamera,
+	inner: StreamCamera,
 }
 
 impl CameraDevice {
-	pub fn new(index: CameraIndex) -> Result<Self> {
-		// TODO: Modify CameraIndex with Cow support.
+	/// Attempt to create a device at the given index.
+	pub fn try_new(index: CameraIndex) -> Result<Self> {
 		let index_str = index.to_string();
 
 		let opened =
 			open_with_buffers(index, OpenRequest::any(), CAMERA_BUFFER_COUNT)
-				.map_err(|why| {
-					let err = CameraDeviceError::NokhwaInitialisation {
-						index: index_str,
-						reason: why.to_string(),
-					};
-					EdgeError::from(err)
-				})
-				.inspect_err(|why| {
-					// TODO: Log outside this function.
-					logger().lock().unwrap().log_error(why);
-				})?;
-
-		let OpenedCamera::Stream(mut camera) = opened else {
-			// TODO: Discuss how we handle this.
-			logger()
-				.lock()
-				.unwrap()
-				.log_warn("Camera is not a webcam...?");
-			// TEMP
-			return Err(CameraDeviceError::CameraNotPresent.into());
-		};
-
-		camera
-			.open()
-			.map_err(|why| {
-				let err = CameraDeviceError::StreamOpen {
-					reason: why.to_string(),
-				};
-				EdgeError::from(err)
-			})
-			.inspect_err(|why| {
-				// TODO: Log outside this function.
-				logger().lock().unwrap().log_error(why);
+				.map_err(|why| CameraDeviceError::NokhwaInitialisation {
+				index: index_str,
+				inner: NokhwaInitialisation::from(why),
 			})?;
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Camera successfully initialised");
+		let stream_camera = match opened {
+			OpenedCamera::Stream(stream) => stream,
+			OpenedCamera::Shutter(_) => {
+				return Err(EdgeError::from(
+					CameraDeviceError::UnsupportedCameraType {
+						cam_type: "Shutter".into(),
+					},
+				));
+			},
+			OpenedCamera::Hybrid(hybrid) => {
+				logger().lock().unwrap().log_warn(
+					"HybridCamera detected, converting to StreamCamera",
+				);
+				hybrid.into()
+			},
+		};
 
-		Ok(Self { inner: camera })
+		Ok(Self {
+			inner: stream_camera,
+		})
+	}
+
+	pub fn try_new_open(index: CameraIndex) -> Result<Self> {
+		Self::try_new(index)?.open()
+	}
+
+	pub fn try_new_open_with_default_controls(
+		index: CameraIndex,
+	) -> Result<Self> {
+		Self::try_new(index)?.open()?.with_default_controls()
+	}
+
+	pub fn open(mut self) -> Result<Self> {
+		self.inner
+			.open()
+			.map_err(|why| CameraDeviceError::from(StreamOpen::from(why)))?;
+		Ok(self)
+	}
+
+	pub fn with_default_controls(mut self) -> Result<Self> {
+		self.reset_controls_to_default();
+		Ok(self)
 	}
 
 	pub fn encode_image(data: &RgbImage) -> Vec<u8> {
@@ -113,50 +123,30 @@ impl CameraDevice {
 	/// Request an image of the current camera frame.
 	///
 	/// There seems to be a 2 frame latency.
-	pub fn get_frame(&mut self) -> Result<Frame<Mjpeg>> {
-		let frame_res = self
+	pub fn get_frame_buffer(&mut self) -> Result<Buffer> {
+		self
 			.inner
 			.frame()
-			.map_err(|_| CameraDeviceError::FrameRead.into());
-		match frame_res {
-			Ok(buffer) => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_info("Frame was successfully read");
-				Ok(Frame::new(buffer))
-			},
-			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
-				Err(why)
-			},
-		}
+			// Could error if the stream hasn't been opened.
+			.map_err(|why| CameraDeviceError::from(FrameRead::from(why)).into())
 	}
 
 	/// Decode an image.
-	pub fn decode_image(&mut self, frame: Frame<Mjpeg>) -> Result<RgbImage> {
-		let decoded_res = frame
-			.into_rgb()
+	pub fn decode_buffer(&mut self, buffer: Buffer) -> Result<RgbImage> {
+		let decoded_res = select_decode_format(buffer)?;
+
+		let img_buffer = decoded_res
 			.materialize()
 			// We just assume it is always corruption for now.
-			.map_err(|_| CameraDeviceError::FrameDecodeCorruption.into());
-		match decoded_res {
-			Ok(decoded) => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_info("Frame was successfully decoded");
-				let frame = DynamicImage::ImageRgb8(decoded);
-				let new = frame
-					.crop_imm(0, 0, frame.width(), frame.height())
-					.into_rgb8();
-				Ok(new)
-			},
-			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
-				Err(why)
-			},
-		}
+			// TODO: Figure out the why.
+			// If it is because of memory, maybe try unwind and restart.
+			.map_err(|why| CameraDeviceError::from(FrameDecodeCorruption::from(why)))?;
+
+		let frame = DynamicImage::ImageRgb8(img_buffer);
+		let new = frame
+			.crop_imm(0, 0, frame.width(), frame.height())
+			.into_rgb8();
+		Ok(new)
 	}
 
 	// == Configurations ==
@@ -201,35 +191,22 @@ impl CameraDevice {
 			return Ok(());
 		}
 		let setter = value.into();
-		self.inner
-			.set_control(id, setter.clone())
-			.map_err(|_| {
-				CameraDeviceError::SetControl {
-					id: id.to_string(),
-					value: setter.to_string(),
-				}
-				.into()
-			})
-			.inspect_err(|why| {
-				// TODO: Log outside this function.
-				logger().lock().unwrap().log_error(why);
-			})
+		self.inner.set_control(id, setter.clone()).map_err(|why| {
+			let err = CameraDeviceError::SetControl {
+				id: id.to_string(),
+				value: setter.to_string(),
+				inner: SetControl::from(why),
+			};
+			EdgeError::from(err)
+		})
 	}
 
 	pub fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
 		controls.into_inner().into_iter().try_for_each(|(id, val)| {
 			let CamControl::IntegerRange(control) = val else {
-				// TODO: Error type for "Attempting to set a control of an
-				// unsupported type"
-				let err = CameraDeviceError::SetControl {
-					id: id.to_string(),
-					value: "unknown type".into(),
-				}
-				.into();
-
-				// TODO: Log outside this function.
-				logger().lock().unwrap().log_error(&err);
-				return Err(err);
+				return Err(EdgeError::from(
+					CameraDeviceError::SetControlType { id: id.to_string() },
+				));
 			};
 			// TODO: Handle error. Maybe try make this operation atomic?
 			self.set_control(id, control.get_value())
@@ -379,454 +356,60 @@ impl CameraDevice {
 	}
 }
 
-#[cfg(test)]
-mod tests {
-	#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
-	#![expect(clippy::use_debug, reason = "Tests are a debug context")]
-	#![expect(clippy::panic, reason = "Tests are allowed to panic")]
-
-	use std::process::{ExitCode, Termination};
-
-	use nokhwa::utils::CameraControl;
-
-	use super::*;
-	use crate::{
-		error::EdgeError,
-		tcam_interface::controls::traits::{
-			ControlItems as _, ControlMax as _, ControlStep as _,
+/// Helper function to choose the decode method.
+fn select_decode_format(buf: Buffer) -> Result<RgbConversion> {
+	match buf.source_frame_format() {
+		FrameFormat::MJPEG => Ok(Frame::<Mjpeg>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::YUYV => Ok(Frame::<Yuyv>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::NV12 => Ok(Frame::<Nv12>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::RAWRGB => Ok(Frame::<RawRgb>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::RAWBGR => Ok(Frame::<RawBgr>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::GRAY => {
+			let nok_err = NokhwaError::general(
+				"threaded-capture does not support GRAY/Luma cameras",
+			);
+			let err = EdgeError::from(CameraDeviceError::from(
+				SelectDecodeFormat::from(nok_err),
+			));
+			Err(err)
 		},
-	};
-
-	impl CameraDevice {
-		fn get_raw_controls(&self) -> Vec<CameraControl> {
-			self.inner.controls().unwrap()
-		}
-	}
-
-	impl Termination for CameraDevice {
-		fn report(self) -> ExitCode {
-			ExitCode::SUCCESS
-		}
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn print_devices() {
-		let cameras = CameraDevice::query_for_available_cameras();
-
-		println!("Available devices: [");
-		for cam in cameras {
-			print!(
-				"\t{}:\n\t\t{}\n\t\t{}",
-				cam.index().as_string(),
-				cam.human_name(),
-				cam.description(),
-			);
-			let misc = cam.misc();
-			if !misc.is_empty() {
-				print!("\n\t\t{misc}");
-			}
-			println!();
-		}
-		println!("]");
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn new() -> Result<CameraDevice> {
-		CameraDevice::new(CameraIndex::Index(0))
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn print_camera_details() {
-		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
-		println!("{:#?}", cam.inner.info());
-	}
-
-	// Can't implement `Termination` for `RgbImage`.
-	#[test]
-	#[ignore = "IO bound"]
-	fn get_frame() {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
-		let _ = cam.get_frame().unwrap();
-		let _ = cam.get_frame().unwrap();
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn decode_image() {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
-		let frame = cam.get_frame().unwrap();
-		let _ = cam.decode_image(frame);
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn get_raw_controls() {
-		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
-		let c = cam.get_raw_controls();
-		println!("{c:#?}");
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn get_all_available_controls() {
-		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
-		let c = cam.get_controls();
-		println!("{c}");
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn get_stripped_controls() {
-		let cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
-		let c = cam.get_controls().stripped();
-		println!("{c}");
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn set_control() -> Result<()> {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
-		let id = KnownCameraControl::Brightness;
-
-		// Assume it will always be this variant.
-		let CamControl::IntegerRange(mut control) = cam.get_control(id) else {
-			return Err(EdgeError::General {
-				reason: "unexpected control variant".into(),
-			});
-		};
-		println!("Start: {}", control.get_value().get_value());
-
-		let new = control.get_max() - (control.get_step() * 8);
-		control
-			.set_value(new.into())
-			.expect("new value should be valid");
-		cam.set_control(id, control.get_value())?;
-
-		let CamControl::IntegerRange(mut control) = cam.get_control(id) else {
-			return Err(EdgeError::General {
-				reason: "unexpected control variant".into(),
-			});
-		};
-		println!("Modified: {}", control.get_value().get_value());
-
-		control.reset_to_default();
-		cam.set_control(id, control.get_value())?;
-
-		let CamControl::IntegerRange(control) = cam.get_control(id) else {
-			return Err(EdgeError::General {
-				reason: "unexpected control variant".into(),
-			});
-		};
-		println!("Default: {}", control.get_value().get_value());
-
-		Ok(())
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn set_control_exposure() -> Result<()> {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
-		let id = KnownCameraControl::AutoExposure;
-		let desired = 1;
-
-		// Assume it will always be this variant.
-		let CamControl::Menu(mut control) = cam.get_control(id) else {
-			return Err(EdgeError::General {
-				reason: "unexpected control variant".into(),
-			});
-		};
-		println!(
-			"Start: {}, {:?}",
-			control.get_value().get_value(),
-			control.get_items()
-		);
-
-		control
-			.set_value(desired.into())
-			.expect("new value should be valid");
-		cam.set_control(id, control.get_value())?;
-
-		let CamControl::Menu(mut control) = cam.get_control(id) else {
-			return Err(EdgeError::General {
-				reason: "unexpected control variant".into(),
-			});
-		};
-		println!(
-			"Modified: {}, {:?}",
-			control.get_value().get_value(),
-			control.get_items()
-		);
-
-		control.reset_to_default();
-		cam.set_control(id, control.get_value())?;
-
-		let CamControl::Menu(control) = cam.get_control(id) else {
-			return Err(EdgeError::General {
-				reason: "unexpected control variant".into(),
-			});
-		};
-		println!(
-			"Default: {}, {:?}",
-			control.get_value().get_value(),
-			control.get_items()
-		);
-
-		Ok(())
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn reset_controls_to_default() {
-		let mut cam = CameraDevice::new(CameraIndex::Index(0)).unwrap();
-		cam.reset_controls_to_default();
-	}
-
-	mod nokhwa_test {
-		//! # Nokhwa Test
-		//!
-		//! Runs a quick demonstration of the nokhwa library:
-		//!
-		//! - Queries available camera devices, selecting the first one for use
-		//! - Displays configuration options
-		//! - Creates a polled camera, accessing 5 frames and printing image
-		//!   dimensions
-		//! - Creates a callback camera, printing image dimensions.
-		//!   Simultaneously polls the camera 5 times and saves the images.
-		use std::{
-			fs::{self, OpenOptions},
-			io::Write as _,
-			path::Path,
-			thread,
-			time::Duration,
-		};
-
-		use nokhwa::{
-			self, Buffer, CameraRunner, NokhwaError, OpenRequest, OpenedCamera,
-			RunnerConfig, StreamCamera,
-			format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
-			frame::{Frame, IntoRgb as _, IntoRgba as _, RgbaConversion},
-			open,
-			session::open_with_buffers,
-			utils::{CameraIndex, CameraInfo, FrameFormat},
-		};
-
-		use crate::settings::CAMERA_BUFFER_COUNT;
-
-		const POLL_INTERVAL: u64 = 400;
-		const OUTPUT_PATH: &str = "./temp/nokhwa_test_output/";
-
-		#[test]
-		#[ignore = "IO bound"]
-		fn main() {
-			println!("\t==== NOKHWA TEST ====");
-			let cameras = super::CameraDevice::query_for_available_cameras();
-			print_available_camera_info(&cameras);
-			let first_camera = cameras.first().unwrap();
-			print_camera_details(first_camera);
-			let camera_index = first_camera.index().clone();
-			println!("\n\t==== Nokhwa Polling Example ====");
-			nokhwa_polling_example(camera_index.clone());
-			println!("\n\t==== Nokhwa Callback Example ====");
-			nokhwa_callback_example(camera_index);
-		}
-
-		/// List the details from a supplied [`Vec`] of [`CameraInfo`].
-		fn print_available_camera_info(cameras: &Vec<CameraInfo>) {
-			println!("Available devices: [");
-			for cam in cameras {
-				print!(
-					"\t{}:\n\t\t{}\n\t\t{}",
-					cam.index().as_string(),
-					cam.human_name(),
-					cam.description(),
-				);
-				let misc = cam.misc();
-				if !misc.is_empty() {
-					print!("\n\t\t{misc:?}");
-				}
-				println!();
-			}
-			println!("]");
-		}
-
-		/// Print details from the supplied [`CameraInfo`].
-		fn print_camera_details(camera: &CameraInfo) {
-			println!(
-				"\nUsing camera {}: {:?}\n―  {}",
-				camera.index().as_index().unwrap_or(u32::MAX),
-				camera.human_name(),
-				get_known_camera_controls(camera.index().clone())
-			);
-		}
-
-		/// Print the known camera controls for a camera found at a
-		/// [`CameraIndex`]
-		fn get_known_camera_controls(camera_index: CameraIndex) -> String {
-			let cam_temp = create_camera(camera_index);
-			match cam_temp.controls() {
-				Ok(controls) => format!("Known controls: {controls:#?}"),
-				Err(e) => format!("No known controls: {e:?}"),
-			}
-		}
-
-		/// Helper function to create a [`StreamCamera`].
-		fn create_camera(camera_index: CameraIndex) -> StreamCamera {
-			let expect_msg = format!(
-				"the supplied camera index should be a valid camera: {camera_index:?}"
-			);
-			let opened = open_with_buffers(
-				camera_index,
-				OpenRequest::any(),
-				CAMERA_BUFFER_COUNT,
-			)
-			.expect(&expect_msg);
-			let OpenedCamera::Stream(stream_cam) = opened else {
-				panic!("AA")
-			};
-			stream_cam
-		}
-
-		///// Helper function for the camera format.
-		// fn get_format() -> RequestedFormat<'static> {
-		// 	RequestedFormat::new::<RgbFormat>(RequestedFormatType::AbsoluteHighestFrameRate)
-		//}
-
-		/// Uses a camera that must be polled for frames.
-		///
-		/// Decodes the frame to an RGB image.
-		fn nokhwa_polling_example(camera_index: CameraIndex) {
-			let mut polling_camera = create_camera(camera_index);
-			polling_camera.open().unwrap();
-			for i in 0..5u8 {
-				let buffer = polling_camera.frame().unwrap();
-				println!(
-					"Captured frame of size {} bytes",
-					buffer.buffer().len()
-				);
-				let frame: Frame<Mjpeg> = Frame::new(buffer);
-				let decoded = frame.into_rgb().materialize().unwrap();
-				println!(
-					"Decoded frame {i} @ {}x{} ({} bytes)",
-					decoded.width(),
-					decoded.height(),
-					decoded.len()
-				);
-				thread::sleep(Duration::from_millis(POLL_INTERVAL));
-			}
-			polling_camera.close().unwrap();
-		}
-
-		/// Uses a threaded camera that will automatically use a callback
-		/// function.
-		///
-		/// Decodes the frame to an RGBA image.
-		///
-		/// Saves the captured frame to a .png file.
-		fn nokhwa_callback_example(camera_index: CameraIndex) {
-			make_sure_output_exists();
-
-			// fn callback(buffer: Buffer) {
-			// 	let image = buffer.decode_image::<RgbAFormat>().unwrap();
-			// 	println!(
-			// 		"Frame callback @ {}x{} ({} bytes)",
-			// 		image.width(),
-			// 		image.height(),
-			// 		image.len()
-			// 	);
-			//}
-
-			let opened = open(camera_index, OpenRequest::any()).unwrap();
-			let runner =
-				CameraRunner::spawn(opened, RunnerConfig::default()).unwrap();
-			let frames = runner.frames().unwrap();
-
-			// let mut callback_camera =
-			// 	CallbackCamera::new(camera_index, get_format(),
-			// callback).expect(&expect_msg); callback_camera.open_stream().
-			// unwrap();
-
-			for _ in 0..5_u8 {
-				let buffer =
-					frames.recv_timeout(Duration::from_secs(2)).unwrap();
-				println!(
-					"Callback recieved buffer of {} bytes",
-					buffer.buffer().len()
-				);
-				let image =
-					decode_to_rgba(buffer).unwrap().materialize().unwrap();
-				println!(
-					"Frame callback @ {}x{} ({} bytes)",
-					image.width(),
-					image.height(),
-					image.len()
-				);
-
-				// let frame = callback_camera.poll_frame().unwrap();
-				// let image = frame.decode_image::<RgbAFormat>().unwrap();
-				// let path = format!("{OUTPUT_PATH}{i}.png");
-				// println!("Asynchronously saved frame to `{path}`");
-				// image
-				// 	.save(path)
-				// 	.expect("output path should be a valid path");
-				thread::sleep(Duration::from_millis(POLL_INTERVAL));
-			}
-
-			runner.stop().unwrap();
-		}
-
-		fn make_sure_output_exists() {
-			let output_folder = Path::new(OUTPUT_PATH);
-			let expect_msg = format!(
-				"the output path should be a valid location: {OUTPUT_PATH}"
-			);
-			fs::create_dir_all(output_folder).expect(&expect_msg);
-
-			let ignore_file = output_folder.join(".gitignore");
-			let contents = fs::read_to_string(&ignore_file).unwrap_or_default();
-
-			if !contents.lines().any(|line| line.trim() == "*") {
-				let mut file = OpenOptions::new()
-					.create(true)
-					.append(true)
-					.open(&ignore_file)
-					.unwrap();
-
-				if !contents.is_empty() && !contents.ends_with('\n') {
-					file.write_all(b"\n\n*\n").unwrap();
-				} else {
-					file.write_all(b"*\n").unwrap();
-				}
-			}
-		}
-
-		/// Wrap a `Buffer` in the typed `Frame<F>` matching its own fourcc and
-		/// start a lazy RGBA conversion. Dispatching on the buffer's format
-		/// avoids the panic that `Frame::<Mjpeg>::new` raises when the backend
-		/// negotiates a non-MJPEG format (most Linux webcams pick YUYV).
-		fn decode_to_rgba(buf: Buffer) -> Result<RgbaConversion, NokhwaError> {
-			match buf.source_frame_format() {
-				FrameFormat::MJPEG => {
-					Ok(Frame::<Mjpeg>::try_new(buf)?.into_rgba())
-				},
-				FrameFormat::YUYV => {
-					Ok(Frame::<Yuyv>::try_new(buf)?.into_rgba())
-				},
-				FrameFormat::NV12 => {
-					Ok(Frame::<Nv12>::try_new(buf)?.into_rgba())
-				},
-				FrameFormat::RAWRGB => {
-					Ok(Frame::<RawRgb>::try_new(buf)?.into_rgba())
-				},
-				FrameFormat::RAWBGR => {
-					Ok(Frame::<RawBgr>::try_new(buf)?.into_rgba())
-				},
-				FrameFormat::GRAY => Err(NokhwaError::general(
-					"threaded-capture does not support GRAY/Luma cameras",
-				)),
-			}
-		}
 	}
 }
+
+#[cfg(test)]
+#[path = "camera_device_tests.rs"]
+mod tests;
+
+#[cfg(test)]
+#[path = "nokhwa_test.rs"]
+mod nokhwa_test;

@@ -127,7 +127,7 @@ impl Active {
 		&mut self,
 		camera_err_decrement: ErrAccType,
 	) -> Result<RgbImage> {
-		let frame = self.get_camera_mut().get_frame()?;
+		let frame = self.get_camera_mut().get_frame_buffer()?;
 
 		logger()
 			.lock()
@@ -136,7 +136,7 @@ impl Active {
 		self.data.reduce_error(camera_err_decrement);
 
 		// TODO: Inspect error reason. If out of memory, send log and panic.
-		let image = self.get_camera_mut().decode_image(frame)?;
+		let image = self.get_camera_mut().decode_buffer(frame)?;
 
 		logger()
 			.lock()
