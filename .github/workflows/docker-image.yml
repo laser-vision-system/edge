@@ -73,7 +73,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/cos40005-p12/edge/stable:$(date +%s)
+          tags: ghcr.io/cos40005-p12/edge/stable:$(date '+%Y%M%d')
           builder: container-builder
           platforms: linux/arm64
           cache-from: type=gha
