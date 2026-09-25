@@ -8,10 +8,13 @@ on:
 
 
 jobs:
-
-  build:
-
-    runs-on: ubuntu-latest
+  docker_build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04-arm
+            arch: arm64
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -38,8 +41,8 @@ jobs:
 #          username: ${{ github.actor }}
 #          password: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY}}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+#      - name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4

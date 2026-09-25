@@ -47,7 +47,7 @@
 ## Set the entrypoint for the container
 
 # syntax=docker/dockerfile:1
-FROM rust:bookworm AS chef
+FROM --platform=$BUILDPLATFORM rust:bookworm AS chef
 RUN cargo install cargo-chef --locked
 WORKDIR /app
 
@@ -64,7 +64,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # Now copy actual source and build app
 RUN cargo build --release --bin edge
 
-FROM debian:bookworm-slim AS runtime
+FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS runtime
 
 COPY --from=builder /app/target/release/edge /usr/local/bin/
 CMD ["edge"]
