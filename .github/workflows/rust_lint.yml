@@ -2,13 +2,28 @@ name: Rust Lint
 
 on:
   workflow_dispatch:
-  pull_request:
+
+  push:
+    branches:
+      - 'main'
+      - 'dev'
+
     paths:
       - '**.rs'
-      - 'rustfmt.toml'
+      - '**.toml'
+      - 'Cargo.lock'
+
+  pull_request:
+    branches:
+      - 'main'
+      - 'dev'
+
+    paths:
+      - '**.rs'
+      - '**.toml'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -17,15 +32,18 @@ env:
 jobs:
   rustfmt:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v4
       with:
           submodules: recursive
           token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
+
     - uses: dtolnay/rust-toolchain@v1
       with:
         toolchain: stable
         components: rustfmt
+
     - run: cargo fmt --all -- --check
 
   clippy:
@@ -35,8 +53,10 @@ jobs:
       with:
           submodules: recursive
           token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
+
     - uses: dtolnay/rust-toolchain@v1
       with:
         toolchain: stable
         components: clippy
+
     - run: cargo clippy --all-targets
