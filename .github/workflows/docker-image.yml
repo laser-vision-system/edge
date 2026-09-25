@@ -7,13 +7,13 @@ on:
     branches: [ "main" , "feat/docker-automated-workflow" ]
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   docker_build:
     runs-on: ${{ matrix.os }}
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
     strategy:
       matrix:
         include:
