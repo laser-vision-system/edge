@@ -22,7 +22,6 @@ use nokhwa::{
 
 use super::{
 	CameraDeviceError, FrameDecodeCorruption, FrameRead, SelectDecodeFormat,
-	CameraDeviceError,
 	controls::{
 		ControlMap,
 		descriptions::CamControl,
