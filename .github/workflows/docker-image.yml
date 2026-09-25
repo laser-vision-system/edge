@@ -1,11 +1,14 @@
 name: Docker Image Builder
 
-run-name: ${{ github.actor }} is building and pushing a docker image
+run-name: ${{ github.actor }} is building and pushing a docker image for ${{ github.repository }}
 
 on:
   workflow_dispatch:
+
   push:
-    branches: [ "main" ]
+    branches:
+      - 'main'
+      - 'dev'
 
 env:
   REGISTRY: ghcr.io
