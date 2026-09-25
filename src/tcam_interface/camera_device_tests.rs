@@ -72,8 +72,8 @@ fn get_frame() {
 		.unwrap()
 		.open()
 		.unwrap();
-	let _ = cam.get_frame().unwrap();
-	let _ = cam.get_frame().unwrap();
+	let _ = cam.get_frame_buffer().unwrap();
+	let _ = cam.get_frame_buffer().unwrap();
 }
 
 #[test]
@@ -83,8 +83,8 @@ fn decode_image() {
 		.unwrap()
 		.open()
 		.unwrap();
-	let frame = cam.get_frame().unwrap();
-	let _ = cam.decode_image(frame);
+	let frame = cam.get_frame_buffer().unwrap();
+	let _ = cam.decode_buffer(frame);
 }
 
 #[test]

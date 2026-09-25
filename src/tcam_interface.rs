@@ -30,15 +30,17 @@ pub enum CameraDeviceError {
 	UnsupportedCameraType { cam_type: String },
 	#[error(transparent)]
 	StreamOpen(#[from] NokhwaError),
-	#[error("The frame was not able to be read by nokhwa")]
-	FrameRead,
+	#[error(transparent)]
+	FrameRead(#[from] FrameRead),
+	#[error(transparent)]
+	SelectDecodeFormat(#[from] SelectDecodeFormat),
 	#[error("The frame could not be decoded because it is invalid")]
-	FrameDecodeCorruption,
+	FrameDecodeCorruption(#[from] FrameDecodeCorruption),
 	// TODO: This variant is not used, find a place for it or remove.
 	#[error(
 		"The frame could not be decoded because not more memory could be allocated"
 	)]
-	FrameDecodeOutOfMemory,
+	FrameDecodeOutOfMemory(#[from] FrameDecodeOutOfMemory),
 	#[error("Failed to set control {id} to {value}")]
 	SetControl { id: String, value: String },
 	#[error("Attempted to access a camera that does not exist")]
@@ -46,6 +48,22 @@ pub enum CameraDeviceError {
 	#[error("Attempting to set an invalid control value")]
 	InvalidControlValue,
 }
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct FrameRead(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct SelectDecodeFormat(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct FrameDecodeCorruption(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct FrameDecodeOutOfMemory(#[from] NokhwaError);
 
 /// Errors specific to camera persistence logic.
 #[derive(Clone, Debug, thiserror::Error)]

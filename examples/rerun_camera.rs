@@ -72,8 +72,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 	let mut incr: u8 = 0;
 
 	loop {
-		let frame = camera.get_frame()?;
-		let image = camera.decode_image(frame)?;
+		let frame = camera.get_frame_buffer()?;
+		let image = camera.decode_buffer(frame)?;
 		context.log_frame("camera/live_feed", image, incr);
 		if incr == 50 {
 			incr = 0;

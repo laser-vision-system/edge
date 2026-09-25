@@ -10,14 +10,18 @@ use std::{cmp::Ordering, io::Cursor};
 
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
-	OpenRequest, OpenedCamera, StreamCamera,
-	format_types::Mjpeg,
-	frame::{Frame, IntoRgb as _},
+	Buffer, NokhwaError, OpenRequest, OpenedCamera, StreamCamera,
+	format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
+	frame::{Frame, IntoRgb as _, RgbConversion},
 	session::open_with_buffers,
-	utils::{CameraIndex, CameraInfo, ControlValueSetter, KnownCameraControl},
+	utils::{
+		CameraIndex, CameraInfo, ControlValueSetter, FrameFormat,
+		KnownCameraControl,
+	},
 };
 
 use super::{
+	CameraDeviceError, FrameDecodeCorruption, FrameRead, SelectDecodeFormat,
 	CameraDeviceError,
 	controls::{
 		ControlMap,
@@ -117,23 +121,26 @@ impl CameraDevice {
 	/// Request an image of the current camera frame.
 	///
 	/// There seems to be a 2 frame latency.
-	pub fn get_frame(&mut self) -> Result<Frame<Mjpeg>> {
-		let frame_res = self
+	pub fn get_frame_buffer(&mut self) -> Result<Buffer> {
+		self
 			.inner
 			.frame()
-			.map_err(|_| EdgeError::from(CameraDeviceError::FrameRead))?;
-		Ok(Frame::new(frame_res))
+			// Could error if the stream hasn't been opened.
+			.map_err(|why| CameraDeviceError::from(FrameRead::from(why)).into())
 	}
 
 	/// Decode an image.
-	pub fn decode_image(&mut self, frame: Frame<Mjpeg>) -> Result<RgbImage> {
-		let decoded_res = frame
-			.into_rgb()
+	pub fn decode_buffer(&mut self, buffer: Buffer) -> Result<RgbImage> {
+		let decoded_res = select_decode_format(buffer)?;
+
+		let img_buffer = decoded_res
 			.materialize()
 			// We just assume it is always corruption for now.
-			.map_err(|_| EdgeError::from(CameraDeviceError::FrameDecodeCorruption))?;
+			// TODO: Figure out the why.
+			// If it is because of memory, maybe try unwind and restart.
+			.map_err(|why| CameraDeviceError::from(FrameDecodeCorruption::from(why)))?;
 
-		let frame = DynamicImage::ImageRgb8(decoded_res);
+		let frame = DynamicImage::ImageRgb8(img_buffer);
 		let new = frame
 			.crop_imm(0, 0, frame.width(), frame.height())
 			.into_rgb8();
@@ -347,6 +354,56 @@ impl CameraDevice {
 			}
 		});
 		cameras
+	}
+}
+
+/// Helper function to choose the decode method.
+fn select_decode_format(buf: Buffer) -> Result<RgbConversion> {
+	match buf.source_frame_format() {
+		FrameFormat::MJPEG => Ok(Frame::<Mjpeg>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::YUYV => Ok(Frame::<Yuyv>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::NV12 => Ok(Frame::<Nv12>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::RAWRGB => Ok(Frame::<RawRgb>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::RAWBGR => Ok(Frame::<RawBgr>::try_new(buf)
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					SelectDecodeFormat::from(why),
+				))
+			})?
+			.into_rgb()),
+		FrameFormat::GRAY => {
+			let nok_err = NokhwaError::general(
+				"threaded-capture does not support GRAY/Luma cameras",
+			);
+			let err = EdgeError::from(CameraDeviceError::from(
+				SelectDecodeFormat::from(nok_err),
+			));
+			Err(err)
+		},
 	}
 }
 
