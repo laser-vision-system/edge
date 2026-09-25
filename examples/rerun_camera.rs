@@ -1,8 +1,12 @@
+#![expect(clippy::unwrap_used, reason = "Quick and dirty example")]
+
 use std::error::Error;
 
 use edge::{
 	tcam_interface::CameraDevice,
-	vision_processor::{BatchItem, Demonstration, VisionInterface, VisionState},
+	vision_processor::{
+		BatchItem, Demonstration, VisionInterface as _, VisionState,
+	},
 };
 use image::RgbImage;
 use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
@@ -15,7 +19,8 @@ struct Context {
 
 impl Context {
 	fn new() -> Result<Self, Box<dyn Error>> {
-		let rec: RecordingStream = RecordingStreamBuilder::new("cam_test_harness").spawn()?;
+		let rec: RecordingStream =
+			RecordingStreamBuilder::new("cam_test_harness").spawn()?;
 		let demo = Demonstration::default();
 		let state = demo.new_state();
 		Ok(Context { rec, demo, state })
@@ -30,8 +35,11 @@ impl Context {
 	}
 
 	pub fn log_frame(&mut self, path: &str, frame: RgbImage, incr: u8) {
-		let rerun_image =
-			Image::from_elements(&frame, [frame.width(), frame.height()], ColorModel::RGB);
+		let rerun_image = Image::from_elements(
+			&frame,
+			[frame.width(), frame.height()],
+			ColorModel::RGB,
+		);
 		self.send_image(path, &rerun_image);
 
 		let batch = BatchItem {
@@ -49,16 +57,16 @@ impl Context {
 		};
 
 		let lightness_path = format!("{path}/lightness");
-		self.send_scalar(&lightness_path, data.intensity.unwrap() as f64);
+		self.send_scalar(&lightness_path, f64::from(data.intensity.unwrap()));
 
 		let deviation_path = format!("{path}/deviation");
-		self.send_scalar(&deviation_path, data.deviation.unwrap() as f64);
+		self.send_scalar(&deviation_path, f64::from(data.deviation.unwrap()));
 	}
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut context = Context::new()?;
-	let mut camera = CameraDevice::new(0)?;
+	let mut camera = CameraDevice::new(nokhwa::utils::CameraIndex::Index(0))?;
 
 	let mut incr: u8 = 0;
 

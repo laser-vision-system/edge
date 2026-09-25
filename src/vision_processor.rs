@@ -1,13 +1,17 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
+
 use std::{
 	cell::RefCell,
 	fmt,
 	sync::{Arc, Mutex, OnceLock, Weak},
 };
 
-use crate::logger::logger;
-
 use image::RgbImage;
 use server_edge_datatypes::shared::{CameraId, VisionTechnique};
+
+use crate::logger::logger;
 
 pub mod cnn;
 pub mod demonstration;
@@ -24,7 +28,7 @@ pub type VisionRef = &'static VisionGuard;
 static VISION: OnceLock<VisionGuard> = OnceLock::new();
 
 pub fn vision() -> VisionRef {
-	VISION.get_or_init(|| VisionGuard::new())
+	VISION.get_or_init(VisionGuard::new)
 }
 
 #[derive(Debug)]
@@ -39,6 +43,10 @@ impl VisionGuard {
 		}
 	}
 
+	#[expect(
+		clippy::expect_used,
+		reason = "Closely protected internal option type"
+	)]
 	pub fn swap(&self, swap_to: VisionTechnique) {
 		let old_vision = self
 			.inner
@@ -50,23 +58,28 @@ impl VisionGuard {
 		self.inner.lock().unwrap().borrow_mut().replace(new_vision);
 	}
 
+	#[expect(
+		clippy::expect_used,
+		reason = "Closely protected internal option type"
+	)]
 	pub fn interact<F, R>(&self, func: F) -> R
 	where
 		F: FnOnce(&mut VisionVariant) -> R,
 	{
-		func(
-			self.inner
-				.lock()
-				.unwrap()
-				.borrow_mut()
-				.as_mut()
-				.expect("vision should never be None outside of VisionGuard::swap_to"),
-		)
+		func(self.inner.lock().unwrap().borrow_mut().as_mut().expect(
+			"vision should never be None outside of VisionGuard::swap_to",
+		))
 	}
 }
 
 #[derive(Clone)]
 pub struct SessionToken(Arc<()>);
+
+impl Default for SessionToken {
+	fn default() -> Self {
+		Self::new()
+	}
+}
 
 impl SessionToken {
 	pub fn new() -> Self {
@@ -112,7 +125,7 @@ pub enum VisionVariant {
 impl VisionVariant {
 	/// Private constructor.
 	fn new() -> Self {
-		Self::Empty(Default::default())
+		Self::Empty(Empty::default())
 	}
 
 	/// Request to switch this variant with another one.
@@ -127,7 +140,7 @@ impl VisionVariant {
 	/// manage setpoints.
 	///
 	/// This method statically asserts exhaustiveness between
-	/// [this](VisionVariant) and [VisionTechnique].
+	/// [this](VisionVariant) and [`VisionTechnique`].
 	fn swap(self, swap_to: VisionTechnique) -> Self {
 		if self.identifier() == swap_to {
 			logger()
@@ -140,17 +153,18 @@ impl VisionVariant {
 		logger()
 			.lock()
 			.unwrap()
-			.log_info(&format!("Swapping VisionTechnique to: {:?}...", swap_to));
+			.log_info(&format!("Swapping VisionTechnique to: {swap_to:?}..."));
 		match swap_to {
 			VisionTechnique::Empty => Self::Empty(Empty::new()),
-			VisionTechnique::Demonstration => Self::Demonstration(Demonstration::new()),
+			VisionTechnique::Demonstration => {
+				Self::Demonstration(Demonstration::new())
+			},
 			VisionTechnique::Cnn => Self::Cnn(Cnn::new()),
 			VisionTechnique::Diff => Self::Diff(Diff::new()),
 			_ => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_warn("Attempting to swap to an unsupported vison technique");
+				logger().lock().unwrap().log_warn(
+					"Attempting to swap to an unsupported vison technique",
+				);
 				self
 			},
 		}
@@ -223,7 +237,8 @@ pub enum VisionState {
 }
 
 impl VisionState {
-	/// Returns true only if the owning vision processor variant is still active.
+	/// Returns true only if the owning vision processor variant is still
+	/// active.
 	pub fn is_valid(&self) -> bool {
 		match self {
 			Self::Empty { handle, .. }
@@ -252,7 +267,8 @@ impl Default for VisionState {
 /// A single record that is passed into `process_frame`.
 ///
 /// Currently holds a reference to the vision state, but should probably be
-/// swapped to using an [`mpsc`](std::sync::mpsc) for multithreading. The [`VisionState`] would be sent back through it.
+/// swapped to using an [`mpsc`](std::sync::mpsc) for multithreading. The
+/// [`VisionState`] would be sent back through it.
 pub struct BatchItem<'a> {
 	pub camera_id: CameraId,
 	pub state: &'a mut VisionState,
@@ -281,12 +297,14 @@ impl<'a> BatchItem<'a> {
 
 #[cfg(test)]
 mod tests {
+	#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
+
 	use super::*;
 
 	#[test]
 	fn swap() {
 		let mut variant = VisionVariant::new();
 		variant = variant.swap(VisionTechnique::Demonstration);
-		println!("Current variant: {}", variant)
+		println!("Current variant: {variant}");
 	}
 }

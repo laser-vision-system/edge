@@ -2,25 +2,32 @@
 //!
 //! Provides logging support for the edge.
 //!
-//! This module can only be accessed by calling importing the logger() function.
+//! This module can only be accessed by calling importing the `logger()`
+//! function.
 //!
 //! To create a log, call one of the following functions:
 //!
-//! - logger().log_info(message: &str)
-//! - logger().log_warn(message: &str)
-//! - logger().log_error(message: &str, error: EdgeError)
+//! - `logger().log_info(message: &str)`
+//! - `logger().log_warn(message: &str)`
+//! - `logger().log_error(message: &str, error: EdgeError)`
 //!
 //! To send all buffered logs to the server, use:
 //!
-//! - logger().send_logs()
+//! - `logger().send_logs()`
+
+#![expect(
+	clippy::print_stderr,
+	clippy::print_stdout,
+	reason = "This is the logger module, where this is expected behaviour"
+)]
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
 use std::sync::{Mutex, OnceLock};
 
 use chrono::{Duration, Local, NaiveDate};
-
-use crate::error::EdgeError::{self};
-
 use serde::{Deserialize, Serialize};
+
+use crate::error::EdgeError;
 
 // Declare a type alias for easy imports
 pub type LoggerRef = &'static Mutex<Logger>;
@@ -33,9 +40,9 @@ pub fn logger() -> LoggerRef {
 
 #[derive(Debug, Serialize, Deserialize)]
 enum LogLevel {
-	INFO,
-	WARN,
-	ERROR,
+	Info,
+	Warn,
+	Error,
 }
 
 // #[derive(Serialize, Deserialize)]
@@ -60,7 +67,8 @@ enum LogLevel {
 // 	}
 // }
 
-// The logger struct that holds each unsent (buffered) log entry and the log count.
+// The logger struct that holds each unsent (buffered) log entry and the log
+// count.
 //
 // Each log entry is stored in a Vector.
 //
@@ -83,12 +91,12 @@ impl Logger {
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
 			Local::now().to_rfc3339(),
-			LogLevel::INFO,
-			message.to_string(),
+			LogLevel::Info,
+			message,
 		);
 
 		#[cfg(debug_assertions)]
-		println!("{}", log_entry);
+		println!("{log_entry}");
 
 		self.logs.push(log_entry);
 	}
@@ -98,29 +106,27 @@ impl Logger {
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
 			Local::now().to_rfc3339(),
-			LogLevel::WARN,
-			message.to_string(),
-		);
-
-		#[cfg(debug_assertions)]
-		println!("{}", log_entry);
-
-		self.logs.push(log_entry);
-	}
-
-	pub fn log_error(&mut self, message: &str, error: &EdgeError) {
-		let log_entry = format!(
-			"[{:05}] {}\n{:?}\n{:?}: {}\n{}\n----------",
-			self.counter.next(),
-			Local::now().to_rfc3339(),
-			LogLevel::ERROR,
-			error,
-			error,
+			LogLevel::Warn,
 			message,
 		);
 
 		#[cfg(debug_assertions)]
-		println!("{}", log_entry);
+		println!("{log_entry}");
+
+		self.logs.push(log_entry);
+	}
+
+	pub fn log_error(&mut self, error: &EdgeError) {
+		let log_entry = format!(
+			"[{:05}] {}\n{:?}\n{}\n----------",
+			self.counter.next(),
+			Local::now().to_rfc3339(),
+			LogLevel::Error,
+			error,
+		);
+
+		#[cfg(debug_assertions)]
+		println!("{log_entry}");
 
 		self.logs.push(log_entry);
 	}
@@ -129,8 +135,9 @@ impl Logger {
 		let logs = std::mem::take(&mut self.logs);
 
 		for log in logs {
-			// TODO: Actually send the logs to the server
-			println!("{}", log);
+			// TODO: Actually send the logs to the server.
+			// TODO: When this happens, the IO bound test must be ignored.
+			println!("{log}");
 		}
 	}
 }
@@ -151,11 +158,11 @@ impl LogCounter {
 	fn next(&mut self) -> u32 {
 		let today = Local::now().date_naive();
 
-		if today != self.date {
+		if today == self.date {
+			self.counter += 1;
+		} else {
 			self.date = today;
 			self.counter = 1;
-		} else {
-			self.counter += 1;
 		}
 
 		self.counter
@@ -179,13 +186,13 @@ impl LogCounter {
 
 #[cfg(test)]
 mod test {
-	use crate::error::EdgeError::{
-		AutoConnect, FrameDecodeCorruption, FrameDecodeOutOfMemory, FrameRead, General,
-		NokhwaInitialisation, NokhwaNoBackend, ServerConnection, SetControl, StreamOpen,
-		WebSocketConnection,
-	};
+	#![expect(clippy::unwrap_used, reason = "Tests are allowed to unwrap")]
 
 	use super::logger;
+	use crate::{
+		error::EdgeError, network::NetworkError,
+		tcam_interface::CameraDeviceError,
+	};
 
 	#[test]
 	fn info() {
@@ -266,79 +273,39 @@ mod test {
 	}
 
 	#[test]
-	fn all_error_types() {
-		let mut error = AutoConnect;
+	fn error() {
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 1.".to_owned().into());
 
-		error = WebSocketConnection;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 2.".to_owned().into());
 
-		error = ServerConnection;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 3.".to_owned().into());
 
-		error = NokhwaNoBackend;
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+		logger().lock().unwrap().send_logs();
+		logger().lock().unwrap().send_logs();
 
-		error = NokhwaInitialisation {
-			index: "69".into(),
-			reason: "*Generic reason*".to_string(),
-		};
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 1.".to_owned().into());
 
-		error = StreamOpen {
-			reason: "*Generic reason*".to_string(),
-		};
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 2.".to_owned().into());
 
-		error = FrameRead;
 		logger()
 			.lock()
 			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
-
-		error = FrameDecodeCorruption;
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
-
-		error = FrameDecodeOutOfMemory;
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
-
-		error = SetControl;
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
-
-		error = General {
-			reason: "*Generic reason*".to_string(),
-		};
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test.", &error);
+			.log_error(&"This is an ERROR log test 3.".to_owned().into());
 
 		logger().lock().unwrap().send_logs();
 		logger().lock().unwrap().send_logs();

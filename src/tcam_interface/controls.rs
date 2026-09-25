@@ -1,4 +1,5 @@
-//! Abstracts over [`nokhwa`]'s camera controls, providing a simplier interface for use.
+//! Abstracts over [`nokhwa`]'s camera controls, providing a simplier interface
+//! for use.
 //!
 //! ## Design Notes
 //!
@@ -6,16 +7,22 @@
 //!
 //! - The order of the collection does not matter.
 //!
-//! - Each control will be unique to a [`KnownCameraControl`] (ID), condusive to a HashMap or Set.
+//! - Each control will be unique to a [`KnownCameraControl`] (ID), condusive to
+//!   a `HashMap` or Set.
 //!
-//! - Every [`CamControl`] ([`ControlValueDescription`]) maps non-commutatively to a [`ControlValue`] ([`ControlValueSetter`]), but cannot be determined at runtime.
-//! This can be handled either by generic or trait objects (`dyn`).
+//! - Every [`CamControl`] ([`ControlValueDescription`]) maps non-commutatively
+//!   to a [`ControlValue`] ([`ControlValueSetter`]), but cannot be determined
+//!   at runtime. This can be handled either by generic or trait objects
+//!   (`dyn`).
 //!
-//! - There seems to be a weak and unclear mapping between [`KnownCameraControl`] and [`CamControl`] ([`ControlValueDescription`]).
+//! - There seems to be a weak and unclear mapping between
+//!   [`KnownCameraControl`] and [`CamControl`] ([`ControlValueDescription`]).
 //!
-//! - What is stored in the collection either needs to be an enum or trait object.
+//! - What is stored in the collection either needs to be an enum or trait
+//!   object.
 //!
-//! - The only important mapping that needs to be sent back to [`nokhwa`] is [`ControlValue`] ([`ControlValueSetter`]).
+//! - The only important mapping that needs to be sent back to [`nokhwa`] is
+//!   [`ControlValue`] ([`ControlValueSetter`]).
 //!
 //! ## TODO: Oh god fix the naming of the types.
 
@@ -25,9 +32,8 @@ use std::{
 	ops::{Deref, DerefMut},
 };
 
-#[allow(unused_imports, reason = "Needed for module docstring")]
+#[expect(unused_imports, reason = "Needed for module docstring")]
 use nokhwa::utils::ControlValueSetter;
-
 use nokhwa::utils::{CameraControl, KnownCameraControl};
 
 pub mod descriptions;
@@ -50,6 +56,7 @@ impl ControlMap {
 		self.inner
 	}
 
+	#[must_use]
 	pub fn stripped(self) -> Self {
 		let inner = self
 			.inner
@@ -71,8 +78,9 @@ impl ControlMap {
 	}
 
 	pub fn serialise(&self) -> String {
-		serde_json::to_string(&self.inner)
-			.expect("everything in the inner map should be correcly serialisable")
+		serde_json::to_string(&self.inner).expect(
+			"everything in the inner map should be correcly serialisable",
+		)
 	}
 }
 

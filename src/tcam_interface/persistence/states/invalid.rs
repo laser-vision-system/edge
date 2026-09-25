@@ -1,8 +1,7 @@
 use server_edge_datatypes::shared::CameraStatus;
 
-use crate::tcam_interface::persistence::OccupiedIndices;
-
 use super::IndexOccupier;
+use crate::tcam_interface::persistence::OccupiedIndices;
 
 /// A connection in an invalid state.
 ///
@@ -23,8 +22,8 @@ impl Invalid {
 	}
 
 	/// Map this type to a [`CameraStatus`].
-	pub fn get_status(&self) -> CameraStatus {
-		CameraStatus::Active
+	pub fn get_status() -> CameraStatus {
+		CameraStatus::Invalid
 	}
 }
 

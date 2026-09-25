@@ -1,3 +1,7 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
+
 mod perpetual_info;
 mod persist_entry;
 pub mod polling;
@@ -15,14 +19,12 @@ use server_edge_datatypes::{
 	shared::{CameraId, Configuration, ViewCameraConfig},
 };
 
-use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
-
 pub use self::{
 	perpetual_info::PerpetualInfo,
 	persist_entry::{MaybeImage, PersistEntry, WhyNo},
 };
-
-use super::Identifier;
+use super::{Identifier, PersistenceError};
+use crate::{error::EdgeError, vision_processor::BatchItem};
 
 pub type ErrAccType = u16;
 
@@ -50,7 +52,8 @@ impl StatusChange {
 
 /// Persistence data for camera devices.
 ///
-/// This type holds details about all currently and previously connected camera devices.
+/// This type holds details about all currently and previously connected camera
+/// devices.
 pub struct Persistence {
 	inner: MapType,
 }
@@ -58,14 +61,17 @@ pub struct Persistence {
 // Access methods.
 impl Persistence {
 	/// Filter peristence with an arbitrary function.
-	pub fn filter_by(&mut self, filter: Box<dyn Fn(&PersistEntry) -> bool>) -> Vec<&PersistEntry> {
+	pub fn filter_by(
+		&mut self,
+		filter: &dyn Fn(&PersistEntry) -> bool,
+	) -> Vec<&PersistEntry> {
 		self.inner.values().filter(|entry| filter(entry)).collect()
 	}
 
 	/// Filter peristence with an arbitrary function.
 	pub fn filter_by_mut(
 		&mut self,
-		filter: Box<dyn Fn(&PersistEntry) -> bool>,
+		filter: &dyn Fn(&PersistEntry) -> bool,
 	) -> Vec<&mut PersistEntry> {
 		self.inner
 			.values_mut()
@@ -89,10 +95,7 @@ impl Persistence {
 		if let Some(entry) = self.get_mut(id) {
 			entry.set_currently_viewed(state);
 		} else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 		}
 	}
 
@@ -100,93 +103,96 @@ impl Persistence {
 		if let Some(entry) = self.get_mut(request.camera_id) {
 			entry.set_name(request.name);
 		} else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 		}
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn start_viewing_camera(&mut self, request: StartViewingCamera) {
 		self.set_currently_viewed(request.camera_id, true);
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn stop_viewing_camera(&mut self, request: StopViewingCamera) {
 		self.set_currently_viewed(request.camera_id, false);
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn set_configuration(&mut self, request: Configuration) {
 		let Some(entry) = self.get_mut(request.camera_id) else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 			return;
 		};
 		let Some(active) = entry.get_active_mut() else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("Not active", &EdgeError::IncorrectConnectionStatus);
+			//"Not active"
+			EdgeError::from(PersistenceError::IncorrectConnectionStatus).log();
 			return;
 		};
 		match serde_json::from_str(&request.configuration) {
 			Ok(map) => {
 				if let Err(why) = active.get_camera_mut().set_controls(map) {
-					logger()
-						.lock()
-						.unwrap()
-						.log_error("Failed to apply request controls to the camera", &why);
-				};
+					// TODO: Error type for "Failed to apply request controls to
+					// the camera"
+					why.log();
+				}
 			},
 			Err(why) => {
-				logger().lock().unwrap().log_error(
-					"Failed to parse requested configuration",
-					&EdgeError::DecodeControls { reason: why },
-				);
+				EdgeError::from(why).log();
 			},
-		};
+		}
 	}
 
-	pub fn get_configuration(&mut self, request: ViewCameraConfig) -> Option<Configuration> {
+	pub fn get_configuration(
+		&mut self,
+		request: ViewCameraConfig,
+	) -> Option<Configuration> {
 		let Some(entry) = self.get_mut(request.camera_id) else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 			return None;
 		};
 		let Some(active) = entry.get_active_mut() else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("Not active", &EdgeError::IncorrectConnectionStatus);
+			// TODO: Error type for "Not active"
+			EdgeError::from(PersistenceError::IncorrectConnectionStatus).log();
 			return None;
 		};
-		let important_controls = active.get_camera_mut().get_controls().stripped();
-		let configuration = Configuration::build_response(request, important_controls.serialise());
+		let important_controls =
+			active.get_camera_mut().get_controls().stripped();
+		let configuration = Configuration::build_response(
+			request,
+			important_controls.serialise(),
+		);
 		Some(configuration)
 	}
 
+	#[expect(
+		clippy::needless_pass_by_value,
+		reason = "The request should not be used after this method call"
+	)]
 	pub fn request_calibration(&mut self, request: Setpoint) {
 		if let Some(entry) = self.get_mut(request.camera_id) {
 			entry.request_calibration();
 		} else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &EdgeError::UnknownCameraId);
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 		}
 	}
 }
 
 impl Persistence {
-	pub fn poll_active_entries<'a>(
-		&'a mut self,
+	pub fn poll_active_entries(
+		&mut self,
 		camera_err_increment: u16,
 		camera_err_threshold: u16,
 		camera_err_decrement: u16,
-	) -> (Vec<BatchItem<'a>>, Vec<StatusChange>) {
+	) -> (Vec<BatchItem<'_>>, Vec<StatusChange>) {
 		let (maybe_batch_items, maybe_status_changes): (Vec<_>, Vec<_>) = self
 			.inner
 			.iter_mut()
@@ -211,25 +217,24 @@ impl Persistence {
 
 				match maybe_image {
 					MaybeImage::Image(image) => {
-						let batch_item = entry.try_make_batch_item_with(ident, image)?;
+						let batch_item =
+							entry.try_make_batch_item_with(ident, image)?;
 						Some((Some(batch_item), None))
 					},
 					MaybeImage::WhyNo(whyno) => Some((
 						None,
-						Some(StatusChange::new(CameraId::from(ident.clone()), whyno)),
+						Some(StatusChange::new(
+							CameraId::from(ident.clone()),
+							whyno,
+						)),
 					)),
 				}
 			})
 			.unzip();
 
-		let batch_items = maybe_batch_items
-			.into_iter()
-			.filter_map(|item| item)
-			.collect();
-		let status_changes = maybe_status_changes
-			.into_iter()
-			.filter_map(|status| status)
-			.collect();
+		let batch_items = maybe_batch_items.into_iter().flatten().collect();
+		let status_changes =
+			maybe_status_changes.into_iter().flatten().collect();
 
 		(batch_items, status_changes)
 	}
@@ -269,23 +274,24 @@ impl Default for Persistence {
 
 #[cfg(test)]
 mod tests {
-	use crate::tcam_interface::identifier::*;
-
 	use super::*;
+	use crate::tcam_interface::identifier::*;
 
 	#[test]
 	fn matching_entries() {
 		let mut persist_map = Persistence::default();
 		let points = HashSet::new();
 
-		let first_key = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let first_key =
+			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
 		let first_entry = PersistEntry::new(&points);
 		persist_map.inner.insert(first_key, first_entry);
 
-		let second_key = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let second_key =
+			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
 		let second_entry = PersistEntry::new(&points);
 		persist_map.inner.insert(second_key, second_entry);
 
-		assert_eq!(persist_map.inner.len(), 1)
+		assert_eq!(persist_map.inner.len(), 1);
 	}
 }

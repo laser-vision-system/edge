@@ -6,7 +6,7 @@ use rayon::prelude::*;
 
 use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Demonstration {
 	session: SessionToken,
 }
@@ -18,12 +18,16 @@ impl Demonstration {
 		}
 	}
 
-	// NOTE: Clippy complains about indexing the slice without asserting, but the
-	// par_chunk_exact guarantees this won't panic.
-	#[allow(clippy::missing_asserts_for_indexing)]
-	#[allow(clippy::indexing_slicing)]
-	#[allow(clippy::cast_precision_loss)]
-	fn average_lightness(&self, frame: &RgbImage) -> f32 {
+	#[expect(
+		clippy::missing_asserts_for_indexing,
+		clippy::indexing_slicing,
+		reason = "`par_chunk_exact` guarantees this won't panic"
+	)]
+	#[expect(
+		clippy::cast_precision_loss,
+		reason = "The pixel count should never exceed the limits of a f32"
+	)]
+	fn average_lightness(frame: &RgbImage) -> f32 {
 		let raw_bytes = frame.as_raw();
 		let pixel_count = raw_bytes.len() as f32 / 3.0;
 
@@ -43,22 +47,22 @@ impl Demonstration {
 impl VisionInterface for Demonstration {
 	fn process(&mut self, batch: &mut [BatchItem]) {
 		for item in batch {
-			let VisionState::Demonstration { data, .. } = &mut item.state else {
+			let VisionState::Demonstration { data, .. } = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
 
-			let lightness = self.average_lightness(&item.image) as f32;
+			let lightness = Self::average_lightness(&item.image);
 
 			if item.calibrate {
 				data.setpoint = Some(lightness);
 			}
 
 			let mut deviation = 0.0;
-			if let Some(setpoint) = data.setpoint {
-				if setpoint > 0.0 {
-					deviation = lightness / setpoint;
-				}
+			if let Some(setpoint) = data.setpoint
+				&& setpoint > 0.0
+			{
+				deviation = lightness / setpoint;
 			}
 
 			data.intensity = Some(lightness);
@@ -70,14 +74,6 @@ impl VisionInterface for Demonstration {
 		VisionState::Demonstration {
 			handle: self.session.downgrade(),
 			data: ExternalData::default(),
-		}
-	}
-}
-
-impl Default for Demonstration {
-	fn default() -> Self {
-		Self {
-			session: SessionToken::new(),
 		}
 	}
 }

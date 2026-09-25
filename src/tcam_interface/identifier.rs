@@ -10,6 +10,8 @@
 //!
 //! All the necessary information is in the [`CameraInfo`] struct.
 
+#![expect(clippy::inline_modules, reason = "Simple unit tests")]
+
 use std::{
 	borrow::{Borrow, Cow},
 	fmt,
@@ -24,11 +26,14 @@ use server_edge_datatypes::shared::CameraId;
 /// You are probably looking for [`Identifier`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IdentMetaInfo {
-	/// The internal name of the device. On v4l, taken from the "Card type" and "Driver name" values.
+	/// The internal name of the device. On v4l, taken from the "Card type" and
+	/// "Driver name" values.
 	name: String,
-	/// The internal description of the device. On v4l, taken from the "Bus info" value.
+	/// The internal description of the device. On v4l, taken from the "Bus
+	/// info" value.
 	description: String,
-	/// Additional miscellaneous information about the device. On v4l, taken from the "Driver version" value.
+	/// Additional miscellaneous information about the device. On v4l, taken
+	/// from the "Driver version" value.
 	misc: String,
 }
 
@@ -53,7 +58,10 @@ impl fmt::Display for IdentMetaInfo {
 }
 
 impl Hash for IdentMetaInfo {
-	fn hash<H: Hasher>(&self, state: &mut H) {
+	fn hash<H>(&self, state: &mut H)
+	where
+		H: Hasher,
+	{
 		self.name.hash(state);
 		self.description.hash(state);
 		self.misc.hash(state);
@@ -63,9 +71,9 @@ impl Hash for IdentMetaInfo {
 impl From<CameraInfo> for IdentMetaInfo {
 	fn from(value: CameraInfo) -> Self {
 		Self {
-			name: value.human_name().to_string(),
-			description: value.description().to_string(),
-			misc: value.misc().to_string(),
+			name: value.human_name().to_owned(),
+			description: value.description().to_owned(),
+			misc: value.misc().to_owned(),
 		}
 	}
 }
@@ -84,7 +92,8 @@ impl PartialEq<IdentMetaInfo> for CameraId {
 
 /// The `Identifier` type.
 ///
-/// The `meta_info` field is not used when performing [`Hash`], [`PartialEq`], [`PartialOrd`], and [`Ord`].
+/// The `meta_info` field is not used when performing [`Hash`], [`PartialEq`],
+/// [`PartialOrd`], and [`Ord`].
 ///
 /// See the [module level documentation](self) for more information.
 #[derive(Clone, Debug)]
@@ -128,7 +137,10 @@ impl fmt::Display for Identifier {
 impl Eq for Identifier {}
 
 impl Hash for Identifier {
-	fn hash<H: Hasher>(&self, state: &mut H) {
+	fn hash<H>(&self, state: &mut H)
+	where
+		H: Hasher,
+	{
 		self.hashed_id.hash(state);
 	}
 }
@@ -165,7 +177,7 @@ impl PartialEq for Identifier {
 
 impl PartialOrd for Identifier {
 	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-		self.hashed_id.partial_cmp(&other.hashed_id)
+		Some(self.cmp(other))
 	}
 }
 
@@ -211,9 +223,11 @@ mod tests {
 
 	#[test]
 	fn identifier_eq() {
-		let first = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let first =
+			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
 		let second = first.clone();
-		let third = Identifier::from(IdentMetaInfo::new("nope", "nuh uh", "hell no"));
+		let third =
+			Identifier::from(IdentMetaInfo::new("nope", "nuh uh", "hell no"));
 
 		assert_eq!(first, second);
 		assert_ne!(first, third);
@@ -222,9 +236,11 @@ mod tests {
 
 	#[test]
 	fn identifier_ord() {
-		let first = Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+		let first =
+			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
 		let second = first.clone();
-		let third = Identifier::from(IdentMetaInfo::new("nope", "nuh uh", "hell no"));
+		let third =
+			Identifier::from(IdentMetaInfo::new("nope", "nuh uh", "hell no"));
 
 		assert_eq!(first.partial_cmp(&second), Some(first.cmp(&second)));
 		assert_eq!(first.cmp(&third), second.cmp(&third));

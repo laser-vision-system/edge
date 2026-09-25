@@ -1,3 +1,6 @@
+// TODO: Remove all unwraps and then this.
+#![expect(clippy::unwrap_used, reason = "WIP development")]
+
 use std::collections::HashMap;
 
 use server_edge_datatypes::{
@@ -7,13 +10,16 @@ use server_edge_datatypes::{
 use tokio::time::interval;
 
 use crate::{
-	auto_connect::assert_connection,
 	error::EdgeError,
 	logger::logger,
+	network::{
+		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
+	},
 	settings::Settings,
-	tcam_interface::{CameraDevice, Persistence, WhyNo, polling::ConnectionDetail},
-	vision_processor::{VisionInterface, vision},
-	websocket::WebSocket,
+	tcam_interface::{
+		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
+	},
+	vision_processor::{VisionInterface as _, vision},
 };
 
 /// # Conductor
@@ -28,7 +34,8 @@ impl Conductor {
 		&mut self,
 		mut websocket: WebSocket,
 		settings: Settings,
-	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>>
+	{
 		let mut limit_interval = interval(settings.update_delay);
 		limit_interval.tick().await;
 
@@ -42,9 +49,14 @@ impl Conductor {
 			.query_websockets(settings.websocket_poll_interval)
 			.await
 		{
-			self.handle_request(request, &mut websocket, &mut requested_vision_type)
-				.await;
+			self.handle_request(
+				request,
+				&mut websocket,
+				&mut requested_vision_type,
+			)
+			.await;
 		}
+
 		logger().lock().unwrap().send_logs();
 
 		let _ = websocket.keep_alive().await;
@@ -53,12 +65,14 @@ impl Conductor {
 			vision().swap(swap_to);
 		}
 
-		// TODO: There should be something in between this call that does the below.
-		let (mut batch_items, status_changes) = self.persistence.poll_active_entries(
-			settings.camera_err_increment,
-			settings.camera_err_threshold,
-			settings.camera_err_decrement,
-		);
+		// TODO: There should be something in between this call that does the
+		// below.
+		let (mut batch_items, status_changes) =
+			self.persistence.poll_active_entries(
+				settings.camera_err_increment,
+				settings.camera_err_threshold,
+				settings.camera_err_decrement,
+			);
 
 		for status_change in status_changes {
 			match status_change.why {
@@ -96,7 +110,7 @@ impl Conductor {
 		});
 
 		// Send result
-		for item in batch_items.iter() {
+		for item in &batch_items {
 			let deviation_maybe = item.state.get_deviation();
 			let camid = item.camera_id;
 			if let Some(deviation) = deviation_maybe {
@@ -110,22 +124,17 @@ impl Conductor {
 					)
 					.await;
 
-				let _ = result.inspect_err(|why| {
-					logger().lock().unwrap().log_error(
-						&format!("failed to send to server: {why}"),
-						&EdgeError::ServerConnection,
-					)
+				let _ = result.inspect_err(|_| {
+					EdgeError::from(NetworkError::ServerConnection).log();
 				});
-			};
+			}
 
 			if item.send_to_server {
-				let mut encoded = CameraDevice::encode_image(item.image.clone());
-				let result = websocket.send_image(item.camera_id, &mut encoded).await;
-				let _ = result.inspect_err(|why| {
-					logger().lock().unwrap().log_error(
-						&format!("failed to image send to server: {why}"),
-						&EdgeError::ServerConnection,
-					)
+				let mut encoded = CameraDevice::encode_image(&item.image);
+				let result =
+					websocket.send_image(item.camera_id, &mut encoded).await;
+				let _ = result.inspect_err(|_| {
+					EdgeError::from(NetworkError::ServerConnection).log();
 				});
 			}
 		}
@@ -158,16 +167,15 @@ impl Conductor {
 				self.persistence.set_configuration(set_config_req);
 			},
 			EdgeRequests::ViewCameraConfig(view_config_req) => {
-				if let Some(configuration) = self.persistence.get_configuration(view_config_req) {
-					if let Err(_) = websocket
+				if let Some(configuration) =
+					self.persistence.get_configuration(view_config_req)
+					&& let Err(_) = websocket
 						.send_text("Configuration:".into(), configuration)
 						.await
-					{
-						logger().lock().unwrap().log_error(
-							"Failed to send configuration request",
-							&EdgeError::WebSocketConnection,
-						);
-					}
+				{
+					// TODO: Error type for "Failed to send configuration
+					// request"
+					EdgeError::from(NetworkError::WebSocketConnection).log();
 				}
 			},
 			EdgeRequests::Setpoint(calibration_req) => {
@@ -177,15 +185,17 @@ impl Conductor {
 				requested_vision_type.replace(processing_req.processing_type);
 			},
 			_ => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_warn("received request that is not currently supported");
+				logger().lock().unwrap().log_warn(
+					"received request that is not currently supported",
+				);
 			},
 		}
 	}
 
-	async fn update_camera_device_connections(&mut self, websocket: &mut WebSocket) {
+	async fn update_camera_device_connections(
+		&mut self,
+		websocket: &mut WebSocket,
+	) {
 		let mut results = self.persistence.poll_for_new_cameras();
 
 		let new_cameras = results.extract_if(|_, value| match value {
@@ -241,7 +251,8 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 	let mut conductor = Conductor::default();
 
 	loop {
-		let (loop_websocket, loop_settings) = assert_connection(websocket, settings).await;
+		let (loop_websocket, loop_settings) =
+			assert_connection(websocket, settings).await;
 		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);

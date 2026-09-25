@@ -1,25 +1,29 @@
 use std::hash::Hash;
 
-use nokhwa::utils::{CameraControl, ControlValueDescription, KnownCameraControl, MenuEntry};
+use nokhwa::utils::{
+	CameraControl, ControlValueDescription, KnownCameraControl, MenuEntry,
+};
+use serde::{Deserialize, Serialize};
 
 use super::{
 	traits::{
-		ControlDefault, ControlDescription, ControlItems, ControlMax, ControlMin, ControlPossible,
-		ControlStep, ControlValue,
+		ControlDefault, ControlDescription, ControlItems, ControlMax,
+		ControlMin, ControlPossible, ControlStep, ControlValue as _,
 	},
 	types::{
-		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue,
-		ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
+		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
+		ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 	},
 	values::{
-		ConValueBoolean, ConValueBooleanType, ConValueBytes, ConValueBytesType, ConValueEnum,
-		ConValueEnumType, ConValueFloat, ConValueFloatType, ConValueInteger, ConValueIntegerType,
-		ConValueKeyValue, ConValueKeyValueType, ConValueMenu, ConValueMenuType, ConValuePoint,
-		ConValuePointType, ConValueRGB, ConValueRGBType, ConValueString, ConValueStringType,
+		ConValueBoolean, ConValueBooleanType, ConValueBytes, ConValueBytesType,
+		ConValueEnum, ConValueEnumType, ConValueFloat, ConValueFloatType,
+		ConValueInteger, ConValueIntegerType, ConValueKeyValue,
+		ConValueKeyValueType, ConValueMenu, ConValueMenuType, ConValuePoint,
+		ConValuePointType, ConValueRGB, ConValueRGBType, ConValueString,
+		ConValueStringType,
 	},
 };
-
-use serde::{Deserialize, Serialize};
+use crate::{error::EdgeError, tcam_interface::CameraDeviceError};
 
 // ===== Field relationship bounds =====
 // (step, min, max, key): value
@@ -33,10 +37,21 @@ use serde::{Deserialize, Serialize};
 /// Represents one type of camera control.
 ///
 /// Maps to [`ControlValueDescription`].
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
 pub enum CamControl {
 	#[default]
-	None, //None(NoneControl),
+	None, // None(NoneControl),
 	Integer(IntegerControl),
 	IntegerRange(IntegerRangeControl),
 	Float(FloatControl),
@@ -53,6 +68,10 @@ pub enum CamControl {
 
 impl From<CameraControl> for CamControl {
 	/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
+	#[expect(
+		clippy::too_many_lines,
+		reason = "Necessary to map from one type to the other"
+	)]
 	fn from(value: CameraControl) -> Self {
 		let control_type = value.control();
 		match value.description() {
@@ -105,9 +124,13 @@ impl From<CameraControl> for CamControl {
 				*min,
 				*max,
 			)),
-			ControlValueDescription::Boolean { value, default } => CamControl::Boolean(
-				BooleanControl::new(control_type, ConValueBoolean::from(*value), *default),
-			),
+			ControlValueDescription::Boolean { value, default } => {
+				CamControl::Boolean(BooleanControl::new(
+					control_type,
+					ConValueBoolean::from(*value),
+					*default,
+				))
+			},
 			ControlValueDescription::String { value, default } => {
 				CamControl::String(StringControl::new(
 					control_type,
@@ -175,12 +198,6 @@ impl From<CameraControl> for CamControl {
 // Every variant has a value and default.
 // There are no hard correllations for the other fields.
 
-/// A camera control that consists of nothing.
-///
-/// Maps to [`ControlValueDescription::None`].
-//#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-//pub struct NoneControl;
-
 /// A camera control that consists of a value, default, and step.
 ///
 /// Maps to [`ControlValueDescription::Integer`]
@@ -209,19 +226,19 @@ impl IntegerControl {
 }
 
 impl ControlDescription for IntegerControl {
-	type ValueType = ConValueInteger;
 	type ConType = ConTypeInt;
+	type ValueType = ConValueInteger;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -239,12 +256,13 @@ impl ControlDefault for IntegerControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
 impl ControlStep for IntegerControl {
-	// Default should be based on ValueType, so this makes sure they can be compared.
+	// Default should be based on ValueType, so this makes sure they can be
+	// compared.
 	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
@@ -253,7 +271,8 @@ impl ControlStep for IntegerControl {
 
 	fn valid(&self, value: Self::StepType) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0
-			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0
+			|| (value - self.get_value().get_value()).abs() % self.get_step()
+				== 0
 	}
 }
 
@@ -292,14 +311,14 @@ impl IntegerRangeControl {
 }
 
 impl ControlDescription for IntegerRangeControl {
-	type ValueType = ConValueInteger;
 	type ConType = ConTypeInt;
+	type ValueType = ConValueInteger;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
@@ -307,7 +326,7 @@ impl ControlDescription for IntegerRangeControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -325,12 +344,13 @@ impl ControlDefault for IntegerRangeControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
 impl ControlStep for IntegerRangeControl {
-	// Default should be based on ValueType, so this makes sure they can be compared.
+	// Default should be based on ValueType, so this makes sure they can be
+	// compared.
 	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
@@ -339,7 +359,8 @@ impl ControlStep for IntegerRangeControl {
 
 	fn valid(&self, value: Self::StepType) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0
-			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0
+			|| (value - self.get_value().get_value()).abs() % self.get_step()
+				== 0
 	}
 }
 
@@ -388,19 +409,19 @@ impl FloatControl {
 }
 
 impl ControlDescription for FloatControl {
-	type ValueType = ConValueFloat;
 	type ConType = ConTypeFloat;
+	type ValueType = ConValueFloat;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -418,12 +439,13 @@ impl ControlDefault for FloatControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
 impl ControlStep for FloatControl {
-	// Default should be based on ValueType, so this makes sure they can be compared.
+	// Default should be based on ValueType, so this makes sure they can be
+	// compared.
 	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
@@ -432,7 +454,8 @@ impl ControlStep for FloatControl {
 
 	fn valid(&self, value: Self::StepType) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0.0
-			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0.0
+			|| (value - self.get_value().get_value()).abs() % self.get_step()
+				== 0.0
 	}
 }
 
@@ -471,14 +494,14 @@ impl FloatRangeControl {
 }
 
 impl ControlDescription for FloatRangeControl {
-	type ValueType = ConValueFloat;
 	type ConType = ConTypeFloat;
+	type ValueType = ConValueFloat;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
@@ -486,7 +509,7 @@ impl ControlDescription for FloatRangeControl {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -504,12 +527,13 @@ impl ControlDefault for FloatRangeControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
 impl ControlStep for FloatRangeControl {
-	// Default should be based on ValueType, so this makes sure they can be compared.
+	// Default should be based on ValueType, so this makes sure they can be
+	// compared.
 	type StepType = Self::ConType;
 
 	fn get_step(&self) -> Self::StepType {
@@ -518,7 +542,8 @@ impl ControlStep for FloatRangeControl {
 
 	fn valid(&self, value: Self::StepType) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0.0
-			|| (value - self.get_value().get_value()).abs() % self.get_step() == 0.0
+			|| (value - self.get_value().get_value()).abs() % self.get_step()
+				== 0.0
 	}
 }
 
@@ -564,14 +589,14 @@ impl BooleanControl {
 }
 
 impl ControlDescription for BooleanControl {
-	type ValueType = ConValueBoolean;
 	type ConType = ConTypeBool;
+	type ValueType = ConValueBoolean;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -590,7 +615,7 @@ impl ControlDefault for BooleanControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -620,14 +645,14 @@ impl StringControl {
 }
 
 impl ControlDescription for StringControl {
-	type ValueType = ConValueString;
 	type ConType = ConTypeString;
+	type ValueType = ConValueString;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -645,8 +670,8 @@ impl ControlDefault for StringControl {
 	}
 
 	fn reset_to_default(&mut self) {
-		self.set_value(self.get_default().unwrap_or("".to_string()).into())
-			.expect("default value should never be invalid")
+		self.set_value(self.get_default().unwrap_or_default().into())
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -676,14 +701,14 @@ impl BytesControl {
 }
 
 impl ControlDescription for BytesControl {
-	type ValueType = ConValueBytes;
 	type ConType = ConTypeBytes;
+	type ValueType = ConValueBytes;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -702,7 +727,7 @@ impl ControlDefault for BytesControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -732,14 +757,14 @@ impl KeyValuePairControl {
 }
 
 impl ControlDescription for KeyValuePairControl {
-	type ValueType = ConValueKeyValue;
 	type ConType = ConTypeKeyValue;
+	type ValueType = ConValueKeyValue;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -758,7 +783,7 @@ impl ControlDefault for KeyValuePairControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -788,14 +813,14 @@ impl PointControl {
 }
 
 impl ControlDescription for PointControl {
-	type ValueType = ConValuePoint;
 	type ConType = ConTypePoint;
+	type ValueType = ConValuePoint;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -814,11 +839,12 @@ impl ControlDefault for PointControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
-/// A camera control that consists of a value, default, and a vector of possible options.
+/// A camera control that consists of a value, default, and a vector of possible
+/// options.
 ///
 /// Maps to [`ControlValueDescription::Enum`]
 
@@ -847,14 +873,14 @@ impl EnumControl {
 }
 
 impl ControlDescription for EnumControl {
-	type ValueType = ConValueEnum;
 	type ConType = ConTypeEnum;
+	type ValueType = ConValueEnum;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -873,7 +899,7 @@ impl ControlDefault for EnumControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -920,19 +946,19 @@ impl RGBControl {
 }
 
 impl ControlDescription for RGBControl {
-	type ValueType = ConValueRGB;
 	type ConType = ConTypeRGB;
+	type ValueType = ConValueRGB;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -950,7 +976,7 @@ impl ControlDefault for RGBControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -987,19 +1013,19 @@ impl MenuControl {
 }
 
 impl ControlDescription for MenuControl {
-	type ValueType = ConValueMenu;
 	type ConType = ConTypeMenu;
+	type ValueType = ConValueMenu;
 
 	fn get_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), ()> {
+	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
 		} else {
-			Err(())
+			Err(CameraDeviceError::InvalidControlValue.into())
 		}
 	}
 
@@ -1017,7 +1043,7 @@ impl ControlDefault for MenuControl {
 
 	fn reset_to_default(&mut self) {
 		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid")
+			.expect("default value should never be invalid");
 	}
 }
 
@@ -1033,11 +1059,15 @@ impl ControlItems for MenuControl {
 	}
 }
 
-/// Automatically implement [`Hash`], [`PartialEq`], [`Eq`], [`PartialOrd`], and [`Ord`] on a struct by its control id.
+/// Automatically implement [`Hash`], [`PartialEq`], [`Eq`], [`PartialOrd`], and
+/// [`Ord`] on a struct by its control id.
 macro_rules! impl_identifiable {
 	($type:ty) => {
 		impl Hash for $type {
-			fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+			fn hash<H>(&self, state: &mut H)
+			where
+				H: std::hash::Hasher,
+			{
 				self.get_id().hash(state);
 			}
 		}
@@ -1052,7 +1082,7 @@ macro_rules! impl_identifiable {
 
 		impl PartialOrd for $type {
 			fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-				self.get_id().partial_cmp(&other.get_id())
+				Some(self.cmp(other))
 			}
 		}
 

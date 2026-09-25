@@ -4,24 +4,28 @@ pub mod disconnected;
 pub mod invalid;
 pub mod limbo;
 
-use nokhwa::utils::CameraIndex;
-use server_edge_datatypes::shared::CameraStatus;
-
-use crate::tcam_interface::CameraDevice;
-
-use super::OccupiedIndices;
-
 pub use active::Active;
 pub use broken::Broken;
 pub use disconnected::Disconnected;
 pub use invalid::Invalid;
 pub use limbo::Limbo;
+use nokhwa::utils::CameraIndex;
+use server_edge_datatypes::shared::CameraStatus;
+
+use super::OccupiedIndices;
+use crate::tcam_interface::CameraDevice;
 
 /// Named type for clarity.
 pub type InsertWasSuccessful = bool;
 
 /// Additional methods for types that represent occupied indices.
-pub trait IndexOccupier: AsRef<OccupiedIndices> + AsMut<OccupiedIndices> {
+#[expect(
+	dead_code,
+	reason = "Currently not used, but provides the option if needed"
+)]
+pub trait IndexOccupier:
+	AsRef<OccupiedIndices> + AsMut<OccupiedIndices>
+{
 	/// Check whether an index is present.
 	fn indices_has(&self, index: CameraIndex) -> bool {
 		self.as_ref().contains(&index)
@@ -83,7 +87,7 @@ impl ConnectionStatus {
 		match self {
 			ConnectionStatus::Active { .. } => CameraStatus::Active,
 			ConnectionStatus::Broken { .. } => CameraStatus::Broken,
-			ConnectionStatus::Disconnected { .. } => CameraStatus::Broken,
+			ConnectionStatus::Disconnected { .. } => CameraStatus::Disconnected,
 			ConnectionStatus::Invalid { .. } => CameraStatus::Invalid,
 			ConnectionStatus::Limbo { .. } => CameraStatus::Limbo,
 		}

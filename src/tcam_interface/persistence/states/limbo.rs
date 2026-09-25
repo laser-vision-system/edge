@@ -5,9 +5,8 @@ use std::{
 
 use server_edge_datatypes::shared::CameraStatus;
 
-use crate::tcam_interface::{PerpetualInfo, persistence::OccupiedIndices};
-
 use super::{Active, Disconnected, IndexOccupier};
+use crate::tcam_interface::{PerpetualInfo, persistence::OccupiedIndices};
 
 /// A connection in a limbo state.
 ///
@@ -47,7 +46,7 @@ impl Limbo {
 	}
 }
 
-//Accessors.
+// Accessors.
 impl Limbo {
 	/// Get the name of this device.
 	pub fn get_name(&self) -> Cow<'_, str> {
@@ -56,12 +55,12 @@ impl Limbo {
 
 	/// Update the name of this device.
 	pub fn set_name(&mut self, name: String) {
-		self.name = name
+		self.name = name;
 	}
 
 	/// Map this type to a [`CameraStatus`].
-	pub fn get_status(&self) -> CameraStatus {
-		CameraStatus::Active
+	pub fn get_status() -> CameraStatus {
+		CameraStatus::Limbo
 	}
 }
 

@@ -3,16 +3,15 @@
 // TODO: Implement `Borrow` on everything.
 
 use nokhwa::utils::ControlValueSetter;
+use serde::{Deserialize, Serialize};
 
 use super::{
 	traits::ControlValue,
 	types::{
-		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt, ConTypeKeyValue,
-		ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
+		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
+		ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 	},
 };
-
-use serde::{Deserialize, Serialize};
 
 // ==================== READ HERE FIRST ====================
 //
@@ -26,13 +25,23 @@ use serde::{Deserialize, Serialize};
 //
 // ==================== ^^^^^^^^^^^^^^^ ====================
 
-//pub struct ControlValueNone;
+// pub struct ControlValueNone;
 
 /// A control that has a value of the type [`ControlTypeInteger`].
 ///
 /// Maps to [`ControlValueSetter::Integer`].
 #[derive(
-	Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
+	Clone,
+	Copy,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
 )]
 pub struct ConValueInteger(ConTypeInt);
 
@@ -65,7 +74,9 @@ pub type ConValueIntegerType = <ConValueInteger as ControlValue>::ConType;
 /// A control that has a value of the type [`ControlTypeFloat`].
 ///
 /// Maps to [`ControlValueSetter::Float`].
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(
+	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
+)]
 pub struct ConValueFloat(ConTypeFloat);
 
 impl From<ConTypeFloat> for ConValueFloat {
@@ -98,7 +109,17 @@ pub type ConValueFloatType = <ConValueFloat as ControlValue>::ConType;
 ///
 /// Maps to [`ControlValueSetter::Boolean`].
 #[derive(
-	Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
+	Clone,
+	Copy,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
 )]
 pub struct ConValueBoolean(ConTypeBool);
 
@@ -131,7 +152,18 @@ pub type ConValueBooleanType = <ConValueBoolean as ControlValue>::ConType;
 /// A control that has a value of the type [`ControlTypeString`].
 ///
 /// Maps to [`ControlValueSetter::String`].
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
 pub struct ConValueString(ConTypeString);
 
 impl From<ConTypeString> for ConValueString {
@@ -163,7 +195,18 @@ pub type ConValueStringType = <ConValueString as ControlValue>::ConType;
 /// A control that has a value of the type [`ControlTypeBytes`].
 ///
 /// Maps to [`ControlValueSetter::Bytes`].
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
 pub struct ConValueBytes(ConTypeBytes);
 
 impl From<ConTypeBytes> for ConValueBytes {
@@ -196,7 +239,17 @@ pub type ConValueBytesType = <ConValueBytes as ControlValue>::ConType;
 ///
 /// Maps to [`ControlValueSetter::KeyValue`].
 #[derive(
-	Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
+	Clone,
+	Copy,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
 )]
 pub struct ConValueKeyValue(ConTypeKeyValue);
 
@@ -229,7 +282,9 @@ pub type ConValueKeyValueType = <ConValueKeyValue as ControlValue>::ConType;
 /// A control that has a value of the type [`Point`].
 ///
 /// Maps to [`ControlValueSetter::Point`].
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(
+	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
+)]
 pub struct ConValuePoint(ConTypePoint);
 
 impl From<ConTypePoint> for ConValuePoint {
@@ -262,7 +317,17 @@ pub type ConValuePointType = <ConValuePoint as ControlValue>::ConType;
 ///
 /// Maps to [`ControlValueSetter::EnumValue`].
 #[derive(
-	Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
+	Clone,
+	Copy,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
 )]
 pub struct ConValueEnum(ConTypeEnum);
 
@@ -295,7 +360,9 @@ pub type ConValueEnumType = <ConValueEnum as ControlValue>::ConType;
 /// A control that has a value of the type [`RGB`].
 ///
 /// Maps to [`ControlValueSetter::RGB`].
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(
+	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
+)]
 pub struct ConValueRGB(ConTypeRGB);
 
 impl From<ConTypeRGB> for ConValueRGB {
@@ -325,7 +392,17 @@ impl From<ConValueRGB> for ControlValueSetter {
 pub type ConValueRGBType = <ConValueRGB as ControlValue>::ConType;
 
 #[derive(
-	Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
+	Clone,
+	Copy,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
 )]
 pub struct ConValueMenu(ConTypeMenu);
 

@@ -1,3 +1,10 @@
+// TODO: Remove all unwraps and then this.
+#![expect(
+	clippy::unwrap_used,
+	clippy::unwrap_in_result,
+	reason = "WIP development"
+)]
+
 use std::{
 	borrow::Cow,
 	ops::{Deref, DerefMut},
@@ -6,6 +13,7 @@ use std::{
 use image::RgbImage;
 use server_edge_datatypes::shared::{CameraId, CameraStatus};
 
+use super::{Disconnected, IndexOccupier, Limbo};
 use crate::{
 	error::Result,
 	logger::logger,
@@ -15,8 +23,6 @@ use crate::{
 	},
 	vision_processor::BatchItem,
 };
-
-use super::{Disconnected, IndexOccupier, Limbo};
 
 /// A connection in an active state.
 ///
@@ -43,7 +49,11 @@ pub struct Active {
 
 // Constructors.
 impl Active {
-	pub fn new(camera: CameraDevice, occupied_indices: OccupiedIndices, name: String) -> Self {
+	pub fn new(
+		camera: CameraDevice,
+		occupied_indices: OccupiedIndices,
+		name: String,
+	) -> Self {
 		Self {
 			occupied_indices,
 			data: PerpetualInfo::default(),
@@ -92,7 +102,7 @@ impl Active {
 
 	/// Update the name of this device.
 	pub fn set_name(&mut self, name: String) {
-		self.name = name
+		self.name = name;
 	}
 
 	/// Get a reference to the current camera.
@@ -106,14 +116,17 @@ impl Active {
 	}
 
 	/// Map this type to a [`CameraStatus`].
-	pub fn get_status(&self) -> CameraStatus {
+	pub fn get_status() -> CameraStatus {
 		CameraStatus::Active
 	}
 }
 
 // Operational.
 impl Active {
-	pub fn get_image(&mut self, camera_err_decrement: ErrAccType) -> Result<RgbImage> {
+	pub fn get_image(
+		&mut self,
+		camera_err_decrement: ErrAccType,
+	) -> Result<RgbImage> {
 		let frame = self.get_camera_mut().get_frame()?;
 
 		logger()
@@ -133,7 +146,11 @@ impl Active {
 		Ok(image)
 	}
 
-	pub fn make_batch_item(&mut self, image: RgbImage, id: CameraId) -> BatchItem<'_> {
+	pub fn make_batch_item(
+		&mut self,
+		image: RgbImage,
+		id: CameraId,
+	) -> BatchItem<'_> {
 		let calibrate = self.data.get_calibrate();
 		self.data.set_calibrate(false);
 		let currently_viewed = self.data.get_currently_viewed();
