@@ -4,7 +4,6 @@ run-name: ${{ github.actor }} is building and pushing a docker image
 
 on:
   workflow_dispatch:
-
   push:
     branches: [ "main" , "feat/docker-automated-workflow" ]
 
@@ -52,20 +51,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-#      - uses: actions/checkout@v4
-#      - name: Build the Docker image
-#        run: docker buildx build --cache-from type=registry,ref=stable:buildcache --cache-to type=registry,ref=stable:buildcache,mode=max . --load --tag stable:$(date +%s) --platform linux/arm64
-
-#      - name: Log in to the Container registry
-#        uses: docker/login-action@v4
-#        with:
-#          registry: ${{ env.REGISTRY }}
-#          username: ${{ github.actor }}
-#          password: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY}}
-
-#      - name: Set up Docker Buildx
-#        uses: docker/setup-buildx-action@v3
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
@@ -76,4 +61,3 @@ jobs:
           platforms: linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # github-token: '${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}'
