@@ -68,7 +68,10 @@ fn print_camera_details() {
 #[test]
 #[ignore = "IO bound"]
 fn get_frame() {
-	let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+		.unwrap()
+		.open()
+		.unwrap();
 	let _ = cam.get_frame().unwrap();
 	let _ = cam.get_frame().unwrap();
 }
@@ -76,7 +79,10 @@ fn get_frame() {
 #[test]
 #[ignore = "IO bound"]
 fn decode_image() {
-	let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+		.unwrap()
+		.open()
+		.unwrap();
 	let frame = cam.get_frame().unwrap();
 	let _ = cam.decode_image(frame);
 }
@@ -108,7 +114,10 @@ fn get_stripped_controls() {
 #[test]
 #[ignore = "IO bound"]
 fn set_control() -> Result<()> {
-	let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+		.unwrap()
+		.open()
+		.unwrap();
 	let id = KnownCameraControl::Brightness;
 
 	// Assume it will always be this variant.
@@ -148,7 +157,10 @@ fn set_control() -> Result<()> {
 #[test]
 #[ignore = "IO bound"]
 fn set_control_exposure() -> Result<()> {
-	let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+		.unwrap()
+		.open()
+		.unwrap();
 	let id = KnownCameraControl::AutoExposure;
 	let desired = 1;
 
@@ -200,6 +212,9 @@ fn set_control_exposure() -> Result<()> {
 #[test]
 #[ignore = "IO bound"]
 fn reset_controls_to_default() {
-	let mut cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+		.unwrap()
+		.open()
+		.unwrap();
 	cam.reset_controls_to_default();
 }

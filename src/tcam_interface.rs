@@ -8,6 +8,7 @@ mod persistence;
 
 pub use camera_device::CameraDevice;
 pub use identifier::Identifier;
+use nokhwa::NokhwaError;
 pub use persistence::{
 	MaybeBatch, MaybeImage, PerpetualInfo, PersistEntry, Persistence, WhyNo,
 	polling,
@@ -25,8 +26,10 @@ pub enum CameraDeviceError {
 		"The nokhwa camera could not be initialised at index `{index}`: '{reason}'"
 	)]
 	NokhwaInitialisation { index: String, reason: String },
-	#[error("The nokhwa camera stream could not be started: '{reason}'")]
-	StreamOpen { reason: String },
+	#[error("We do not currently have support for the '{cam_type}' type")]
+	UnsupportedCameraType { cam_type: String },
+	#[error(transparent)]
+	StreamOpen(#[from] NokhwaError),
 	#[error("The frame was not able to be read by nokhwa")]
 	FrameRead,
 	#[error("The frame could not be decoded because it is invalid")]

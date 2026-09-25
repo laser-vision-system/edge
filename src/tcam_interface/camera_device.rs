@@ -10,7 +10,7 @@ use std::{cmp::Ordering, io::Cursor};
 
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
-	self, OpenRequest, OpenedCamera,
+	OpenRequest, OpenedCamera, StreamCamera,
 	format_types::Mjpeg,
 	frame::{Frame, IntoRgb as _},
 	session::open_with_buffers,
@@ -29,6 +29,7 @@ use super::{
 };
 use crate::{
 	error::{EdgeError, Result},
+	logger::logger,
 	settings::CAMERA_BUFFER_COUNT,
 };
 
@@ -39,37 +40,61 @@ use crate::{
 /// use `frame_raw()` to avoid pointless copy operations.
 #[must_use]
 pub struct CameraDevice {
-	inner: nokhwa::StreamCamera,
+	inner: StreamCamera,
 }
 
 impl CameraDevice {
+	/// Attempt to create a device at the given index.
 	pub fn try_new(index: CameraIndex) -> Result<Self> {
-		// TODO: Modify CameraIndex with Cow support.
 		let index_str = index.to_string();
 
 		let opened =
 			open_with_buffers(index, OpenRequest::any(), CAMERA_BUFFER_COUNT)
-				.map_err(|why| {
-				let err = CameraDeviceError::NokhwaInitialisation {
-					index: index_str,
-					reason: why.to_string(),
-				};
-				EdgeError::from(err)
+				.map_err(|why| CameraDeviceError::NokhwaInitialisation {
+				index: index_str,
+				reason: why.to_string(),
 			})?;
 
-		let OpenedCamera::Stream(mut camera) = opened else {
-			// TEMP
-			return Err(CameraDeviceError::CameraNotPresent.into());
+		let stream_camera = match opened {
+			OpenedCamera::Stream(stream) => stream,
+			OpenedCamera::Shutter(_) => {
+				return Err(EdgeError::from(
+					CameraDeviceError::UnsupportedCameraType {
+						cam_type: "Shutter".into(),
+					},
+				));
+			},
+			OpenedCamera::Hybrid(hybrid) => {
+				logger().lock().unwrap().log_warn(
+					"HybridCamera detected, converting to StreamCamera",
+				);
+				hybrid.into()
+			},
 		};
 
-		camera.open().map_err(|why| {
-			let err = CameraDeviceError::StreamOpen {
-				reason: why.to_string(),
-			};
-			EdgeError::from(err)
-		})?;
+		Ok(Self {
+			inner: stream_camera,
+		})
+	}
 
-		Ok(Self { inner: camera })
+	pub fn try_new_open(index: CameraIndex) -> Result<Self> {
+		Self::try_new(index)?.open()
+	}
+
+	pub fn try_new_open_with_default_controls(
+		index: CameraIndex,
+	) -> Result<Self> {
+		Self::try_new(index)?.open()?.with_default_controls()
+	}
+
+	pub fn open(mut self) -> Result<Self> {
+		self.inner.open().map_err(CameraDeviceError::StreamOpen)?;
+		Ok(self)
+	}
+
+	pub fn with_default_controls(mut self) -> Result<Self> {
+		self.reset_controls_to_default();
+		Ok(self)
 	}
 
 	pub fn encode_image(data: &RgbImage) -> Vec<u8> {

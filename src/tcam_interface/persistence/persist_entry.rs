@@ -80,10 +80,11 @@ impl PersistEntry {
 			if point.is_metadata {
 				continue;
 			}
-			let maybe_camera = CameraDevice::try_new(point.index.clone());
+			let maybe_camera = CameraDevice::try_new_open_with_default_controls(
+				point.index.clone(),
+			);
 			match maybe_camera {
-				Ok(mut camera) => {
-					camera.reset_controls_to_default();
+				Ok(camera) => {
 					return Some(camera);
 				},
 				// TODO: This might be better suited as a warn.
