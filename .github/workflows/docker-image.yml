@@ -39,6 +39,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: stable:$(date +%s)
+          tags: stable:test
           cache-from: type=registry,ref=stable:buildcache
           cache-to: type=registry,ref=stable:buildcache,mode=max
