@@ -80,9 +80,7 @@ impl PersistEntry {
 			if point.is_metadata {
 				continue;
 			}
-			let maybe_camera = CameraDevice::try_new_open_with_default_controls(
-				point.index.clone(),
-			);
+			let maybe_camera = CameraDevice::try_new_open(point.index.clone());
 			match maybe_camera {
 				Ok(camera) => {
 					return Some(camera);
