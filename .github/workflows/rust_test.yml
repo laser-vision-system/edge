@@ -55,7 +55,6 @@ jobs:
 
     - uses: Swatinem/rust-cache@v2
       with:
-        key: dev
         cache-on-failure: false
 
     - name: Build binaries in dev mode
@@ -89,7 +88,6 @@ jobs:
 
     - uses: Swatinem/rust-cache@v2
       with:
-        key: release
         cache-on-failure: false
 
     - name: Build binaries in release mode

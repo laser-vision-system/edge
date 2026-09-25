@@ -36,8 +36,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-          submodules: recursive
-          token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
+        submodules: recursive
+        token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
 
     - uses: dtolnay/rust-toolchain@v1
       with:
@@ -51,8 +51,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-          submodules: recursive
-          token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
+        submodules: recursive
+        token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
 
     - uses: dtolnay/rust-toolchain@v1
       with:
