@@ -27,7 +27,7 @@
 //! ## TODO: Oh god fix the naming of the types.
 
 use std::{
-	collections::HashMap,
+	collections::BTreeMap,
 	fmt,
 	ops::{Deref, DerefMut},
 };
@@ -44,7 +44,7 @@ pub mod values;
 use descriptions::CamControl;
 use serde::{Deserialize, Serialize};
 
-type MapType = HashMap<KnownCameraControl, CamControl>;
+type MapType = BTreeMap<KnownCameraControl, CamControl>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ControlMap {
