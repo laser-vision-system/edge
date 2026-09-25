@@ -38,7 +38,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
-          tags: cos40005-p12/edge:test-image
-          cache-from: type=registry,ref=cos40005-p12/edge:buildcache
-          cache-to: type=registry,ref=cos40005-p12/edge:buildcache,mode=max
+          push: true
+          tags: stable:$(date +%s)
+          cache-from: type=registry,ref=stable:buildcache
+          cache-to: type=registry,ref=stable:buildcache,mode=max
