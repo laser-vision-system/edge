@@ -362,17 +362,20 @@ mod tests {
 
 		println!("Available devices: [");
 		for cam in cameras {
-			print!(
-				"\t{}:\n\t\t{}\n\t\t{}",
-				cam.index().as_string(),
+			if cam.is_metadata() {
+				println!("\tindex `{}` (metadata):", cam.index().as_string())
+			} else {
+				println!("\tindex `{}`:", cam.index().as_string())
+			}
+			println!(
+				"\t\tname: {}\n\t\tdesc: {}",
 				cam.human_name(),
-				cam.description(),
+				cam.description()
 			);
 			let misc = cam.misc();
 			if !misc.is_empty() {
-				print!("\n\t\t{misc}");
+				println!("\t\tmisc: {misc}");
 			}
-			println!();
 		}
 		println!("]");
 	}
