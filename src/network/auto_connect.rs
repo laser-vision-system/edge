@@ -127,10 +127,7 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 			},
 			#[cfg(debug_assertions)]
 			Ok(Err(why)) => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_error("Incorrect message response", &why);
+				why.log();
 			},
 			// Ignore failures silently
 			_ => {},
@@ -164,7 +161,7 @@ async fn loop_until_connection() -> (WebSocket, Settings) {
 		match try_connect_once().await {
 			Ok(yay) => return yay,
 			Err(err) => {
-				logger().lock().unwrap().log_error("PLEASE", &err);
+				err.log();
 			},
 		}
 		limit_interval.tick().await;

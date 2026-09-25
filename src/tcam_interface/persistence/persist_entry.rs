@@ -404,23 +404,21 @@ impl PersistEntry {
 	) -> Option<MaybeImage> {
 		let active = self.get_active_mut()?;
 
-		let maybeimage = active
-			.get_image(camera_err_decrement)
-			.inspect_err(|why| logger().lock().unwrap().log_error("", why))
-			.map_or_else(
-				|_| {
-					active.add_error(camera_err_increment);
+		let maybeimage = active.get_image(camera_err_decrement).map_or_else(
+			|why| {
+				why.log();
+				active.add_error(camera_err_increment);
 
-					if active.err_accumulation() < camera_err_threshold {
-						logger().lock().unwrap().log_warn("disconnetcted");
-						MaybeImage::WhyNo(WhyNo::Disconnected)
-					} else {
-						logger().lock().unwrap().log_warn("bokrne");
-						MaybeImage::WhyNo(WhyNo::Broken)
-					}
-				},
-				MaybeImage::from,
-			);
+				if active.err_accumulation() < camera_err_threshold {
+					logger().lock().unwrap().log_warn("disconnetcted");
+					MaybeImage::WhyNo(WhyNo::Disconnected)
+				} else {
+					logger().lock().unwrap().log_warn("bokrne");
+					MaybeImage::WhyNo(WhyNo::Broken)
+				}
+			},
+			MaybeImage::from,
+		);
 
 		Some(maybeimage)
 	}

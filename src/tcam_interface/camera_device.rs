@@ -27,7 +27,11 @@ use super::{
 		},
 	},
 };
-use crate::{error::Result, logger::logger, settings::CAMERA_BUFFER_COUNT};
+use crate::{
+	error::{EdgeError, Result},
+	logger::logger,
+	settings::CAMERA_BUFFER_COUNT,
+};
 
 /// An abstraction over the nokhwa camera objects.
 ///
@@ -47,17 +51,15 @@ impl CameraDevice {
 		let opened =
 			open_with_buffers(index, OpenRequest::any(), CAMERA_BUFFER_COUNT)
 				.map_err(|why| {
-					CameraDeviceError::NokhwaInitialisation {
+					let err = CameraDeviceError::NokhwaInitialisation {
 						index: index_str,
 						reason: why.to_string(),
-					}
-					.into()
+					};
+					EdgeError::from(err)
 				})
 				.inspect_err(|why| {
-					logger()
-						.lock()
-						.unwrap()
-						.log_error("Could not initialise camera", why);
+					// TODO: Log outside this function.
+					logger().lock().unwrap().log_error(why);
 				})?;
 
 		let OpenedCamera::Stream(mut camera) = opened else {
@@ -73,16 +75,14 @@ impl CameraDevice {
 		camera
 			.open()
 			.map_err(|why| {
-				CameraDeviceError::StreamOpen {
+				let err = CameraDeviceError::StreamOpen {
 					reason: why.to_string(),
-				}
-				.into()
+				};
+				EdgeError::from(err)
 			})
 			.inspect_err(|why| {
-				logger()
-					.lock()
-					.unwrap()
-					.log_error("Could not initialise camera", why);
+				// TODO: Log outside this function.
+				logger().lock().unwrap().log_error(why);
 			})?;
 
 		logger()
@@ -127,7 +127,7 @@ impl CameraDevice {
 				Ok(Frame::new(buffer))
 			},
 			Err(why) => {
-				logger().lock().unwrap().log_error("", &why);
+				logger().lock().unwrap().log_error(&why);
 				Err(why)
 			},
 		}
@@ -153,7 +153,7 @@ impl CameraDevice {
 				Ok(new)
 			},
 			Err(why) => {
-				logger().lock().unwrap().log_error("", &why);
+				logger().lock().unwrap().log_error(&why);
 				Err(why)
 			},
 		}
@@ -200,35 +200,40 @@ impl CameraDevice {
 			// HACK: Cheekily skip controls that may be inactive/disabled.
 			return Ok(());
 		}
+		let setter = value.into();
 		self.inner
-			.set_control(id, value.clone().into())
-			.map_err(|_| CameraDeviceError::SetControl.into())
+			.set_control(id, setter.clone())
+			.map_err(|_| {
+				CameraDeviceError::SetControl {
+					id: id.to_string(),
+					value: setter.to_string(),
+				}
+				.into()
+			})
 			.inspect_err(|why| {
-				logger().lock().unwrap().log_error(
-					&format!(
-						"Failed to set control {} to {}",
-						id,
-						value.into()
-					),
-					why,
-				);
+				// TODO: Log outside this function.
+				logger().lock().unwrap().log_error(why);
 			})
 	}
 
 	pub fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
-		controls.into_inner().into_iter().for_each(|(id, val)| {
+		controls.into_inner().into_iter().try_for_each(|(id, val)| {
 			let CamControl::IntegerRange(control) = val else {
-				logger().lock().unwrap().log_error(
-					"Attempting to set a control of an unsupported type.",
-					&CameraDeviceError::SetControl.into(),
-				);
-				return;
+				// TODO: Error type for "Attempting to set a control of an
+				// unsupported type"
+				let err = CameraDeviceError::SetControl {
+					id: id.to_string(),
+					value: "unknown type".into(),
+				}
+				.into();
+
+				// TODO: Log outside this function.
+				logger().lock().unwrap().log_error(&err);
+				return Err(err);
 			};
 			// TODO: Handle error. Maybe try make this operation atomic?
-			let _ = self.set_control(id, control.get_value());
-		});
-
-		Ok(())
+			self.set_control(id, control.get_value())
+		})
 	}
 
 	/// Set every control on the camera back to its default value.

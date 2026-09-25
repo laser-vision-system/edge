@@ -10,6 +10,7 @@ use server_edge_datatypes::{
 use tokio::time::interval;
 
 use crate::{
+	error::EdgeError,
 	logger::logger,
 	network::{
 		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
@@ -123,11 +124,8 @@ impl Conductor {
 					)
 					.await;
 
-				let _ = result.inspect_err(|why| {
-					logger().lock().unwrap().log_error(
-						&format!("failed to send to server: {why}"),
-						&NetworkError::ServerConnection.into(),
-					);
+				let _ = result.inspect_err(|_| {
+					EdgeError::from(NetworkError::ServerConnection).log();
 				});
 			}
 
@@ -135,11 +133,8 @@ impl Conductor {
 				let mut encoded = CameraDevice::encode_image(&item.image);
 				let result =
 					websocket.send_image(item.camera_id, &mut encoded).await;
-				let _ = result.inspect_err(|why| {
-					logger().lock().unwrap().log_error(
-						&format!("failed to image send to server: {why}"),
-						&NetworkError::ServerConnection.into(),
-					);
+				let _ = result.inspect_err(|_| {
+					EdgeError::from(NetworkError::ServerConnection).log();
 				});
 			}
 		}
@@ -178,10 +173,9 @@ impl Conductor {
 						.send_text("Configuration:".into(), configuration)
 						.await
 				{
-					logger().lock().unwrap().log_error(
-						"Failed to send configuration request",
-						&NetworkError::WebSocketConnection.into(),
-					);
+					// TODO: Error type for "Failed to send configuration
+					// request"
+					EdgeError::from(NetworkError::WebSocketConnection).log();
 				}
 			},
 			EdgeRequests::Setpoint(calibration_req) => {

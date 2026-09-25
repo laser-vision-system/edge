@@ -1,6 +1,7 @@
 use serde_json::error::Error as SerdeError;
 
 use crate::{
+	logger::logger,
 	network::NetworkError,
 	tcam_interface::{CameraDeviceError, PersistenceError},
 };
@@ -35,6 +36,13 @@ pub enum EdgeError {
 		#[from]
 		reason: SerdeError,
 	},
+}
+
+impl EdgeError {
+	#[expect(clippy::unwrap_used, reason = "WIP development")]
+	pub fn log(self) {
+		logger().lock().unwrap().log_error(&self);
+	}
 }
 
 impl Clone for EdgeError {

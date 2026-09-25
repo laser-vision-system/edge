@@ -24,7 +24,7 @@ pub use self::{
 	persist_entry::{MaybeImage, PersistEntry, WhyNo},
 };
 use super::{Identifier, PersistenceError};
-use crate::{error::EdgeError, logger::logger, vision_processor::BatchItem};
+use crate::{error::EdgeError, vision_processor::BatchItem};
 
 pub type ErrAccType = u16;
 
@@ -95,10 +95,7 @@ impl Persistence {
 		if let Some(entry) = self.get_mut(id) {
 			entry.set_currently_viewed(state);
 		} else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &PersistenceError::UnknownCameraId.into());
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 		}
 	}
 
@@ -106,10 +103,7 @@ impl Persistence {
 		if let Some(entry) = self.get_mut(request.camera_id) {
 			entry.set_name(request.name);
 		} else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &PersistenceError::UnknownCameraId.into());
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 		}
 	}
 
@@ -135,33 +129,24 @@ impl Persistence {
 	)]
 	pub fn set_configuration(&mut self, request: Configuration) {
 		let Some(entry) = self.get_mut(request.camera_id) else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &PersistenceError::UnknownCameraId.into());
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 			return;
 		};
 		let Some(active) = entry.get_active_mut() else {
-			logger().lock().unwrap().log_error(
-				"Not active",
-				&PersistenceError::IncorrectConnectionStatus.into(),
-			);
+			//"Not active"
+			EdgeError::from(PersistenceError::IncorrectConnectionStatus).log();
 			return;
 		};
 		match serde_json::from_str(&request.configuration) {
 			Ok(map) => {
 				if let Err(why) = active.get_camera_mut().set_controls(map) {
-					logger().lock().unwrap().log_error(
-						"Failed to apply request controls to the camera",
-						&why,
-					);
+					// TODO: Error type for "Failed to apply request controls to
+					// the camera"
+					why.log();
 				}
 			},
 			Err(why) => {
-				logger().lock().unwrap().log_error(
-					"Failed to parse requested configuration",
-					&EdgeError::DecodeControls { reason: why },
-				);
+				EdgeError::from(why).log();
 			},
 		}
 	}
@@ -171,17 +156,12 @@ impl Persistence {
 		request: ViewCameraConfig,
 	) -> Option<Configuration> {
 		let Some(entry) = self.get_mut(request.camera_id) else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &PersistenceError::UnknownCameraId.into());
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 			return None;
 		};
 		let Some(active) = entry.get_active_mut() else {
-			logger().lock().unwrap().log_error(
-				"Not active",
-				&PersistenceError::IncorrectConnectionStatus.into(),
-			);
+			// TODO: Error type for "Not active"
+			EdgeError::from(PersistenceError::IncorrectConnectionStatus).log();
 			return None;
 		};
 		let important_controls =
@@ -201,10 +181,7 @@ impl Persistence {
 		if let Some(entry) = self.get_mut(request.camera_id) {
 			entry.request_calibration();
 		} else {
-			logger()
-				.lock()
-				.unwrap()
-				.log_error("", &PersistenceError::UnknownCameraId.into());
+			EdgeError::from(PersistenceError::UnknownCameraId).log();
 		}
 	}
 }
