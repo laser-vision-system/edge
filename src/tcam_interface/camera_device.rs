@@ -21,7 +21,8 @@ use nokhwa::{
 };
 
 use super::{
-	CameraDeviceError, FrameDecodeCorruption, FrameRead, SelectDecodeFormat,
+	CameraDeviceError, FrameDecodeCorruption, FrameRead, NokhwaInitialisation,
+	SelectDecodeFormat, SetControl, StreamOpen,
 	controls::{
 		ControlMap,
 		descriptions::CamControl,
@@ -55,7 +56,7 @@ impl CameraDevice {
 			open_with_buffers(index, OpenRequest::any(), CAMERA_BUFFER_COUNT)
 				.map_err(|why| CameraDeviceError::NokhwaInitialisation {
 				index: index_str,
-				reason: why.to_string(),
+				inner: NokhwaInitialisation::from(why),
 			})?;
 
 		let stream_camera = match opened {
@@ -91,7 +92,9 @@ impl CameraDevice {
 	}
 
 	pub fn open(mut self) -> Result<Self> {
-		self.inner.open().map_err(CameraDeviceError::StreamOpen)?;
+		self.inner
+			.open()
+			.map_err(|why| CameraDeviceError::from(StreamOpen::from(why)))?;
 		Ok(self)
 	}
 
@@ -188,10 +191,11 @@ impl CameraDevice {
 			return Ok(());
 		}
 		let setter = value.into();
-		self.inner.set_control(id, setter.clone()).map_err(|_| {
+		self.inner.set_control(id, setter.clone()).map_err(|why| {
 			let err = CameraDeviceError::SetControl {
 				id: id.to_string(),
 				value: setter.to_string(),
+				inner: SetControl::from(why),
 			};
 			EdgeError::from(err)
 		})
@@ -200,13 +204,9 @@ impl CameraDevice {
 	pub fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
 		controls.into_inner().into_iter().try_for_each(|(id, val)| {
 			let CamControl::IntegerRange(control) = val else {
-				// TODO: Error type for "Attempting to set a control of an
-				// unsupported type"
-				let err = CameraDeviceError::SetControl {
-					id: id.to_string(),
-					value: "unknown type".into(),
-				};
-				return Err(EdgeError::from(err));
+				return Err(EdgeError::from(
+					CameraDeviceError::SetControlType { id: id.to_string() },
+				));
 			};
 			// TODO: Handle error. Maybe try make this operation atomic?
 			self.set_control(id, control.get_value())

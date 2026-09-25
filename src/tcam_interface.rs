@@ -20,16 +20,19 @@ pub use persistence::{
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum CameraDeviceError {
 	// TODO: This variant is not used, find a place for it or remove.
-	#[error("Nokhwa does not have a backend to use")]
-	NokhwaNoBackend,
+	#[error(transparent)]
+	NokhwaBackend(#[from] NokhwaBackend),
 	#[error(
-		"The nokhwa camera could not be initialised at index `{index}`: '{reason}'"
+		"The nokhwa camera could not be initialised at index `{index}`: '{inner}'"
 	)]
-	NokhwaInitialisation { index: String, reason: String },
+	NokhwaInitialisation {
+		index: String,
+		inner: NokhwaInitialisation,
+	},
 	#[error("We do not currently have support for the '{cam_type}' type")]
 	UnsupportedCameraType { cam_type: String },
 	#[error(transparent)]
-	StreamOpen(#[from] NokhwaError),
+	StreamOpen(#[from] StreamOpen),
 	#[error(transparent)]
 	FrameRead(#[from] FrameRead),
 	#[error(transparent)]
@@ -41,13 +44,31 @@ pub enum CameraDeviceError {
 		"The frame could not be decoded because not more memory could be allocated"
 	)]
 	FrameDecodeOutOfMemory(#[from] FrameDecodeOutOfMemory),
-	#[error("Failed to set control {id} to {value}")]
-	SetControl { id: String, value: String },
+	#[error("Failed to set control {id} to {value}: {inner}")]
+	SetControl {
+		id: String,
+		value: String,
+		inner: SetControl,
+	},
+	#[error("Attempting to set a control of an unsupported type: {id}")]
+	SetControlType { id: String },
 	#[error("Attempted to access a camera that does not exist")]
 	CameraNotPresent,
 	#[error("Attempting to set an invalid control value")]
 	InvalidControlValue,
 }
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct NokhwaBackend(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct NokhwaInitialisation(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct StreamOpen(#[from] NokhwaError);
 
 #[derive(Clone, Debug, thiserror::Error)]
 #[error(transparent)]
@@ -64,6 +85,10 @@ pub struct FrameDecodeCorruption(#[from] NokhwaError);
 #[derive(Clone, Debug, thiserror::Error)]
 #[error(transparent)]
 pub struct FrameDecodeOutOfMemory(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct SetControl(#[from] NokhwaError);
 
 /// Errors specific to camera persistence logic.
 #[derive(Clone, Debug, thiserror::Error)]
