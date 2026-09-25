@@ -1,6 +1,6 @@
 name: Docker Image Builder
 
-run-name: ${{ github.actor }} is building and pushing docker image
+run-name: ${{ github.actor }} is building and pushing a docker image
 
 on:
   workflow_dispatch:
@@ -38,9 +38,8 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
               type=ref,event=branch
-              type=semver,pattern={{version}} 
-              type=semver,pattern={{major}}.{{minor}}
-              type=raw,value=latest,enable={{is_default_branch}}
+              type=raw,value=stable,enable={{is_default_branch}}
+              type=schedule,pattern={{date 'YYYY-MM-DD'}}
 
       - uses: actions/checkout@v4.2.2
       - name: configure docker builder
