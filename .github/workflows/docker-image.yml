@@ -31,17 +31,17 @@ jobs:
            submodules: recursive
            token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
 
-#      - name: Extract metadata
-#        id: meta
-#        uses: docker/metadata-action@v6
-#        with:
-#          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-#          tags: |
-#              type=sha
-#              type=ref,event=branch
-#              type=semver,pattern={{version}}
-#              type=semver,pattern={{major}}.{{minor}}
-#              type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+              type=sha
+              type=ref,event=branch
+              type=semver,pattern={{version}}
+              type=semver,pattern={{major}}.{{minor}}
+              type=raw,value=latest,enable={{is_default_branch}}
 
       - uses: actions/checkout@v4.2.2
       - name: configure docker builder
@@ -73,7 +73,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/cos40005-p12/edge/stable:$(date '+%Y%M%d')
+          tags: ${{ steps.meta.outputs.tags }}
           builder: container-builder
           platforms: linux/arm64
           cache-from: type=gha
