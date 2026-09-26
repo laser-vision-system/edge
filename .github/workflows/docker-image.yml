@@ -33,7 +33,6 @@ jobs:
       packages: write
 
     strategy:
-      id: os
       matrix:
         include:
           - os: ubuntu-22.04-arm
@@ -75,6 +74,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           builder: container-builder
-          platforms: linux/${{ steps.os.outputs.os.arch }}
+          platforms: linux/${{ matrix.os }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
