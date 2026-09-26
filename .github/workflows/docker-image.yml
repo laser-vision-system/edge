@@ -36,7 +36,7 @@ jobs:
         include:
           - os: ubuntu-22.04-arm
             arch: arm64
-          - os: ubuntu-22.04-amd
+          - os: ubuntu-22.04
             arch: amd64
     steps:
       - name: Checkout Repository
