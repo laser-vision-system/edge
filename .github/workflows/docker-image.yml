@@ -73,6 +73,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           builder: container-builder
-          platforms: linux/arm64
+          platforms: linux/${{ matrix.os.arch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
