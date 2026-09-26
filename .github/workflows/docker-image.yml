@@ -8,11 +8,21 @@ on:
   push:
     branches:
       - 'main'
-      - 'dev'
+      - 'feat/docker-automated-workflow'
+    paths:
+      - '**.rs'
+      - 'Cargo.lock'
+      - 'Dockerfile'
+      - ...
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only if we want a new push to replace an existing build-in-progress.
+  cancel-in-progress: true
 
 jobs:
   docker_build:
@@ -26,6 +36,8 @@ jobs:
         include:
           - os: ubuntu-22.04-arm
             arch: arm64
+          - os: ubuntu-22.04-amd
+            arch: amd64
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4

@@ -44,10 +44,6 @@ rerun = { version = "0.35", features = [
 	"image"
 ] }
 
-[profile.release-with-debug]
-inherits = "release"
-debug = true
-
 [lints.rust]
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.
 
@@ -61,8 +57,6 @@ pedantic = { level = "warn", priority = -1} # This should be upgraded to forbid 
 missing_errors_doc = "allow" # Consider upgrading in the future.
 missing_panics_doc = "allow" # Consider upgrading in the future.
 must_use_candidate = "allow" # We don't need to be constantly alerted to this.
-
-
 
 # Lints from the restriction group:
 absolute_paths = "allow" # Acceptable, maybe this would change.
