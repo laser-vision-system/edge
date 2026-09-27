@@ -44,7 +44,10 @@ impl From<WhyNo> for MaybeImage {
 
 /// This is the value associated with an [`Identifier`].
 pub struct PersistEntry {
-	// Wrapped in option to allow status switching.
+	/// Wrapped in option to allow status switching.
+	/// Never access this directly, or the program may panic.
+	///
+	/// Use [`PersistEntry::as_inner`] instead!
 	inner: Option<ConnectionStatus>,
 }
 
