@@ -19,4 +19,4 @@ RUN cargo build --release --bin edge
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS runtime
 
 COPY --from=builder /app/target/release/edge /edge
-CMD ["edge"]
+CMD ["/edge"]
