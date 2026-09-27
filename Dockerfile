@@ -10,6 +10,7 @@
 #FROM chef AS builder
 FROM --platform=$BUILDPLATFORM rust:bookworm AS builder
 #COPY --from=planner /app/recipe.json recipe.json
+WORKDIR /app
 RUN apt-get update && apt-get install -y clang
 COPY . .
 # Builds dependencies - cached unless recipe.json changes
