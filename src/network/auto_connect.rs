@@ -10,7 +10,9 @@ use server_edge_datatypes::edge::Settings;
 use tokio::{task::JoinSet, time::interval};
 use tokio_tungstenite::connect_async;
 
-use super::{NetworkError, websocket::WebSocket};
+use server_edge_datatypes::edge::InitialiseConnection;
+
+use super::{NetworkError, websocket::WebSocket, persistant_edge_id::get_mac_address};
 use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
@@ -137,6 +139,17 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 	Err(NetworkError::AutoConnect.into())
 }
 
+pub async fn send_persistant_edge_id(mut websocket: WebSocket, setting: Settings) -> (WebSocket, Settings) {
+	websocket.send_text(
+
+		"UpdateCameraStatus:".into(),
+		InitialiseConnection {
+			edge_id:
+		}
+	)
+
+}
+
 /// When call,
 pub async fn assert_connection(
 	websocket: Option<WebSocket>,
@@ -147,6 +160,7 @@ pub async fn assert_connection(
 		(Some(socket), Some(settings)) => {
 			if socket.is_terminated() {
 				return loop_until_connection().await;
+
 			}
 			(socket, settings)
 		},
@@ -159,7 +173,9 @@ async fn loop_until_connection() -> (WebSocket, Settings) {
 	let mut limit_interval = interval(AUTO_CONNECT_DELAY);
 	loop {
 		match try_connect_once().await {
-			Ok(yay) => return yay,
+			Ok(yay) => {
+				return yay
+			},
 			Err(err) => {
 				err.log();
 			},
