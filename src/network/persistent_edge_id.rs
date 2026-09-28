@@ -39,7 +39,7 @@ pub fn get_mac_address() -> Result<u64, NetworkError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::network::persistant_edge_id::{get_mac_address, get_network_interface, mac_octet_converter};
+    use crate::network::persistent_edge_id::{get_mac_address, get_network_interface, mac_octet_converter};
 
     #[test]
     fn test_mac_address() {

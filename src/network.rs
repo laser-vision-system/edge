@@ -2,7 +2,7 @@
 
 pub mod auto_connect;
 pub mod websocket;
-pub mod persistant_edge_id;
+pub mod persistent_edge_id;
 
 use serde::de::DeserializeOwned;
 

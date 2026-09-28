@@ -72,9 +72,8 @@ impl WebSocket {
 	where
 		T: Serialize,
 	{
-		prefix.push_str(&serde_json::to_string(&data)?);
 		self.inner
-			.send(Message::Text(Utf8Bytes::from(prefix)))
+			.send(Message::Text(Utf8Bytes::from(&serde_json::to_string(&data)?)))
 			.await?;
 		Ok(())
 	}
@@ -179,5 +178,24 @@ fn process_incoming(text: &str) -> Option<EdgeRequests> {
 			})
 		},
 		_ => None,
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use server_edge_datatypes::edge::EdgeRequests;
+	use server_edge_datatypes::shared::Configuration;
+	use tokio_tungstenite::tungstenite::Utf8Bytes;
+
+	#[test]
+	fn test_de_serialize_enum() {
+		let enum_struct = Configuration {
+			conn_id: 1,
+			camera_id: 1,
+			configuration: "dummy configuration".to_string(),
+		};
+		let data = EdgeRequests::Configuration(enum_struct);
+		let bytes = Utf8Bytes::from(&serde_json::to_string(&data).unwrap());
+		println!("{:?}", bytes);
 	}
 }

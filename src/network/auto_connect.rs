@@ -6,13 +6,13 @@ use std::{collections::HashSet, fmt};
 
 use pnet_datalink::interfaces;
 use reqwest::Client;
-use server_edge_datatypes::edge::Settings;
+use server_edge_datatypes::edge::{ServerRequests, Settings};
 use tokio::{task::JoinSet, time::interval};
 use tokio_tungstenite::connect_async;
 
 use server_edge_datatypes::edge::InitialiseConnection;
 
-use super::{NetworkError, websocket::WebSocket, persistant_edge_id::get_mac_address};
+use super::{NetworkError, websocket::WebSocket, persistent_edge_id::get_mac_address};
 use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
@@ -139,15 +139,14 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 	Err(NetworkError::AutoConnect.into())
 }
 
-pub async fn send_persistant_edge_id(mut websocket: WebSocket, setting: Settings) -> (WebSocket, Settings) {
-	websocket.send_text(
+pub async fn send_persistent_edge_id(mut websocket: WebSocket, setting: Settings) -> (WebSocket, Settings) {
 
-		"UpdateCameraStatus:".into(),
+	let request_enum = ServerRequests::InitialiseConnection(
 		InitialiseConnection {
-			edge_id:
-		}
-	)
-
+			edge_id: get_mac_address().unwrap()
+		});
+	websocket.send_text("dummy".to_string(), request_enum).await.unwrap();
+	(websocket, setting)
 }
 
 /// When call,
@@ -159,13 +158,17 @@ pub async fn assert_connection(
 		// All good, normal operation.
 		(Some(socket), Some(settings)) => {
 			if socket.is_terminated() {
-				return loop_until_connection().await;
+				let (socket, settings) = loop_until_connection().await;
+				return send_persistent_edge_id(socket, settings).await
 
 			}
 			(socket, settings)
 		},
 		// First time calling.
-		_ => loop_until_connection().await,
+		_ => {
+			let (socket, settings) = loop_until_connection().await;
+			send_persistent_edge_id(socket, settings).await
+		},
 	}
 }
 
