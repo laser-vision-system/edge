@@ -18,7 +18,6 @@ use tokio_tungstenite::{
 
 use crate::{
 	logger::logger,
-	network::unpack,
 	settings::{API, HOST, PORT},
 };
 
@@ -125,15 +124,6 @@ fn process_incoming(text: &str) -> Option<EdgeRequests> {
 		return None
 	};
 
-	match msg {
-		EdgeRequests::SetNameCamera(_) => Some(msg),
-		EdgeRequests::StartViewingCamera(_) => Some(msg),
-		EdgeRequests::StopViewingCamera(_) => Some(msg),
-		EdgeRequests::Configuration(_) => Some(msg),
-		EdgeRequests::ViewCameraConfig(_) => Some(msg),
-		EdgeRequests::Setpoint(_) => Some(msg),
-		EdgeRequests::SetProcessingType(_) => Some(msg),
-		_ => None,
-	}
+	Some(msg)
 }
 
