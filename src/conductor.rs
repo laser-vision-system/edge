@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 
 use server_edge_datatypes::{
-	edge::{EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
+	edge::{ServerRequests, EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
 	shared::{CameraStatus, VisionTechnique},
 };
 use tokio::time::interval;
@@ -79,23 +79,23 @@ impl Conductor {
 				WhyNo::Disconnected => {
 					let _ = websocket
 						.send_text(
-							"UpdateCameraStatus:".into(),
-							UpdateCameraStatus {
-								camera_id: status_change.id,
-								status: CameraStatus::Disconnected,
-							},
-						)
+							ServerRequests::UpdateCameraStatus(
+								UpdateCameraStatus {
+									camera_id: status_change.id,
+									status: CameraStatus::Disconnected,
+								}
+							))
 						.await;
 				},
 				WhyNo::Broken => {
 					let _ = websocket
 						.send_text(
-							"UpdateCameraStatus:".into(),
-							UpdateCameraStatus {
-								camera_id: status_change.id,
-								status: CameraStatus::Broken,
-							},
-						)
+							ServerRequests::UpdateCameraStatus(
+								UpdateCameraStatus {
+									camera_id: status_change.id,
+									status: CameraStatus::Broken,
+								}
+							))
 						.await;
 				},
 			}
@@ -116,12 +116,12 @@ impl Conductor {
 			if let Some(deviation) = deviation_maybe {
 				let result = websocket
 					.send_text(
-						"ImageAnalysis:".into(),
-						ImageAnalysis {
-							camera_id: camid,
-							deviation,
-						},
-					)
+						ServerRequests::ImageAnalysis(
+							ImageAnalysis {
+								camera_id: camid,
+								deviation,
+							}
+						))
 					.await;
 
 				let _ = result.inspect_err(|_| {
@@ -170,7 +170,9 @@ impl Conductor {
 				if let Some(configuration) =
 					self.persistence.get_configuration(view_config_req)
 					&& let Err(_) = websocket
-						.send_text("Configuration:".into(), configuration)
+						.send_text(ServerRequests::Configuration(
+							configuration
+						))
 						.await
 				{
 					// TODO: Error type for "Failed to send configuration
@@ -217,20 +219,20 @@ impl Conductor {
 			};
 			let _ = websocket
 				.send_text(
-					"UpdateCameraStatus:".into(),
-					UpdateCameraStatus { camera_id, status },
-				)
+					ServerRequests::UpdateCameraStatus(
+						UpdateCameraStatus { camera_id, status}
+					))
 				.await;
 		}
 
 		if !new_cameras.is_empty() {
 			let _ = websocket
 				.send_text(
-					"RegisterCameras:".into(),
-					RegisterCameras {
-						cameras: new_cameras,
-					},
-				)
+					ServerRequests::RegisterCameras(
+						RegisterCameras {
+							cameras: new_cameras,
+						}
+					))
 				.await;
 		}
 	}
