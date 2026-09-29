@@ -47,6 +47,7 @@ use serde::{Deserialize, Serialize};
 type MapType = HashMap<KnownCameraControl, CamControl>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct ControlMap {
 	inner: MapType,
 }

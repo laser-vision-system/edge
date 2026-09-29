@@ -129,7 +129,10 @@ fn process_incoming(text: &str) -> Option<EdgeRequests> {
 		EdgeRequests::SetNameCamera(_) => Some(msg),
 		EdgeRequests::StartViewingCamera(_) => Some(msg),
 		EdgeRequests::StopViewingCamera(_) => Some(msg),
-		EdgeRequests::Configuration(_) => Some(msg),
+		EdgeRequests::Configuration(_) => {
+			println!("Hello you matched me properly!!!!");
+			Some(msg)
+		},
 		EdgeRequests::ViewCameraConfig(_) => Some(msg),
 		EdgeRequests::Setpoint(_) => Some(msg),
 		EdgeRequests::SetProcessingType(_) => Some(msg),
