@@ -149,10 +149,7 @@ pub async fn send_persistent_edge_id(
 		ServerRequests::InitialiseConnection(InitialiseConnection {
 			edge_id: get_mac_address().unwrap(),
 		});
-	websocket
-		.send_text(request_enum)
-		.await
-		.unwrap();
+	websocket.send_text(request_enum).await.unwrap();
 	(websocket, setting)
 }
 
