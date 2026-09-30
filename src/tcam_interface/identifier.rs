@@ -13,9 +13,16 @@
 #![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
 use std::{
-	borrow::{Borrow, Cow},
+	borrow::{
+		Borrow,
+		Cow,
+	},
 	fmt,
-	hash::{DefaultHasher, Hash, Hasher},
+	hash::{
+		DefaultHasher,
+		Hash,
+		Hasher,
+	},
 };
 
 use nokhwa::utils::CameraInfo;
@@ -134,7 +141,8 @@ impl fmt::Display for Identifier {
 }
 
 // Assert to the compiler that this type can be equal to itself.
-impl Eq for Identifier {}
+impl Eq for Identifier {
+}
 
 impl Hash for Identifier {
 	fn hash<H>(&self, state: &mut H)

@@ -39,4 +39,5 @@ impl AsMut<OccupiedIndices> for Invalid {
 	}
 }
 
-impl IndexOccupier for Invalid {}
+impl IndexOccupier for Invalid {
+}

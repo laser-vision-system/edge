@@ -12,7 +12,10 @@
 //! - Creates a callback camera, printing image dimensions. Simultaneously polls
 //!   the camera 5 times and saves the images.
 use std::{
-	fs::{self, OpenOptions},
+	fs::{
+		self,
+		OpenOptions,
+	},
 	io::Write as _,
 	path::Path,
 	thread,
@@ -20,13 +23,34 @@ use std::{
 };
 
 use nokhwa::{
-	self, Buffer, CameraRunner, NokhwaError, OpenRequest, OpenedCamera,
-	RunnerConfig, StreamCamera,
-	format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
-	frame::{Frame, IntoRgb as _, IntoRgba as _, RgbaConversion},
+	self,
+	Buffer,
+	CameraRunner,
+	NokhwaError,
+	OpenRequest,
+	OpenedCamera,
+	RunnerConfig,
+	StreamCamera,
+	format_types::{
+		Mjpeg,
+		Nv12,
+		RawBgr,
+		RawRgb,
+		Yuyv,
+	},
+	frame::{
+		Frame,
+		IntoRgb as _,
+		IntoRgba as _,
+		RgbaConversion,
+	},
 	open,
 	session::open_with_buffers,
-	utils::{CameraIndex, CameraInfo, FrameFormat},
+	utils::{
+		CameraIndex,
+		CameraInfo,
+		FrameFormat,
+	},
 };
 
 use crate::settings::CAMERA_BUFFER_COUNT;

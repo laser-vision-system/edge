@@ -5,11 +5,19 @@
 use std::{
 	cell::RefCell,
 	fmt,
-	sync::{Arc, Mutex, OnceLock, Weak},
+	sync::{
+		Arc,
+		Mutex,
+		OnceLock,
+		Weak,
+	},
 };
 
 use image::RgbImage;
-use server_edge_datatypes::shared::{CameraId, VisionTechnique};
+use server_edge_datatypes::shared::{
+	CameraId,
+	VisionTechnique,
+};
 
 use crate::logger::logger;
 

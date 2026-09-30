@@ -5,17 +5,31 @@ use std::collections::HashSet;
 
 use image::RgbImage;
 use nokhwa::utils::CameraIndex;
-use server_edge_datatypes::shared::{CameraId, CameraStatus};
+use server_edge_datatypes::shared::{
+	CameraId,
+	CameraStatus,
+};
 
 use super::{
 	OccupiedIndices,
 	polling::AccessPoint,
-	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
+	states::{
+		Active,
+		Broken,
+		ConnectionStatus,
+		Disconnected,
+		Invalid,
+		Limbo,
+	},
 };
 use crate::{
 	error::EdgeError,
 	logger::logger,
-	tcam_interface::{CameraDevice, Identifier, PersistenceError},
+	tcam_interface::{
+		CameraDevice,
+		Identifier,
+		PersistenceError,
+	},
 	vision_processor::BatchItem,
 };
 

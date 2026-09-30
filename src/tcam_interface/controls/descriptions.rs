@@ -1,29 +1,66 @@
 use std::hash::Hash;
 
 use nokhwa::utils::{
-	CameraControl, ControlValueDescription, KnownCameraControl, MenuEntry,
+	CameraControl,
+	ControlValueDescription,
+	KnownCameraControl,
+	MenuEntry,
 };
-use serde::{Deserialize, Serialize};
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 use super::{
 	traits::{
-		ControlDefault, ControlDescription, ControlItems, ControlMax,
-		ControlMin, ControlPossible, ControlStep, ControlValue as _,
+		ControlDefault,
+		ControlDescription,
+		ControlItems,
+		ControlMax,
+		ControlMin,
+		ControlPossible,
+		ControlStep,
+		ControlValue as _,
 	},
 	types::{
-		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
-		ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
+		ConTypeBool,
+		ConTypeBytes,
+		ConTypeEnum,
+		ConTypeFloat,
+		ConTypeInt,
+		ConTypeKeyValue,
+		ConTypeMenu,
+		ConTypePoint,
+		ConTypeRGB,
+		ConTypeString,
 	},
 	values::{
-		ConValueBoolean, ConValueBooleanType, ConValueBytes, ConValueBytesType,
-		ConValueEnum, ConValueEnumType, ConValueFloat, ConValueFloatType,
-		ConValueInteger, ConValueIntegerType, ConValueKeyValue,
-		ConValueKeyValueType, ConValueMenu, ConValueMenuType, ConValuePoint,
-		ConValuePointType, ConValueRGB, ConValueRGBType, ConValueString,
+		ConValueBoolean,
+		ConValueBooleanType,
+		ConValueBytes,
+		ConValueBytesType,
+		ConValueEnum,
+		ConValueEnumType,
+		ConValueFloat,
+		ConValueFloatType,
+		ConValueInteger,
+		ConValueIntegerType,
+		ConValueKeyValue,
+		ConValueKeyValueType,
+		ConValueMenu,
+		ConValueMenuType,
+		ConValuePoint,
+		ConValuePointType,
+		ConValueRGB,
+		ConValueRGBType,
+		ConValueString,
 		ConValueStringType,
 	},
 };
-use crate::{error::EdgeError, tcam_interface::CameraDeviceError};
+use crate::{
+	error::EdgeError,
+	tcam_interface::CameraDeviceError,
+};
 
 // ===== Field relationship bounds =====
 // (step, min, max, key): value
@@ -1078,7 +1115,8 @@ macro_rules! impl_identifiable {
 			}
 		}
 
-		impl Eq for $type {}
+		impl Eq for $type {
+		}
 
 		impl PartialOrd for $type {
 			fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {

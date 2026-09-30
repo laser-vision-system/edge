@@ -2,7 +2,10 @@
 #![expect(clippy::use_debug, reason = "Tests are a debug context")]
 #![expect(clippy::panic, reason = "Tests are allowed to panic")]
 
-use std::process::{ExitCode, Termination};
+use std::process::{
+	ExitCode,
+	Termination,
+};
 
 use nokhwa::utils::CameraControl;
 
@@ -10,7 +13,9 @@ use super::*;
 use crate::{
 	error::EdgeError,
 	tcam_interface::controls::traits::{
-		ControlItems as _, ControlMax as _, ControlStep as _,
+		ControlItems as _,
+		ControlMax as _,
+		ControlStep as _,
 	},
 };
 

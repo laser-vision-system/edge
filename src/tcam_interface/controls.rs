@@ -29,12 +29,18 @@
 use std::{
 	collections::HashMap,
 	fmt,
-	ops::{Deref, DerefMut},
+	ops::{
+		Deref,
+		DerefMut,
+	},
 };
 
 #[expect(unused_imports, reason = "Needed for module docstring")]
 use nokhwa::utils::ControlValueSetter;
-use nokhwa::utils::{CameraControl, KnownCameraControl};
+use nokhwa::utils::{
+	CameraControl,
+	KnownCameraControl,
+};
 
 pub mod descriptions;
 pub mod traits;
@@ -42,7 +48,10 @@ pub mod types;
 pub mod values;
 
 use descriptions::CamControl;
-use serde::{Deserialize, Serialize};
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 type MapType = HashMap<KnownCameraControl, CamControl>;
 
