@@ -1,6 +1,11 @@
 #![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
 #![expect(clippy::use_debug, reason = "Tests are a debug context")]
 #![expect(clippy::panic, reason = "Tests are allowed to panic")]
+#![expect(
+	clippy::unwrap_used,
+	clippy::unwrap_in_result,
+	reason = "Tests are allowed to unwrap"
+)]
 
 use std::process::{ExitCode, Termination};
 
@@ -99,7 +104,7 @@ fn get_raw_controls() {
 #[ignore = "IO bound"]
 fn get_all_available_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-	let c = cam.get_controls();
+	let c = cam.get_controls().unwrap();
 	println!("{c}");
 }
 
@@ -107,7 +112,7 @@ fn get_all_available_controls() {
 #[ignore = "IO bound"]
 fn get_stripped_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-	let c = cam.get_controls().stripped();
+	let c = cam.get_controls().unwrap().stripped();
 	println!("{c}");
 }
 
@@ -121,7 +126,7 @@ fn set_control() -> Result<()> {
 	let id = KnownCameraControl::Brightness;
 
 	// Assume it will always be this variant.
-	let CamControl::IntegerRange(mut control) = cam.get_control(id) else {
+	let CamControl::IntegerRange(mut control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
 			reason: "unexpected control variant".into(),
 		});
@@ -134,7 +139,7 @@ fn set_control() -> Result<()> {
 		.expect("new value should be valid");
 	cam.set_control(id, control.get_value())?;
 
-	let CamControl::IntegerRange(mut control) = cam.get_control(id) else {
+	let CamControl::IntegerRange(mut control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
 			reason: "unexpected control variant".into(),
 		});
@@ -144,7 +149,7 @@ fn set_control() -> Result<()> {
 	control.reset_to_default();
 	cam.set_control(id, control.get_value())?;
 
-	let CamControl::IntegerRange(control) = cam.get_control(id) else {
+	let CamControl::IntegerRange(control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
 			reason: "unexpected control variant".into(),
 		});
@@ -165,7 +170,7 @@ fn set_control_exposure() -> Result<()> {
 	let desired = 1;
 
 	// Assume it will always be this variant.
-	let CamControl::Menu(mut control) = cam.get_control(id) else {
+	let CamControl::Menu(mut control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
 			reason: "unexpected control variant".into(),
 		});
@@ -181,7 +186,7 @@ fn set_control_exposure() -> Result<()> {
 		.expect("new value should be valid");
 	cam.set_control(id, control.get_value())?;
 
-	let CamControl::Menu(mut control) = cam.get_control(id) else {
+	let CamControl::Menu(mut control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
 			reason: "unexpected control variant".into(),
 		});
@@ -195,7 +200,7 @@ fn set_control_exposure() -> Result<()> {
 	control.reset_to_default();
 	cam.set_control(id, control.get_value())?;
 
-	let CamControl::Menu(control) = cam.get_control(id) else {
+	let CamControl::Menu(control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
 			reason: "unexpected control variant".into(),
 		});

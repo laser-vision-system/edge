@@ -1,11 +1,3 @@
-// TODO: Remove all unwraps and then this.
-#![expect(
-	clippy::unwrap_used,
-	clippy::unwrap_in_result,
-	reason = "WIP development"
-)]
-#![expect(clippy::inline_modules, reason = "Simple unit tests")]
-
 use std::{cmp::Ordering, io::Cursor};
 
 use image::{DynamicImage, RgbImage};
@@ -21,8 +13,8 @@ use nokhwa::{
 };
 
 use super::{
-	CameraDeviceError, FrameDecodeCorruption, FrameRead, NokhwaInitialisation,
-	SelectDecodeFormat, SetControl, StreamOpen,
+	CameraDeviceError, CannotGetControls, FrameDecodeCorruption, FrameRead,
+	NokhwaInitialisation, SelectDecodeFormat, SetControl, StreamOpen,
 	controls::{
 		ControlMap,
 		descriptions::CamControl,
@@ -49,6 +41,11 @@ pub struct CameraDevice {
 
 impl CameraDevice {
 	/// Attempt to create a device at the given index.
+	#[expect(
+		clippy::unwrap_used,
+		clippy::unwrap_in_result,
+		reason = "WIP development"
+	)]
 	pub fn try_new(index: CameraIndex) -> Result<Self> {
 		let index_str = index.to_string();
 
@@ -103,6 +100,7 @@ impl CameraDevice {
 		Ok(self)
 	}
 
+	#[expect(clippy::unwrap_used, reason = "WIP development")]
 	pub fn encode_image(data: &RgbImage) -> Vec<u8> {
 		let mut buff = Cursor::new(Vec::new());
 		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
@@ -152,29 +150,43 @@ impl CameraDevice {
 	// == Configurations ==
 
 	/// Get the IDs of all supported controls.
-	pub fn get_all_supported_controls(&self) -> Vec<KnownCameraControl> {
+	pub fn get_all_supported_controls(
+		&self,
+	) -> Result<Vec<KnownCameraControl>> {
 		self.inner
 			.controls()
-			.unwrap()
+			.map_err(|why| {
+				CameraDeviceError::from(CannotGetControls::from(why))
+			})?
 			.iter()
 			.map(nokhwa::utils::CameraControl::control)
+			.map(|con| Ok(con))
 			.collect()
 	}
 
 	/// Get a map of the camera controls
-	pub fn get_controls(&self) -> ControlMap {
-		ControlMap::from(self.inner.controls().unwrap())
+	pub fn get_controls(&self) -> Result<ControlMap> {
+		self.inner
+			.controls()
+			.map_err(|why| {
+				EdgeError::from(CameraDeviceError::from(
+					CannotGetControls::from(why),
+				))
+			})
+			.map(ControlMap::from)
 	}
 
 	/// Get a camera control by ID
-	pub fn get_control(&self, id: KnownCameraControl) -> CamControl {
+	pub fn get_control(&self, id: KnownCameraControl) -> Result<CamControl> {
 		self.inner
 			.controls()
-			.unwrap()
+			.map_err(|why| {
+				CameraDeviceError::from(CannotGetControls::from(why))
+			})?
 			.into_iter()
 			.find(|con| con.control() == id)
-			.unwrap()
-			.into()
+			.ok_or_else(|| EdgeError::from(CameraDeviceError::GetControl(id)))
+			.map(|con| CamControl::from(con))
 	}
 
 	/// Set a camera control
@@ -193,7 +205,7 @@ impl CameraDevice {
 		let setter = value.into();
 		self.inner.set_control(id, setter.clone()).map_err(|why| {
 			let err = CameraDeviceError::SetControl {
-				id: id.to_string(),
+				id,
 				value: setter.to_string(),
 				inner: SetControl::from(why),
 			};
@@ -205,7 +217,7 @@ impl CameraDevice {
 		controls.into_inner().into_iter().try_for_each(|(id, val)| {
 			let CamControl::IntegerRange(control) = val else {
 				return Err(EdgeError::from(
-					CameraDeviceError::SetControlType { id: id.to_string() },
+					CameraDeviceError::SetControlType(id),
 				));
 			};
 			// TODO: Handle error. Maybe try make this operation atomic?
@@ -214,9 +226,14 @@ impl CameraDevice {
 	}
 
 	/// Set every control on the camera back to its default value.
-	#[expect(clippy::too_many_lines, clippy::panic, reason = "WIP development")]
+	#[expect(
+		clippy::too_many_lines,
+		clippy::panic,
+		clippy::unwrap_used,
+		reason = "WIP development"
+	)]
 	pub fn reset_controls_to_default(&mut self) {
-		let mut controls = self.get_controls();
+		let mut controls = self.get_controls().unwrap();
 		if let Some(control) =
 			controls.get_mut(&KnownCameraControl::AutoExposure)
 		{
@@ -258,7 +275,7 @@ impl CameraDevice {
 				.unwrap();
 		}
 
-		for (id, control) in self.get_controls().into_inner() {
+		for (id, control) in self.get_controls().unwrap().into_inner() {
 			if id == KnownCameraControl::ExposureAbsolute {
 				continue;
 			}
@@ -339,8 +356,8 @@ impl CameraDevice {
 	/// Query [`nokhwa`] for all available cameras and then sort them by their
 	/// index.
 	pub fn query_for_available_cameras() -> Vec<CameraInfo> {
-		let mut cameras =
-			nokhwa::query(nokhwa::utils::ApiBackend::Auto).unwrap();
+		let mut cameras = nokhwa::query(nokhwa::utils::ApiBackend::Auto)
+			.expect("The backend should be supported");
 		cameras.sort_by(|a, b| -> Ordering {
 			let a_ind = a.index().as_index().unwrap_or(u32::MAX);
 			let b_ind = b.index().as_index().unwrap_or(u32::MAX);
