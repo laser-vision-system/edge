@@ -150,7 +150,7 @@ pub async fn send_persistent_edge_id(
 			edge_id: get_mac_address().unwrap(),
 		});
 	websocket
-		.send_text("dummy".to_string(), request_enum)
+		.send_text(request_enum)
 		.await
 		.unwrap();
 	(websocket, setting)
