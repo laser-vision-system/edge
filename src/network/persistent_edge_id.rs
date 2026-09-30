@@ -5,7 +5,6 @@ fn get_network_interface() -> Option<NetworkInterface> {
         .iter()
         .find(
             |interface|
-                interface.is_up() &&
                     !interface.is_loopback() &&
                     !interface.is_point_to_point() &&
                     !interface.mac.is_none())

@@ -5603,7 +5603,7 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "nokhwa"
-version = "0.14.14"
+version = "0.14.13"
 dependencies = [
  "image",
  "nokhwa-bindings-linux-v4l",
@@ -5616,7 +5616,7 @@ dependencies = [
 
 [[package]]
 name = "nokhwa-bindings-linux-v4l"
-version = "0.14.14"
+version = "0.14.13"
 dependencies = [
  "libc",
  "nokhwa-core",
@@ -5625,7 +5625,7 @@ dependencies = [
 
 [[package]]
 name = "nokhwa-bindings-macos-avfoundation"
-version = "0.14.14"
+version = "0.14.13"
 dependencies = [
  "block2 0.6.2",
  "nokhwa-core",
@@ -5640,7 +5640,7 @@ dependencies = [
 
 [[package]]
 name = "nokhwa-bindings-windows-msmf"
-version = "0.14.14"
+version = "0.14.13"
 dependencies = [
  "nokhwa-core",
  "windows",
@@ -5648,7 +5648,7 @@ dependencies = [
 
 [[package]]
 name = "nokhwa-core"
-version = "0.14.14"
+version = "0.14.13"
 dependencies = [
  "bytes",
  "image",
