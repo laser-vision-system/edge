@@ -18,7 +18,6 @@ use tokio_tungstenite::{
 
 use crate::{
 	logger::logger,
-	network::unpack,
 	settings::{API, HOST, PORT},
 };
 
@@ -66,15 +65,15 @@ impl WebSocket {
 
 	pub async fn send_text<T>(
 		&mut self,
-		mut prefix: String,
 		data: T,
 	) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
 	where
 		T: Serialize,
 	{
-		prefix.push_str(&serde_json::to_string(&data)?);
 		self.inner
-			.send(Message::Text(Utf8Bytes::from(prefix)))
+			.send(Message::Text(Utf8Bytes::from(&serde_json::to_string(
+				&data,
+			)?)))
 			.await?;
 		Ok(())
 	}
@@ -116,68 +115,15 @@ impl WebSocket {
 }
 
 fn process_incoming(text: &str) -> Option<EdgeRequests> {
-	let msg = text.trim();
+	let msg_unchecked: Result<EdgeRequests, _> =
+		serde_json::from_str(text.trim());
 
 	logger()
 		.lock()
 		.unwrap()
-		.log_info(&format!("Received from Server: {msg}"));
+		.log_info(&format!("Received from Server: {}", text.trim()));
 
-	let mut args = msg.splitn(2, ':');
+	let Ok(msg) = msg_unchecked else { return None };
 
-	match args.next().unwrap() {
-		"SetNameCamera" => {
-			let data = args.next();
-			let inner = data?;
-			let unpacked = unpack(inner);
-			unpacked
-				.map_or(None, |inner| Some(EdgeRequests::SetNameCamera(inner)))
-		},
-		"StartViewingCamera" => {
-			let data = args.next();
-			let inner = data?;
-			let unpacked = unpack(inner);
-			unpacked.map_or(None, |inner| {
-				Some(EdgeRequests::StartViewingCamera(inner))
-			})
-		},
-		"StopViewingCamera" => {
-			let data = args.next();
-			let inner = data?;
-			let unpacked = unpack(inner);
-			unpacked.map_or(None, |inner| {
-				Some(EdgeRequests::StopViewingCamera(inner))
-			})
-		},
-		"Configuration" => {
-			let data = args.next();
-			let inner = data?;
-			let unpacked = unpack(inner);
-			unpacked
-				.map_or(None, |inner| Some(EdgeRequests::Configuration(inner)))
-		},
-		"ViewCameraConfig" => {
-			let data = args.next();
-			let inner = data?;
-			let unpacked = unpack(inner);
-			unpacked.map_or(None, |inner| {
-				Some(EdgeRequests::ViewCameraConfig(inner))
-			})
-		},
-		"Setpoint" => {
-			let data = args.next();
-			let inner = data?;
-			let unpacked = unpack(inner);
-			unpacked.map_or(None, |inner| Some(EdgeRequests::Setpoint(inner)))
-		},
-		"SetProcessingType" => {
-			let data = args.next();
-			let inner = data?;
-			let unpacked = unpack(inner);
-			unpacked.map_or(None, |inner| {
-				Some(EdgeRequests::SetProcessingType(inner))
-			})
-		},
-		_ => None,
-	}
+	Some(msg)
 }
