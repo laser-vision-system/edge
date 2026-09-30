@@ -12,7 +12,9 @@ use tokio_tungstenite::connect_async;
 
 use server_edge_datatypes::edge::InitialiseConnection;
 
-use super::{NetworkError, websocket::WebSocket, persistent_edge_id::get_mac_address};
+use super::{
+	NetworkError, persistent_edge_id::get_mac_address, websocket::WebSocket,
+};
 use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
@@ -139,13 +141,18 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 	Err(NetworkError::AutoConnect.into())
 }
 
-pub async fn send_persistent_edge_id(mut websocket: WebSocket, setting: Settings) -> (WebSocket, Settings) {
-
-	let request_enum = ServerRequests::InitialiseConnection(
-		InitialiseConnection {
-			edge_id: get_mac_address().unwrap()
+pub async fn send_persistent_edge_id(
+	mut websocket: WebSocket,
+	setting: Settings,
+) -> (WebSocket, Settings) {
+	let request_enum =
+		ServerRequests::InitialiseConnection(InitialiseConnection {
+			edge_id: get_mac_address().unwrap(),
 		});
-	websocket.send_text("dummy".to_string(), request_enum).await.unwrap();
+	websocket
+		.send_text("dummy".to_string(), request_enum)
+		.await
+		.unwrap();
 	(websocket, setting)
 }
 
@@ -159,8 +166,7 @@ pub async fn assert_connection(
 		(Some(socket), Some(settings)) => {
 			if socket.is_terminated() {
 				let (socket, settings) = loop_until_connection().await;
-				return send_persistent_edge_id(socket, settings).await
-
+				return send_persistent_edge_id(socket, settings).await;
 			}
 			(socket, settings)
 		},
@@ -176,9 +182,7 @@ async fn loop_until_connection() -> (WebSocket, Settings) {
 	let mut limit_interval = interval(AUTO_CONNECT_DELAY);
 	loop {
 		match try_connect_once().await {
-			Ok(yay) => {
-				return yay
-			},
+			Ok(yay) => return yay,
 			Err(err) => {
 				err.log();
 			},

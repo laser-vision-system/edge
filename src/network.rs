@@ -1,8 +1,8 @@
 //! Shared network utilities.
 
 pub mod auto_connect;
-pub mod websocket;
 pub mod persistent_edge_id;
+pub mod websocket;
 
 use serde::de::DeserializeOwned;
 
