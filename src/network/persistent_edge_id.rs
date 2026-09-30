@@ -40,15 +40,15 @@ mod tests {
 	};
 
 	#[test]
-	fn test_mac_address() {
+	fn mac_address() {
 		get_mac_address();
 	}
 	#[test]
-	fn test_network_interface() {
+	fn network_interface() {
 		get_network_interface();
 	}
 	#[test]
-	fn test_mac_octet_converter() {
+	fn convert_mac_address() {
 		let mac_octets: [u8; 6] = [0; 6];
 		mac_octet_converter(mac_octets);
 	}
