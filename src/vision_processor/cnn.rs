@@ -1,11 +1,6 @@
 use std::fmt;
 
-use super::{
-	BatchItem,
-	SessionToken,
-	VisionInterface,
-	VisionState,
-};
+use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
 #[derive(Clone, Default)]
 pub struct Cnn {

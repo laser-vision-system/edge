@@ -3,24 +3,13 @@
 // TODO: Implement `Borrow` on everything.
 
 use nokhwa::utils::ControlValueSetter;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 use super::{
 	traits::ControlValue,
 	types::{
-		ConTypeBool,
-		ConTypeBytes,
-		ConTypeEnum,
-		ConTypeFloat,
-		ConTypeInt,
-		ConTypeKeyValue,
-		ConTypeMenu,
-		ConTypePoint,
-		ConTypeRGB,
-		ConTypeString,
+		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
+		ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 	},
 };
 

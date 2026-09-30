@@ -4,12 +4,7 @@ use image::RgbImage;
 use lab::Lab;
 use rayon::prelude::*;
 
-use super::{
-	BatchItem,
-	SessionToken,
-	VisionInterface,
-	VisionState,
-};
+use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
 #[derive(Clone, Default)]
 pub struct Demonstration {

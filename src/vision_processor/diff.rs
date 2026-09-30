@@ -3,23 +3,12 @@
 
 use std::fmt;
 
-use image::{
-	DynamicImage,
-	GrayImage,
-};
+use image::{DynamicImage, GrayImage};
 use image_compare::{
-	Algorithm,
-	Metric,
-	gray_similarity_histogram,
-	gray_similarity_structure,
+	Algorithm, Metric, gray_similarity_histogram, gray_similarity_structure,
 };
 
-use super::{
-	BatchItem,
-	SessionToken,
-	VisionInterface,
-	VisionState,
-};
+use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 use crate::logger::logger;
 
 struct DiffModel {

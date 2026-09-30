@@ -1,11 +1,7 @@
 #![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
 use super::ErrAccType;
-use crate::vision_processor::{
-	VisionInterface as _,
-	VisionState,
-	vision,
-};
+use crate::vision_processor::{VisionInterface as _, VisionState, vision};
 
 /// Information about a camera that persists after the device is
 /// disconnected.

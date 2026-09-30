@@ -10,12 +10,7 @@ pub use camera_device::CameraDevice;
 pub use identifier::Identifier;
 use nokhwa::NokhwaError;
 pub use persistence::{
-	MaybeBatch,
-	MaybeImage,
-	PerpetualInfo,
-	PersistEntry,
-	Persistence,
-	WhyNo,
+	MaybeBatch, MaybeImage, PerpetualInfo, PersistEntry, Persistence, WhyNo,
 	polling,
 };
 

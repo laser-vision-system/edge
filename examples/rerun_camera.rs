@@ -5,20 +5,11 @@ use std::error::Error;
 use edge::{
 	tcam_interface::CameraDevice,
 	vision_processor::{
-		BatchItem,
-		Demonstration,
-		VisionInterface as _,
-		VisionState,
+		BatchItem, Demonstration, VisionInterface as _, VisionState,
 	},
 };
 use image::RgbImage;
-use rerun::{
-	self,
-	ColorModel,
-	Image,
-	RecordingStream,
-	RecordingStreamBuilder,
-};
+use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
 
 struct Context {
 	rec: RecordingStream,

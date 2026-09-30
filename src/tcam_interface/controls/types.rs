@@ -1,23 +1,12 @@
 //! Low level and higher level types used for camera control values.
 
 use nokhwa::utils::ControlValueSetter;
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 #[expect(unused_imports, reason = "Needed for docstring")]
 use super::{
-	descriptions::{
-		KeyValuePairControl,
-		PointControl,
-		RGBControl,
-	},
-	values::{
-		ConValueKeyValue,
-		ConValuePoint,
-		ConValueRGB,
-	},
+	descriptions::{KeyValuePairControl, PointControl, RGBControl},
+	values::{ConValueKeyValue, ConValuePoint, ConValueRGB},
 };
 
 // TODO: Use COW for String and Bytes.

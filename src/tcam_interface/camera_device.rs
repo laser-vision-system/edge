@@ -6,66 +6,33 @@
 )]
 #![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
-use std::{
-	cmp::Ordering,
-	io::Cursor,
-};
+use std::{cmp::Ordering, io::Cursor};
 
-use image::{
-	DynamicImage,
-	RgbImage,
-};
+use image::{DynamicImage, RgbImage};
 use nokhwa::{
-	Buffer,
-	NokhwaError,
-	OpenRequest,
-	OpenedCamera,
-	StreamCamera,
-	format_types::{
-		Mjpeg,
-		Nv12,
-		RawBgr,
-		RawRgb,
-		Yuyv,
-	},
-	frame::{
-		Frame,
-		IntoRgb as _,
-		RgbConversion,
-	},
+	Buffer, NokhwaError, OpenRequest, OpenedCamera, StreamCamera,
+	format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
+	frame::{Frame, IntoRgb as _, RgbConversion},
 	session::open_with_buffers,
 	utils::{
-		CameraIndex,
-		CameraInfo,
-		ControlValueSetter,
-		FrameFormat,
+		CameraIndex, CameraInfo, ControlValueSetter, FrameFormat,
 		KnownCameraControl,
 	},
 };
 
 use super::{
-	CameraDeviceError,
-	FrameDecodeCorruption,
-	FrameRead,
-	NokhwaInitialisation,
-	SelectDecodeFormat,
-	SetControl,
-	StreamOpen,
+	CameraDeviceError, FrameDecodeCorruption, FrameRead, NokhwaInitialisation,
+	SelectDecodeFormat, SetControl, StreamOpen,
 	controls::{
 		ControlMap,
 		descriptions::CamControl,
 		traits::{
-			ControlDefault as _,
-			ControlDescription as _,
-			ControlValue as _,
+			ControlDefault as _, ControlDescription as _, ControlValue as _,
 		},
 	},
 };
 use crate::{
-	error::{
-		EdgeError,
-		Result,
-	},
+	error::{EdgeError, Result},
 	logger::logger,
 	settings::CAMERA_BUFFER_COUNT,
 };

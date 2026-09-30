@@ -1,18 +1,11 @@
 use std::{
 	borrow::Cow,
-	ops::{
-		Deref,
-		DerefMut,
-	},
+	ops::{Deref, DerefMut},
 };
 
 use server_edge_datatypes::shared::CameraStatus;
 
-use super::{
-	Active,
-	Broken,
-	Limbo,
-};
+use super::{Active, Broken, Limbo};
 use crate::tcam_interface::PerpetualInfo;
 
 /// A connection in a disconnected state.

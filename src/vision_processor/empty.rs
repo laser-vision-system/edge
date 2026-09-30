@@ -1,11 +1,6 @@
 use std::fmt;
 
-use super::{
-	BatchItem,
-	SessionToken,
-	VisionInterface,
-	VisionState,
-};
+use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
 #[derive(Clone, Default)]
 pub struct Empty {
@@ -21,8 +16,7 @@ impl Empty {
 }
 
 impl VisionInterface for Empty {
-	fn process(&mut self, _: &mut [BatchItem]) {
-	}
+	fn process(&mut self, _: &mut [BatchItem]) {}
 
 	fn new_state(&self) -> VisionState {
 		VisionState::Empty {

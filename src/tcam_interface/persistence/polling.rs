@@ -4,34 +4,20 @@
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
 use std::{
-	collections::{
-		HashMap,
-		HashSet,
-	},
+	collections::{HashMap, HashSet},
 	fmt,
 	hash::RandomState,
 };
 
-use nokhwa::utils::{
-	CameraIndex,
-	CameraInfo,
-};
+use nokhwa::utils::{CameraIndex, CameraInfo};
 use server_edge_datatypes::{
 	edge::NewCameraInfo,
-	shared::{
-		CameraId,
-		CameraStatus,
-	},
+	shared::{CameraId, CameraStatus},
 };
 
 use super::{
-	super::{
-		CameraDevice,
-		Identifier,
-	},
-	KeyType,
-	Persistence,
-	ValType,
+	super::{CameraDevice, Identifier},
+	KeyType, Persistence, ValType,
 };
 use crate::logger::logger;
 

@@ -3,10 +3,7 @@ use serde_json::error::Error as SerdeError;
 use crate::{
 	logger::logger,
 	network::NetworkError,
-	tcam_interface::{
-		CameraDeviceError,
-		PersistenceError,
-	},
+	tcam_interface::{CameraDeviceError, PersistenceError},
 };
 
 /// Specialised [`Result`] type for the Edge tier.

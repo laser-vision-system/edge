@@ -5,16 +5,10 @@ use std::collections::HashMap;
 
 use server_edge_datatypes::{
 	edge::{
-		EdgeRequests,
-		ImageAnalysis,
-		RegisterCameras,
-		ServerRequests,
+		EdgeRequests, ImageAnalysis, RegisterCameras, ServerRequests,
 		UpdateCameraStatus,
 	},
-	shared::{
-		CameraStatus,
-		VisionTechnique,
-	},
+	shared::{CameraStatus, VisionTechnique},
 };
 use tokio::time::interval;
 
@@ -22,21 +16,13 @@ use crate::{
 	error::EdgeError,
 	logger::logger,
 	network::{
-		NetworkError,
-		auto_connect::assert_connection,
-		websocket::WebSocket,
+		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
 	},
 	settings::Settings,
 	tcam_interface::{
-		CameraDevice,
-		Persistence,
-		WhyNo,
-		polling::ConnectionDetail,
+		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
 	},
-	vision_processor::{
-		VisionInterface as _,
-		vision,
-	},
+	vision_processor::{VisionInterface as _, vision},
 };
 
 /// # Conductor

@@ -22,20 +22,10 @@
 )]
 #![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
-use std::sync::{
-	Mutex,
-	OnceLock,
-};
+use std::sync::{Mutex, OnceLock};
 
-use chrono::{
-	Duration,
-	Local,
-	NaiveDate,
-};
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use chrono::{Duration, Local, NaiveDate};
+use serde::{Deserialize, Serialize};
 
 use crate::error::EdgeError;
 
@@ -200,8 +190,7 @@ mod test {
 
 	use super::logger;
 	use crate::{
-		error::EdgeError,
-		network::NetworkError,
+		error::EdgeError, network::NetworkError,
 		tcam_interface::CameraDeviceError,
 	};
 
