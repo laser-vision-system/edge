@@ -4,7 +4,10 @@
 use std::collections::HashMap;
 
 use server_edge_datatypes::{
-	edge::{ServerRequests, EdgeRequests, ImageAnalysis, RegisterCameras, UpdateCameraStatus},
+	edge::{
+		EdgeRequests, ImageAnalysis, RegisterCameras, ServerRequests,
+		UpdateCameraStatus,
+	},
 	shared::{CameraStatus, VisionTechnique},
 };
 use tokio::time::interval;
@@ -78,24 +81,22 @@ impl Conductor {
 			match status_change.why {
 				WhyNo::Disconnected => {
 					let _ = websocket
-						.send_text(
-							ServerRequests::UpdateCameraStatus(
-								UpdateCameraStatus {
-									camera_id: status_change.id,
-									status: CameraStatus::Disconnected,
-								}
-							))
+						.send_text(ServerRequests::UpdateCameraStatus(
+							UpdateCameraStatus {
+								camera_id: status_change.id,
+								status: CameraStatus::Disconnected,
+							},
+						))
 						.await;
 				},
 				WhyNo::Broken => {
 					let _ = websocket
-						.send_text(
-							ServerRequests::UpdateCameraStatus(
-								UpdateCameraStatus {
-									camera_id: status_change.id,
-									status: CameraStatus::Broken,
-								}
-							))
+						.send_text(ServerRequests::UpdateCameraStatus(
+							UpdateCameraStatus {
+								camera_id: status_change.id,
+								status: CameraStatus::Broken,
+							},
+						))
 						.await;
 				},
 			}
@@ -115,13 +116,10 @@ impl Conductor {
 			let camid = item.camera_id;
 			if let Some(deviation) = deviation_maybe {
 				let result = websocket
-					.send_text(
-						ServerRequests::ImageAnalysis(
-							ImageAnalysis {
-								camera_id: camid,
-								deviation,
-							}
-						))
+					.send_text(ServerRequests::ImageAnalysis(ImageAnalysis {
+						camera_id: camid,
+						deviation,
+					}))
 					.await;
 
 				let _ = result.inspect_err(|_| {
@@ -170,9 +168,7 @@ impl Conductor {
 				if let Some(configuration) =
 					self.persistence.get_configuration(view_config_req)
 					&& let Err(_) = websocket
-						.send_text(ServerRequests::Configuration(
-							configuration
-						))
+						.send_text(ServerRequests::Configuration(configuration))
 						.await
 				{
 					// TODO: Error type for "Failed to send configuration
@@ -218,21 +214,17 @@ impl Conductor {
 				continue;
 			};
 			let _ = websocket
-				.send_text(
-					ServerRequests::UpdateCameraStatus(
-						UpdateCameraStatus { camera_id, status}
-					))
+				.send_text(ServerRequests::UpdateCameraStatus(
+					UpdateCameraStatus { camera_id, status },
+				))
 				.await;
 		}
 
 		if !new_cameras.is_empty() {
 			let _ = websocket
-				.send_text(
-					ServerRequests::RegisterCameras(
-						RegisterCameras {
-							cameras: new_cameras,
-						}
-					))
+				.send_text(ServerRequests::RegisterCameras(RegisterCameras {
+					cameras: new_cameras,
+				}))
 				.await;
 		}
 	}

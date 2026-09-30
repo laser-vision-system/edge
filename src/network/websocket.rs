@@ -71,7 +71,9 @@ impl WebSocket {
 		T: Serialize,
 	{
 		self.inner
-			.send(Message::Text(Utf8Bytes::from(&serde_json::to_string(&data)?)))
+			.send(Message::Text(Utf8Bytes::from(&serde_json::to_string(
+				&data,
+			)?)))
 			.await?;
 		Ok(())
 	}
@@ -113,17 +115,15 @@ impl WebSocket {
 }
 
 fn process_incoming(text: &str) -> Option<EdgeRequests> {
-	let msg_unchecked: Result<EdgeRequests, _> = serde_json::from_str(text.trim());
+	let msg_unchecked: Result<EdgeRequests, _> =
+		serde_json::from_str(text.trim());
 
 	logger()
 		.lock()
 		.unwrap()
 		.log_info(&format!("Received from Server: {}", text.trim()));
 
-	let Ok(msg) = msg_unchecked else {
-		return None
-	};
+	let Ok(msg) = msg_unchecked else { return None };
 
 	Some(msg)
 }
-
