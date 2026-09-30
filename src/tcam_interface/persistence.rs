@@ -164,8 +164,14 @@ impl Persistence {
 			EdgeError::from(PersistenceError::IncorrectConnectionStatus).log();
 			return None;
 		};
-		let important_controls =
-			active.get_camera_mut().get_controls().stripped();
+		let controls = active.get_camera_mut().get_controls();
+		let important_controls = match controls {
+			Ok(controls) => controls.stripped(),
+			Err(why) => {
+				why.log();
+				return None;
+			},
+		};
 		let configuration = Configuration::build_response(
 			request,
 			important_controls.serialise(),
