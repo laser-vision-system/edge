@@ -5653,6 +5653,7 @@ dependencies = [
  "bytes",
  "image",
  "mozjpeg",
+ "num-rational",
  "serde",
  "thiserror 2.0.20",
 ]
