@@ -143,14 +143,13 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 
 pub async fn send_persistent_edge_id(
 	mut websocket: WebSocket,
-	setting: Settings,
-) -> (WebSocket, Settings) {
+) -> (WebSocket) {
 	let request_enum =
 		ServerRequests::InitialiseConnection(InitialiseConnection {
 			edge_id: get_mac_address().unwrap(),
 		});
 	websocket.send_text(request_enum).await.unwrap();
-	(websocket, setting)
+	websocket
 }
 
 /// When call,
@@ -163,14 +162,14 @@ pub async fn assert_connection(
 		(Some(socket), Some(settings)) => {
 			if socket.is_terminated() {
 				let (socket, settings) = loop_until_connection().await;
-				return send_persistent_edge_id(socket, settings).await;
+				return (send_persistent_edge_id(socket).await, settings)
 			}
 			(socket, settings)
 		},
 		// First time calling.
 		_ => {
 			let (socket, settings) = loop_until_connection().await;
-			send_persistent_edge_id(socket, settings).await
+			(send_persistent_edge_id(socket).await, settings)
 		},
 	}
 }

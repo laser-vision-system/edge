@@ -2,32 +2,43 @@ use crate::network::NetworkError;
 use pnet_datalink::{NetworkInterface, interfaces};
 fn get_network_interface() -> Option<NetworkInterface> {
 	interfaces()
-		.iter()
+		.into_iter()
 		.find(|interface| {
 			!interface.is_loopback()
 				&& !interface.is_point_to_point()
 				&& !interface.mac.is_none()
 		})
-		.cloned()
 }
+#[expect(
+	clippy::big_endian_bytes,
+	reason = "This data is intended to be sent to the server"
+)]
 fn mac_octet_converter(mac_octets: [u8; 6]) -> u64 {
-	let mut mac_address_vec = Vec::<u8>::new();
-	mac_octets
-		.iter()
-		.for_each(|octets| mac_address_vec.push(octets.clone()));
-	mac_address_vec.push(0u8);
-	mac_address_vec.push(0u8);
-	let mac_address_array = mac_address_vec.as_array();
-	let mac_address = u64::from_be_bytes(mac_address_array.unwrap().clone());
-	mac_address
+	let bytes: [u8; 8] = [
+		mac_octets[0],
+		mac_octets[1],
+		mac_octets[2],
+		mac_octets[3],
+		mac_octets[4],
+		mac_octets[5],
+		0_u8,
+		0_u8,
+	];
+	u64::from_be_bytes(bytes)
 }
 pub fn get_mac_address() -> Result<u64, NetworkError> {
 	let network_interface = get_network_interface();
 	match network_interface {
 		Some(interface) => {
-			let mac_octets = interface.mac.unwrap().octets();
-			let mac_address = mac_octet_converter(mac_octets);
-			Ok(mac_address)
+			match interface.mac {
+				Some(mac) => {
+					let mac_octets = mac.octets();
+					let mac_address = mac_octet_converter(mac_octets);
+					Ok(mac_address)
+				},
+				_ => Err(NetworkError::AutoConnect),
+			}
+
 		},
 		None => Err(NetworkError::AutoConnect),
 	}
@@ -41,15 +52,17 @@ mod tests {
 
 	#[test]
 	fn mac_address() {
-		get_mac_address();
+		get_mac_address().unwrap();
 	}
 	#[test]
 	fn network_interface() {
-		get_network_interface();
+		get_network_interface().unwrap();
 	}
 	#[test]
 	fn convert_mac_address() {
-		let mac_octets: [u8; 6] = [0; 6];
-		mac_octet_converter(mac_octets);
+		let mac_octets = [1_u8, 2_u8, 3_u8, 4_u8, 5_u8, 6_u8];
+		let expected:u64 = 1;
+		let result = mac_octet_converter(mac_octets);
+		assert_eq!(result, expected);
 	}
 }
