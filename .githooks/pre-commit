@@ -2,8 +2,8 @@
 set -e
 
 echo "==> Running rustfmt..."
-cargo fmt --all -- --check
+cargo fmt -- --check
 
 echo "==> Running clippy..."
-cargo clippy
-#cargo clippy -- -D warnings
+cargo clippy --all-targets --no-deps
+#cargo clippy --all-targets --no-deps -- -D warnings
