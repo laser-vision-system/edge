@@ -33,9 +33,9 @@ pub fn get_mac_address() -> Result<u64, NetworkError> {
 				let mac_address = mac_octet_converter(mac_octets);
 				Ok(mac_address)
 			},
-			_ => Err(NetworkError::AutoConnect),
+			_ => Err(NetworkError::MacAddress),
 		},
-		None => Err(NetworkError::AutoConnect),
+		None => Err(NetworkError::MacAddress),
 	}
 }
 
