@@ -141,9 +141,7 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 	Err(NetworkError::AutoConnect.into())
 }
 
-pub async fn send_persistent_edge_id(
-	mut websocket: WebSocket,
-) -> (WebSocket) {
+pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> (WebSocket) {
 	let request_enum =
 		ServerRequests::InitialiseConnection(InitialiseConnection {
 			edge_id: get_mac_address().unwrap(),
@@ -162,7 +160,7 @@ pub async fn assert_connection(
 		(Some(socket), Some(settings)) => {
 			if socket.is_terminated() {
 				let (socket, settings) = loop_until_connection().await;
-				return (send_persistent_edge_id(socket).await, settings)
+				return (send_persistent_edge_id(socket).await, settings);
 			}
 			(socket, settings)
 		},

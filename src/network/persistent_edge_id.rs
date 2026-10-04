@@ -1,13 +1,11 @@
 use crate::network::NetworkError;
 use pnet_datalink::{NetworkInterface, interfaces};
 fn get_network_interface() -> Option<NetworkInterface> {
-	interfaces()
-		.into_iter()
-		.find(|interface| {
-			!interface.is_loopback()
-				&& !interface.is_point_to_point()
-				&& !interface.mac.is_none()
-		})
+	interfaces().into_iter().find(|interface| {
+		!interface.is_loopback()
+			&& !interface.is_point_to_point()
+			&& !interface.mac.is_none()
+	})
 }
 #[expect(
 	clippy::big_endian_bytes,
@@ -29,16 +27,13 @@ fn mac_octet_converter(mac_octets: [u8; 6]) -> u64 {
 pub fn get_mac_address() -> Result<u64, NetworkError> {
 	let network_interface = get_network_interface();
 	match network_interface {
-		Some(interface) => {
-			match interface.mac {
-				Some(mac) => {
-					let mac_octets = mac.octets();
-					let mac_address = mac_octet_converter(mac_octets);
-					Ok(mac_address)
-				},
-				_ => Err(NetworkError::AutoConnect),
-			}
-
+		Some(interface) => match interface.mac {
+			Some(mac) => {
+				let mac_octets = mac.octets();
+				let mac_address = mac_octet_converter(mac_octets);
+				Ok(mac_address)
+			},
+			_ => Err(NetworkError::AutoConnect),
 		},
 		None => Err(NetworkError::AutoConnect),
 	}
@@ -61,7 +56,7 @@ mod tests {
 	#[test]
 	fn convert_mac_address() {
 		let mac_octets = [0x12, 0x34, 0x56, 0x78, 0x90, 0x12];
-		let expected:u64 = 0x1234567890120000;
+		let expected: u64 = 0x1234567890120000;
 		let result = mac_octet_converter(mac_octets);
 		assert_eq!(result, expected);
 	}
