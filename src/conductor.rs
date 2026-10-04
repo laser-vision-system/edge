@@ -10,6 +10,7 @@ use server_edge_datatypes::{
 	},
 	shared::{CameraStatus, VisionTechnique},
 };
+use server_edge_datatypes::edge::{NewCameraInfo, SetNameCamera};
 use tokio::time::interval;
 
 use crate::{
@@ -154,6 +155,15 @@ impl Conductor {
 		match request {
 			EdgeRequests::SetNameCamera(cam_name_req) => {
 				self.persistence.set_entry_name(cam_name_req);
+				match websocket.
+					send_text(ServerRequests::SetNameCamera(
+						cam_name_req
+					))
+					.await
+				{
+					Ok(_) => (),
+					Err(e) => {}
+				}
 			},
 			EdgeRequests::StartViewingCamera(start_view_cam_req) => {
 				self.persistence.start_viewing_camera(start_view_cam_req);
@@ -246,7 +256,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 	loop {
 		let (loop_websocket, loop_settings) =
-			assert_connection(websocket, settings).await;
+			assert_connection(websocket, settings, &conductor.persistence).await;
 		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);

@@ -16,6 +16,7 @@ use super::{
 	NetworkError, persistent_edge_id::get_mac_address, websocket::WebSocket,
 };
 use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
+use crate::tcam_interface::Persistence;
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct AddressComp {
@@ -156,12 +157,14 @@ pub async fn send_persistent_edge_id(
 pub async fn assert_connection(
 	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
+	persistance: &Persistence,
 ) -> (WebSocket, Settings) {
 	match (websocket, settings) {
 		// All good, normal operation.
 		(Some(socket), Some(settings)) => {
 			if socket.is_terminated() {
 				let (socket, settings) = loop_until_connection().await;
+
 				return (send_persistent_edge_id(socket).await, settings)
 			}
 			(socket, settings)
