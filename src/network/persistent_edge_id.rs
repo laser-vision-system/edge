@@ -47,13 +47,14 @@ mod tests {
 
 	#[test]
 	fn mac_address() {
-		get_mac_address().unwrap();
+		get_mac_address().expect(
+			"expected to find a non loopback/localhost interface with a mac address",
+		);
 	}
 	#[test]
 	fn network_interface() {
-		get_network_interface().expect(
-			"expected to find a non loopback/localhost interface with a mac address",
-		);
+		get_network_interface()
+			.expect("expected to find a non loopback/localhost interface");
 	}
 	#[test]
 	fn convert_mac_address() {
