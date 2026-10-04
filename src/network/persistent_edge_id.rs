@@ -21,8 +21,8 @@ fn mac_octet_converter(mac_octets: [u8; 6]) -> u64 {
 		mac_octets[3],
 		mac_octets[4],
 		mac_octets[5],
-		0_u8,
-		0_u8,
+		0x00,
+		0x00,
 	];
 	u64::from_be_bytes(bytes)
 }
@@ -56,12 +56,12 @@ mod tests {
 	}
 	#[test]
 	fn network_interface() {
-		get_network_interface().unwrap();
+		get_network_interface().expect("Successfully found network interface");
 	}
 	#[test]
 	fn convert_mac_address() {
-		let mac_octets = [1_u8, 2_u8, 3_u8, 4_u8, 5_u8, 6_u8];
-		let expected:u64 = 1;
+		let mac_octets = [0x12, 0x34, 0x56, 0x78, 0x90, 0x12];
+		let expected:u64 = 0x1234567890120000;
 		let result = mac_octet_converter(mac_octets);
 		assert_eq!(result, expected);
 	}
