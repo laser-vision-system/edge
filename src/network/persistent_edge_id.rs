@@ -4,7 +4,7 @@ fn get_network_interface() -> Option<NetworkInterface> {
 	interfaces().into_iter().find(|interface| {
 		!interface.is_loopback()
 			&& !interface.is_point_to_point()
-			&& !interface.mac.is_none()
+			&& interface.mac.is_some()
 	})
 }
 #[expect(
@@ -51,12 +51,12 @@ mod tests {
 	}
 	#[test]
 	fn network_interface() {
-		get_network_interface().expect("Successfully found network interface");
+		get_network_interface().expect("expected to find a non loopback/localhost interface with a mac address");
 	}
 	#[test]
 	fn convert_mac_address() {
 		let mac_octets = [0x12, 0x34, 0x56, 0x78, 0x90, 0x12];
-		let expected: u64 = 0x1234567890120000;
+		let expected: u64 = 0x1234_5678_9012_0000;
 		let result = mac_octet_converter(mac_octets);
 		assert_eq!(result, expected);
 	}
