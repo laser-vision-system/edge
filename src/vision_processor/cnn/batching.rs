@@ -5,29 +5,43 @@ use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_PIXELS, IMAGE_WIDTH};
 
 use super::config::{Backend, Device};
 
-pub(super) fn image_to_tensor(
-	image: &RgbImage,
+pub(super) fn images_to_tensor<'a>(
+	images: impl ExactSizeIterator<Item = &'a RgbImage>,
 	device: &Device,
-) -> Tensor<Backend, 3> {
-	debug_assert_eq!(
-		image.dimensions(),
-		(IMAGE_WIDTH, IMAGE_HEIGHT),
-		"The image did not have the correct dimensions"
-	);
+) -> Tensor<Backend, 4> {
+	let batch_size = images.len();
+	let image_size = IMAGE_PIXELS * 3;
+	let mut values = vec![0; batch_size * image_size];
 
-	let mut red = Vec::with_capacity(IMAGE_PIXELS);
-	let mut green = Vec::with_capacity(IMAGE_PIXELS);
-	let mut blue = Vec::with_capacity(IMAGE_PIXELS);
+	for (image_values, image) in values.chunks_exact_mut(image_size).zip(images)
+	{
+		debug_assert_eq!(
+			image.dimensions(),
+			(IMAGE_WIDTH, IMAGE_HEIGHT),
+			"The image did not have the correct dimensions"
+		);
 
-	for pixel in image.pixels() {
-		let image::Rgb([red_value, green_value, blue_value]) = *pixel;
-		red.push(red_value);
-		green.push(green_value);
-		blue.push(blue_value);
+		let (red_values, other_channels) =
+			image_values.split_at_mut(IMAGE_PIXELS);
+		let (green_values, blue_values) =
+			other_channels.split_at_mut(IMAGE_PIXELS);
+		for (((red_slot, green_slot), blue_slot), pixel) in red_values
+			.iter_mut()
+			.zip(green_values)
+			.zip(blue_values)
+			.zip(image.pixels())
+		{
+			let image::Rgb([red, green, blue]) = *pixel;
+			*red_slot = red;
+			*green_slot = green;
+			*blue_slot = blue;
+		}
 	}
 
-	let values = red.into_iter().chain(green).chain(blue).collect::<Vec<_>>();
-	let data = TensorData::new(values, [3, IMAGE_HEIGHT, IMAGE_WIDTH]);
+	let data = TensorData::new(
+		values,
+		[batch_size, 3, IMAGE_HEIGHT as usize, IMAGE_WIDTH as usize],
+	);
 	Tensor::from_data(data, device)
 }
 
@@ -36,18 +50,32 @@ mod tests {
 	use super::{super::config, *};
 
 	#[test]
-	fn image_tensor_is_channel_first_at_model_dimensions() {
-		let image = RgbImage::from_pixel(1, 1, image::Rgb([10, 20, 30]));
-		let tensor = image_to_tensor(&image, &config::get_device());
+	fn image_batch_tensor_is_nchw_and_keeps_images_separate() {
+		let images = [
+			RgbImage::from_pixel(
+				IMAGE_WIDTH,
+				IMAGE_HEIGHT,
+				image::Rgb([10, 20, 30]),
+			),
+			RgbImage::from_pixel(
+				IMAGE_WIDTH,
+				IMAGE_HEIGHT,
+				image::Rgb([40, 50, 60]),
+			),
+		];
+		let tensor = images_to_tensor(images.iter(), &config::get_device());
 		let dimensions = tensor.dims();
 		let values = tensor
 			.into_data()
 			.to_vec::<f32>()
 			.expect("tensor values should be readable");
 
-		assert_eq!(dimensions, [3, 480, 640]);
+		assert_eq!(dimensions, [2, 3, 480, 640]);
 		assert_eq!(values.first(), Some(&10.0));
 		assert_eq!(values.get(IMAGE_PIXELS), Some(&20.0));
 		assert_eq!(values.get(2 * IMAGE_PIXELS), Some(&30.0));
+		assert_eq!(values.get(3 * IMAGE_PIXELS), Some(&40.0));
+		assert_eq!(values.get(4 * IMAGE_PIXELS), Some(&50.0));
+		assert_eq!(values.get(5 * IMAGE_PIXELS), Some(&60.0));
 	}
 }

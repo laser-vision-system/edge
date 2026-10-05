@@ -81,14 +81,10 @@ impl Cnn {
 		batch: &mut [BatchItem],
 		device: &config::Device,
 	) -> Tensor<config::Backend, 4> {
-		let tensors = batch
-			.iter_mut()
-			.map(|item| {
-				self.validate_batch(item);
-				batching::image_to_tensor(&item.image, device).unsqueeze_dim(0)
-			})
-			.collect();
-		Tensor::cat(tensors, 0)
+		for item in batch.iter_mut() {
+			self.validate_batch(item);
+		}
+		batching::images_to_tensor(batch.iter().map(|item| &item.image), device)
 	}
 }
 
@@ -154,6 +150,10 @@ fn clear_predictions(batch: &mut [BatchItem]) {
 #[expect(clippy::panic, reason = "Tests can panic")]
 #[cfg(test)]
 mod tests {
+	#![expect(clippy::print_stdout, reason = "Manual profiling output")]
+
+	use std::time::Instant;
+
 	use image::{Rgb, RgbImage};
 
 	use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_WIDTH};
@@ -286,6 +286,75 @@ mod tests {
 				assert!(data.intensity.unwrap().is_finite());
 			},
 			_ => panic!("expected a CNN state"),
+		}
+	}
+
+	#[test]
+	#[ignore = "manual backend profiling; run with --ignored --nocapture"]
+	fn profile_process_vs_prepared_prediction() {
+		const SAMPLES: u32 = 5;
+		const WARMUP: u32 = 1;
+		let mut cnn = Cnn::new().expect("CNN profiling requires a valid model");
+		let image =
+			RgbImage::from_pixel(IMAGE_WIDTH, IMAGE_HEIGHT, Rgb([255, 40, 90]));
+
+		for batch_size in [1, 10] {
+			let mut states =
+				(0..batch_size).map(|_| cnn.new_state()).collect::<Vec<_>>();
+			let mut batch = states
+				.iter_mut()
+				.enumerate()
+				.map(|(index, state)| {
+					BatchItem::new(
+						index as u64,
+						state,
+						image.clone(),
+						true,
+						false,
+					)
+				})
+				.collect::<Vec<_>>();
+			let prepared = cnn.prepare_batch(&mut batch, &cnn.device);
+
+			for _ in 0..WARMUP {
+				let _predictions = cnn
+					.predict(prepared.clone())
+					.expect("prepared prediction should succeed");
+				cnn.process(&mut batch);
+			}
+
+			let prediction_start = Instant::now();
+			for _ in 0..SAMPLES {
+				let predictions = cnn
+					.predict(prepared.clone())
+					.expect("prepared prediction should succeed");
+				std::hint::black_box(predictions);
+			}
+			let prediction_elapsed = prediction_start.elapsed() / SAMPLES;
+
+			let process_start = Instant::now();
+			for _ in 0..SAMPLES {
+				cnn.process(&mut batch);
+			}
+			let process_elapsed = process_start.elapsed() / SAMPLES;
+			let individual_process_elapsed = if batch_size == 10 {
+				let individual_start = Instant::now();
+				for _ in 0..SAMPLES {
+					for item in &mut batch {
+						cnn.process(std::slice::from_mut(item));
+					}
+				}
+				Some(individual_start.elapsed() / SAMPLES)
+			} else {
+				None
+			};
+
+			println!(
+				"batch={batch_size}: predict_prepared={:?}, process={:?}, estimated_prepare_and_state_overhead={:?}, ten_individual_processes={individual_process_elapsed:?}",
+				prediction_elapsed,
+				process_elapsed,
+				process_elapsed.saturating_sub(prediction_elapsed),
+			);
 		}
 	}
 }
