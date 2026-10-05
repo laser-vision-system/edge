@@ -21,9 +21,9 @@ pub(super) fn image_to_tensor(
 
 	for pixel in image.pixels() {
 		let image::Rgb([red_value, green_value, blue_value]) = *pixel;
-		red.push(f32::from(red_value));
-		green.push(f32::from(green_value));
-		blue.push(f32::from(blue_value));
+		red.push(red_value);
+		green.push(green_value);
+		blue.push(blue_value);
 	}
 
 	let values = red.into_iter().chain(green).chain(blue).collect::<Vec<_>>();

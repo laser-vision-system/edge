@@ -57,9 +57,40 @@ tokio-tungstenite = "0.30.0"
 
 # Dependencies only needed for tests, examples, or benchmarks.
 [dev-dependencies]
+criterion = "0.8"
 rerun = { version = "0.35", features = [
 	"image"
 ] }
+
+[[bench]]
+name = "cnn_inference_flex"
+path = "benches/cnn_inference/flex.rs"
+required-features = ["cnn-backend-flex"]
+harness = false
+
+[[bench]]
+name = "cnn_inference_wgpu"
+path = "benches/cnn_inference/wgpu.rs"
+required-features = ["cnn-backend-wgpu"]
+harness = false
+
+[[bench]]
+name = "cnn_inference_cuda"
+path = "benches/cnn_inference/cuda.rs"
+required-features = ["cnn-backend-cuda"]
+harness = false
+
+[[bench]]
+name = "cnn_inference_rocm"
+path = "benches/cnn_inference/rocm.rs"
+required-features = ["cnn-backend-rocm"]
+harness = false
+
+[[bench]]
+name = "cnn_inference_tch"
+path = "benches/cnn_inference/tch.rs"
+required-features = ["cnn-backend-tch"]
+harness = false
 
 [lints.rust]
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.
