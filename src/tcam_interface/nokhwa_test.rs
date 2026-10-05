@@ -1,6 +1,11 @@
 #![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
 #![expect(clippy::use_debug, reason = "Tests are a debug context")]
 #![expect(clippy::panic, reason = "Tests are allowed to panic")]
+#![expect(
+	clippy::unwrap_used,
+	clippy::unwrap_in_result,
+	reason = "Tests are allowed to unwrap"
+)]
 
 //! # Nokhwa Test
 //!

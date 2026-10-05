@@ -8,7 +8,7 @@ mod persistence;
 
 pub use camera_device::CameraDevice;
 pub use identifier::Identifier;
-use nokhwa::NokhwaError;
+use nokhwa::{NokhwaError, utils::KnownCameraControl};
 pub use persistence::{
 	MaybeBatch, MaybeImage, PerpetualInfo, PersistEntry, Persistence, WhyNo,
 	polling,
@@ -46,14 +46,20 @@ pub enum CameraDeviceError {
 	FrameDecodeOutOfMemory(#[from] FrameDecodeOutOfMemory),
 	#[error("Failed to set control {id} to {value}: {inner}")]
 	SetControl {
-		id: String,
+		id: KnownCameraControl,
 		value: String,
 		inner: SetControl,
 	},
-	#[error("Attempting to set a control of an unsupported type: {id}")]
-	SetControlType { id: String },
+	#[error("Attempting to set a control of an unsupported type: {0}")]
+	SetControlType(KnownCameraControl),
 	#[error("Attempted to access a camera that does not exist")]
 	CameraNotPresent,
+	#[error(transparent)]
+	CannotGetControls(#[from] CannotGetControls),
+	#[error("Unable to get control of type '{0}'")]
+	GetControl(KnownCameraControl),
+	#[error("Attempting to get a control of an unsupported type: {0}")]
+	GetControlType(KnownCameraControl),
 	#[error("Attempting to set an invalid control value")]
 	InvalidControlValue,
 }
@@ -89,6 +95,10 @@ pub struct FrameDecodeOutOfMemory(#[from] NokhwaError);
 #[derive(Clone, Debug, thiserror::Error)]
 #[error(transparent)]
 pub struct SetControl(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct CannotGetControls(#[from] NokhwaError);
 
 /// Errors specific to camera persistence logic.
 #[derive(Clone, Debug, thiserror::Error)]
