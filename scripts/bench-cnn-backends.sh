@@ -36,24 +36,24 @@ for backend in "${backends[@]}"; do
 done
 
 if ((${#successes[@]} > 0)); then
-	printf '\nMean inference time by backend and batch size:\n'
+	printf '\nMean inference time by backend and case:\n'
 	python3 - "${successes[@]}" <<'PY'
 import json
 import pathlib
 import sys
 
 root = pathlib.Path("target/criterion")
-print(f"{'backend':<10} {'batch_1':>14} {'batch_10':>14}")
+print(f"{'backend':<10} {'batch_1':>14} {'batch_10':>14} {'ten_single':>14}")
 for backend in sys.argv[1:]:
 	means = []
-	for batch_size in (1, 10):
-		path = root / f"cnn_inference_{backend}" / f"batch_{batch_size}" / backend / "estimates.json"
+	for case in ("batch_1", "batch_10", "ten_single_calls"):
+		path = root / f"cnn_inference_{backend}" / case / backend / "estimates.json"
 		try:
 			mean_ms = json.loads(path.read_text())["mean"]["point_estimate"] / 1_000_000
 			means.append(f"{mean_ms:.3f} ms")
 		except (OSError, KeyError, json.JSONDecodeError):
 			means.append("n/a")
-	print(f"{backend:<10} {means[0]:>14} {means[1]:>14}")
+	print(f"{backend:<10} {means[0]:>14} {means[1]:>14} {means[2]:>14}")
 PY
 fi
 

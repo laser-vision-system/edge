@@ -32,6 +32,21 @@ pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
 				start.elapsed()
 			});
 		});
+
+		if batch_size == 10 {
+			group.bench_function("ten_single_calls", |bencher| {
+				bencher.iter_custom(|iterations| {
+					let batch = black_box(&mut batch);
+					let start = Instant::now();
+					for _ in 0..iterations {
+						for item in batch.iter_mut() {
+							cnn.process(std::slice::from_mut(item));
+						}
+					}
+					start.elapsed()
+				});
+			});
+		}
 	}
 
 	group.finish();
