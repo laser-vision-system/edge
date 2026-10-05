@@ -6,7 +6,7 @@ edition = "2024"
 [features]
 default = ["cnn-backend-wgpu"]
 cnn-backend-cuda = ["burn/cuda"]
-cnn-backend-flex = ["burn/flex"]
+cnn-backend-flex = ["burn/flex", "dep:burn-flex"]
 cnn-backend-tch = ["burn/tch"]
 cnn-backend-rocm = ["burn/rocm"]
 cnn-backend-wgpu = ["burn/wgpu"]
@@ -15,6 +15,10 @@ cnn-backend-wgpu = ["burn/wgpu"]
 burn = { version = "0.21", default-features = false, features = [
 	"std",
 ]}
+burn-flex = { version = "0.21", default-features = false, features = [
+	"rayon",
+	"simd",
+], optional = true }
 burn-store = { version = "0.21", default-features = false, features = [
 	"std",
 	"burnpack",

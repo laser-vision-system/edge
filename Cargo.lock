@@ -4242,6 +4242,7 @@ name = "edge"
 version = "0.1.0"
 dependencies = [
  "burn",
+ "burn-flex",
  "burn-store",
  "chrono",
  "criterion",
