@@ -4,6 +4,7 @@ use crate::{
 	logger::logger,
 	network::NetworkError,
 	tcam_interface::{CameraDeviceError, PersistenceError},
+	vision_processor::VisionError,
 };
 
 /// Specialised [`Result`] type for the Edge tier.
@@ -31,6 +32,8 @@ pub enum EdgeError {
 	NetworkError(#[from] NetworkError),
 	#[error(transparent)]
 	PersistenceError(#[from] PersistenceError),
+	#[error(transparent)]
+	VisionError(#[from] VisionError),
 	#[error("Failed to decode the controls sent by the server: {reason}")]
 	DecodeControls {
 		#[from]
@@ -60,6 +63,11 @@ impl Clone for EdgeError {
 				reason: format!(
 					"Failed to decode the controls sent by the server: {reason}",
 				),
+			},
+			// Down-convert this to a general error because burn's errors
+			// don't implement clone.
+			Self::VisionError(reason) => Self::General {
+				reason: reason.to_string(),
 			},
 			other => other.clone(),
 		}

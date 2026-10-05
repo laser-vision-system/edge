@@ -1,28 +1,106 @@
-use std::fmt;
+mod batching;
+mod config;
+mod model;
 
-use super::{BatchItem, SessionToken, VisionInterface, VisionState};
+use std::{fmt, path::PathBuf};
 
-#[derive(Clone, Default)]
+use burn::tensor::{DataError, Tensor};
+use burn_store::BurnpackError;
+use thiserror::Error;
+
+use super::{
+	BatchItem, SessionToken, VisionError, VisionInterface, VisionState,
+	write_optional,
+};
+use crate::error::{EdgeError, Result};
+
+#[derive(Debug, Error)]
+#[expect(clippy::module_name_repetitions, reason = "Clarity")]
+pub enum CnnError {
+	#[error("failed to load CNN model from {path}: {source}")]
+	ModelLoad {
+		path: PathBuf,
+		#[source]
+		source: BurnpackError,
+	},
+	#[error(transparent)]
+	Predict(#[from] DataError),
+}
+
+/// Closely associated data used by external holders.
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+pub struct ExternalData {
+	pub setpoint: Option<f32>,
+	pub intensity: Option<f32>,
+	pub deviation: Option<f32>,
+}
+
+impl fmt::Display for ExternalData {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "ExternalData for Cnn {{ setpoint: ")?;
+		write_optional(f, self.setpoint)?;
+		f.write_str(", intensity: ")?;
+		write_optional(f, self.intensity)?;
+		f.write_str(", deviation: ")?;
+		write_optional(f, self.deviation)?;
+		f.write_str(" }")
+	}
+}
+
 pub struct Cnn {
 	session: SessionToken,
+	device: config::Device,
+	model: model::LaserModel<config::Backend>,
 }
 
 impl Cnn {
-	pub fn new() -> Self {
-		Self {
+	pub fn new() -> Result<Self> {
+		let device = config::get_device();
+		let path = config::model_path();
+		let model = model::LaserModel::load(path, &device)?;
+		Ok(Self {
 			session: SessionToken::new(),
-		}
+			device,
+			model,
+		})
+	}
+
+	fn predict(&self, images: Tensor<config::Backend, 4>) -> Result<Vec<f32>> {
+		self.model
+			.forward(images)
+			.flatten::<1>(0, 1)
+			.into_data()
+			.to_vec::<f32>()
+			.map_err(|why| {
+				EdgeError::from(VisionError::from(CnnError::from(why)))
+			})
+	}
+
+	fn prepare_batch(
+		&self,
+		batch: &mut [BatchItem],
+		device: &config::Device,
+	) -> Tensor<config::Backend, 4> {
+		let tensors = batch
+			.iter_mut()
+			.map(|item| {
+				self.validate_batch(item);
+				batching::image_to_tensor(&item.image, device).unsqueeze_dim(0)
+			})
+			.collect();
+		Tensor::cat(tensors, 0)
 	}
 }
 
 impl VisionInterface for Cnn {
 	fn process(&mut self, batch: &mut [BatchItem]) {
-		for item in batch {
-			let VisionState::Cnn { data, .. } = item.state else {
-				// TODO: This should raise an error.
-				continue;
-			};
-			data.deviation = Some(0.0);
+		let tensors = self.prepare_batch(batch, &self.device);
+		match self.predict(tensors) {
+			Ok(predictions) => apply_predictions(batch, predictions),
+			Err(why) => {
+				why.log();
+				clear_predictions(batch);
+			},
 		}
 	}
 
@@ -36,25 +114,178 @@ impl VisionInterface for Cnn {
 
 impl fmt::Debug for Cnn {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "Cnn")
+		f.debug_struct("Cnn").finish_non_exhaustive()
 	}
 }
 
 impl fmt::Display for Cnn {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "Cnn")
+		f.write_str("Cnn")
 	}
 }
 
-/// Closely associated data used by external holders.
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ExternalData {
-	pub setpoint: Option<f32>,
-	pub deviation: Option<f32>,
+fn apply_predictions(batch: &mut [BatchItem], predictions: Vec<f32>) {
+	debug_assert_eq!(batch.len(), predictions.len());
+
+	for (item, intensity) in batch.iter_mut().zip(predictions) {
+		if let VisionState::Cnn { data, .. } = item.state {
+			if item.calibrate {
+				data.setpoint = Some(intensity);
+			}
+			data.intensity = Some(intensity);
+			data.deviation = data
+				.setpoint
+				.filter(|setpoint| *setpoint > 0.0)
+				.map(|setpoint| intensity / setpoint)
+				.or(Some(0.0));
+		}
+	}
 }
 
-impl fmt::Display for ExternalData {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "ExternalData for Cnn: {:?}", self.setpoint)
+fn clear_predictions(batch: &mut [BatchItem]) {
+	for item in batch.iter_mut() {
+		if let VisionState::Cnn { data, .. } = item.state {
+			data.intensity = None;
+			data.deviation = None;
+		}
+	}
+}
+
+#[expect(clippy::panic, reason = "Tests can panic")]
+#[cfg(test)]
+mod tests {
+	use image::{Rgb, RgbImage};
+
+	use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_WIDTH};
+
+	use super::*;
+
+	fn test_cnn() -> Cnn {
+		let device = config::get_device();
+		let model = model::LaserModel::<config::Backend>::test_model(&device);
+		Cnn {
+			session: SessionToken::new(),
+			device,
+			model,
+		}
+	}
+
+	fn cnn_state(data: ExternalData) -> VisionState {
+		VisionState::Cnn {
+			handle: SessionToken::new().downgrade(),
+			data,
+		}
+	}
+
+	#[test]
+	fn external_data_display_formats_values() {
+		let data = ExternalData {
+			setpoint: Some(3.5),
+			intensity: Some(1.25),
+			deviation: Some(0.357),
+		};
+
+		assert_eq!(
+			format!("{data}"),
+			"ExternalData for Cnn { setpoint: 3.5, intensity: 1.25, deviation: 0.357 }"
+		);
+	}
+
+	#[test]
+	fn apply_predictions_sets_intensity_and_setpoint_when_calibrating() {
+		let mut state = cnn_state(ExternalData::default());
+		let mut batch = [BatchItem::new(
+			7,
+			&mut state,
+			RgbImage::new(8, 8),
+			true,
+			false,
+		)];
+
+		apply_predictions(&mut batch, vec![12.5]);
+
+		match &batch[0].state {
+			VisionState::Cnn { data, .. } => {
+				assert_eq!(data.setpoint, Some(12.5));
+				assert_eq!(data.intensity, Some(12.5));
+				assert_eq!(data.deviation, Some(1.0));
+			},
+			_ => panic!("expected a CNN state"),
+		}
+	}
+
+	#[test]
+	fn apply_predictions_uses_existing_setpoint_for_deviation() {
+		let mut state = cnn_state(ExternalData {
+			setpoint: Some(10.0),
+			intensity: None,
+			deviation: None,
+		});
+		let mut batch = [BatchItem::new(
+			12,
+			&mut state,
+			RgbImage::new(8, 8),
+			false,
+			false,
+		)];
+
+		apply_predictions(&mut batch, vec![4.0]);
+
+		match &batch[0].state {
+			VisionState::Cnn { data, .. } => {
+				assert_eq!(data.setpoint, Some(10.0));
+				assert_eq!(data.intensity, Some(4.0));
+				assert_eq!(data.deviation, Some(0.4));
+			},
+			_ => panic!("expected a CNN state"),
+		}
+	}
+
+	#[test]
+	fn clear_predictions_removes_inference_values() {
+		let mut state = cnn_state(ExternalData {
+			setpoint: Some(9.0),
+			intensity: Some(6.0),
+			deviation: Some(0.666),
+		});
+		let mut batch = [BatchItem::new(
+			21,
+			&mut state,
+			RgbImage::new(8, 8),
+			false,
+			true,
+		)];
+
+		clear_predictions(&mut batch);
+
+		match &batch[0].state {
+			VisionState::Cnn { data, .. } => {
+				assert_eq!(data.setpoint, Some(9.0));
+				assert_eq!(data.intensity, None);
+				assert_eq!(data.deviation, None);
+			},
+			_ => panic!("expected a CNN state"),
+		}
+	}
+
+	#[test]
+	fn process_runs_inference_and_updates_state() {
+		let mut cnn = test_cnn();
+		let mut state = cnn_state(ExternalData::default());
+		let image =
+			RgbImage::from_pixel(IMAGE_WIDTH, IMAGE_HEIGHT, Rgb([255, 40, 90]));
+		let mut batch = [BatchItem::new(99, &mut state, image, true, false)];
+
+		cnn.process(&mut batch);
+
+		match &batch[0].state {
+			VisionState::Cnn { data, .. } => {
+				assert!(data.setpoint.is_some());
+				assert!(data.intensity.is_some());
+				assert!(data.deviation.is_some());
+				assert!(data.intensity.unwrap().is_finite());
+			},
+			_ => panic!("expected a CNN state"),
+		}
 	}
 }

@@ -64,8 +64,10 @@ impl Conductor {
 
 		let _ = websocket.keep_alive().await;
 
-		if let Some(swap_to) = requested_vision_type {
-			vision().swap(swap_to);
+		if let Some(swap_to) = requested_vision_type
+			&& let Err(error) = vision().swap(swap_to)
+		{
+			error.log();
 		}
 
 		// TODO: There should be something in between this call that does the

@@ -19,8 +19,19 @@ pub use diff::Diff;
 pub use empty::Empty;
 use image::RgbImage;
 use server_edge_datatypes::shared::{CameraId, VisionTechnique};
+use thiserror::Error;
 
 use crate::{error::Result, logger::logger};
+
+const IMAGE_WIDTH: u32 = 640;
+const IMAGE_HEIGHT: u32 = 480;
+const IMAGE_PIXELS: usize = (IMAGE_WIDTH * IMAGE_HEIGHT) as usize;
+
+#[derive(Debug, Error)]
+pub enum VisionError {
+	#[error(transparent)]
+	Cnn(#[from] cnn::CnnError),
+}
 
 pub type VisionRef = &'static VisionGuard;
 
@@ -136,7 +147,7 @@ pub trait VisionInterface: fmt::Debug + fmt::Display {
 pub enum VisionVariant {
 	Empty(Empty),
 	Demonstration(Demonstration),
-	Cnn(Cnn),
+	Cnn(Box<Cnn>),
 	Diff(Diff),
 }
 
@@ -160,12 +171,13 @@ impl VisionVariant {
 	/// This method statically asserts exhaustiveness between
 	/// [this](VisionVariant) and [`VisionTechnique`].
 	#[expect(clippy::unwrap_in_result, reason = "Logger")]
+	fn swap(&mut self, swap_to: VisionTechnique) -> Result<()> {
 		if self.identifier() == swap_to {
 			logger()
 				.lock()
 				.unwrap()
 				.log_warn("That VisionTechnique is already active.");
-			return;
+			return Ok(());
 		}
 
 		logger()
@@ -177,7 +189,7 @@ impl VisionVariant {
 			VisionTechnique::Demonstration => {
 				*self = Self::Demonstration(Demonstration::new());
 			},
-			VisionTechnique::Cnn => *self = Self::Cnn(Cnn::new()),
+			VisionTechnique::Cnn => *self = Self::Cnn(Box::new(Cnn::new()?)),
 			VisionTechnique::Diff => *self = Self::Diff(Diff::new()),
 			_ => {
 				logger().lock().unwrap().log_warn(
@@ -189,6 +201,7 @@ impl VisionVariant {
 			.lock()
 			.unwrap()
 			.log_info("Finished swapping VisionTechnique");
+		Ok(())
 	}
 
 	/// A marker for which vision type this is.

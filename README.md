@@ -16,28 +16,37 @@ To enable the pre-commit hook, run `git config core.hooksPath .githooks`.
 
 See [CONTRIBUTING](docs/CONTRIBUTING.md).
 
-## Docker image 
+### Feature flags
 
-In order to run our docker image you will need to pull the image from github. to start off with make sure you are logged in to login to the github docker registery by doing the following: 
+Available backend features are `cnn-backend-flex`, `cnn-backend-wgpu`, `cnn-backend-cuda`, `cnn-backend-rocm`, and `cnn-backend-tch`.
+
+Wgpu is enabled by default. To build with another Burn backend, disable default features and select exactly one backend, for example:
+
+```sh
+cargo build --no-default-features --features cnn-backend-cuda
+```
+
+## Docker image
+
+In order to run our docker image you will need to pull the image from github. to start off with make sure you are logged in to login to the github docker registery by doing the following:
 ```
 # Create a new personal access token (classic) with the appropriate scopes for the tasks you want to accomplish. If your organization requires SSO, you must enable SSO for your new token.
-# Select the read:packages scope to download container images and read their metadata. 
-export CR_PAT=YOUR_TOKEN 
-echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin 
+# Select the read:packages scope to download container images and read their metadata.
+export CR_PAT=YOUR_TOKEN
+echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 ```
-After you are logged in run the following command to pull the image:  
+After you are logged in run the following command to pull the image:
 ```
 # For raspbery pi's or MAC machines
 docker pull ghcr.io/cos40005-p12/edge-arm64:BRANCH
-# For other hardware 
+# For other hardware
 docker pull ghcr.io/cos40005-p12/edge-amd64:BRANCH
 ```
-If you want to make and run a container for testing run the following: 
+If you want to make and run a container for testing run the following:
 ```
 docker run -it --rm --net=host --privileged --name edge --restart unless-stopped --mount type=bind,src=/dev,dst=/dev ghcr.io/cos40005-p12/edge-arm64:BRANCH
 ```
-For deployment on the raspberry pi instead run the following: 
+For deployment on the raspberry pi instead run the following:
 ```
 docker run --net=host --privileged --name edge --restart unless-stopped --mount type=bind,src=/dev,dst=/dev ghcr.io/cos40005-p12/edge-arm64:BRANCH
 ```
-

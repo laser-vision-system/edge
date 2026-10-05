@@ -1,5 +1,7 @@
 //! Edge computing system for laser measurement on a μ-com.
 
+#![cfg_attr(feature = "cnn-backend-wgpu", recursion_limit = "256")]
+
 mod conductor;
 mod logger;
 mod network;

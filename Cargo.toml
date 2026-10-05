@@ -3,9 +3,25 @@ name = "edge"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["cnn-backend-wgpu"]
+cnn-backend-cuda = ["burn/cuda"]
+cnn-backend-flex = ["burn/flex"]
+cnn-backend-tch = ["burn/tch"]
+cnn-backend-rocm = ["burn/rocm"]
+cnn-backend-wgpu = ["burn/wgpu"]
+
 [dependencies]
-server-edge-datatypes = { path = "./server-edge-datatypes"}
+burn = { version = "0.21", default-features = false, features = [
+	"std",
+]}
+burn-store = { version = "0.21", default-features = false, features = [
+	"std",
+	"burnpack",
+	"memmap"
+] }
 chrono = "0.4"
+futures-util = "0.3.33"
 image = { version = "0.25", default-features = false, features = [
 	"rayon",
 	"jpeg",
@@ -14,12 +30,14 @@ image = { version = "0.25", default-features = false, features = [
 	"webp",
 	"avif"
 ] }
+image-compare = "0.5"
 lab = "0.11"
 nokhwa = { path = "nokhwa", features = [
 	"serialize",
 	"input-native",
 	"runner",
 ] }
+pnet_datalink = "0.35.0"
 rayon = "1"
 reqwest = { version = "0.13", features = [
 	"json",
@@ -28,16 +46,15 @@ reqwest = { version = "0.13", features = [
 serde = { version = "1" , features = [
 	"derive"
 ] }
+serde_json = "1.0.151"
+server-edge-datatypes = { path = "./server-edge-datatypes"}
 thiserror = "2.0"
 tokio = { version = "1.26.0", features = [
 	"full"
 ] }
 tungstenite = "0.28.0"
-serde_json = "1.0.151"
 tokio-tungstenite = "0.30.0"
-futures-util = "0.3.33"
-pnet_datalink = "0.35.0"
-image-compare = "0.5"
+
 # Dependencies only needed for tests, examples, or benchmarks.
 [dev-dependencies]
 rerun = { version = "0.35", features = [
