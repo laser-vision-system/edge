@@ -154,11 +154,12 @@ impl Conductor {
 	) {
 		match request {
 			EdgeRequests::SetNameCamera(cam_name_req) => {
-				self.persistence.set_entry_name(cam_name_req.clone());
+				let cam_name = cam_name_req.clone();
+				self.persistence.set_entry_name(cam_name_req);
 				println!("Hit 1");
 				match websocket.
 					send_text(ServerRequests::SetNameCamera(
-						cam_name_req
+						cam_name
 					))
 					.await
 				{
