@@ -298,9 +298,10 @@ mod tests {
 		let image =
 			RgbImage::from_pixel(IMAGE_WIDTH, IMAGE_HEIGHT, Rgb([255, 40, 90]));
 
-		for batch_size in [1, 10] {
-			let mut states =
-				(0..batch_size).map(|_| cnn.new_state()).collect::<Vec<_>>();
+		for batch_size in [1_i32, 10_i32] {
+			let mut states = (0_i32..batch_size)
+				.map(|_| cnn.new_state())
+				.collect::<Vec<_>>();
 			let mut batch = states
 				.iter_mut()
 				.enumerate()
