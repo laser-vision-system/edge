@@ -90,6 +90,10 @@ impl PartialEq<IdentMetaInfo> for CameraId {
 	}
 }
 
+impl AsRef<String> for IdentMetaInfo {
+	fn as_ref(&self) -> &String { &self.name }
+}
+
 /// The `Identifier` type.
 ///
 /// The `meta_info` field is not used when performing [`Hash`], [`PartialEq`],
@@ -106,6 +110,10 @@ impl AsRef<CameraId> for Identifier {
 	fn as_ref(&self) -> &CameraId {
 		&self.hashed_id
 	}
+}
+
+impl AsRef<IdentMetaInfo> for Identifier {
+	fn as_ref(&self) -> &IdentMetaInfo { &self.meta_info }
 }
 
 impl Identifier {

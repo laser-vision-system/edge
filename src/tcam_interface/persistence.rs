@@ -12,19 +12,21 @@ use std::{
 	collections::{HashMap, HashSet},
 	hash::RandomState,
 };
-
+use std::ops::Deref;
 use nokhwa::utils::CameraIndex;
+use serde::__private229::de::Borrowed;
 use server_edge_datatypes::{
 	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
 	shared::{CameraId, Configuration, ViewCameraConfig},
 };
-
+use server_edge_datatypes::edge::{NewCameraInfo, RegisterCameras};
 pub use self::{
 	perpetual_info::PerpetualInfo,
 	persist_entry::{MaybeImage, PersistEntry, WhyNo},
 };
-use super::{Identifier, PersistenceError};
+use super::{identifier, Identifier, PersistenceError};
 use crate::{error::EdgeError, vision_processor::BatchItem};
+use crate::tcam_interface::identifier::IdentMetaInfo;
 
 pub type ErrAccType = u16;
 
@@ -188,6 +190,24 @@ impl Persistence {
 			entry.request_calibration();
 		} else {
 			EdgeError::from(PersistenceError::UnknownCameraId).log();
+		}
+	}
+
+	pub fn get_current_cameras(
+		&mut self
+	) -> RegisterCameras {
+		let camera_list: HashMap<CameraId, NewCameraInfo> = self.inner.iter().filter_map(|internal_map| {
+			let camera_id = <Identifier as AsRef<CameraId>>::as_ref(internal_map.0).clone();
+			let camera_name = <IdentMetaInfo as AsRef<String>>::as_ref(&<Identifier as AsRef<IdentMetaInfo>>::as_ref(internal_map.0));
+
+			let camera_status = NewCameraInfo {
+				name: camera_name.clone(),
+				status: internal_map.1.clone().get_status(),
+			};
+			Some((camera_id, camera_status))
+		}).collect();
+		RegisterCameras {
+			cameras: camera_list
 		}
 	}
 }

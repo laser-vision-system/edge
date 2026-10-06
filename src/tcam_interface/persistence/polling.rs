@@ -129,32 +129,7 @@ impl Persistence {
 		self.get_new_from_inter(inter)
 	}
 
-	pub fn poll_for_current_cameras(
-		&mut self,
-	) -> HashMap<CameraId, ConnectionDetail> {
-		let all_devices = CameraDevice::query_for_available_cameras();
-		let inter = convert_to_intermediaries(all_devices);
-		self.get_new_from_inter(inter)
-	}
-
 	fn get_new_from_inter(
-		&mut self,
-		inter: IntermediaryMap,
-	) -> HashMap<CameraId, ConnectionDetail> {
-		inter
-			.into_iter()
-			// TODO: Filter for disconnections here.
-			.filter_map(|(ident, points)| -> Option<(CameraId, ConnectionDetail)> {
-				self.on_each_connection(&DeviceConnection::from((ident, points)))
-			})
-			.collect::<HashMap<_, _>>()
-
-		// Cache a NewCameraInfo of each entry beforehand.
-		// Make a new batch of NewCameraInfos.
-		// Contrast this to use for register to server.
-	}
-
-	fn get_current_from_inter(
 		&mut self,
 		inter: IntermediaryMap,
 	) -> HashMap<CameraId, ConnectionDetail> {

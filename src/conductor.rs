@@ -154,7 +154,7 @@ impl Conductor {
 	) {
 		match request {
 			EdgeRequests::SetNameCamera(cam_name_req) => {
-				self.persistence.set_entry_name(cam_name_req);
+				self.persistence.set_entry_name(cam_name_req.clone());
 				match websocket.
 					send_text(ServerRequests::SetNameCamera(
 						cam_name_req
@@ -256,7 +256,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 	loop {
 		let (loop_websocket, loop_settings) =
-			assert_connection(websocket, settings, &conductor.persistence).await;
+			assert_connection(websocket, settings, &mut conductor.persistence).await;
 		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);

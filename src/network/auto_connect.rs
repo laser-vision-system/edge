@@ -3,7 +3,7 @@
 #![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
 use std::{collections::HashSet, fmt};
-
+use std::error::Error;
 use pnet_datalink::interfaces;
 use reqwest::Client;
 use server_edge_datatypes::edge::{ServerRequests, Settings};
@@ -149,22 +149,40 @@ pub async fn send_persistent_edge_id(
 		ServerRequests::InitialiseConnection(InitialiseConnection {
 			edge_id: get_mac_address().unwrap(),
 		});
-	websocket.send_text(request_enum).await.unwrap();
-	websocket
+	match websocket.send_text(request_enum).await {
+		Ok(_) => {
+			websocket
+		}
+		Err(_) => {
+			websocket
+		}
+	}
+}
+
+pub async fn send_camera_list(
+	persistence: &mut Persistence,
+	mut websocket: WebSocket
+) -> (WebSocket) {
+	match websocket.send_text(persistence.get_current_cameras()).await {
+		Ok(_) => {
+			websocket}
+		Err(_) => {
+			websocket}
+	}
 }
 
 /// When call,
 pub async fn assert_connection(
 	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
-	persistance: &Persistence,
+	persistence: &mut Persistence,
 ) -> (WebSocket, Settings) {
 	match (websocket, settings) {
 		// All good, normal operation.
 		(Some(socket), Some(settings)) => {
 			if socket.is_terminated() {
 				let (socket, settings) = loop_until_connection().await;
-
+				let socket = send_camera_list(persistence, socket).await;
 				return (send_persistent_edge_id(socket).await, settings)
 			}
 			(socket, settings)
