@@ -365,7 +365,6 @@ impl PersistEntry {
 				.lock()
 				.unwrap()
 				.log_warn("Attempted to change name of an invalid connection"),
-			_ => println!("HEEEEEELP THIS WENT REALLY WRONG")
 		}
 	}
 
