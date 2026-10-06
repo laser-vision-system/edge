@@ -108,9 +108,10 @@ impl AsRef<CameraId> for Identifier {
 	}
 }
 
-impl AsRef<IdentMetaInfo> for Identifier {
-	fn as_ref(&self) -> &IdentMetaInfo {
-		&self.meta_info
+impl Identifier {
+	/// See [`Cow`] for more information.
+	pub fn lazy_clone(&self) -> Cow<'_, Self> {
+		Cow::Borrowed(self)
 	}
 }
 
