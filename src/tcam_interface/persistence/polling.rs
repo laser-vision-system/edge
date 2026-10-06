@@ -146,8 +146,6 @@ impl Persistence {
 		// Contrast this to use for register to server.
 	}
 
-
-
 	/// Attempt to create a new device from a device info entry.
 	fn on_each_connection(
 		&mut self,

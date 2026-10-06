@@ -91,7 +91,9 @@ impl PartialEq<IdentMetaInfo> for CameraId {
 }
 
 impl AsRef<String> for IdentMetaInfo {
-	fn as_ref(&self) -> &String { &self.name }
+	fn as_ref(&self) -> &String {
+		&self.name
+	}
 }
 
 /// The `Identifier` type.
@@ -113,7 +115,9 @@ impl AsRef<CameraId> for Identifier {
 }
 
 impl AsRef<IdentMetaInfo> for Identifier {
-	fn as_ref(&self) -> &IdentMetaInfo { &self.meta_info }
+	fn as_ref(&self) -> &IdentMetaInfo {
+		&self.meta_info
+	}
 }
 
 impl Identifier {
