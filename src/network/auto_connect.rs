@@ -142,7 +142,7 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 	Err(NetworkError::AutoConnect.into())
 }
 
-pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> (WebSocket) {
+pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> WebSocket {
 	let request_enum =
 		ServerRequests::InitialiseConnection(InitialiseConnection {
 			edge_id: get_mac_address().unwrap(),
@@ -156,7 +156,7 @@ pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> (WebSocket) {
 pub async fn send_camera_list(
 	persistence: &mut Persistence,
 	mut websocket: WebSocket,
-) -> (WebSocket) {
+) -> WebSocket {
 	match websocket.send_text(persistence.get_current_cameras()).await {
 		Ok(_) => websocket,
 		Err(_) => websocket,
