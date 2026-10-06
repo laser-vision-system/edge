@@ -1,5 +1,6 @@
 use std::{cmp::Ordering, io::Cursor};
 
+use image::codecs::jpeg;
 use image::{DynamicImage, RgbImage};
 use nokhwa::{
 	Buffer, NokhwaError, OpenRequest, OpenedCamera, StreamCamera,
@@ -7,8 +8,8 @@ use nokhwa::{
 	frame::{Frame, IntoRgb as _, RgbConversion},
 	session::open_with_buffers,
 	utils::{
-		CameraIndex, CameraInfo, ControlValueSetter, FrameFormat,
-		KnownCameraControl,
+		ApiBackend, CameraControl, CameraIndex, CameraInfo, ControlValueSetter,
+		FrameFormat, KnownCameraControl,
 	},
 };
 
@@ -103,7 +104,7 @@ impl CameraDevice {
 	#[expect(clippy::unwrap_used, reason = "WIP development")]
 	pub fn encode_image(data: &RgbImage) -> Vec<u8> {
 		let mut buff = Cursor::new(Vec::new());
-		let mut enc = image::codecs::jpeg::JpegEncoder::new(&mut buff);
+		let mut enc = jpeg::JpegEncoder::new(&mut buff);
 		enc.encode_image(data).unwrap();
 		buff.into_inner()
 	}
@@ -159,12 +160,12 @@ impl CameraDevice {
 				CameraDeviceError::from(CannotGetControls::from(why))
 			})?
 			.iter()
-			.map(nokhwa::utils::CameraControl::control)
-			.map(|con| Ok(con))
+			.map(CameraControl::control)
+			.map(Ok)
 			.collect()
 	}
 
-	/// Get a map of the camera controls
+	/// Get a map of the camera controls.
 	pub fn get_controls(&self) -> Result<ControlMap> {
 		self.inner
 			.controls()
@@ -176,7 +177,7 @@ impl CameraDevice {
 			.map(ControlMap::from)
 	}
 
-	/// Get a camera control by ID
+	/// Get a camera control by ID.
 	pub fn get_control(&self, id: KnownCameraControl) -> Result<CamControl> {
 		self.inner
 			.controls()
@@ -186,10 +187,10 @@ impl CameraDevice {
 			.into_iter()
 			.find(|con| con.control() == id)
 			.ok_or_else(|| EdgeError::from(CameraDeviceError::GetControl(id)))
-			.map(|con| CamControl::from(con))
+			.map(CamControl::from)
 	}
 
-	/// Set a camera control
+	/// Set a camera control.
 	pub fn set_control<T>(
 		&mut self,
 		id: KnownCameraControl,
@@ -230,6 +231,7 @@ impl CameraDevice {
 		clippy::too_many_lines,
 		clippy::panic,
 		clippy::unwrap_used,
+		clippy::expect_used,
 		reason = "WIP development"
 	)]
 	pub fn reset_controls_to_default(&mut self) {
@@ -355,15 +357,16 @@ impl CameraDevice {
 
 	/// Query [`nokhwa`] for all available cameras and then sort them by their
 	/// index.
+	#[expect(clippy::expect_used, reason = "Low priority edge case")]
 	pub fn query_for_available_cameras() -> Vec<CameraInfo> {
-		let mut cameras = nokhwa::query(nokhwa::utils::ApiBackend::Auto)
+		let mut cameras = nokhwa::query(ApiBackend::Auto)
 			.expect("The backend should be supported");
-		cameras.sort_by(|a, b| -> Ordering {
-			let a_ind = a.index().as_index().unwrap_or(u32::MAX);
-			let b_ind = b.index().as_index().unwrap_or(u32::MAX);
-			if a_ind == u32::MAX && b_ind == u32::MAX {
+		cameras.sort_by(|left, right| -> Ordering {
+			let left_ind = left.index().as_index().unwrap_or(u32::MAX);
+			let right_ind = right.index().as_index().unwrap_or(u32::MAX);
+			if left_ind == u32::MAX && right_ind == u32::MAX {
 				Ordering::Equal
-			} else if a_ind < b_ind {
+			} else if left_ind < right_ind {
 				Ordering::Less
 			} else {
 				Ordering::Greater

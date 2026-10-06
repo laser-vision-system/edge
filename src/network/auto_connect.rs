@@ -1,6 +1,5 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
-#![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
 use std::{collections::HashSet, fmt};
 
@@ -51,7 +50,7 @@ impl AddressComp {
 }
 
 impl fmt::Display for AddressComp {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(
 			f,
 			"{}{}{}{}",
@@ -88,6 +87,10 @@ struct WebSocketResponse {
 	pub message: String,
 }
 
+#[expect(
+	clippy::map_err_ignore,
+	reason = "Temporary until error type improvements"
+)]
 async fn get_response(
 	url: AddressComp,
 	client: Client,
@@ -150,25 +153,23 @@ pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> WebSocket {
 	websocket
 }
 
-/// When call,
 pub async fn assert_connection(
 	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
 ) -> (WebSocket, Settings) {
-	match (websocket, settings) {
-		// All good, normal operation.
-		(Some(socket), Some(settings)) => {
-			if socket.is_terminated() {
-				let (socket, settings) = loop_until_connection().await;
-				return (send_persistent_edge_id(socket).await, settings);
-			}
-			(socket, settings)
-		},
-		// First time calling.
-		_ => {
+	// All good, normal operation.
+	if let (Some(socket), Some(settings)) = (websocket, settings) {
+		if socket.is_terminated() {
 			let (socket, settings) = loop_until_connection().await;
 			(send_persistent_edge_id(socket).await, settings)
-		},
+		} else {
+			(socket, settings)
+		}
+	}
+	// First time calling.
+	else {
+		let (socket, settings) = loop_until_connection().await;
+		(send_persistent_edge_id(socket).await, settings)
 	}
 }
 
@@ -230,8 +231,6 @@ async fn get_default_settings(_url: &str) -> Result<Settings> {
 
 #[cfg(test)]
 mod tests {
-	#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
-
 	use super::*;
 	use crate::settings;
 

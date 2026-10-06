@@ -11,6 +11,7 @@ use crate::{
 /// Shorthand for a result with the [`EdgeError`] error type.
 ///
 /// [`Result`]: std::result::Result
+#[expect(clippy::absolute_paths, reason = "Single use aliasing")]
 pub type Result<T> = std::result::Result<T, EdgeError>;
 
 /// The error type for all operations in the Edge tier.

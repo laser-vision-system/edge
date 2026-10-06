@@ -1,11 +1,7 @@
 // TODO: Remove all unwraps and then this.
-#![expect(
-	clippy::unwrap_used,
-	clippy::unwrap_in_result,
-	reason = "WIP development"
-)]
+#![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::time::Duration;
+use std::{error, time::Duration};
 
 use futures_util::{SinkExt as _, StreamExt as _, stream::FusedStream as _};
 use serde::Serialize;
@@ -37,6 +33,7 @@ impl WebSocket {
 		dead_code,
 		reason = "Needs to be better integrated with autonnect"
 	)]
+	#[expect(clippy::expect_used, reason = "WIP development")]
 	pub async fn websocket_connect(url: &str) -> Self {
 		let (stream, _) = connect_async(url).await.expect("Failed to connect");
 		Self { inner: stream }
@@ -51,13 +48,13 @@ impl WebSocket {
 		reason = "Needs to be better integrated with autonnect"
 	)]
 	pub async fn websocket_connect_static() -> Self {
-		let url = "ws://".to_owned() + HOST + ":" + PORT + API;
+		let url = format!("ws://{HOST}:{PORT}{API}");
 		Self::websocket_connect(&url).await
 	}
 
 	pub async fn keep_alive(
 		&mut self,
-	) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<(), Box<dyn error::Error + Send + Sync>> {
 		let msg = "hello";
 		self.inner.send(Message::Pong(Bytes::from(msg))).await?;
 		Ok(())
@@ -66,7 +63,7 @@ impl WebSocket {
 	pub async fn send_text<T>(
 		&mut self,
 		data: T,
-	) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>
+	) -> Result<(), Box<dyn error::Error + Send + Sync>>
 	where
 		T: Serialize,
 	{
@@ -86,7 +83,7 @@ impl WebSocket {
 		&mut self,
 		camera_id: u64,
 		frame: &mut Vec<u8>,
-	) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+	) -> Result<(), Box<dyn error::Error + Send + Sync>> {
 		let mut msg = camera_id.to_be_bytes().to_vec();
 		msg.append(frame);
 		self.inner.send(Message::Binary(Bytes::from(msg))).await?;

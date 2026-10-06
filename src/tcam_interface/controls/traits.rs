@@ -15,7 +15,7 @@ use super::types::{
 	ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
 	ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
 };
-use crate::error::EdgeError;
+use crate::error::Result;
 
 /// A marker trait that determines what is acceptable to use within a
 /// [`ControlValue`].
@@ -92,7 +92,7 @@ pub trait ControlDescription {
 	type ConType: ValidControlValue;
 
 	fn get_id(&self) -> KnownCameraControl;
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError>;
+	fn set_value(&mut self, value: Self::ValueType) -> Result<()>;
 	fn get_value(&self) -> Self::ValueType;
 }
 
