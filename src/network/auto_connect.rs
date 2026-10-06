@@ -182,8 +182,8 @@ pub async fn assert_connection(
 		(Some(socket), Some(settings)) => {
 			if socket.is_terminated() {
 				let (socket, settings) = loop_until_connection().await;
-				let socket = send_camera_list(persistence, socket).await;
-				return (send_persistent_edge_id(socket).await, settings)
+				let socket = send_persistent_edge_id(socket).await;
+				return (send_camera_list(persistence, socket).await, settings)
 			}
 			(socket, settings)
 		},
