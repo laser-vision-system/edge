@@ -19,7 +19,7 @@ use server_edge_datatypes::{
 	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
 	shared::{CameraId, Configuration, ViewCameraConfig},
 };
-use server_edge_datatypes::edge::{NewCameraInfo, RegisterCameras};
+use server_edge_datatypes::edge::{NewCameraInfo, RegisterCameras, ServerRequests};
 pub use self::{
 	perpetual_info::PerpetualInfo,
 	persist_entry::{MaybeImage, PersistEntry, WhyNo},
@@ -195,7 +195,7 @@ impl Persistence {
 
 	pub fn get_current_cameras(
 		&mut self
-	) -> RegisterCameras {
+	) -> ServerRequests {
 		let camera_list: HashMap<CameraId, NewCameraInfo> = self.inner.iter().filter_map(|internal_map| {
 			let camera_id = <Identifier as AsRef<CameraId>>::as_ref(internal_map.0).clone();
 			let camera_name = <IdentMetaInfo as AsRef<String>>::as_ref(&<Identifier as AsRef<IdentMetaInfo>>::as_ref(internal_map.0));
@@ -206,9 +206,11 @@ impl Persistence {
 			};
 			Some((camera_id, camera_status))
 		}).collect();
-		RegisterCameras {
-			cameras: camera_list
-		}
+		ServerRequests::RegisterCameras(
+			RegisterCameras {
+				cameras: camera_list
+			}
+		)
 	}
 }
 
