@@ -102,9 +102,7 @@ impl Active {
 
 	/// Update the name of this device.
 	pub fn set_name(&mut self, name: String) {
-		println!("Hit 6");
 		self.name = name;
-		println!("{}", self.name.clone().to_string());
 	}
 
 	/// Get a reference to the current camera.
