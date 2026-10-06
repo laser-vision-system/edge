@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["cnn-backend-wgpu"]
+default = ["cnn-backend-flex"]
 cnn-backend-cuda = ["burn/cuda"]
 cnn-backend-flex = ["burn/flex", "dep:burn-flex"]
 cnn-backend-tch = ["burn/tch"]
