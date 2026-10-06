@@ -86,6 +86,7 @@ impl Persistence {
 	}
 
 	pub fn get_mut(&mut self, ident: CameraId) -> Option<&mut PersistEntry> {
+		println!("Hit 2");
 		self.inner.get_mut(&ident)
 	}
 }
@@ -103,6 +104,7 @@ impl Persistence {
 
 	pub fn set_entry_name(&mut self, request: SetNameCamera) {
 		if let Some(entry) = self.get_mut(request.camera_id) {
+			println!("Hit 3");
 			entry.set_name(request.name);
 		} else {
 			EdgeError::from(PersistenceError::UnknownCameraId).log();
