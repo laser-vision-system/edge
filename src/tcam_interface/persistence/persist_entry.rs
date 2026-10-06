@@ -349,13 +349,8 @@ impl PersistEntry {
 // Setters.
 impl PersistEntry {
 	pub fn set_name(&mut self, name: String) {
-		println!("Hit 4");
 		match self.as_inner_mut() {
-			ConnectionStatus::Active { active } => {
-				println!("Hit 5");
-				active.set_name(name);
-				println!("Name should have changed");
-			},
+			ConnectionStatus::Active { active } => active.set_name(name),
 			ConnectionStatus::Broken { broken } => broken.set_name(name),
 			ConnectionStatus::Disconnected { disconnected } => {
 				disconnected.set_name(name);
