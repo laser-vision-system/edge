@@ -8,6 +8,7 @@ mod persistence;
 
 pub use camera_device::CameraDevice;
 pub use identifier::Identifier;
+use nokhwa::{NokhwaError, utils::KnownCameraControl};
 pub use persistence::{
 	MaybeBatch, MaybeImage, PerpetualInfo, PersistEntry, Persistence, WhyNo,
 	polling,
@@ -19,30 +20,85 @@ pub use persistence::{
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum CameraDeviceError {
 	// TODO: This variant is not used, find a place for it or remove.
-	#[error("Nokhwa does not have a backend to use")]
-	NokhwaNoBackend,
+	#[error(transparent)]
+	NokhwaBackend(#[from] NokhwaBackend),
 	#[error(
-		"The nokhwa camera could not be initialised at index `{index}`: '{reason}'"
+		"The nokhwa camera could not be initialised at index `{index}`: '{inner}'"
 	)]
-	NokhwaInitialisation { index: String, reason: String },
-	#[error("The nokhwa camera stream could not be started: '{reason}'")]
-	StreamOpen { reason: String },
-	#[error("The frame was not able to be read by nokhwa")]
-	FrameRead,
+	NokhwaInitialisation {
+		index: String,
+		inner: NokhwaInitialisation,
+	},
+	#[error("We do not currently have support for the '{cam_type}' type")]
+	UnsupportedCameraType { cam_type: String },
+	#[error(transparent)]
+	StreamOpen(#[from] StreamOpen),
+	#[error(transparent)]
+	FrameRead(#[from] FrameRead),
+	#[error(transparent)]
+	SelectDecodeFormat(#[from] SelectDecodeFormat),
 	#[error("The frame could not be decoded because it is invalid")]
-	FrameDecodeCorruption,
+	FrameDecodeCorruption(#[from] FrameDecodeCorruption),
 	// TODO: This variant is not used, find a place for it or remove.
 	#[error(
 		"The frame could not be decoded because not more memory could be allocated"
 	)]
-	FrameDecodeOutOfMemory,
-	#[error("Failed to set control {id} to {value}")]
-	SetControl { id: String, value: String },
+	FrameDecodeOutOfMemory(#[from] FrameDecodeOutOfMemory),
+	#[error("Failed to set control {id} to {value}: {inner}")]
+	SetControl {
+		id: KnownCameraControl,
+		value: String,
+		inner: SetControl,
+	},
+	#[error("Attempting to set a control of an unsupported type: {0}")]
+	SetControlType(KnownCameraControl),
 	#[error("Attempted to access a camera that does not exist")]
 	CameraNotPresent,
+	#[error(transparent)]
+	CannotGetControls(#[from] CannotGetControls),
+	#[error("Unable to get control of type '{0}'")]
+	GetControl(KnownCameraControl),
+	#[error("Attempting to get a control of an unsupported type: {0}")]
+	GetControlType(KnownCameraControl),
 	#[error("Attempting to set an invalid control value")]
 	InvalidControlValue,
 }
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct NokhwaBackend(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct NokhwaInitialisation(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct StreamOpen(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct FrameRead(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct SelectDecodeFormat(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct FrameDecodeCorruption(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct FrameDecodeOutOfMemory(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct SetControl(#[from] NokhwaError);
+
+#[derive(Clone, Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct CannotGetControls(#[from] NokhwaError);
 
 /// Errors specific to camera persistence logic.
 #[derive(Clone, Debug, thiserror::Error)]

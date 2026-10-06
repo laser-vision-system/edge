@@ -6,11 +6,15 @@ use std::{collections::HashSet, fmt};
 
 use pnet_datalink::interfaces;
 use reqwest::Client;
-use server_edge_datatypes::edge::Settings;
+use server_edge_datatypes::edge::{ServerRequests, Settings};
 use tokio::{task::JoinSet, time::interval};
 use tokio_tungstenite::connect_async;
 
-use super::{NetworkError, websocket::WebSocket};
+use server_edge_datatypes::edge::InitialiseConnection;
+
+use super::{
+	NetworkError, persistent_edge_id::get_mac_address, websocket::WebSocket,
+};
 use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
@@ -137,6 +141,15 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 	Err(NetworkError::AutoConnect.into())
 }
 
+pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> WebSocket {
+	let request_enum =
+		ServerRequests::InitialiseConnection(InitialiseConnection {
+			edge_id: get_mac_address().unwrap(),
+		});
+	websocket.send_text(request_enum).await.unwrap();
+	websocket
+}
+
 /// When call,
 pub async fn assert_connection(
 	websocket: Option<WebSocket>,
@@ -146,12 +159,16 @@ pub async fn assert_connection(
 		// All good, normal operation.
 		(Some(socket), Some(settings)) => {
 			if socket.is_terminated() {
-				return loop_until_connection().await;
+				let (socket, settings) = loop_until_connection().await;
+				return (send_persistent_edge_id(socket).await, settings);
 			}
 			(socket, settings)
 		},
 		// First time calling.
-		_ => loop_until_connection().await,
+		_ => {
+			let (socket, settings) = loop_until_connection().await;
+			(send_persistent_edge_id(socket).await, settings)
+		},
 	}
 }
 

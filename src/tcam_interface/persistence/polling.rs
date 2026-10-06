@@ -52,6 +52,8 @@ use crate::logger::logger;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct AccessPoint {
+	/// Use the full [`nokhwa`] index type so that any error from an incorrect
+	/// index type are handled when creating the camera.
 	pub index: CameraIndex,
 	pub is_metadata: bool,
 }

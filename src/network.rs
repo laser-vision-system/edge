@@ -1,6 +1,7 @@
 //! Shared network utilities.
 
 pub mod auto_connect;
+pub mod persistent_edge_id;
 pub mod websocket;
 
 use serde::de::DeserializeOwned;
@@ -25,6 +26,8 @@ pub enum NetworkError {
 	IdentifyNetwork,
 	#[error("Failed to get a response: {reason}")]
 	ReqwestError { reason: String },
+	#[error("Could not find mac address")]
+	MacAddress,
 }
 
 pub fn unpack<T>(data: &str) -> Result<T>
