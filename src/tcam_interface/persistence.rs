@@ -15,7 +15,10 @@ use std::{
 
 use nokhwa::utils::CameraIndex;
 use server_edge_datatypes::{
-	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
+	edge::{
+		NewCameraInfo, RegisterCameras, ServerRequests, SetNameCamera,
+		Setpoint, StartViewingCamera, StopViewingCamera,
+	},
 	shared::{CameraId, Configuration, ViewCameraConfig},
 };
 
@@ -190,6 +193,28 @@ impl Persistence {
 			EdgeError::from(PersistenceError::UnknownCameraId).log();
 		}
 	}
+
+	pub fn get_current_cameras(&mut self) -> ServerRequests {
+		let camera_list: HashMap<CameraId, NewCameraInfo> = self
+			.inner
+			.iter()
+			.filter_map(|(id, entry)| {
+				let name = entry
+					.try_get_name()
+					.map(std::borrow::Cow::into_owned)
+					.unwrap_or(id.to_string());
+				let camera_id = id.as_ref();
+				let camera_status = NewCameraInfo {
+					name,
+					status: entry.get_status(),
+				};
+				Some((*camera_id, camera_status))
+			})
+			.collect();
+		ServerRequests::RegisterCameras(RegisterCameras {
+			cameras: camera_list,
+		})
+	}
 }
 
 impl Persistence {
@@ -223,8 +248,12 @@ impl Persistence {
 
 				match maybe_image {
 					MaybeImage::Image(image) => {
-						let batch_item =
-							entry.try_make_batch_item_with(ident, image)?;
+						let name = entry
+							.try_get_name()
+							.expect("Pls not inavlid")
+							.into_owned();
+						let batch_item = entry
+							.try_make_batch_item_with(ident, &name, image)?;
 						Some((Some(batch_item), None))
 					},
 					MaybeImage::WhyNo(whyno) => Some((
