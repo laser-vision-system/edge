@@ -103,6 +103,7 @@ impl Active {
 	/// Update the name of this device.
 	pub fn set_name(&mut self, name: String) {
 		self.name = name;
+		println!("{}", &self.name);
 	}
 
 	/// Get a reference to the current camera.

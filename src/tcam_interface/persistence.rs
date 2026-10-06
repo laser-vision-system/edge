@@ -199,21 +199,17 @@ impl Persistence {
 		let camera_list: HashMap<CameraId, NewCameraInfo> = self
 			.inner
 			.iter()
-			.filter_map(|internal_map| {
-				let camera_id =
-					<Identifier as AsRef<CameraId>>::as_ref(internal_map.0)
-						.clone();
-				let camera_name = <IdentMetaInfo as AsRef<String>>::as_ref(
-					&<Identifier as AsRef<IdentMetaInfo>>::as_ref(
-						internal_map.0,
-					),
-				);
-
+			.filter_map(|(id, entry)| {
+				let name = entry
+					.try_get_name()
+					.map(|cow| cow.into_owned())
+					.unwrap_or(id.to_string());
+				let camera_id = id.as_ref();
 				let camera_status = NewCameraInfo {
-					name: camera_name.clone(),
-					status: internal_map.1.clone().get_status(),
+					name,
+					status: entry.get_status(),
 				};
-				Some((camera_id, camera_status))
+				Some((*camera_id, camera_status))
 			})
 			.collect();
 		ServerRequests::RegisterCameras(RegisterCameras {
@@ -253,8 +249,12 @@ impl Persistence {
 
 				match maybe_image {
 					MaybeImage::Image(image) => {
-						let batch_item =
-							entry.try_make_batch_item_with(ident, image)?;
+						let name = entry
+							.try_get_name()
+							.expect("Pls not inavlid")
+							.into_owned();
+						let batch_item = entry
+							.try_make_batch_item_with(ident, &name, image)?;
 						Some((Some(batch_item), None))
 					},
 					MaybeImage::WhyNo(whyno) => Some((
