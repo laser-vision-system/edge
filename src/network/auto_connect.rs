@@ -2,21 +2,23 @@
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 #![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
+use std::{collections::HashSet, fmt};
+
 use pnet_datalink::interfaces;
 use reqwest::Client;
-use server_edge_datatypes::edge::{ServerRequests, Settings};
-use std::error::Error;
-use std::{collections::HashSet, fmt};
+use server_edge_datatypes::edge::{
+	InitialiseConnection, ServerRequests, Settings,
+};
 use tokio::{task::JoinSet, time::interval};
 use tokio_tungstenite::connect_async;
-
-use server_edge_datatypes::edge::InitialiseConnection;
 
 use super::{
 	NetworkError, persistent_edge_id::get_mac_address, websocket::WebSocket,
 };
-use crate::tcam_interface::Persistence;
-use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
+use crate::{
+	error::Result, logger::logger, settings::AUTO_CONNECT_DELAY,
+	tcam_interface::Persistence,
+};
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct AddressComp {
@@ -148,7 +150,7 @@ pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> WebSocket {
 			edge_id: get_mac_address().unwrap(),
 		});
 	match websocket.send_text(request_enum).await {
-		Ok(_) => websocket,
+		Ok(()) => websocket,
 		Err(_) => websocket,
 	}
 }
@@ -158,7 +160,7 @@ pub async fn send_camera_list(
 	mut websocket: WebSocket,
 ) -> WebSocket {
 	match websocket.send_text(persistence.get_current_cameras()).await {
-		Ok(_) => websocket,
+		Ok(()) => websocket,
 		Err(_) => websocket,
 	}
 }

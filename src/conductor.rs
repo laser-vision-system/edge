@@ -3,7 +3,6 @@
 
 use std::collections::HashMap;
 
-use server_edge_datatypes::edge::{NewCameraInfo, SetNameCamera};
 use server_edge_datatypes::{
 	edge::{
 		EdgeRequests, ImageAnalysis, RegisterCameras, ServerRequests,
@@ -159,8 +158,8 @@ impl Conductor {
 					.send_text(ServerRequests::SetNameCamera(cam_name_req))
 					.await
 				{
-					Ok(_) => (),
-					Err(e) => {},
+					Ok(()) => (),
+					Err(_e) => {},
 				}
 			},
 			EdgeRequests::StartViewingCamera(start_view_cam_req) => {

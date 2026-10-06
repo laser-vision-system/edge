@@ -7,28 +7,27 @@ mod persist_entry;
 pub mod polling;
 mod states;
 
-pub use self::{
-	perpetual_info::PerpetualInfo,
-	persist_entry::{MaybeImage, PersistEntry, WhyNo},
-};
-use super::{Identifier, PersistenceError, identifier};
-use crate::tcam_interface::identifier::IdentMetaInfo;
-use crate::{error::EdgeError, vision_processor::BatchItem};
-use nokhwa::utils::CameraIndex;
-use serde::__private229::de::Borrowed;
-use server_edge_datatypes::edge::{
-	NewCameraInfo, RegisterCameras, ServerRequests,
-};
-use server_edge_datatypes::{
-	edge::{SetNameCamera, Setpoint, StartViewingCamera, StopViewingCamera},
-	shared::{CameraId, Configuration, ViewCameraConfig},
-};
-use std::ops::Deref;
 use std::{
 	borrow::{Borrow, BorrowMut},
 	collections::{HashMap, HashSet},
 	hash::RandomState,
 };
+
+use nokhwa::utils::CameraIndex;
+use server_edge_datatypes::{
+	edge::{
+		NewCameraInfo, RegisterCameras, ServerRequests, SetNameCamera,
+		Setpoint, StartViewingCamera, StopViewingCamera,
+	},
+	shared::{CameraId, Configuration, ViewCameraConfig},
+};
+
+pub use self::{
+	perpetual_info::PerpetualInfo,
+	persist_entry::{MaybeImage, PersistEntry, WhyNo},
+};
+use super::{Identifier, PersistenceError};
+use crate::{error::EdgeError, vision_processor::BatchItem};
 
 pub type ErrAccType = u16;
 
@@ -202,7 +201,7 @@ impl Persistence {
 			.filter_map(|(id, entry)| {
 				let name = entry
 					.try_get_name()
-					.map(|cow| cow.into_owned())
+					.map(std::borrow::Cow::into_owned)
 					.unwrap_or(id.to_string());
 				let camera_id = id.as_ref();
 				let camera_status = NewCameraInfo {
