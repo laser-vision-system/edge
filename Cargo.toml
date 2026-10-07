@@ -4,12 +4,21 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["cnn-backend-flex"]
-cnn-backend-cuda = ["burn/cuda"]
-cnn-backend-flex = ["burn/flex", "dep:burn-flex"]
-cnn-backend-tch = ["burn/tch"]
-cnn-backend-rocm = ["burn/rocm"]
-cnn-backend-wgpu = ["burn/wgpu"]
+default = [
+	"cnn-backend-flex",
+]
+cnn-backend-flex = [
+	"burn/flex",
+	"dep:burn-flex",
+]
+cnn-backend-wgpu = [
+	"burn/wgpu",
+	"burn/fusion",
+]
+cnn-backend-cuda = [
+	"burn/cuda",
+	"burn/fusion",
+]
 
 [dependencies]
 burn = { version = "0.21", default-features = false, features = [

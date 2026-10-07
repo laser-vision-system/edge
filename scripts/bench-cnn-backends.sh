@@ -4,7 +4,7 @@ set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 if (($# == 0)); then
-	backends=(flex wgpu cuda rocm tch)
+	backends=(flex wgpu cuda)
 else
 	backends=("$@")
 fi
@@ -14,7 +14,7 @@ successes=()
 
 for backend in "${backends[@]}"; do
 	case "$backend" in
-		flex|wgpu|cuda|rocm|tch) ;;
+		flex|wgpu|cuda) ;;
 		*)
 			printf 'Unknown CNN backend: %s\n' "$backend" >&2
 			exit 2
