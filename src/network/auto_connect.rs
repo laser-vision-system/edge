@@ -1,21 +1,23 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
-#![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
 use std::{collections::HashSet, fmt};
 
 use pnet_datalink::interfaces;
 use reqwest::Client;
-use server_edge_datatypes::edge::{ServerRequests, Settings};
+use server_edge_datatypes::edge::{
+	InitialiseConnection, ServerRequests, Settings,
+};
 use tokio::{task::JoinSet, time::interval};
 use tokio_tungstenite::connect_async;
-
-use server_edge_datatypes::edge::InitialiseConnection;
 
 use super::{
 	NetworkError, persistent_edge_id::get_mac_address, websocket::WebSocket,
 };
-use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
+use crate::{
+	error::Result, logger::logger, settings::AUTO_CONNECT_DELAY,
+	tcam_interface::Persistence,
+};
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct AddressComp {
@@ -51,7 +53,7 @@ impl AddressComp {
 }
 
 impl fmt::Display for AddressComp {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(
 			f,
 			"{}{}{}{}",
@@ -88,6 +90,10 @@ struct WebSocketResponse {
 	pub message: String,
 }
 
+#[expect(
+	clippy::map_err_ignore,
+	reason = "Temporary until error type improvements"
+)]
 async fn get_response(
 	url: AddressComp,
 	client: Client,
@@ -146,29 +152,41 @@ pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> WebSocket {
 		ServerRequests::InitialiseConnection(InitialiseConnection {
 			edge_id: get_mac_address().unwrap(),
 		});
-	websocket.send_text(request_enum).await.unwrap();
-	websocket
+	match websocket.send_text(request_enum).await {
+		Ok(()) => websocket,
+		Err(_) => websocket,
+	}
 }
 
-/// When call,
+pub async fn send_camera_list(
+	persistence: &mut Persistence,
+	mut websocket: WebSocket,
+) -> WebSocket {
+	match websocket.send_text(persistence.get_current_cameras()).await {
+		Ok(()) => websocket,
+		Err(_) => websocket,
+	}
+}
+
 pub async fn assert_connection(
 	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
+	persistence: &mut Persistence,
 ) -> (WebSocket, Settings) {
-	match (websocket, settings) {
-		// All good, normal operation.
-		(Some(socket), Some(settings)) => {
-			if socket.is_terminated() {
-				let (socket, settings) = loop_until_connection().await;
-				return (send_persistent_edge_id(socket).await, settings);
-			}
-			(socket, settings)
-		},
-		// First time calling.
-		_ => {
+	// All good, normal operation.
+	if let (Some(socket), Some(settings)) = (websocket, settings) {
+		if socket.is_terminated() {
 			let (socket, settings) = loop_until_connection().await;
-			(send_persistent_edge_id(socket).await, settings)
-		},
+			let socket = send_persistent_edge_id(socket).await;
+			(send_camera_list(persistence, socket).await, settings)
+		} else {
+			(socket, settings)
+		}
+	}
+	// First time calling.
+	else {
+		let (socket, settings) = loop_until_connection().await;
+		(send_persistent_edge_id(socket).await, settings)
 	}
 }
 
@@ -230,8 +248,6 @@ async fn get_default_settings(_url: &str) -> Result<Settings> {
 
 #[cfg(test)]
 mod tests {
-	#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
-
 	use super::*;
 	use crate::settings;
 

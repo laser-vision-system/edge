@@ -78,6 +78,7 @@ impl ControlMap {
 		Self { inner }
 	}
 
+	#[expect(clippy::expect_used, reason = "Low priority edge case")]
 	pub fn serialise(&self) -> String {
 		serde_json::to_string(&self.inner).expect(
 			"everything in the inner map should be correcly serialisable",

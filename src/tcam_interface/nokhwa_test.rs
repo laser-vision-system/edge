@@ -1,12 +1,3 @@
-#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
-#![expect(clippy::use_debug, reason = "Tests are a debug context")]
-#![expect(clippy::panic, reason = "Tests are allowed to panic")]
-#![expect(
-	clippy::unwrap_used,
-	clippy::unwrap_in_result,
-	reason = "Tests are allowed to unwrap"
-)]
-
 //! # Nokhwa Test
 //!
 //! Runs a quick demonstration of the nokhwa library:
@@ -84,12 +75,12 @@ fn print_camera_details(camera: &CameraInfo) {
 }
 
 /// Print the known camera controls for a camera found at a
-/// [`CameraIndex`]
+/// [`CameraIndex`].
 fn get_known_camera_controls(camera_index: CameraIndex) -> String {
 	let cam_temp = create_camera(camera_index);
 	match cam_temp.controls() {
 		Ok(controls) => format!("Known controls: {controls:#?}"),
-		Err(e) => format!("No known controls: {e:?}"),
+		Err(why) => format!("No known controls: {why:?}"),
 	}
 }
 
@@ -121,7 +112,7 @@ fn create_camera(camera_index: CameraIndex) -> StreamCamera {
 fn nokhwa_polling_example(camera_index: CameraIndex) {
 	let mut polling_camera = create_camera(camera_index);
 	polling_camera.open().unwrap();
-	for i in 0..5u8 {
+	for i in 0..5_u8 {
 		let buffer = polling_camera.frame().unwrap();
 		println!("Captured frame of size {} bytes", buffer.buffer().len());
 		let frame: Frame<Mjpeg> = Frame::new(buffer);

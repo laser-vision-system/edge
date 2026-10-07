@@ -16,15 +16,16 @@
 //! - `logger().send_logs()`
 
 #![expect(
-	clippy::print_stderr,
 	clippy::print_stdout,
 	reason = "This is the logger module, where this is expected behaviour"
 )]
-#![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
-use std::sync::{Mutex, OnceLock};
+use std::{
+	mem,
+	sync::{Mutex, OnceLock},
+};
 
-use chrono::{Duration, Local, NaiveDate};
+use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
 use crate::error::EdgeError;
@@ -132,7 +133,7 @@ impl Logger {
 	}
 
 	pub fn send_logs(&mut self) {
-		let logs = std::mem::take(&mut self.logs);
+		let logs = mem::take(&mut self.logs);
 
 		for log in logs {
 			// TODO: Actually send the logs to the server.
@@ -167,28 +168,30 @@ impl LogCounter {
 
 		self.counter
 	}
-
-	fn _reset_counter(&mut self) {
-		let yesterday = Local::now().date_naive() - Duration::days(1);
-		self.date = yesterday;
-	}
-
-	fn _back_one_hour(&mut self) {
-		let hour_ago = Local::now().date_naive() - Duration::hours(1);
-		self.date = hour_ago;
-	}
-
-	fn _forward_one_hour(&mut self) {
-		let hour_forward = Local::now().date_naive() + Duration::hours(1);
-		self.date = hour_forward;
-	}
 }
 
 #[cfg(test)]
 mod test {
-	#![expect(clippy::unwrap_used, reason = "Tests are allowed to unwrap")]
+	use chrono::Duration;
 
-	use super::logger;
+	use super::*;
+
+	impl LogCounter {
+		fn reset_counter(&mut self) {
+			let yesterday = Local::now().date_naive() - Duration::days(1);
+			self.date = yesterday;
+		}
+
+		fn back_one_hour(&mut self) {
+			let hour_ago = Local::now().date_naive() - Duration::hours(1);
+			self.date = hour_ago;
+		}
+
+		fn forward_one_hour(&mut self) {
+			let hour_forward = Local::now().date_naive() + Duration::hours(1);
+			self.date = hour_forward;
+		}
+	}
 
 	#[test]
 	fn info() {
@@ -311,13 +314,13 @@ mod test {
 	fn new_day() {
 		logger().lock().unwrap().log_info("Logging today.");
 
-		logger().lock().unwrap().counter._reset_counter();
+		logger().lock().unwrap().counter.reset_counter();
 
 		logger().lock().unwrap().log_info("Reset counter.");
 		logger().lock().unwrap().log_info("Logging again today.");
 		logger().lock().unwrap().log_info("Logging again today.");
 
-		logger().lock().unwrap().counter._reset_counter();
+		logger().lock().unwrap().counter.reset_counter();
 
 		logger().lock().unwrap().log_info("Reset counter.");
 		logger().lock().unwrap().log_info("Logging again today.");
@@ -333,21 +336,21 @@ mod test {
 			.unwrap()
 			.log_info("First log. Now going back an hour.");
 
-		logger().lock().unwrap().counter._back_one_hour();
+		logger().lock().unwrap().counter.back_one_hour();
 
 		logger()
 			.lock()
 			.unwrap()
 			.log_info("Back one hour. Now going forward one hour.");
 
-		logger().lock().unwrap().counter._forward_one_hour();
+		logger().lock().unwrap().counter.forward_one_hour();
 
 		logger()
 			.lock()
 			.unwrap()
 			.log_info("Back to normal. Going forward one hour again.");
 
-		logger().lock().unwrap().counter._forward_one_hour();
+		logger().lock().unwrap().counter.forward_one_hour();
 
 		logger().lock().unwrap().log_info("Now forward one hour.");
 

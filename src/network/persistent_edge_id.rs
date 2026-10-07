@@ -1,5 +1,6 @@
-use crate::network::NetworkError;
 use pnet_datalink::{NetworkInterface, interfaces};
+
+use crate::network::NetworkError;
 fn get_network_interface() -> Option<NetworkInterface> {
 	interfaces().into_iter().find(|interface| {
 		!interface.is_loopback()

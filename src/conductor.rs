@@ -1,7 +1,7 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::collections::HashMap;
+use std::{collections::HashMap, error};
 
 use server_edge_datatypes::{
 	edge::{
@@ -37,8 +37,7 @@ impl Conductor {
 		&mut self,
 		mut websocket: WebSocket,
 		settings: Settings,
-	) -> Result<(WebSocket, Settings), Box<dyn std::error::Error + Send + Sync>>
-	{
+	) -> Result<(WebSocket, Settings), Box<dyn error::Error + Send + Sync>> {
 		let mut limit_interval = interval(settings.update_delay);
 		limit_interval.tick().await;
 
@@ -62,7 +61,7 @@ impl Conductor {
 
 		logger().lock().unwrap().send_logs();
 
-		let _ = websocket.keep_alive().await;
+		_ = websocket.keep_alive().await;
 
 		if let Some(swap_to) = requested_vision_type {
 			vision().swap(swap_to);
@@ -80,7 +79,7 @@ impl Conductor {
 		for status_change in status_changes {
 			match status_change.why {
 				WhyNo::Disconnected => {
-					let _ = websocket
+					_ = websocket
 						.send_text(ServerRequests::UpdateCameraStatus(
 							UpdateCameraStatus {
 								camera_id: status_change.id,
@@ -90,7 +89,7 @@ impl Conductor {
 						.await;
 				},
 				WhyNo::Broken => {
-					let _ = websocket
+					_ = websocket
 						.send_text(ServerRequests::UpdateCameraStatus(
 							UpdateCameraStatus {
 								camera_id: status_change.id,
@@ -122,7 +121,7 @@ impl Conductor {
 					}))
 					.await;
 
-				let _ = result.inspect_err(|_| {
+				_ = result.inspect_err(|_| {
 					EdgeError::from(NetworkError::ServerConnection).log();
 				});
 			}
@@ -131,7 +130,7 @@ impl Conductor {
 				let mut encoded = CameraDevice::encode_image(&item.image);
 				let result =
 					websocket.send_image(item.camera_id, &mut encoded).await;
-				let _ = result.inspect_err(|_| {
+				_ = result.inspect_err(|_| {
 					EdgeError::from(NetworkError::ServerConnection).log();
 				});
 			}
@@ -153,7 +152,14 @@ impl Conductor {
 	) {
 		match request {
 			EdgeRequests::SetNameCamera(cam_name_req) => {
-				self.persistence.set_entry_name(cam_name_req);
+				self.persistence.set_entry_name(cam_name_req.clone());
+				match websocket
+					.send_text(ServerRequests::SetNameCamera(cam_name_req))
+					.await
+				{
+					Ok(()) => (),
+					Err(_e) => {},
+				}
 			},
 			EdgeRequests::StartViewingCamera(start_view_cam_req) => {
 				self.persistence.start_viewing_camera(start_view_cam_req);
@@ -213,7 +219,7 @@ impl Conductor {
 			let ConnectionDetail::Update { status } = update else {
 				continue;
 			};
-			let _ = websocket
+			_ = websocket
 				.send_text(ServerRequests::UpdateCameraStatus(
 					UpdateCameraStatus { camera_id, status },
 				))
@@ -221,7 +227,7 @@ impl Conductor {
 		}
 
 		if !new_cameras.is_empty() {
-			let _ = websocket
+			_ = websocket
 				.send_text(ServerRequests::RegisterCameras(RegisterCameras {
 					cameras: new_cameras,
 				}))
@@ -239,14 +245,15 @@ impl Default for Conductor {
 }
 
 /// Call this function to begin the system.
-pub async fn run() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let mut websocket: Option<WebSocket> = None;
 	let mut settings: Option<Settings> = None;
 	let mut conductor = Conductor::default();
 
 	loop {
 		let (loop_websocket, loop_settings) =
-			assert_connection(websocket, settings).await;
+			assert_connection(websocket, settings, &mut conductor.persistence)
+				.await;
 		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);
