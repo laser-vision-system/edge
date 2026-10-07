@@ -63,8 +63,10 @@ impl Conductor {
 
 		_ = websocket.keep_alive().await;
 
-		if let Some(swap_to) = requested_vision_type {
-			vision().swap(swap_to);
+		if let Some(swap_to) = requested_vision_type
+			&& let Err(error) = vision().swap(swap_to)
+		{
+			error.log();
 		}
 
 		// TODO: There should be something in between this call that does the
@@ -101,13 +103,14 @@ impl Conductor {
 			}
 		}
 
-		// Send logs.
 		logger().lock().unwrap().send_logs();
 
 		// Vision
 		vision().interact(|vision| {
 			vision.process(&mut batch_items);
 		});
+
+		logger().lock().unwrap().send_logs();
 
 		// Send result
 		for item in &batch_items {
