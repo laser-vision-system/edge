@@ -6,6 +6,7 @@ use std::{
 // ===== BACKENDS =====
 #[cfg(feature = "cnn-backend-flex")]
 use burn::backend::Flex;
+use burn::prelude::Device;
 use burn_store::BurnpackStore;
 
 #[cfg(feature = "cnn-backend-flex")]
@@ -23,10 +24,10 @@ use burn::backend::Cuda;
 #[cfg(feature = "cnn-backend-cuda")]
 pub(super) type Backend = Cuda<f32>;
 
-pub(super) type Device = burn::prelude::Device<Backend>;
+pub(super) type BackendDevice = Device<Backend>;
 
-pub(super) fn get_device() -> Device {
-	Device::default()
+pub(super) fn get_device() -> BackendDevice {
+	BackendDevice::default()
 }
 
 // ===== MODEL SOURCE =====

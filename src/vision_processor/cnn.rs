@@ -1,3 +1,8 @@
+#![expect(
+	clippy::allow_attributes,
+	reason = "Expect might not always be fulfilled"
+)]
+
 mod batching;
 mod config;
 mod model;
@@ -15,7 +20,6 @@ use super::{
 use crate::error::{EdgeError, Result};
 
 #[derive(Debug, Error)]
-#[expect(clippy::module_name_repetitions, reason = "Clarity")]
 pub enum CnnError {
 	#[error("failed to load CNN model from {path}: {source}")]
 	ModelLoad {
@@ -49,7 +53,7 @@ impl fmt::Display for ExternalData {
 
 pub struct Cnn {
 	session: SessionToken,
-	device: config::Device,
+	device: config::BackendDevice,
 	model: model::LaserModel<config::Backend>,
 }
 
@@ -76,10 +80,14 @@ impl Cnn {
 			})
 	}
 
+	#[allow(
+		clippy::trivially_copy_pass_by_ref,
+		reason = "Type may change with feature flag"
+	)]
 	fn prepare_batch(
 		&self,
 		batch: &mut [BatchItem],
-		device: &config::Device,
+		device: &config::BackendDevice,
 	) -> Tensor<config::Backend, 4> {
 		for item in batch.iter_mut() {
 			self.validate_batch(item);
@@ -121,7 +129,11 @@ impl fmt::Display for Cnn {
 }
 
 fn apply_predictions(batch: &mut [BatchItem], predictions: Vec<f32>) {
-	debug_assert_eq!(batch.len(), predictions.len());
+	debug_assert_eq!(
+		batch.len(),
+		predictions.len(),
+		"The number of predictions does not match the number of items"
+	);
 
 	for (item, intensity) in batch.iter_mut().zip(predictions) {
 		if let VisionState::Cnn { data, .. } = item.state {
@@ -146,18 +158,14 @@ fn clear_predictions(batch: &mut [BatchItem]) {
 	}
 }
 
-#[expect(clippy::panic, reason = "Tests can panic")]
 #[cfg(test)]
 mod tests {
-	#![expect(clippy::print_stdout, reason = "Manual profiling output")]
-
-	use std::time::Instant;
+	use std::{hint, iter, slice, time::Instant};
 
 	use image::{Rgb, RgbImage};
 
-	use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_WIDTH};
-
 	use super::*;
+	use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_WIDTH};
 
 	fn test_cnn() -> Cnn {
 		let device = config::get_device();
@@ -297,9 +305,9 @@ mod tests {
 		let image =
 			RgbImage::from_pixel(IMAGE_WIDTH, IMAGE_HEIGHT, Rgb([255, 40, 90]));
 
-		for batch_size in [1_i32, 10_i32] {
-			let mut states = (0_i32..batch_size)
-				.map(|_| cnn.new_state())
+		for batch_size in [1, 10] {
+			let mut states = iter::repeat_with(|| cnn.new_state())
+				.take(batch_size)
 				.collect::<Vec<_>>();
 			let mut batch = states
 				.iter_mut()
@@ -328,7 +336,7 @@ mod tests {
 				let predictions = cnn
 					.predict(prepared.clone())
 					.expect("prepared prediction should succeed");
-				std::hint::black_box(predictions);
+				hint::black_box(predictions);
 			}
 			let prediction_elapsed = prediction_start.elapsed() / SAMPLES;
 
@@ -337,17 +345,15 @@ mod tests {
 				cnn.process(&mut batch);
 			}
 			let process_elapsed = process_start.elapsed() / SAMPLES;
-			let individual_process_elapsed = if batch_size == 10 {
+			let individual_process_elapsed = (batch_size == 10).then(|| {
 				let individual_start = Instant::now();
 				for _ in 0..SAMPLES {
 					for item in &mut batch {
-						cnn.process(std::slice::from_mut(item));
+						cnn.process(slice::from_mut(item));
 					}
 				}
-				Some(individual_start.elapsed() / SAMPLES)
-			} else {
-				None
-			};
+				individual_start.elapsed() / SAMPLES
+			});
 
 			println!(
 				"batch={batch_size}: predict_prepared={:?}, process={:?}, estimated_prepare_and_state_overhead={:?}, ten_individual_processes={individual_process_elapsed:?}",

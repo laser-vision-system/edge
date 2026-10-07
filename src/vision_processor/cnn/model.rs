@@ -1,5 +1,3 @@
-#![expect(clippy::module_name_repetitions, reason = "Not a problem")]
-
 use std::path::Path;
 
 use burn::{
@@ -108,7 +106,7 @@ impl<B: Backend> LaserModel<B> {
 #[cfg(test)]
 mod tests {
 	use std::{
-		fs,
+		env, fs, process,
 		sync::atomic::{AtomicUsize, Ordering},
 	};
 
@@ -120,9 +118,9 @@ mod tests {
 
 	#[test]
 	fn model_loads_from_burnpack_file() {
-		let path = std::env::temp_dir().join(format!(
+		let path = env::temp_dir().join(format!(
 			"edge-cnn-loader-{}-{}.bpk",
-			std::process::id(),
+			process::id(),
 			NEXT_MODEL_FILE.fetch_add(1, Ordering::Relaxed),
 		));
 		let device = config::get_device();

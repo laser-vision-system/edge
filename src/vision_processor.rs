@@ -170,10 +170,6 @@ impl VisionVariant {
 	/// This method statically asserts exhaustiveness between
 	/// [this](VisionVariant) and [`VisionTechnique`].
 	#[expect(clippy::unwrap_in_result, reason = "Logger")]
-	#[expect(
-		clippy::use_debug,
-		reason = "Temporary, vision technique will have display"
-	)]
 	fn swap(&mut self, swap_to: VisionTechnique) -> Result<()> {
 		if self.identifier() == swap_to {
 			logger()
@@ -231,7 +227,7 @@ impl VisionInterface for VisionVariant {
 
 		let process_results = batch
 			.iter()
-			.map(|item| item.to_string())
+			.map(ToString::to_string)
 			.collect::<Vec<_>>()
 			.join("\n");
 		logger().lock().unwrap().log_info(&process_results);
@@ -350,7 +346,7 @@ impl<'a> BatchItem<'a> {
 	}
 }
 
-impl<'a> fmt::Display for BatchItem<'a> {
+impl fmt::Display for BatchItem<'_> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		writeln!(
 			f,

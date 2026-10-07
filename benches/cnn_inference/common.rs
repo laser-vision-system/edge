@@ -1,4 +1,6 @@
-use std::{hint::black_box, time::Instant};
+#![expect(clippy::expect_used, reason = "This is a benchmark")]
+
+use std::{hint::black_box, iter, slice, time::Instant};
 
 use criterion::{Criterion, Throughput};
 use edge::vision_processor::{BatchItem, Cnn, VisionInterface as _};
@@ -11,8 +13,9 @@ pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
 		criterion.benchmark_group(format!("cnn_inference_{backend}"));
 
 	for batch_size in [1, 10] {
-		let mut states =
-			(0..batch_size).map(|_| cnn.new_state()).collect::<Vec<_>>();
+		let mut states: Vec<_> = iter::repeat_with(|| cnn.new_state())
+			.take(batch_size)
+			.collect();
 		let mut batch = states
 			.iter_mut()
 			.enumerate()
@@ -21,7 +24,7 @@ pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
 			})
 			.collect::<Vec<_>>();
 
-		group.throughput(Throughput::Elements(batch_size));
+		group.throughput(Throughput::Elements(batch_size as u64));
 		group.bench_function(format!("batch_{batch_size}"), |bencher| {
 			bencher.iter_custom(|iterations| {
 				let batch = black_box(&mut batch);
@@ -40,7 +43,7 @@ pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
 					let start = Instant::now();
 					for _ in 0..iterations {
 						for item in batch.iter_mut() {
-							cnn.process(std::slice::from_mut(item));
+							cnn.process(slice::from_mut(item));
 						}
 					}
 					start.elapsed()

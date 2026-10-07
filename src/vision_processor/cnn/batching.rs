@@ -1,13 +1,21 @@
+#![expect(
+	clippy::allow_attributes,
+	reason = "Expect might not always be fulfilled"
+)]
+
 use burn::tensor::{Tensor, TensorData};
 use image::RgbImage;
 
+use super::config::{Backend, BackendDevice};
 use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_PIXELS, IMAGE_WIDTH};
 
-use super::config::{Backend, Device};
-
+#[allow(
+	clippy::trivially_copy_pass_by_ref,
+	reason = "Type may change with feature flag"
+)]
 pub(super) fn images_to_tensor<'a>(
 	images: impl ExactSizeIterator<Item = &'a RgbImage>,
-	device: &Device,
+	device: &BackendDevice,
 ) -> Tensor<Backend, 4> {
 	let batch_size = images.len();
 	let image_size = IMAGE_PIXELS * 3;
