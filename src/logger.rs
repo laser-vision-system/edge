@@ -348,7 +348,7 @@ mod test {
 	#[test]
 	fn daylight_savings() {
 		Logger::initialise_logger(3);
-		
+
 		logger()
 			.lock()
 			.unwrap()
