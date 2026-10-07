@@ -1,6 +1,5 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
-#![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
 pub mod cnn;
 pub mod demonstration;
@@ -356,8 +355,6 @@ where
 
 #[cfg(test)]
 mod tests {
-	#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
-
 	use super::*;
 
 	#[test]

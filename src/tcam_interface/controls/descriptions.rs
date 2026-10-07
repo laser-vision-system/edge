@@ -1,3 +1,5 @@
+#![expect(clippy::expect_used, reason = "Low priority edge cases")]
+
 use std::hash::Hash;
 
 use nokhwa::utils::{
@@ -200,7 +202,7 @@ impl From<CameraControl> for CamControl {
 
 /// A camera control that consists of a value, default, and step.
 ///
-/// Maps to [`ControlValueDescription::Integer`]
+/// Maps to [`ControlValueDescription::Integer`].
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct IntegerControl {
 	control_type: KnownCameraControl,
@@ -278,7 +280,7 @@ impl ControlStep for IntegerControl {
 
 /// A camera control that consists of a value, default, step, min, and max.
 ///
-/// Maps to [`ControlValueDescription::IntegerRange`]
+/// Maps to [`ControlValueDescription::IntegerRange`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct IntegerRangeControl {
@@ -382,7 +384,7 @@ impl ControlMax for IntegerRangeControl {
 
 /// A camera control that consists of a value, default, and step.
 ///
-/// Maps to [`ControlValueDescription::Float`]
+/// Maps to [`ControlValueDescription::Float`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct FloatControl {
@@ -461,7 +463,7 @@ impl ControlStep for FloatControl {
 
 /// A camera control that consists of a value, default, step, min, and max.
 ///
-/// Maps to [`ControlValueDescription::FloatRange`]
+/// Maps to [`ControlValueDescription::FloatRange`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct FloatRangeControl {
@@ -565,7 +567,7 @@ impl ControlMax for FloatRangeControl {
 
 /// A camera control that consists of a value and default.
 ///
-/// Maps to [`ControlValueDescription::Boolean`]
+/// Maps to [`ControlValueDescription::Boolean`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct BooleanControl {
@@ -621,7 +623,7 @@ impl ControlDefault for BooleanControl {
 
 /// A camera control that consists of a value and an optional default.
 ///
-/// Maps to [`ControlValueDescription::String`]
+/// Maps to [`ControlValueDescription::String`].
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StringControl {
@@ -677,7 +679,7 @@ impl ControlDefault for StringControl {
 
 /// A camera control that consists of a value and default.
 ///
-/// Maps to [`ControlValueDescription::Bytes`]
+/// Maps to [`ControlValueDescription::Bytes`].
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BytesControl {
@@ -733,7 +735,7 @@ impl ControlDefault for BytesControl {
 
 /// A camera control that consists of a value and default.
 ///
-/// Maps to [`ControlValueDescription::KeyValuePair`]
+/// Maps to [`ControlValueDescription::KeyValuePair`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct KeyValuePairControl {
@@ -789,7 +791,7 @@ impl ControlDefault for KeyValuePairControl {
 
 /// A camera control that consists of a value and default.
 ///
-/// Maps to [`ControlValueDescription::Point`]
+/// Maps to [`ControlValueDescription::Point`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct PointControl {
@@ -846,7 +848,7 @@ impl ControlDefault for PointControl {
 /// A camera control that consists of a value, default, and a vector of possible
 /// options.
 ///
-/// Maps to [`ControlValueDescription::Enum`]
+/// Maps to [`ControlValueDescription::Enum`].
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EnumControl {
@@ -919,7 +921,7 @@ impl ControlPossible for EnumControl {
 ///
 /// The assumption is that the min will always be 0.
 ///
-/// Maps to [`ControlValueDescription::RGB`]
+/// Maps to [`ControlValueDescription::RGB`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct RGBControl {
@@ -988,6 +990,9 @@ impl ControlMax for RGBControl {
 	}
 }
 
+/// A camera control that consists of a value, default, and list of items.
+///
+/// Maps to [`ControlValueDescription::Menu`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MenuControl {
 	control_type: KnownCameraControl,

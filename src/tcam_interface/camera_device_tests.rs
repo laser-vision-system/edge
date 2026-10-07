@@ -1,12 +1,3 @@
-#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
-#![expect(clippy::use_debug, reason = "Tests are a debug context")]
-#![expect(clippy::panic, reason = "Tests are allowed to panic")]
-#![expect(
-	clippy::unwrap_used,
-	clippy::unwrap_in_result,
-	reason = "Tests are allowed to unwrap"
-)]
-
 use std::process::{ExitCode, Termination};
 
 use nokhwa::utils::CameraControl;
@@ -39,9 +30,9 @@ fn print_devices() {
 	println!("Available devices: [");
 	for cam in cameras {
 		if cam.is_metadata() {
-			println!("\tindex `{}` (metadata):", cam.index().as_string())
+			println!("\tindex `{}` (metadata):", cam.index().as_string());
 		} else {
-			println!("\tindex `{}`:", cam.index().as_string())
+			println!("\tindex `{}`:", cam.index().as_string());
 		}
 		println!(
 			"\t\tname: {}\n\t\tdesc: {}",
@@ -89,31 +80,31 @@ fn decode_image() {
 		.open()
 		.unwrap();
 	let frame = cam.get_frame_buffer().unwrap();
-	let _ = cam.decode_buffer(frame);
+	_ = cam.decode_buffer(frame);
 }
 
 #[test]
 #[ignore = "IO bound"]
 fn get_raw_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-	let c = cam.get_raw_controls();
-	println!("{c:#?}");
+	let controls = cam.get_raw_controls();
+	println!("{controls:#?}");
 }
 
 #[test]
 #[ignore = "IO bound"]
 fn get_all_available_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-	let c = cam.get_controls().unwrap();
-	println!("{c}");
+	let controls = cam.get_controls().unwrap();
+	println!("{controls}");
 }
 
 #[test]
 #[ignore = "IO bound"]
 fn get_stripped_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-	let c = cam.get_controls().unwrap().stripped();
-	println!("{c}");
+	let controls = cam.get_controls().unwrap().stripped();
+	println!("{controls}");
 }
 
 #[test]

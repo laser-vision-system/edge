@@ -1,4 +1,6 @@
+use std::error;
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn main() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	edge::run().await
 }

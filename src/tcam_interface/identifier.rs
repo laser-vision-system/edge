@@ -10,10 +10,9 @@
 //!
 //! All the necessary information is in the [`CameraInfo`] struct.
 
-#![expect(clippy::inline_modules, reason = "Simple unit tests")]
-
 use std::{
 	borrow::{Borrow, Cow},
+	cmp::Ordering,
 	fmt,
 	hash::{DefaultHasher, Hash, Hasher},
 };
@@ -40,9 +39,9 @@ pub struct IdentMetaInfo {
 impl IdentMetaInfo {
 	/// Get the hash for this instance.
 	pub fn calculate_hash(&self) -> CameraId {
-		let mut s = DefaultHasher::new();
-		self.hash(&mut s);
-		s.finish()
+		let mut hash = DefaultHasher::new();
+		self.hash(&mut hash);
+		hash.finish()
 	}
 
 	/// See [`Cow`] for more information.
@@ -176,13 +175,13 @@ impl PartialEq for Identifier {
 }
 
 impl PartialOrd for Identifier {
-	fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
 		Some(self.cmp(other))
 	}
 }
 
 impl Ord for Identifier {
-	fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+	fn cmp(&self, other: &Self) -> Ordering {
 		self.hashed_id.cmp(&other.hashed_id)
 	}
 }
