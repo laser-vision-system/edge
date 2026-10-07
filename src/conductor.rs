@@ -13,11 +13,16 @@ use server_edge_datatypes::{
 use tokio::time::interval;
 
 use crate::{
-	error::EdgeError, logger::{Logger, logger}, network::{
+	error::EdgeError,
+	logger::{Logger, logger},
+	network::{
 		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
-	}, settings::{EnvVariables, Settings}, tcam_interface::{
+	},
+	settings::{EnvVariables, Settings},
+	tcam_interface::{
 		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
-	}, vision_processor::{VisionInterface as _, vision},
+	},
+	vision_processor::{VisionInterface as _, vision},
 };
 
 /// # Conductor
