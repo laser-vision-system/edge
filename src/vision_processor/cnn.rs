@@ -132,8 +132,7 @@ fn apply_predictions(batch: &mut [BatchItem], predictions: Vec<f32>) {
 			data.deviation = data
 				.setpoint
 				.filter(|setpoint| *setpoint > 0.0)
-				.map(|setpoint| intensity / setpoint)
-				.or(Some(0.0));
+				.map(|setpoint| intensity / setpoint);
 		}
 	}
 }
