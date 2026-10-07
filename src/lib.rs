@@ -26,3 +26,7 @@ pub mod tcam_interface;
 pub mod vision_processor;
 
 pub use conductor::run;
+use mutually_exclusive_features::exactly_one_of;
+
+// Verify that only one backend feature flag is enabled at once.
+exactly_one_of!("cnn-backend-flex", "cnn-backend-cuda", "cnn-backend-wgpu");

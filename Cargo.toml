@@ -41,6 +41,7 @@ image = { version = "0.25", default-features = false, features = [
 ] }
 image-compare = "0.5"
 lab = "0.11"
+mutually_exclusive_features = "0.1.0"
 nokhwa = { path = "nokhwa", features = [
 	"serialize",
 	"input-native",

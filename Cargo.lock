@@ -4255,6 +4255,7 @@ dependencies = [
  "image",
  "image-compare",
  "lab",
+ "mutually_exclusive_features",
  "nokhwa",
  "pnet_datalink",
  "rayon",
@@ -7247,6 +7248,12 @@ name = "multiversion_no_op"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
+
+[[package]]
+name = "mutually_exclusive_features"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e94e1e6445d314f972ff7395df2de295fe51b71821694f0b0e1e79c4f12c8577"
 
 [[package]]
 name = "naga"
