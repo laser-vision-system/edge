@@ -90,18 +90,6 @@ path = "benches/cnn_inference/cuda.rs"
 required-features = ["cnn-backend-cuda"]
 harness = false
 
-[[bench]]
-name = "cnn_inference_rocm"
-path = "benches/cnn_inference/rocm.rs"
-required-features = ["cnn-backend-rocm"]
-harness = false
-
-[[bench]]
-name = "cnn_inference_tch"
-path = "benches/cnn_inference/tch.rs"
-required-features = ["cnn-backend-tch"]
-harness = false
-
 [lints.rust]
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.
 

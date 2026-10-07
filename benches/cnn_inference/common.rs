@@ -1,7 +1,7 @@
 use std::{hint::black_box, time::Instant};
 
 use criterion::{Criterion, Throughput};
-use edge::vision_processor::{BatchItem, Cnn, VisionInterface};
+use edge::vision_processor::{BatchItem, Cnn, VisionInterface as _};
 use image::{Rgb, RgbImage};
 
 pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
