@@ -30,3 +30,10 @@ use mutually_exclusive_features::exactly_one_of;
 
 // Verify that only one backend feature flag is enabled at once.
 exactly_one_of!("cnn-backend-flex", "cnn-backend-cuda", "cnn-backend-wgpu");
+
+// Verify that only one model loading feature flag is enabled at once.
+exactly_one_of!(
+	"cnn-model-embedded",
+	"cnn-model-file",
+	"cnn-model-zero-copy"
+);

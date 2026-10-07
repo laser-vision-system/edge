@@ -1665,7 +1665,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2f64a4fe2a0616d18f07d1d0d19c79e655e70e1828cbcb5e9df7b52211091023"
 dependencies = [
  "burn-core",
+ "burn-cuda",
  "burn-tensor",
+ "burn-wgpu",
  "byteorder",
  "bytes",
  "ciborium",

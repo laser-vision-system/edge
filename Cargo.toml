@@ -6,7 +6,10 @@ edition = "2024"
 [features]
 default = [
 	"cnn-backend-flex",
+	"cnn-model-embedded",
 ]
+
+# == Burn backend selection ==
 cnn-backend-flex = [
 	"burn/flex",
 	"dep:burn-flex",
@@ -14,10 +17,24 @@ cnn-backend-flex = [
 cnn-backend-wgpu = [
 	"burn/wgpu",
 	"burn/fusion",
+	"burn-store/wgpu",
 ]
 cnn-backend-cuda = [
 	"burn/cuda",
 	"burn/fusion",
+	"burn-store/cuda",
+]
+
+# == Burn model loading mehod ==
+# Embed the model into the compiled binary.
+cnn-model-embedded = [
+]
+# Load the model from file at runtime with zero-copy.
+cnn-model-zero-copy = [
+	"burn-store/memmap",
+]
+# Load the model from file at runtime without zero-copy.
+cnn-model-file = [
 ]
 
 [dependencies]
@@ -31,7 +48,6 @@ burn-flex = { version = "0.21", default-features = false, features = [
 burn-store = { version = "0.21", default-features = false, features = [
 	"std",
 	"burnpack",
-	"memmap"
 ] }
 chrono = "0.4"
 futures-util = "0.3.33"

@@ -14,9 +14,9 @@ use burn::{
 	prelude::*,
 	tensor::activation::relu,
 };
-use burn_store::{BurnpackStore, ModuleSnapshot as _};
+use burn_store::ModuleSnapshot as _;
 
-use super::CnnError;
+use super::{CnnError, config};
 use crate::{
 	error::{EdgeError, Result},
 	vision_processor::VisionError,
@@ -67,10 +67,12 @@ impl<B: Backend> LaserModel<B> {
 		P: AsRef<Path>,
 	{
 		let mut model = Self::init(device);
-		let mut store = BurnpackStore::from_file(&path).zero_copy(true);
+
+		let path_buf = path.as_ref().to_path_buf();
+		let mut store = config::get_burnpack(path);
 		let _apply_result = model.load_from(&mut store).map_err(|source| {
 			EdgeError::from(VisionError::from(CnnError::ModelLoad {
-				path: path.as_ref().to_path_buf(),
+				path: path_buf,
 				source,
 			}))
 		})?;
@@ -109,6 +111,8 @@ mod tests {
 		fs,
 		sync::atomic::{AtomicUsize, Ordering},
 	};
+
+	use burn_store::BurnpackStore;
 
 	use super::{super::config, *};
 
