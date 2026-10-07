@@ -1,7 +1,7 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::collections::HashSet;
+use std::{borrow::Cow, collections::HashSet};
 
 use image::RgbImage;
 use nokhwa::utils::CameraIndex;
@@ -348,6 +348,19 @@ impl PersistEntry {
 	pub fn get_status(&self) -> CameraStatus {
 		self.as_inner().get_status()
 	}
+
+	/// Get the name, retuning [`None`] if it is [`Invalid`].
+	pub fn try_get_name(&self) -> Option<Cow<'_, str>> {
+		match self.as_inner() {
+			ConnectionStatus::Active { active } => Some(active.get_name()),
+			ConnectionStatus::Broken { broken } => Some(broken.get_name()),
+			ConnectionStatus::Disconnected { disconnected } => {
+				Some(disconnected.get_name())
+			},
+			ConnectionStatus::Limbo { limbo } => Some(limbo.get_name()),
+			ConnectionStatus::Invalid { .. } => None,
+		}
+	}
 }
 
 /// Setters.
@@ -440,13 +453,15 @@ impl PersistEntry {
 	pub fn try_make_batch_item_with(
 		&mut self,
 		ident: &Identifier,
+		name: &str,
 		image: RgbImage,
 	) -> Option<BatchItem<'_>> {
 		let active = self.get_active_mut()?;
 
 		logger().lock().unwrap().log_warn(&format!(
-			"Camera at id `{}` has an err accumulation of `{}`",
+			"Camera at id `{}` with name '{}' has an err accumulation of `{}`",
 			ident,
+			name,
 			active.err_accumulation()
 		));
 
