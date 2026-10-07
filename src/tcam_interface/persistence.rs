@@ -1,7 +1,3 @@
-// TODO: Remove all unwraps and then this.
-#![expect(clippy::unwrap_used, reason = "WIP development")]
-#![expect(clippy::inline_modules, reason = "Simple unit tests")]
-
 mod perpetual_info;
 mod persist_entry;
 pub mod polling;

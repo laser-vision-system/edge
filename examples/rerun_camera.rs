@@ -9,6 +9,7 @@ use edge::{
 	},
 };
 use image::RgbImage;
+use nokhwa::utils::CameraIndex;
 use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
 
 struct Context {
@@ -66,8 +67,7 @@ impl Context {
 
 fn main() -> Result<(), Box<dyn Error>> {
 	let mut context = Context::new()?;
-	let mut camera =
-		CameraDevice::try_new_open(nokhwa::utils::CameraIndex::Index(0))?;
+	let mut camera = CameraDevice::try_new_open(CameraIndex::Index(0))?;
 
 	let mut incr: u8 = 0;
 

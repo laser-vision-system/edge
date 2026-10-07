@@ -87,17 +87,17 @@ impl Diff {
 		reason = "The pixel count should never exceed the limits of a f32"
 	)]
 	fn compute_brightness_stats(img: &GrayImage) -> (u8, f32, f32) {
-		let pixels: Vec<u8> = img.pixels().map(|p| p.0[0]).collect();
+		let pixels: Vec<u8> = img.pixels().map(|pixel| pixel.0[0]).collect();
 		let n = pixels.len() as f32;
 
-		let sum: f32 = pixels.iter().map(|&p| f32::from(p)).sum();
+		let sum: f32 = pixels.iter().map(|&pixel| f32::from(pixel)).sum();
 		let mean = sum / n;
 
 		let variance = pixels
 			.iter()
-			.map(|&p| {
-				let d = f32::from(p) - mean;
-				d * d
+			.map(|&pixel| {
+				let dev = f32::from(pixel) - mean;
+				dev * dev
 			})
 			.sum::<f32>()
 			/ n;

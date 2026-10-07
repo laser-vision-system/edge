@@ -51,7 +51,7 @@ pub struct PersistEntry {
 	inner: Option<ConnectionStatus>,
 }
 
-// Constructors.
+/// Constructors.
 impl PersistEntry {
 	pub fn new(points: &HashSet<AccessPoint>) -> Self {
 		let occupied_indices: HashSet<CameraIndex> =
@@ -96,7 +96,7 @@ impl PersistEntry {
 	}
 }
 
-// Variant checkers.
+/// Variant checkers.
 impl PersistEntry {
 	pub fn is_active(&self) -> bool {
 		self.get_status() == CameraStatus::Active
@@ -119,7 +119,8 @@ impl PersistEntry {
 	}
 }
 
-// Inner operations.
+/// Inner operations.
+#[expect(clippy::expect_used, reason = "Tightly controlled inner mutability")]
 impl PersistEntry {
 	fn as_inner(&self) -> &ConnectionStatus {
 		self.inner.as_ref().expect(
@@ -142,7 +143,10 @@ impl PersistEntry {
 			"the inner value should only be None for brief switching operations",
 		)
 	}
+}
 
+/// Switching operations.
+impl PersistEntry {
 	pub fn active_to_broken(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
@@ -264,7 +268,7 @@ impl PersistEntry {
 	}
 }
 
-// Accessors.
+/// Accessors.
 impl PersistEntry {
 	pub fn get_active(&self) -> Option<&Active> {
 		match self.as_inner() {
@@ -359,7 +363,7 @@ impl PersistEntry {
 	}
 }
 
-// Setters.
+/// Setters.
 impl PersistEntry {
 	pub fn set_name(&mut self, name: String) {
 		match self.as_inner_mut() {
@@ -415,7 +419,7 @@ impl PersistEntry {
 	}
 }
 
-// Operations.
+/// Operations.
 impl PersistEntry {
 	pub fn try_get_image(
 		&mut self,
