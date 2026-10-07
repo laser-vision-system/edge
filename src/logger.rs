@@ -203,6 +203,8 @@ mod test {
 
 	#[test]
 	fn info() {
+		Logger::initialise_logger(3);
+
 		logger()
 			.lock()
 			.unwrap()
@@ -242,6 +244,8 @@ mod test {
 
 	#[test]
 	fn warn() {
+		Logger::initialise_logger(3);
+
 		logger()
 			.lock()
 			.unwrap()
@@ -281,6 +285,8 @@ mod test {
 
 	#[test]
 	fn error() {
+		Logger::initialise_logger(3);
+
 		logger()
 			.lock()
 			.unwrap()
@@ -320,6 +326,8 @@ mod test {
 
 	#[test]
 	fn new_day() {
+		Logger::initialise_logger(3);
+
 		logger().lock().unwrap().log_info("Logging today.");
 
 		logger().lock().unwrap().counter.reset_counter();
@@ -339,6 +347,8 @@ mod test {
 
 	#[test]
 	fn daylight_savings() {
+		Logger::initialise_logger(3);
+		
 		logger()
 			.lock()
 			.unwrap()
