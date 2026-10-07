@@ -170,19 +170,23 @@ impl VisionVariant {
 	/// This method statically asserts exhaustiveness between
 	/// [this](VisionVariant) and [`VisionTechnique`].
 	#[expect(clippy::unwrap_in_result, reason = "Logger")]
+	#[expect(
+		clippy::use_debug,
+		reason = "Temporary, vision technique will have display"
+	)]
 	fn swap(&mut self, swap_to: VisionTechnique) -> Result<()> {
 		if self.identifier() == swap_to {
 			logger()
 				.lock()
 				.unwrap()
-				.log_warn("That VisionTechnique is already active.");
+				.log_info(&format!("{swap_to:?} is already active"));
 			return Ok(());
 		}
 
 		logger()
 			.lock()
 			.unwrap()
-			.log_info(&format!("Swapping VisionTechnique to: {swap_to:?}..."));
+			.log_info(&format!("Swapping to: {swap_to:?}"));
 		match swap_to {
 			VisionTechnique::Empty => *self = Self::Empty(Empty::new()),
 			VisionTechnique::Demonstration => {
@@ -192,14 +196,10 @@ impl VisionVariant {
 			VisionTechnique::Diff => *self = Self::Diff(Diff::new()),
 			_ => {
 				logger().lock().unwrap().log_warn(
-					"Attempting to swap to an unsupported vison technique",
+					"Attempting to swap to an unsupported vison technique, nothing changes",
 				);
 			},
 		}
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Finished swapping VisionTechnique");
 		Ok(())
 	}
 
@@ -219,22 +219,22 @@ impl VisionVariant {
 impl VisionInterface for VisionVariant {
 	fn process(&mut self, batch: &mut [BatchItem]) {
 		if batch.is_empty() {
-			logger()
-				.lock()
-				.unwrap()
-				.log_info("Nothing passed to vision");
 			return;
 		}
 
-		logger().lock().unwrap().log_info("Starting vision");
 		match self {
 			Self::Empty(inner) => inner.process(batch),
 			Self::Demonstration(inner) => inner.process(batch),
 			Self::Cnn(inner) => inner.process(batch),
 			Self::Diff(inner) => inner.process(batch),
 		}
-		logger().lock().unwrap().log_info("Finished vision");
-		logger().lock().unwrap().send_logs();
+
+		let process_results = batch
+			.iter()
+			.map(|item| item.to_string())
+			.collect::<Vec<_>>()
+			.join("\n");
+		logger().lock().unwrap().log_info(&process_results);
 	}
 
 	fn new_state(&self) -> VisionState {
@@ -308,6 +308,17 @@ impl Default for VisionState {
 	}
 }
 
+impl fmt::Display for VisionState {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Empty { data, .. } => data.fmt(f),
+			Self::Demonstration { data, .. } => data.fmt(f),
+			Self::Cnn { data, .. } => data.fmt(f),
+			Self::Diff { data, .. } => data.fmt(f),
+		}
+	}
+}
+
 /// A single record that is passed into `process_frame`.
 ///
 /// Currently holds a reference to the vision state, but should probably be
@@ -336,6 +347,16 @@ impl<'a> BatchItem<'a> {
 			calibrate,
 			send_to_server,
 		}
+	}
+}
+
+impl<'a> fmt::Display for BatchItem<'a> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		writeln!(
+			f,
+			"Batch Item: [\n\tID: {}\n\tState: {}\n\tImage\n\tCalibrate: {}\n\tSend: {}\n]",
+			self.camera_id, self.state, self.calibrate, self.send_to_server
+		)
 	}
 }
 

@@ -103,13 +103,14 @@ impl Conductor {
 			}
 		}
 
-		// Send logs.
 		logger().lock().unwrap().send_logs();
 
 		// Vision
 		vision().interact(|vision| {
 			vision.process(&mut batch_items);
 		});
+
+		logger().lock().unwrap().send_logs();
 
 		// Send result
 		for item in &batch_items {
