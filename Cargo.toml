@@ -29,10 +29,6 @@ futures-util = "0.3.33"
 image = { version = "0.25", default-features = false, features = [
 	"rayon",
 	"jpeg",
-	"png",
-	"gif",
-	"webp",
-	"avif"
 ] }
 image-compare = "0.5"
 lab = "0.11"
