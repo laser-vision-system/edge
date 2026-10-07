@@ -35,8 +35,21 @@ pub type LoggerRef = &'static Mutex<Logger>;
 
 static LOGGER: OnceLock<Mutex<Logger>> = OnceLock::new();
 
+pub fn initialize_logger(verbosity: u8) {
+	match LOGGER.set(Mutex::new(Logger::new(verbosity))) {
+		Ok(_) => {},
+		Err(_) => {
+			EdgeError::General {
+				reason: "Logger cannot be initialised more than once."
+					.to_string(),
+			}
+			.log();
+		},
+	};
+}
+
 pub fn logger() -> LoggerRef {
-	LOGGER.get_or_init(|| Mutex::new(Logger::new()))
+	LOGGER.get().expect("Logger has not been initialised.")
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,48 +59,41 @@ enum LogLevel {
 	Error,
 }
 
-// #[derive(Serialize, Deserialize)]
-// /// A single log entry.
-// struct LogEntry {
-// 	count: u32,
-// 	timestamp: String,
-// 	level: LogLevel,
-// 	message: String,
-// }
-
-// impl LogEntry {
-// 	fn new(count: u32, level: LogLevel, message: String) -> Self {
-// 		let timestamp = Local::now().to_rfc3339();
-
-// 		LogEntry {
-// 			count,
-// 			timestamp,
-// 			level,
-// 			message,
-// 		}
-// 	}
-// }
-
-// The logger struct that holds each unsent (buffered) log entry and the log
-// count.
-//
-// Each log entry is stored in a Vector.
-//
-// All log entries are consumed upon calling the send_logs function.
+/// The logger struct that holds each unsent (buffered) log entry and the log
+/// count.
+///
+/// Each log entry is a string, stored in a `Vec<String>`.
+///
+/// All log entries are consumed upon calling the send_logs function.
+///
+/// ### Verbosity Levels
+/// The logger supports different verbosity levels, which can be set via the
+/// `VERBOSITY` environment variable. The levels are as follows:
+/// - 0: No logs are recorded or sent.
+/// - 1: Only error logs are recorded and sent.
+/// - 2: Warning and error logs are recorded and sent.
+/// - 3: Info, warning, and error logs are recorded and sent.
+///
+/// Any other inputs including non-numeric strings will default to level 1 (error logs only).
 pub struct Logger {
 	logs: Vec<String>,
 	counter: LogCounter,
+	verbosity: u8,
 }
 
 impl Logger {
-	fn new() -> Self {
+	fn new(verbosity: u8) -> Self {
 		Logger {
 			logs: Vec::new(),
 			counter: LogCounter::new(),
+			verbosity,
 		}
 	}
 
 	pub fn log_info(&mut self, message: &str) {
+		if self.verbosity < 3 {
+			return;
+		}
 		let log_entry = format!(
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
@@ -103,6 +109,9 @@ impl Logger {
 	}
 
 	pub fn log_warn(&mut self, message: &str) {
+		if self.verbosity < 2 {
+			return;
+		}
 		let log_entry = format!(
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
@@ -118,6 +127,9 @@ impl Logger {
 	}
 
 	pub fn log_error(&mut self, error: &EdgeError) {
+		if self.verbosity < 1 {
+			return;
+		}
 		let log_entry = format!(
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
