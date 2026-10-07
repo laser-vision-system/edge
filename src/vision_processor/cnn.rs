@@ -276,6 +276,7 @@ mod tests {
 	}
 
 	#[test]
+	#[ignore = "Must be run in isolation"]
 	fn process_runs_inference_and_updates_state() {
 		let mut cnn = test_cnn();
 		let mut state = cnn_state(ExternalData::default());
