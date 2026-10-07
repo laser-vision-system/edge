@@ -13,16 +13,11 @@ use server_edge_datatypes::{
 use tokio::time::interval;
 
 use crate::{
-	error::EdgeError,
-	logger::logger,
-	network::{
+	error::EdgeError, logger::{Logger, logger}, network::{
 		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
-	},
-	settings::Settings,
-	tcam_interface::{
+	}, settings::{EnvVariables, Settings}, tcam_interface::{
 		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
-	},
-	vision_processor::{VisionInterface as _, vision},
+	}, vision_processor::{VisionInterface as _, vision},
 };
 
 /// # Conductor
@@ -30,9 +25,19 @@ use crate::{
 /// The main execution context.
 pub struct Conductor {
 	persistence: Persistence,
+	env_variables: EnvVariables,
 }
 
 impl Conductor {
+	fn new() -> Self {
+		let persistence = Persistence::default();
+		let env_variables = EnvVariables::initialise();
+
+		Self {
+			persistence,
+			env_variables,
+		}
+	}
 	async fn loop_once(
 		&mut self,
 		mut websocket: WebSocket,
@@ -239,8 +244,11 @@ impl Conductor {
 impl Default for Conductor {
 	fn default() -> Self {
 		let persistence = Persistence::default();
-
-		Self { persistence }
+		let env_variables = EnvVariables::default();
+		Self {
+			persistence,
+			env_variables,
+		}
 	}
 }
 
@@ -248,7 +256,8 @@ impl Default for Conductor {
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let mut websocket: Option<WebSocket> = None;
 	let mut settings: Option<Settings> = None;
-	let mut conductor = Conductor::default();
+	let mut conductor = Conductor::new();
+	Logger::initialise_logger(conductor.env_variables.verbosity());
 
 	loop {
 		let (loop_websocket, loop_settings) =

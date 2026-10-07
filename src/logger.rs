@@ -35,19 +35,6 @@ pub type LoggerRef = &'static Mutex<Logger>;
 
 static LOGGER: OnceLock<Mutex<Logger>> = OnceLock::new();
 
-pub fn initialize_logger(verbosity: u8) {
-	match LOGGER.set(Mutex::new(Logger::new(verbosity))) {
-		Ok(_) => {},
-		Err(_) => {
-			EdgeError::General {
-				reason: "Logger cannot be initialised more than once."
-					.to_string(),
-			}
-			.log();
-		},
-	};
-}
-
 pub fn logger() -> LoggerRef {
 	LOGGER.get().expect("Logger has not been initialised.")
 }
@@ -82,6 +69,15 @@ pub struct Logger {
 }
 
 impl Logger {
+	pub fn initialise_logger(verbosity: u8) {
+		match LOGGER.set(Mutex::new(Logger::new(verbosity))) {
+			Ok(_) => {},
+			Err(_) => {
+				println!("Logger cannot be initialised more than once.")
+			},
+		}
+	}
+
 	fn new(verbosity: u8) -> Self {
 		Logger {
 			logs: Vec::new(),
