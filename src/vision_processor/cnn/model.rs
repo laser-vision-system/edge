@@ -38,22 +38,22 @@ pub struct LaserModel<B: Backend> {
 impl<B: Backend> LaserModel<B> {
 	fn init(device: &B::Device) -> Self {
 		Self {
-			read_head: Conv2dConfig::new([3, 32], [3, 3])
+			read_head: Conv2dConfig::new([3, 16], [3, 3])
 				.with_padding(PaddingConfig2d::Same)
 				.init(device),
-			read_head_norm: BatchNormConfig::new(32)
+			read_head_norm: BatchNormConfig::new(16)
 				.with_momentum(0.1)
 				.init(device),
 			read_head_pool: MaxPool2dConfig::new([4, 4]).init(),
-			detail_extraction: Conv2dConfig::new([32, 16], [3, 3])
+			detail_extraction: Conv2dConfig::new([16, 8], [3, 3])
 				.with_padding(PaddingConfig2d::Same)
 				.init(device),
-			detail_extraction_norm: BatchNormConfig::new(16)
+			detail_extraction_norm: BatchNormConfig::new(8)
 				.with_momentum(0.1)
 				.init(device),
 			detail_extraction_pool: MaxPool2dConfig::new([4, 4]).init(),
 			avg_pool: AdaptiveAvgPool2dConfig::new([1, 1]).init(),
-			prediction: LinearConfig::new(16, 1).init(device),
+			prediction: LinearConfig::new(8, 1).init(device),
 		}
 	}
 
@@ -87,18 +87,18 @@ impl<B: Backend> LaserModel<B> {
 		debug_assert_eq!(channels, 3, "expected an RGB tensor");
 
 		let x = images;
-		let x = self.read_head.forward(x); // [batch_size, 32, 640, 480]
+		let x = self.read_head.forward(x); // [batch_size, 16, 640, 480]
 		let x = self.read_head_norm.forward(x);
 		let x = relu(x);
-		let x = self.read_head_pool.forward(x); // [batch_size, 32, 160, 120]
-		let x = self.detail_extraction.forward(x); // [batch_size, 16, 160, 120]
+		let x = self.read_head_pool.forward(x); // [batch_size, 16, 160, 120]
+		let x = self.detail_extraction.forward(x); // [batch_size, 8, 160, 120]
 		let x = self.detail_extraction_norm.forward(x);
 		let x = relu(x);
-		let x = self.detail_extraction_pool.forward(x); // [batch_size, 16, 40, 30]
+		let x = self.detail_extraction_pool.forward(x); // [batch_size, 8, 40, 30]
 		// These two layers function as the `GlobalAveragePooling2D` layer and
 		// drop the shape to two dimensions.
-		let x = self.avg_pool.forward(x); // [batch_size, 16, 1, 1]
-		let x = x.reshape([batch_size, 16]); // [batch_size, 16]
+		let x = self.avg_pool.forward(x); // [batch_size, 8, 1, 1]
+		let x = x.reshape([batch_size, 8]); // [batch_size, 8]
 		self.prediction.forward(x) // [batch_size, 1]
 	}
 }
