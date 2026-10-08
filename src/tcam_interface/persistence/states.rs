@@ -13,7 +13,7 @@ use nokhwa::utils::CameraIndex;
 use server_edge_datatypes::shared::CameraStatus;
 
 use super::OccupiedIndices;
-use crate::tcam_interface::CameraDevice;
+use crate::tcam_interface::CameraLike;
 
 /// Named type for clarity.
 pub type InsertWasSuccessful = bool;
@@ -66,11 +66,14 @@ pub enum ConnectionStatus {
 
 // Constructors.
 impl ConnectionStatus {
-	pub fn new_active(
-		camera: CameraDevice,
+	pub fn new_active<T>(
+		camera: T,
 		occupied_indices: OccupiedIndices,
 		name: String,
-	) -> Self {
+	) -> Self
+	where
+		T: CameraLike + 'static,
+	{
 		let active = Active::new(camera, occupied_indices, name);
 		Self::Active { active }
 	}

@@ -11,6 +11,7 @@
 		clippy::unwrap_used,
 		clippy::unwrap_in_result,
 		clippy::expect_used,
+		clippy::indexing_slicing,
 		reason = "Tests are allowed to perform all of these operations"
 	)
 )]

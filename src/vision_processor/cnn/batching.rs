@@ -4,10 +4,12 @@
 )]
 
 use burn::tensor::{Tensor, TensorData};
-use image::RgbImage;
 
 use super::config::{Backend, BackendDevice};
-use crate::settings::{IMAGE_HEIGHT, IMAGE_PIXELS, IMAGE_WIDTH};
+use crate::{
+	settings::{IMAGE_HEIGHT, IMAGE_PIXELS, IMAGE_WIDTH},
+	tcam_interface::Image,
+};
 
 #[allow(
 	clippy::trivially_copy_pass_by_ref,
@@ -18,7 +20,7 @@ pub(super) fn images_to_tensor<'a, I>(
 	device: &BackendDevice,
 ) -> Tensor<Backend, 4>
 where
-	I: ExactSizeIterator<Item = &'a RgbImage>,
+	I: ExactSizeIterator<Item = &'a Image>,
 {
 	let batch_size = images.len();
 	let image_size = IMAGE_PIXELS * 3;
@@ -58,21 +60,23 @@ where
 
 #[cfg(test)]
 mod tests {
+	use image::RgbImage;
+
 	use super::{super::config, *};
 
 	#[test]
 	fn image_batch_tensor_is_nchw_and_keeps_images_separate() {
 		let images = [
-			RgbImage::from_pixel(
+			Image::from(RgbImage::from_pixel(
 				IMAGE_WIDTH,
 				IMAGE_HEIGHT,
 				image::Rgb([10, 20, 30]),
-			),
-			RgbImage::from_pixel(
+			)),
+			Image::from(RgbImage::from_pixel(
 				IMAGE_WIDTH,
 				IMAGE_HEIGHT,
 				image::Rgb([40, 50, 60]),
-			),
+			)),
 		];
 		let tensor = images_to_tensor(images.iter(), &config::get_device());
 		let dimensions = tensor.dims();

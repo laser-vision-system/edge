@@ -21,7 +21,7 @@ use image::RgbImage;
 use server_edge_datatypes::shared::{CameraId, VisionTechnique};
 use thiserror::Error;
 
-use crate::{error::Result, logger::logger};
+use crate::{error::Result, logger::logger, tcam_interface::Image};
 
 #[derive(Debug, Error)]
 pub enum VisionError {
@@ -322,7 +322,7 @@ impl fmt::Display for VisionState {
 pub struct BatchItem<'a> {
 	pub camera_id: CameraId,
 	pub state: &'a mut VisionState,
-	pub image: RgbImage,
+	pub image: Image,
 	pub calibrate: bool,
 	pub send_to_server: bool,
 }
@@ -331,7 +331,7 @@ impl<'a> BatchItem<'a> {
 	pub fn new(
 		camera_id: CameraId,
 		state: &'a mut VisionState,
-		image: RgbImage,
+		image: Image,
 		calibrate: bool,
 		send_to_server: bool,
 	) -> Self {
