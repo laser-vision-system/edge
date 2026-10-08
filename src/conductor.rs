@@ -1,7 +1,7 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{collections::HashMap, env, error};
+use std::{collections::HashMap, error};
 
 use server_edge_datatypes::{
 	edge::{
@@ -256,7 +256,7 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 
 	loop {
 		let (loop_websocket, loop_settings) =
-			assert_connection(websocket, settings, &mut conductor.persistence)
+			assert_connection(websocket, settings, &mut conductor.persistence, &env_variables)
 				.await;
 		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);

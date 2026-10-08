@@ -1,8 +1,8 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{collections::HashSet, fmt};
-
+use std::{collections::HashSet, env, fmt};
+use std::env::VarError;
 use pnet_datalink::interfaces;
 use reqwest::Client;
 use server_edge_datatypes::edge::{
@@ -18,6 +18,7 @@ use crate::{
 	error::Result, logger::logger, settings::AUTO_CONNECT_DELAY,
 	tcam_interface::Persistence,
 };
+use crate::settings::EnvVariables;
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct AddressComp {
@@ -172,11 +173,12 @@ pub async fn assert_connection(
 	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
 	persistence: &mut Persistence,
+	env_variables: &EnvVariables,
 ) -> (WebSocket, Settings) {
 	// All good, normal operation.
 	if let (Some(socket), Some(settings)) = (websocket, settings) {
 		if socket.is_terminated() {
-			let (socket, settings) = loop_until_connection().await;
+			let (socket, settings) = loop_until_connection(env_variables).await;
 			let socket = send_persistent_edge_id(socket).await;
 			(send_camera_list(persistence, socket).await, settings)
 		} else {
@@ -185,16 +187,21 @@ pub async fn assert_connection(
 	}
 	// First time calling.
 	else {
-		let (socket, settings) = loop_until_connection().await;
+		let (socket, settings) = loop_until_connection(env_variables).await;
 		(send_persistent_edge_id(socket).await, settings)
 	}
 }
 
-async fn loop_until_connection() -> (WebSocket, Settings) {
+async fn loop_until_connection(
+	env_variables: &EnvVariables
+) -> (WebSocket, Settings) {
 	let mut limit_interval = interval(AUTO_CONNECT_DELAY);
 	loop {
-		match try_connect_once().await {
-			Ok(yay) => return yay,
+		match try_connect_once(env_variables).await {
+			Ok(yay) => {
+				logger().lock().unwrap().log_info(&"Successfully connected to server!".to_string());
+				return yay
+			},
 			Err(err) => {
 				err.log();
 			},
@@ -203,9 +210,29 @@ async fn loop_until_connection() -> (WebSocket, Settings) {
 	}
 }
 
-async fn try_connect_once() -> Result<(WebSocket, Settings)> {
-	let urls = identify_network();
-	let websocket_url = get_websocket_url(urls).await?;
+async fn try_connect_once(_env_variables: &EnvVariables) -> Result<(WebSocket, Settings)> {
+
+	let websocket_url = match env::var("SERVER_URL") {
+				Ok(url) => {
+					if url.is_empty() {
+						logger().lock().unwrap().log_info(&"Connecting using auto connect".to_string());
+						let urls = identify_network();
+						get_websocket_url(urls).await?
+					}
+					else {
+						logger().lock().unwrap().log_info(&format!(
+							"Connecting to provided server address: {url}"
+						));
+						format!("ws://{}/edge_ws", url)
+					}
+
+				},
+				Err(..) => {
+					let urls = identify_network();
+					get_websocket_url(urls).await?
+				}
+			};
+
 	let (stream, _) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {
 			NetworkError::AutoConnectUrl {
