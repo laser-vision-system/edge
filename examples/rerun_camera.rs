@@ -5,7 +5,7 @@ use std::error::Error;
 use edge::{
 	tcam_interface::{CameraDevice, CameraLike as _, Image},
 	vision_processor::{
-		BatchItem, Demonstration, VisionInterface as _, VisionState,
+		AvgLightness, BatchItem, VisionInterface as _, VisionState,
 	},
 };
 use nokhwa::utils::CameraIndex;
@@ -13,7 +13,7 @@ use rerun::{self, ColorModel, RecordingStream, RecordingStreamBuilder};
 
 struct Context {
 	rec: RecordingStream,
-	demo: Demonstration,
+	demo: AvgLightness,
 	state: VisionState,
 }
 
@@ -21,7 +21,7 @@ impl Context {
 	fn new() -> Result<Self, Box<dyn Error>> {
 		let rec: RecordingStream =
 			RecordingStreamBuilder::new("cam_test_harness").spawn()?;
-		let demo = Demonstration::default();
+		let demo = AvgLightness::default();
 		let state = demo.new_state();
 		Ok(Context { rec, demo, state })
 	}
@@ -52,7 +52,7 @@ impl Context {
 		let mut batched = [batch];
 		self.demo.process(&mut batched);
 
-		let VisionState::Demonstration { data, .. } = &self.state else {
+		let VisionState::AvgLightness { data, .. } = &self.state else {
 			return;
 		};
 

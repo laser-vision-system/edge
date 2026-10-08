@@ -7,11 +7,11 @@ use rayon::prelude::*;
 use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
 #[derive(Clone, Default)]
-pub struct Demonstration {
+pub struct AvgLightness {
 	session: SessionToken,
 }
 
-impl Demonstration {
+impl AvgLightness {
 	pub fn new() -> Self {
 		Self {
 			session: SessionToken::new(),
@@ -44,10 +44,10 @@ impl Demonstration {
 	}
 }
 
-impl VisionInterface for Demonstration {
+impl VisionInterface for AvgLightness {
 	fn process(&mut self, batch: &mut [BatchItem]) {
 		for item in batch {
-			let VisionState::Demonstration { data, .. } = item.state else {
+			let VisionState::AvgLightness { data, .. } = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
@@ -71,22 +71,22 @@ impl VisionInterface for Demonstration {
 	}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::Demonstration {
+		VisionState::AvgLightness {
 			handle: self.session.downgrade(),
 			data: ExternalData::default(),
 		}
 	}
 }
 
-impl fmt::Debug for Demonstration {
+impl fmt::Debug for AvgLightness {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "Demonstration")
+		write!(f, "AvgLightness")
 	}
 }
 
-impl fmt::Display for Demonstration {
+impl fmt::Display for AvgLightness {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "Demonstration")
+		write!(f, "AvgLightness")
 	}
 }
 
@@ -100,6 +100,6 @@ pub struct ExternalData {
 
 impl fmt::Display for ExternalData {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "ExternalData for Demonstration: {:?}", self.setpoint)
+		write!(f, "ExternalData for AvgLightness: {:?}", self.setpoint)
 	}
 }
