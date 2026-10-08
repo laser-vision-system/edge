@@ -7,7 +7,7 @@ mod identifier;
 mod image;
 mod persistence;
 
-pub use camera_device::CameraDevice;
+pub use camera_device::{CameraDevice, CameraLike};
 pub use identifier::Identifier;
 pub use image::Image;
 use nokhwa::{NokhwaError, utils::KnownCameraControl};

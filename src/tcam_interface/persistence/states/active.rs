@@ -16,7 +16,7 @@ use super::{Disconnected, IndexOccupier, Limbo};
 use crate::{
 	error::Result,
 	tcam_interface::{
-		CameraDevice, PerpetualInfo,
+		CameraLike, PerpetualInfo,
 		image::Image,
 		persistence::{ErrAccType, OccupiedIndices},
 	},
@@ -43,42 +43,51 @@ pub struct Active {
 	///
 	/// It is not required to be unique, but is preferrable.
 	pub name: String,
-	pub camera: CameraDevice,
+	pub camera: Box<dyn CameraLike>,
 }
 
 // Constructors.
 impl Active {
-	pub fn new(
-		camera: CameraDevice,
+	pub fn new<T>(
+		camera: T,
 		occupied_indices: OccupiedIndices,
 		name: String,
-	) -> Self {
+	) -> Self
+	where
+		T: CameraLike + 'static,
+	{
 		Self {
 			occupied_indices,
 			data: PerpetualInfo::default(),
 			name,
-			camera,
+			camera: Box::new(camera),
 		}
 	}
 
-	pub fn from_disconnected(
+	pub fn from_disconnected<T>(
 		disconnected: Disconnected,
-		camera: CameraDevice,
+		camera: T,
 		occupied_indices: OccupiedIndices,
-	) -> Self {
+	) -> Self
+	where
+		T: CameraLike + 'static,
+	{
 		Self {
 			occupied_indices,
 			data: disconnected.data,
 			name: disconnected.name,
-			camera,
+			camera: Box::new(camera),
 		}
 	}
 
-	pub fn from_limbo(
+	pub fn from_limbo<T>(
 		limbo: Limbo,
-		camera: CameraDevice,
+		camera: T,
 		mut occupied_indices: OccupiedIndices,
-	) -> Self {
+	) -> Self
+	where
+		T: CameraLike + 'static,
+	{
 		// The parameter contains more indices than limbo.
 		if !occupied_indices.is_subset(&limbo.occupied_indices) {
 			occupied_indices.extend(limbo.occupied_indices);
@@ -87,7 +96,7 @@ impl Active {
 			occupied_indices,
 			data: limbo.data,
 			name: limbo.name,
-			camera,
+			camera: Box::new(camera),
 		}
 	}
 }
@@ -105,13 +114,13 @@ impl Active {
 	}
 
 	/// Get a reference to the current camera.
-	pub fn get_camera(&self) -> &CameraDevice {
-		&self.camera
+	pub fn get_camera(&self) -> &dyn CameraLike {
+		&*self.camera
 	}
 
 	/// Get a mutable reference to the current camera.
-	pub fn get_camera_mut(&mut self) -> &mut CameraDevice {
-		&mut self.camera
+	pub fn get_camera_mut(&mut self) -> &mut dyn CameraLike {
+		&mut *self.camera
 	}
 
 	/// Map this type to a [`CameraStatus`].

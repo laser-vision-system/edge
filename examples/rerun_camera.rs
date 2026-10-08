@@ -3,7 +3,7 @@
 use std::error::Error;
 
 use edge::{
-	tcam_interface::{CameraDevice, Image},
+	tcam_interface::{CameraDevice, CameraLike as _, Image},
 	vision_processor::{
 		BatchItem, Demonstration, VisionInterface as _, VisionState,
 	},

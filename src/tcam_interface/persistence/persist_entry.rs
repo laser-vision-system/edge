@@ -14,7 +14,10 @@ use super::{
 use crate::{
 	error::EdgeError,
 	logger::logger,
-	tcam_interface::{CameraDevice, Identifier, Image, PersistenceError},
+	tcam_interface::{
+		CameraDevice, Identifier, Image, PersistenceError,
+		camera_device::CameraLike,
+	},
 	vision_processor::BatchItem,
 };
 
@@ -190,11 +193,13 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
-	pub fn disconnected_to_active(
+	pub fn disconnected_to_active<T>(
 		&mut self,
-		camera: CameraDevice,
+		camera: T,
 		occupied_indices: OccupiedIndices,
-	) {
+	) where
+		T: CameraLike + 'static,
+	{
 		let inner = self.take_inner();
 		let new_inner = match inner {
 			ConnectionStatus::Disconnected { disconnected } => {
@@ -224,11 +229,13 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
-	pub fn limbo_to_active(
+	pub fn limbo_to_active<T>(
 		&mut self,
-		camera: CameraDevice,
+		camera: T,
 		occupied_indices: OccupiedIndices,
-	) {
+	) where
+		T: CameraLike + 'static,
+	{
 		let inner = self.take_inner();
 		let new_inner = match inner {
 			ConnectionStatus::Limbo { limbo } => {

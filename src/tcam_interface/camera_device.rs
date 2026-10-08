@@ -31,11 +31,29 @@ use crate::{
 	settings::CAMERA_BUFFER_COUNT,
 };
 
+pub trait CameraLike {
+	fn get_info(&self) -> &CameraInfo;
+
+	fn get_index(&self) -> &CameraIndex;
+
+	fn get_frame_buffer(&mut self) -> Result<FrameBuffer>;
+
+	fn get_all_supported_controls(&self) -> Result<Vec<KnownCameraControl>>;
+
+	fn get_controls(&self) -> Result<ControlMap>;
+
+	fn get_control(&self, id: KnownCameraControl) -> Result<CamControl>;
+
+	fn set_control(
+		&mut self,
+		id: KnownCameraControl,
+		value: ControlValueSetter,
+	) -> Result<()>;
+
+	fn set_controls(&mut self, controls: ControlMap) -> Result<()>;
+}
+
 /// An abstraction over the nokhwa camera objects.
-///
-/// TODO: The `frame()` function seems to copy the data into a buffer, and then
-/// calls decode image which will copy the data again. It may be a good idea to
-/// use `frame_raw()` to avoid pointless copy operations.
 #[must_use]
 pub struct CameraDevice {
 	inner: StreamCamera,
@@ -102,24 +120,54 @@ impl CameraDevice {
 	//	self.reset_controls_to_default();
 	//	Ok(self)
 	//}
+
+	/// Set a camera control using the concrete Nokhwa value type.
+	pub fn set_control_value<T>(
+		&mut self,
+		id: KnownCameraControl,
+		value: T,
+	) -> Result<()>
+	where
+		T: Into<ControlValueSetter>,
+	{
+		self.set_value(id, value.into())
+	}
+
+	fn set_value(
+		&mut self,
+		id: KnownCameraControl,
+		value: ControlValueSetter,
+	) -> Result<()> {
+		if matches!(id, KnownCameraControl::WhiteBalance) {
+			// HACK: Cheekily skip controls that may be inactive/disabled.
+			return Ok(());
+		}
+
+		let value_string = value.to_string();
+		self.inner.set_control(id, value).map_err(|why| {
+			let err = CameraDeviceError::SetControl {
+				id,
+				value: value_string,
+				inner: SetControl::from(why),
+			};
+			EdgeError::from(err)
+		})
+	}
 }
 
-/// Getters.
-impl CameraDevice {
-	pub fn get_info(&self) -> &CameraInfo {
+impl CameraLike for CameraDevice {
+	fn get_info(&self) -> &CameraInfo {
 		self.inner.info()
 	}
 
-	pub fn get_index(&self) -> &CameraIndex {
+	fn get_index(&self) -> &CameraIndex {
 		self.inner.info().index()
 	}
-
-	// == Images ==
 
 	/// Request an image of the current camera frame.
 	///
 	/// There seems to be a 2 frame latency.
-	pub fn get_frame_buffer(&mut self) -> Result<FrameBuffer> {
+	fn get_frame_buffer(&mut self) -> Result<FrameBuffer> {
 		let frame = self
 			.inner
 			.frame()
@@ -129,12 +177,8 @@ impl CameraDevice {
 		Ok(FrameBuffer::from(frame))
 	}
 
-	// == Configurations ==
-
 	/// Get the IDs of all supported controls.
-	pub fn get_all_supported_controls(
-		&self,
-	) -> Result<Vec<KnownCameraControl>> {
+	fn get_all_supported_controls(&self) -> Result<Vec<KnownCameraControl>> {
 		self.inner
 			.controls()
 			.map_err(|why| {
@@ -147,7 +191,7 @@ impl CameraDevice {
 	}
 
 	/// Get a map of the camera controls.
-	pub fn get_controls(&self) -> Result<ControlMap> {
+	fn get_controls(&self) -> Result<ControlMap> {
 		self.inner
 			.controls()
 			.map_err(|why| {
@@ -159,7 +203,7 @@ impl CameraDevice {
 	}
 
 	/// Get a camera control by ID.
-	pub fn get_control(&self, id: KnownCameraControl) -> Result<CamControl> {
+	fn get_control(&self, id: KnownCameraControl) -> Result<CamControl> {
 		self.inner
 			.controls()
 			.map_err(|why| {
@@ -170,35 +214,17 @@ impl CameraDevice {
 			.ok_or_else(|| EdgeError::from(CameraDeviceError::GetControl(id)))
 			.map(CamControl::from)
 	}
-}
 
-/// Setters.
-impl CameraDevice {
 	/// Set a camera control.
-	pub fn set_control<T>(
+	fn set_control(
 		&mut self,
 		id: KnownCameraControl,
-		value: T,
-	) -> Result<()>
-	where
-		T: Into<ControlValueSetter> + Clone,
-	{
-		if matches!(id, KnownCameraControl::WhiteBalance) {
-			// HACK: Cheekily skip controls that may be inactive/disabled.
-			return Ok(());
-		}
-		let setter = value.into();
-		self.inner.set_control(id, setter.clone()).map_err(|why| {
-			let err = CameraDeviceError::SetControl {
-				id,
-				value: setter.to_string(),
-				inner: SetControl::from(why),
-			};
-			EdgeError::from(err)
-		})
+		value: ControlValueSetter,
+	) -> Result<()> {
+		self.set_value(id, value)
 	}
 
-	pub fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
+	fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
 		controls.into_inner().into_iter().try_for_each(|(id, val)| {
 			let CamControl::IntegerRange(control) = val else {
 				return Err(EdgeError::from(
@@ -206,7 +232,7 @@ impl CameraDevice {
 				));
 			};
 			// TODO: Handle error. Maybe try make this operation atomic?
-			self.set_control(id, control.get_value())
+			self.set_value(id, control.get_value().into())
 		})
 	}
 
