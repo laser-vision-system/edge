@@ -3,13 +3,24 @@
 // TODO: Implement `Borrow` on everything.
 
 use nokhwa::utils::ControlValueSetter;
-use serde::{Deserialize, Serialize};
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 use super::{
 	traits::ControlValue,
 	types::{
-		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
-		ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
+		ConTypeBool,
+		ConTypeBytes,
+		ConTypeEnum,
+		ConTypeFloat,
+		ConTypeInt,
+		ConTypeKeyValue,
+		ConTypeMenu,
+		ConTypePoint,
+		ConTypeRGB,
+		ConTypeString,
 	},
 };
 
@@ -58,7 +69,10 @@ impl ControlValue for ConValueInteger {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -92,7 +106,10 @@ impl ControlValue for ConValueFloat {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -136,7 +153,10 @@ impl ControlValue for ConValueBoolean {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -179,7 +199,10 @@ impl ControlValue for ConValueString {
 		self.0.clone()
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -222,7 +245,10 @@ impl ControlValue for ConValueBytes {
 		self.0.clone()
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -266,7 +292,10 @@ impl ControlValue for ConValueKeyValue {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -300,7 +329,10 @@ impl ControlValue for ConValuePoint {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -344,7 +376,10 @@ impl ControlValue for ConValueEnum {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -378,7 +413,10 @@ impl ControlValue for ConValueRGB {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -419,7 +457,10 @@ impl ControlValue for ConValueMenu {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }

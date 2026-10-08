@@ -1,20 +1,41 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{error, time::Duration};
+use std::{
+	error,
+	time::Duration,
+};
 
-use futures_util::{SinkExt as _, StreamExt as _, stream::FusedStream as _};
+use futures_util::{
+	SinkExt as _,
+	StreamExt as _,
+	stream::FusedStream as _,
+};
 use serde::Serialize;
 use server_edge_datatypes::edge::EdgeRequests;
-use tokio::{self, net::TcpStream, time::interval};
+use tokio::{
+	self,
+	net::TcpStream,
+	time::interval,
+};
 use tokio_tungstenite::{
-	MaybeTlsStream, WebSocketStream, connect_async,
-	tungstenite::{Bytes, Message, Utf8Bytes},
+	MaybeTlsStream,
+	WebSocketStream,
+	connect_async,
+	tungstenite::{
+		Bytes,
+		Message,
+		Utf8Bytes,
+	},
 };
 
 use crate::{
 	logger::logger,
-	settings::{API, HOST, PORT},
+	settings::{
+		API,
+		HOST,
+		PORT,
+	},
 };
 
 type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
@@ -26,7 +47,9 @@ pub struct WebSocket {
 
 impl WebSocket {
 	pub fn new(inner: WebsocketType) -> Self {
-		Self { inner }
+		Self {
+			inner,
+		}
 	}
 
 	#[expect(
@@ -36,7 +59,9 @@ impl WebSocket {
 	#[expect(clippy::expect_used, reason = "WIP development")]
 	pub async fn websocket_connect(url: &str) -> Self {
 		let (stream, _) = connect_async(url).await.expect("Failed to connect");
-		Self { inner: stream }
+		Self {
+			inner: stream,
+		}
 	}
 
 	pub fn is_terminated(&self) -> bool {
@@ -53,7 +78,7 @@ impl WebSocket {
 	}
 
 	pub async fn keep_alive(
-		&mut self,
+		&mut self
 	) -> Result<(), Box<dyn error::Error + Send + Sync>> {
 		let msg = "hello";
 		self.inner.send(Message::Pong(Bytes::from(msg))).await?;

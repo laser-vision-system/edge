@@ -1,6 +1,9 @@
 use std::{
 	cell::RefCell,
-	process::{ExitCode, Termination},
+	process::{
+		ExitCode,
+		Termination,
+	},
 	rc::Rc,
 };
 
@@ -10,8 +13,11 @@ use super::*;
 use crate::{
 	error::EdgeError,
 	tcam_interface::controls::traits::{
-		ControlDefault as _, ControlItems as _, ControlMax as _,
-		ControlStep as _, ControlValue as _,
+		ControlDefault as _,
+		ControlItems as _,
+		ControlMax as _,
+		ControlStep as _,
+		ControlValue as _,
 	},
 };
 
@@ -75,7 +81,10 @@ impl CameraLike for FakeCamera {
 		Ok(ControlMap::from(Vec::new()))
 	}
 
-	fn get_control(&self, id: KnownCameraControl) -> Result<CamControl> {
+	fn get_control(
+		&self,
+		id: KnownCameraControl,
+	) -> Result<CamControl> {
 		Err(CameraDeviceError::GetControl(id).into())
 	}
 
@@ -88,7 +97,10 @@ impl CameraLike for FakeCamera {
 		Ok(())
 	}
 
-	fn set_controls(&mut self, _controls: ControlMap) -> Result<()> {
+	fn set_controls(
+		&mut self,
+		_controls: ControlMap,
+	) -> Result<()> {
 		Ok(())
 	}
 }

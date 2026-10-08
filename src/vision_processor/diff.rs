@@ -3,12 +3,23 @@
 
 use std::fmt;
 
-use image::{DynamicImage, GrayImage};
+use image::{
+	DynamicImage,
+	GrayImage,
+};
 use image_compare::{
-	Algorithm, Metric, gray_similarity_histogram, gray_similarity_structure,
+	Algorithm,
+	Metric,
+	gray_similarity_histogram,
+	gray_similarity_structure,
 };
 
-use super::{BatchItem, SessionToken, VisionInterface, VisionState};
+use super::{
+	BatchItem,
+	SessionToken,
+	VisionInterface,
+	VisionState,
+};
 use crate::logger::logger;
 
 struct DiffModel {
@@ -148,9 +159,15 @@ impl Diff {
 }
 
 impl VisionInterface for Diff {
-	fn process(&mut self, batch: &mut [BatchItem]) {
+	fn process(
+		&mut self,
+		batch: &mut [BatchItem],
+	) {
 		for item in batch {
-			let VisionState::Diff { data, .. } = item.state else {
+			let VisionState::Diff {
+				data, ..
+			} = item.state
+			else {
 				// TODO: This should raise an error.
 				continue;
 			};
@@ -209,13 +226,19 @@ impl VisionInterface for Diff {
 }
 
 impl fmt::Debug for Diff {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "Diff")
 	}
 }
 
 impl fmt::Display for Diff {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "Diff")
 	}
 }
@@ -231,7 +254,10 @@ pub struct ExternalData {
 }
 
 impl fmt::Display for ExternalData {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(
 			f,
 			"ExternalData for Diff\n - peak: {:?}\n - mean: {:?}\n - std_dev: {:?}",

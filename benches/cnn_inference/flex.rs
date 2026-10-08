@@ -4,7 +4,11 @@ compile_error!("flex backend not selected");
 #[path = "common.rs"]
 mod common;
 
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{
+	Criterion,
+	criterion_group,
+	criterion_main,
+};
 
 fn benchmark(criterion: &mut Criterion) {
 	common::benchmark_inference(criterion, "flex");

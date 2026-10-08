@@ -1,4 +1,7 @@
-use pnet_datalink::{NetworkInterface, interfaces};
+use pnet_datalink::{
+	NetworkInterface,
+	interfaces,
+};
 
 use crate::network::NetworkError;
 fn get_network_interface() -> Option<NetworkInterface> {
@@ -28,13 +31,15 @@ fn mac_octet_converter(mac_octets: [u8; 6]) -> u64 {
 pub fn get_mac_address() -> Result<u64, NetworkError> {
 	let network_interface = get_network_interface();
 	match network_interface {
-		Some(interface) => match interface.mac {
-			Some(mac) => {
-				let mac_octets = mac.octets();
-				let mac_address = mac_octet_converter(mac_octets);
-				Ok(mac_address)
-			},
-			_ => Err(NetworkError::MacAddress),
+		Some(interface) => {
+			match interface.mac {
+				Some(mac) => {
+					let mac_octets = mac.octets();
+					let mac_address = mac_octet_converter(mac_octets);
+					Ok(mac_address)
+				},
+				_ => Err(NetworkError::MacAddress),
+			}
 		},
 		None => Err(NetworkError::MacAddress),
 	}
@@ -43,7 +48,9 @@ pub fn get_mac_address() -> Result<u64, NetworkError> {
 #[cfg(test)]
 mod tests {
 	use crate::network::persistent_edge_id::{
-		get_mac_address, get_network_interface, mac_octet_converter,
+		get_mac_address,
+		get_network_interface,
+		mac_octet_converter,
 	};
 
 	#[test]
