@@ -165,7 +165,7 @@ mod tests {
 	use image::{Rgb, RgbImage};
 
 	use super::*;
-	use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_WIDTH};
+	use crate::settings::{IMAGE_HEIGHT, IMAGE_WIDTH};
 
 	fn test_cnn() -> Cnn {
 		let device = config::get_device();

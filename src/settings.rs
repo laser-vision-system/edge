@@ -37,6 +37,10 @@ pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
 /// High number increases latency and memory usage.
 pub const CAMERA_BUFFER_COUNT: u32 = 1;
 
+pub const IMAGE_WIDTH: u32 = 640;
+pub const IMAGE_HEIGHT: u32 = 480;
+pub const IMAGE_PIXELS: usize = (IMAGE_WIDTH * IMAGE_HEIGHT) as usize;
+
 pub use server_edge_datatypes::edge::Settings;
 
 use std::env;

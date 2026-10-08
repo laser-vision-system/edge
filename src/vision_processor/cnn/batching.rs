@@ -7,7 +7,7 @@ use burn::tensor::{Tensor, TensorData};
 use image::RgbImage;
 
 use super::config::{Backend, BackendDevice};
-use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_PIXELS, IMAGE_WIDTH};
+use crate::settings::{IMAGE_HEIGHT, IMAGE_PIXELS, IMAGE_WIDTH};
 
 #[allow(
 	clippy::trivially_copy_pass_by_ref,

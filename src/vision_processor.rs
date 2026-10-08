@@ -22,10 +22,6 @@ use thiserror::Error;
 
 use crate::{error::Result, logger::logger};
 
-const IMAGE_WIDTH: u32 = 640;
-const IMAGE_HEIGHT: u32 = 480;
-const IMAGE_PIXELS: usize = (IMAGE_WIDTH * IMAGE_HEIGHT) as usize;
-
 #[derive(Debug, Error)]
 pub enum VisionError {
 	#[error(transparent)]
