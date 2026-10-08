@@ -1,26 +1,36 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
+pub mod cnn;
+pub mod demonstration;
+pub mod diff;
+pub mod empty;
+
 use std::{
 	cell::RefCell,
 	fmt,
 	sync::{Arc, Mutex, OnceLock, Weak},
 };
 
-use image::RgbImage;
-use server_edge_datatypes::shared::{CameraId, VisionTechnique};
-
-use crate::logger::logger;
-
-pub mod cnn;
-pub mod demonstration;
-pub mod diff;
-pub mod empty;
-
 pub use cnn::Cnn;
 pub use demonstration::Demonstration;
 pub use diff::Diff;
 pub use empty::Empty;
+use image::RgbImage;
+use server_edge_datatypes::shared::{CameraId, VisionTechnique};
+use thiserror::Error;
+
+use crate::{error::Result, logger::logger};
+
+const IMAGE_WIDTH: u32 = 640;
+const IMAGE_HEIGHT: u32 = 480;
+const IMAGE_PIXELS: usize = (IMAGE_WIDTH * IMAGE_HEIGHT) as usize;
+
+#[derive(Debug, Error)]
+pub enum VisionError {
+	#[error(transparent)]
+	Cnn(#[from] cnn::CnnError),
+}
 
 pub type VisionRef = &'static VisionGuard;
 
@@ -46,15 +56,19 @@ impl VisionGuard {
 		clippy::expect_used,
 		reason = "Closely protected internal option type"
 	)]
-	pub fn swap(&self, swap_to: VisionTechnique) {
-		let old_vision = self
-			.inner
-			.lock()
-			.unwrap()
-			.take()
-			.expect("vision should never be None outside of this method");
-		let new_vision = old_vision.swap(swap_to);
-		self.inner.lock().unwrap().borrow_mut().replace(new_vision);
+	pub fn swap(&self, swap_to: VisionTechnique) -> Result<()> {
+		let inner = self.inner.lock().unwrap_or_else(|err| {
+			logger()
+				.lock()
+				.unwrap()
+				.log_warn("Vision mutex was poisoned");
+			err.into_inner()
+		});
+		let mut vision = inner.borrow_mut();
+		vision
+			.as_mut()
+			.expect("vision should never be None outside of this method")
+			.swap(swap_to)
 	}
 
 	#[expect(
@@ -65,9 +79,18 @@ impl VisionGuard {
 	where
 		F: FnOnce(&mut VisionVariant) -> R,
 	{
-		func(self.inner.lock().unwrap().borrow_mut().as_mut().expect(
-			"vision should never be None outside of VisionGuard::swap_to",
-		))
+		let inner = self.inner.lock().unwrap_or_else(|err| {
+			logger()
+				.lock()
+				.unwrap()
+				.log_warn("Vision mutex was poisoned");
+			err.into_inner()
+		});
+		let mut vision = inner.borrow_mut();
+		let variant = vision
+			.as_mut()
+			.expect("vision should never be None outside of VisionGuard::swap");
+		func(variant)
 	}
 }
 
@@ -105,19 +128,25 @@ impl SessionHandle {
 /// Implement on a type to declare it as capable of performing machine vision
 /// intensity measurement.
 pub trait VisionInterface: fmt::Debug + fmt::Display {
-	// fn new_state(&self) -> VisionState;
-
 	/// Process all frames in a single batch, setting the return value in-place.
 	fn process(&mut self, batch: &mut [BatchItem]);
 
+	/// Get a new [`VisionState`] for this technique.
 	fn new_state(&self) -> VisionState;
+
+	/// Make sure the batch item has a valid [`VisionState`].
+	fn validate_batch(&self, batch: &mut BatchItem) {
+		if !batch.state.is_valid() {
+			*batch.state = self.new_state();
+		}
+	}
 }
 
 #[derive(Debug)]
 pub enum VisionVariant {
 	Empty(Empty),
 	Demonstration(Demonstration),
-	Cnn(Cnn),
+	Cnn(Box<Cnn>),
 	Diff(Diff),
 }
 
@@ -132,7 +161,7 @@ impl VisionVariant {
 	/// If the requested type is the same as the current, this is a no-op.
 	///
 	/// Swaps the current vision processing technique to the chosen one.
-	/// If the current technique is the same as the chosen one, returns None.
+	/// A failed CNN model load leaves the current technique active.
 	/// This function must be called from the conductor where the necessary
 	/// setpoint logic is implemented. The setpoint logic is not implemented
 	/// here because it is not the responsibility of the vision processor to
@@ -140,33 +169,34 @@ impl VisionVariant {
 	///
 	/// This method statically asserts exhaustiveness between
 	/// [this](VisionVariant) and [`VisionTechnique`].
-	fn swap(self, swap_to: VisionTechnique) -> Self {
+	#[expect(clippy::unwrap_in_result, reason = "Logger")]
+	fn swap(&mut self, swap_to: VisionTechnique) -> Result<()> {
 		if self.identifier() == swap_to {
 			logger()
 				.lock()
 				.unwrap()
-				.log_warn("That VisionTechnique is already active.");
-			return self;
+				.log_info(&format!("{swap_to:?} is already active"));
+			return Ok(());
 		}
 
 		logger()
 			.lock()
 			.unwrap()
-			.log_info(&format!("Swapping VisionTechnique to: {swap_to:?}..."));
+			.log_info(&format!("Swapping to: {swap_to:?}"));
 		match swap_to {
-			VisionTechnique::Empty => Self::Empty(Empty::new()),
+			VisionTechnique::Empty => *self = Self::Empty(Empty::new()),
 			VisionTechnique::Demonstration => {
-				Self::Demonstration(Demonstration::new())
+				*self = Self::Demonstration(Demonstration::new());
 			},
-			VisionTechnique::Cnn => Self::Cnn(Cnn::new()),
-			VisionTechnique::Diff => Self::Diff(Diff::new()),
+			VisionTechnique::Cnn => *self = Self::Cnn(Box::new(Cnn::new()?)),
+			VisionTechnique::Diff => *self = Self::Diff(Diff::new()),
 			_ => {
 				logger().lock().unwrap().log_warn(
-					"Attempting to swap to an unsupported vison technique",
+					"Attempting to swap to an unsupported vison technique, nothing changes",
 				);
-				self
 			},
 		}
+		Ok(())
 	}
 
 	/// A marker for which vision type this is.
@@ -184,12 +214,23 @@ impl VisionVariant {
 
 impl VisionInterface for VisionVariant {
 	fn process(&mut self, batch: &mut [BatchItem]) {
+		if batch.is_empty() {
+			return;
+		}
+
 		match self {
 			Self::Empty(inner) => inner.process(batch),
 			Self::Demonstration(inner) => inner.process(batch),
 			Self::Cnn(inner) => inner.process(batch),
 			Self::Diff(inner) => inner.process(batch),
 		}
+
+		let process_results = batch
+			.iter()
+			.map(ToString::to_string)
+			.collect::<Vec<_>>()
+			.join("\n");
+		logger().lock().unwrap().log_info(&process_results);
 	}
 
 	fn new_state(&self) -> VisionState {
@@ -263,6 +304,17 @@ impl Default for VisionState {
 	}
 }
 
+impl fmt::Display for VisionState {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Empty { data, .. } => data.fmt(f),
+			Self::Demonstration { data, .. } => data.fmt(f),
+			Self::Cnn { data, .. } => data.fmt(f),
+			Self::Diff { data, .. } => data.fmt(f),
+		}
+	}
+}
+
 /// A single record that is passed into `process_frame`.
 ///
 /// Currently holds a reference to the vision state, but should probably be
@@ -294,6 +346,30 @@ impl<'a> BatchItem<'a> {
 	}
 }
 
+impl fmt::Display for BatchItem<'_> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		writeln!(
+			f,
+			"Batch Item: [\n\tID: {}\n\tState: {}\n\tImage\n\tCalibrate: {}\n\tSend: {}\n]",
+			self.camera_id, self.state, self.calibrate, self.send_to_server
+		)
+	}
+}
+
+/// Helper function for writing optional values for display.
+fn write_optional<V>(
+	fmtr: &mut fmt::Formatter<'_>,
+	value: Option<V>,
+) -> fmt::Result
+where
+	V: fmt::Display,
+{
+	match value {
+		Some(value) => write!(fmtr, "{value}"),
+		None => fmtr.write_str("None"),
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -301,7 +377,9 @@ mod tests {
 	#[test]
 	fn swap() {
 		let mut variant = VisionVariant::new();
-		variant = variant.swap(VisionTechnique::Demonstration);
+		variant
+			.swap(VisionTechnique::Demonstration)
+			.expect("demonstration swap should succeed");
 		println!("Current variant: {variant}");
 	}
 }

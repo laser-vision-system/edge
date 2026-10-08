@@ -3,23 +3,67 @@ name = "edge"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = [
+	"cnn-backend-flex",
+	"cnn-model-embedded",
+]
+
+# == Burn backend selection ==
+cnn-backend-flex = [
+	"burn/flex",
+	"dep:burn-flex",
+]
+cnn-backend-wgpu = [
+	"burn/wgpu",
+	"burn/fusion",
+	"burn-store/wgpu",
+]
+cnn-backend-cuda = [
+	"burn/cuda",
+	"burn/fusion",
+	"burn-store/cuda",
+]
+
+# == Burn model loading mehod ==
+# Embed the model into the compiled binary.
+cnn-model-embedded = [
+]
+# Load the model from file at runtime with zero-copy.
+cnn-model-zero-copy = [
+	"burn-store/memmap",
+]
+# Load the model from file at runtime without zero-copy.
+cnn-model-file = [
+]
+
 [dependencies]
-server-edge-datatypes = { path = "./server-edge-datatypes"}
+burn = { version = "0.21", default-features = false, features = [
+	"std",
+]}
+burn-flex = { version = "0.21", default-features = false, features = [
+	"rayon",
+	"simd",
+], optional = true }
+burn-store = { version = "0.21", default-features = false, features = [
+	"std",
+	"burnpack",
+] }
 chrono = "0.4"
+futures-util = "0.3.33"
 image = { version = "0.25", default-features = false, features = [
 	"rayon",
 	"jpeg",
-	"png",
-	"gif",
-	"webp",
-	"avif"
 ] }
+image-compare = "0.5"
 lab = "0.11"
+mutually_exclusive_features = "0.1.0"
 nokhwa = { path = "nokhwa", features = [
 	"serialize",
 	"input-native",
 	"runner",
 ] }
+pnet_datalink = "0.35.0"
 rayon = "1"
 reqwest = { version = "0.13", features = [
 	"json",
@@ -28,22 +72,39 @@ reqwest = { version = "0.13", features = [
 serde = { version = "1" , features = [
 	"derive"
 ] }
+serde_json = "1.0.151"
+server-edge-datatypes = { path = "./server-edge-datatypes"}
 thiserror = "2.0"
 tokio = { version = "1.26.0", features = [
 	"full"
 ] }
 tungstenite = "0.28.0"
-serde_json = "1.0.151"
 tokio-tungstenite = "0.30.0"
-futures-util = "0.3.33"
-pnet_datalink = "0.35.0"
-image-compare = "0.5"
 
 # Dependencies only needed for tests, examples, or benchmarks.
 [dev-dependencies]
+criterion = "0.8"
 rerun = { version = "0.35", features = [
 	"image"
 ] }
+
+[[bench]]
+name = "cnn_inference_flex"
+path = "benches/cnn_inference/flex.rs"
+required-features = ["cnn-backend-flex"]
+harness = false
+
+[[bench]]
+name = "cnn_inference_wgpu"
+path = "benches/cnn_inference/wgpu.rs"
+required-features = ["cnn-backend-wgpu"]
+harness = false
+
+[[bench]]
+name = "cnn_inference_cuda"
+path = "benches/cnn_inference/cuda.rs"
+required-features = ["cnn-backend-cuda"]
+harness = false
 
 [lints.rust]
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.

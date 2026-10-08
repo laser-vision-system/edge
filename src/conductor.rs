@@ -1,7 +1,7 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{collections::HashMap, error};
+use std::{collections::HashMap, env, error};
 
 use server_edge_datatypes::{
 	edge::{
@@ -14,11 +14,11 @@ use tokio::time::interval;
 
 use crate::{
 	error::EdgeError,
-	logger::logger,
+	logger::{Logger, logger},
 	network::{
 		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
 	},
-	settings::Settings,
+	settings::{EnvVariables, Settings},
 	tcam_interface::{
 		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
 	},
@@ -63,8 +63,10 @@ impl Conductor {
 
 		_ = websocket.keep_alive().await;
 
-		if let Some(swap_to) = requested_vision_type {
-			vision().swap(swap_to);
+		if let Some(swap_to) = requested_vision_type
+			&& let Err(error) = vision().swap(swap_to)
+		{
+			error.log();
 		}
 
 		// TODO: There should be something in between this call that does the
@@ -101,13 +103,14 @@ impl Conductor {
 			}
 		}
 
-		// Send logs.
 		logger().lock().unwrap().send_logs();
 
 		// Vision
 		vision().interact(|vision| {
 			vision.process(&mut batch_items);
 		});
+
+		logger().lock().unwrap().send_logs();
 
 		// Send result
 		for item in &batch_items {
@@ -239,7 +242,6 @@ impl Conductor {
 impl Default for Conductor {
 	fn default() -> Self {
 		let persistence = Persistence::default();
-
 		Self { persistence }
 	}
 }
@@ -249,6 +251,8 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let mut websocket: Option<WebSocket> = None;
 	let mut settings: Option<Settings> = None;
 	let mut conductor = Conductor::default();
+	let env_variables = EnvVariables::initialise();
+	Logger::initialise_logger(env_variables.verbosity());
 
 	loop {
 		let (loop_websocket, loop_settings) =
