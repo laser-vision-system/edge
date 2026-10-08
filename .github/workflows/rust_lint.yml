@@ -39,11 +39,15 @@ jobs:
         submodules: recursive
         token: ${{ secrets.DOCKER_GH_AUTO_AUTH_KEY }}
 
+
+
     - uses: dtolnay/rust-toolchain@v1
       with:
         toolchain: stable
         components: rustfmt
 
+    - run: rustup toolchain install nightly
+    - run: rustup override set nightly
     - run: cargo fmt -- --check
 
   clippy:
