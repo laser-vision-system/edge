@@ -226,7 +226,6 @@ async fn loop_until_connection(
 					.lock()
 					.unwrap()
 					.log_info(&"Successfully connected to server!".to_string());
-				println!("Successfully connected to server!");
 				return yay;
 			},
 			Err(err) => {
@@ -247,14 +246,12 @@ async fn try_connect_once(
 					.lock()
 					.unwrap()
 					.log_info(&"Connecting using auto connect".to_string());
-				println!("Connecting using auto connect");
 				let urls = identify_network();
 				get_websocket_url(urls).await?
 			} else {
 				logger().lock().unwrap().log_info(&format!(
 					"Connecting to provided server address: {url}"
 				));
-				println!("Connecting to provided server address: {url}");
 				format!("ws://{}/edge_ws", url)
 			}
 		},
@@ -263,7 +260,6 @@ async fn try_connect_once(
 				.lock()
 				.unwrap()
 				.log_info(&"Connecting using auto connect".to_string());
-			println!("Connecting using auto connect");
 			let urls = identify_network();
 			get_websocket_url(urls).await?
 		},
