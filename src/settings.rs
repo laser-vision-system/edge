@@ -41,13 +41,14 @@ pub const IMAGE_WIDTH: u32 = 640;
 pub const IMAGE_HEIGHT: u32 = 480;
 pub const IMAGE_PIXELS: usize = (IMAGE_WIDTH * IMAGE_HEIGHT) as usize;
 
-pub use server_edge_datatypes::edge::Settings;
-
 use std::env;
+
+pub use server_edge_datatypes::edge::Settings;
 
 use crate::error::EdgeError;
 
-/// Contains all environment variables that are used to configure the application.
+/// Contains all environment variables that are used to configure the
+/// application.
 pub struct EnvVariables {
 	// Verbosity level for logging and debugging:
 	// - 0: No logs
@@ -63,9 +64,10 @@ impl EnvVariables {
 		let verbosity = match Self::get_env_variable::<u8>("VERBOSITY") {
 			Ok(v) => v,
 			Err(e) => {
-				eprintln!("{}", e);
+				eprintln!("{e}");
 				1
-			}, // Default to error logs only if the variable is not set or invalid
+			}, /* Default to error logs only if the variable is not set or
+			    * invalid */
 		};
 
 		Self { verbosity }
@@ -81,15 +83,13 @@ impl EnvVariables {
 				Ok(parsed_value) => Ok(parsed_value),
 				Err(e) => Err(EdgeError::General {
 					reason: format!(
-						"Could not parse {} environment variable to the expected type: {}",
-						name, e
+						"Could not parse {name} environment variable to the expected type: {e}"
 					),
 				}),
 			},
 			Err(e) => Err(EdgeError::General {
 				reason: format!(
-					"Error reading {} environment variable: {}",
-					name, e
+					"Error reading {name} environment variable: {e}"
 				),
 			}),
 		}

@@ -1,10 +1,10 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
+pub mod avg_lightness;
 pub mod cnn;
-pub mod demonstration;
 pub mod diff;
-pub mod empty;
+pub mod inactive;
 
 use std::{
 	cell::RefCell,
@@ -12,15 +12,16 @@ use std::{
 	sync::{Arc, Mutex, OnceLock, Weak},
 };
 
+pub use avg_lightness::AvgLightness;
 pub use cnn::Cnn;
-pub use demonstration::Demonstration;
 pub use diff::Diff;
-pub use empty::Empty;
+pub use inactive::Inactive;
+
 use image::RgbImage;
 use server_edge_datatypes::shared::{CameraId, VisionTechnique};
 use thiserror::Error;
 
-use crate::{error::Result, logger::logger};
+use crate::{error::Result, logger::logger, tcam_interface::Image};
 
 #[derive(Debug, Error)]
 pub enum VisionError {
@@ -140,8 +141,8 @@ pub trait VisionInterface: fmt::Debug + fmt::Display {
 
 #[derive(Debug)]
 pub enum VisionVariant {
-	Empty(Empty),
-	Demonstration(Demonstration),
+	Inactive(Inactive),
+	AvgLightness(AvgLightness),
 	Cnn(Box<Cnn>),
 	Diff(Diff),
 }
@@ -149,7 +150,7 @@ pub enum VisionVariant {
 impl VisionVariant {
 	/// Private constructor.
 	fn new() -> Self {
-		Self::Empty(Empty::default())
+		Self::Inactive(Inactive::default())
 	}
 
 	/// Request to switch this variant with another one.
@@ -180,9 +181,11 @@ impl VisionVariant {
 			.unwrap()
 			.log_info(&format!("Swapping to: {swap_to:?}"));
 		match swap_to {
-			VisionTechnique::Empty => *self = Self::Empty(Empty::new()),
-			VisionTechnique::Demonstration => {
-				*self = Self::Demonstration(Demonstration::new());
+			VisionTechnique::Inactive => {
+				*self = Self::Inactive(Inactive::new())
+			},
+			VisionTechnique::AvgLightness => {
+				*self = Self::AvgLightness(AvgLightness::new());
 			},
 			VisionTechnique::Cnn => *self = Self::Cnn(Box::new(Cnn::new()?)),
 			VisionTechnique::Diff => *self = Self::Diff(Diff::new()),
@@ -200,8 +203,8 @@ impl VisionVariant {
 	/// Used when interacting with the server.
 	fn identifier(&self) -> VisionTechnique {
 		match self {
-			Self::Empty(_) => VisionTechnique::Empty,
-			Self::Demonstration(_) => VisionTechnique::Demonstration,
+			Self::Inactive(_) => VisionTechnique::Inactive,
+			Self::AvgLightness(_) => VisionTechnique::AvgLightness,
 			Self::Cnn(_) => VisionTechnique::Cnn,
 			Self::Diff(_) => VisionTechnique::Diff,
 		}
@@ -215,8 +218,8 @@ impl VisionInterface for VisionVariant {
 		}
 
 		match self {
-			Self::Empty(inner) => inner.process(batch),
-			Self::Demonstration(inner) => inner.process(batch),
+			Self::Inactive(inner) => inner.process(batch),
+			Self::AvgLightness(inner) => inner.process(batch),
 			Self::Cnn(inner) => inner.process(batch),
 			Self::Diff(inner) => inner.process(batch),
 		}
@@ -231,8 +234,8 @@ impl VisionInterface for VisionVariant {
 
 	fn new_state(&self) -> VisionState {
 		match self {
-			Self::Empty(inner) => inner.new_state(),
-			Self::Demonstration(inner) => inner.new_state(),
+			Self::Inactive(inner) => inner.new_state(),
+			Self::AvgLightness(inner) => inner.new_state(),
 			Self::Cnn(inner) => inner.new_state(),
 			Self::Diff(inner) => inner.new_state(),
 		}
@@ -243,8 +246,8 @@ impl VisionInterface for VisionVariant {
 impl fmt::Display for VisionVariant {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			Self::Empty(empty) => empty.fmt(f),
-			Self::Demonstration(demonstration) => demonstration.fmt(f),
+			Self::Inactive(empty) => empty.fmt(f),
+			Self::AvgLightness(demonstration) => demonstration.fmt(f),
 			Self::Cnn(cnn) => cnn.fmt(f),
 			Self::Diff(diff) => diff.fmt(f),
 		}
@@ -254,13 +257,13 @@ impl fmt::Display for VisionVariant {
 /// External state for the vision processor variants.
 #[derive(Clone, Debug)]
 pub enum VisionState {
-	Empty {
+	Inactive {
 		handle: SessionHandle,
-		data: empty::ExternalData,
+		data: inactive::ExternalData,
 	},
-	Demonstration {
+	AvgLightness {
 		handle: SessionHandle,
-		data: demonstration::ExternalData,
+		data: avg_lightness::ExternalData,
 	},
 	Cnn {
 		handle: SessionHandle,
@@ -277,8 +280,8 @@ impl VisionState {
 	/// active.
 	pub fn is_valid(&self) -> bool {
 		match self {
-			Self::Empty { handle, .. }
-			| Self::Demonstration { handle, .. }
+			Self::Inactive { handle, .. }
+			| Self::AvgLightness { handle, .. }
 			| Self::Cnn { handle, .. }
 			| Self::Diff { handle, .. } => handle.is_valid(),
 		}
@@ -286,8 +289,8 @@ impl VisionState {
 
 	pub fn get_deviation(&self) -> Option<f32> {
 		match self {
-			Self::Empty { .. } => None,
-			Self::Demonstration { data, .. } => data.deviation,
+			Self::Inactive { .. } => None,
+			Self::AvgLightness { data, .. } => data.deviation,
 			Self::Cnn { data, .. } => data.deviation,
 			Self::Diff { data, .. } => data.deviation,
 		}
@@ -303,8 +306,8 @@ impl Default for VisionState {
 impl fmt::Display for VisionState {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			Self::Empty { data, .. } => data.fmt(f),
-			Self::Demonstration { data, .. } => data.fmt(f),
+			Self::Inactive { data, .. } => data.fmt(f),
+			Self::AvgLightness { data, .. } => data.fmt(f),
 			Self::Cnn { data, .. } => data.fmt(f),
 			Self::Diff { data, .. } => data.fmt(f),
 		}
@@ -319,7 +322,7 @@ impl fmt::Display for VisionState {
 pub struct BatchItem<'a> {
 	pub camera_id: CameraId,
 	pub state: &'a mut VisionState,
-	pub image: RgbImage,
+	pub image: Image,
 	pub calibrate: bool,
 	pub send_to_server: bool,
 }
@@ -328,7 +331,7 @@ impl<'a> BatchItem<'a> {
 	pub fn new(
 		camera_id: CameraId,
 		state: &'a mut VisionState,
-		image: RgbImage,
+		image: Image,
 		calibrate: bool,
 		send_to_server: bool,
 	) -> Self {
@@ -374,7 +377,7 @@ mod tests {
 	fn swap() {
 		let mut variant = VisionVariant::new();
 		variant
-			.swap(VisionTechnique::Demonstration)
+			.swap(VisionTechnique::AvgLightness)
 			.expect("demonstration swap should succeed");
 		println!("Current variant: {variant}");
 	}

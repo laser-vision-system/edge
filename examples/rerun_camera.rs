@@ -3,18 +3,17 @@
 use std::error::Error;
 
 use edge::{
-	tcam_interface::CameraDevice,
+	tcam_interface::{CameraDevice, CameraLike as _, Image},
 	vision_processor::{
-		BatchItem, Demonstration, VisionInterface as _, VisionState,
+		AvgLightness, BatchItem, VisionInterface as _, VisionState,
 	},
 };
-use image::RgbImage;
 use nokhwa::utils::CameraIndex;
-use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
+use rerun::{self, ColorModel, RecordingStream, RecordingStreamBuilder};
 
 struct Context {
 	rec: RecordingStream,
-	demo: Demonstration,
+	demo: AvgLightness,
 	state: VisionState,
 }
 
@@ -22,12 +21,12 @@ impl Context {
 	fn new() -> Result<Self, Box<dyn Error>> {
 		let rec: RecordingStream =
 			RecordingStreamBuilder::new("cam_test_harness").spawn()?;
-		let demo = Demonstration::default();
+		let demo = AvgLightness::default();
 		let state = demo.new_state();
 		Ok(Context { rec, demo, state })
 	}
 
-	pub fn send_image(&self, path: &str, image: &Image) {
+	pub fn send_image(&self, path: &str, image: &rerun::Image) {
 		self.rec.log(path, image).unwrap();
 	}
 
@@ -35,8 +34,8 @@ impl Context {
 		self.rec.log(path, &rerun::Scalars::single(value)).unwrap();
 	}
 
-	pub fn log_frame(&mut self, path: &str, frame: RgbImage, incr: u8) {
-		let rerun_image = Image::from_elements(
+	pub fn log_frame(&mut self, path: &str, frame: Image, incr: u8) {
+		let rerun_image = rerun::Image::from_elements(
 			&frame,
 			[frame.width(), frame.height()],
 			ColorModel::RGB,
@@ -53,7 +52,7 @@ impl Context {
 		let mut batched = [batch];
 		self.demo.process(&mut batched);
 
-		let VisionState::Demonstration { data, .. } = &self.state else {
+		let VisionState::AvgLightness { data, .. } = &self.state else {
 			return;
 		};
 
@@ -73,7 +72,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	loop {
 		let frame = camera.get_frame_buffer()?;
-		let image = camera.decode_buffer(frame)?;
+		let image = frame.try_decode()?;
 		context.log_frame("camera/live_feed", image, incr);
 		if incr == 50 {
 			incr = 0;

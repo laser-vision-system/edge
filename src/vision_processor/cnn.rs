@@ -165,7 +165,10 @@ mod tests {
 	use image::{Rgb, RgbImage};
 
 	use super::*;
-	use crate::settings::{IMAGE_HEIGHT, IMAGE_WIDTH};
+	use crate::{
+		settings::{IMAGE_HEIGHT, IMAGE_WIDTH},
+		tcam_interface::Image,
+	};
 
 	fn test_cnn() -> Cnn {
 		let device = config::get_device();
@@ -204,7 +207,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			7,
 			&mut state,
-			RgbImage::new(8, 8),
+			Image::from(RgbImage::new(8, 8)),
 			true,
 			false,
 		)];
@@ -231,7 +234,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			12,
 			&mut state,
-			RgbImage::new(8, 8),
+			Image::from(RgbImage::new(8, 8)),
 			false,
 			false,
 		)];
@@ -258,7 +261,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			21,
 			&mut state,
-			RgbImage::new(8, 8),
+			Image::from(RgbImage::new(8, 8)),
 			false,
 			true,
 		)];
@@ -280,8 +283,11 @@ mod tests {
 	fn process_runs_inference_and_updates_state() {
 		let mut cnn = test_cnn();
 		let mut state = cnn_state(ExternalData::default());
-		let image =
-			RgbImage::from_pixel(IMAGE_WIDTH, IMAGE_HEIGHT, Rgb([255, 40, 90]));
+		let image = Image::from(RgbImage::from_pixel(
+			IMAGE_WIDTH,
+			IMAGE_HEIGHT,
+			Rgb([255, 40, 90]),
+		));
 		let mut batch = [BatchItem::new(99, &mut state, image, true, false)];
 
 		cnn.process(&mut batch);
@@ -303,8 +309,11 @@ mod tests {
 		const SAMPLES: u32 = 5;
 		const WARMUP: u32 = 1;
 		let mut cnn = Cnn::new().expect("CNN profiling requires a valid model");
-		let image =
-			RgbImage::from_pixel(IMAGE_WIDTH, IMAGE_HEIGHT, Rgb([255, 40, 90]));
+		let image = Image::from(RgbImage::from_pixel(
+			IMAGE_WIDTH,
+			IMAGE_HEIGHT,
+			Rgb([255, 40, 90]),
+		));
 
 		for batch_size in [1, 10] {
 			let mut states = iter::repeat_with(|| cnn.new_state())

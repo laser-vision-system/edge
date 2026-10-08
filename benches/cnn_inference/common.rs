@@ -20,7 +20,13 @@ pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
 			.iter_mut()
 			.enumerate()
 			.map(|(index, state)| {
-				BatchItem::new(index as u64, state, image.clone(), true, false)
+				BatchItem::new(
+					index as u64,
+					state,
+					image.clone().into(),
+					true,
+					false,
+				)
 			})
 			.collect::<Vec<_>>();
 

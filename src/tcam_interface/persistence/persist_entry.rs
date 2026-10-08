@@ -3,7 +3,6 @@
 
 use std::{borrow::Cow, collections::HashSet};
 
-use image::RgbImage;
 use nokhwa::utils::CameraIndex;
 use server_edge_datatypes::shared::{CameraId, CameraStatus};
 
@@ -15,7 +14,10 @@ use super::{
 use crate::{
 	error::EdgeError,
 	logger::logger,
-	tcam_interface::{CameraDevice, Identifier, PersistenceError},
+	tcam_interface::{
+		CameraDevice, Identifier, Image, PersistenceError,
+		camera_device::CameraLike,
+	},
 	vision_processor::BatchItem,
 };
 
@@ -26,12 +28,12 @@ pub enum WhyNo {
 }
 
 pub enum MaybeImage {
-	Image(RgbImage),
+	Image(Image),
 	WhyNo(WhyNo),
 }
 
-impl From<RgbImage> for MaybeImage {
-	fn from(image: RgbImage) -> Self {
+impl From<Image> for MaybeImage {
+	fn from(image: Image) -> Self {
 		Self::Image(image)
 	}
 }
@@ -191,11 +193,13 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
-	pub fn disconnected_to_active(
+	pub fn disconnected_to_active<T>(
 		&mut self,
-		camera: CameraDevice,
+		camera: T,
 		occupied_indices: OccupiedIndices,
-	) {
+	) where
+		T: CameraLike + 'static,
+	{
 		let inner = self.take_inner();
 		let new_inner = match inner {
 			ConnectionStatus::Disconnected { disconnected } => {
@@ -225,11 +229,13 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
-	pub fn limbo_to_active(
+	pub fn limbo_to_active<T>(
 		&mut self,
-		camera: CameraDevice,
+		camera: T,
 		occupied_indices: OccupiedIndices,
-	) {
+	) where
+		T: CameraLike + 'static,
+	{
 		let inner = self.take_inner();
 		let new_inner = match inner {
 			ConnectionStatus::Limbo { limbo } => {
@@ -454,15 +460,14 @@ impl PersistEntry {
 		&mut self,
 		ident: &Identifier,
 		name: &str,
-		image: RgbImage,
+		image: Image,
 	) -> Option<BatchItem<'_>> {
 		let active = self.get_active_mut()?;
 
 		let err_acc = active.err_accumulation();
 		if err_acc > 0 {
 			logger().lock().unwrap().log_warn(&format!(
-				"Camera at id `{}` with name '{}' has an err accumulation of `{}`",
-				ident, name, err_acc
+				"Camera at id `{ident}` with name '{name}' has an err accumulation of `{err_acc}`"
 			));
 		}
 

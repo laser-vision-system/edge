@@ -1,7 +1,7 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{collections::HashMap, env, error};
+use std::{collections::HashMap, error};
 
 use server_edge_datatypes::{
 	edge::{
@@ -19,9 +19,7 @@ use crate::{
 		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
 	},
 	settings::{EnvVariables, Settings},
-	tcam_interface::{
-		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
-	},
+	tcam_interface::{Persistence, WhyNo, polling::ConnectionDetail},
 	vision_processor::{VisionInterface as _, vision},
 };
 
@@ -134,7 +132,7 @@ impl Conductor {
 			}
 
 			if item.send_to_server {
-				let mut encoded = CameraDevice::encode_image(&item.image);
+				let mut encoded = item.image.encode();
 				let result =
 					websocket.send_image(item.camera_id, &mut encoded).await;
 				_ = result.inspect_err(|_| {
