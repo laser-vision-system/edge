@@ -1,7 +1,8 @@
 use std::{cmp::Ordering, io::Cursor};
 
-use image::codecs::jpeg;
-use image::{DynamicImage, RgbImage};
+use image::{DynamicImage, RgbImage, imageops::FilterType};
+use image::{GenericImageView, codecs::jpeg};
+
 use nokhwa::{
 	Buffer, NokhwaError, OpenRequest, OpenedCamera, StreamCamera,
 	format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
@@ -27,7 +28,7 @@ use super::{
 use crate::{
 	error::{EdgeError, Result},
 	logger::logger,
-	settings::CAMERA_BUFFER_COUNT,
+	settings::{CAMERA_BUFFER_COUNT, IMAGE_HEIGHT, IMAGE_WIDTH},
 };
 
 /// An abstraction over the nokhwa camera objects.
@@ -142,10 +143,9 @@ impl CameraDevice {
 			.map_err(|why| CameraDeviceError::from(FrameDecodeCorruption::from(why)))?;
 
 		let frame = DynamicImage::ImageRgb8(img_buffer);
-		let new = frame
-			.crop_imm(0, 0, frame.width(), frame.height())
-			.into_rgb8();
-		Ok(new)
+		let cropped = frame.crop_imm(0, 0, frame.width(), frame.height());
+		let resized = enusure_dimensions(cropped).into_rgb8();
+		Ok(resized)
 	}
 
 	// == Configurations ==
@@ -423,6 +423,15 @@ fn select_decode_format(buf: Buffer) -> Result<RgbConversion> {
 			));
 			Err(err)
 		},
+	}
+}
+
+fn enusure_dimensions(image: DynamicImage) -> DynamicImage {
+	if image.dimensions() != (IMAGE_WIDTH, IMAGE_HEIGHT) {
+		// TODO: Check which type of resize method we want to use.
+		image.resize_exact(IMAGE_WIDTH, IMAGE_HEIGHT, FilterType::Triangle)
+	} else {
+		image
 	}
 }
 
