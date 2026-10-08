@@ -1,6 +1,8 @@
 FROM --platform=$BUILDPLATFORM rust:bookworm AS builder
 WORKDIR /app
 
+ARG BUILD_TARGET=dev
+
 RUN apt-get update && apt-get install -y clang
 RUN rustup toolchain install nightly
 RUN rustup override set nightly
