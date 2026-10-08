@@ -129,19 +129,10 @@ impl Active {
 	) -> Result<RgbImage> {
 		let frame = self.get_camera_mut().get_frame_buffer()?;
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Successfully read frame from camera");
 		self.data.reduce_error(camera_err_decrement);
 
 		// TODO: Inspect error reason. If out of memory, send log and panic.
 		let image = self.get_camera_mut().decode_buffer(frame)?;
-
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Successfully decoded image from camera");
 
 		Ok(image)
 	}
