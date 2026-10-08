@@ -3,11 +3,11 @@ use std::fmt;
 use super::{BatchItem, SessionToken, VisionInterface, VisionState};
 
 #[derive(Clone, Default)]
-pub struct Empty {
+pub struct Inactive {
 	session: SessionToken,
 }
 
-impl Empty {
+impl Inactive {
 	pub fn new() -> Self {
 		Self {
 			session: SessionToken::new(),
@@ -15,26 +15,26 @@ impl Empty {
 	}
 }
 
-impl VisionInterface for Empty {
+impl VisionInterface for Inactive {
 	fn process(&mut self, _: &mut [BatchItem]) {}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::Empty {
+		VisionState::Inactive {
 			handle: self.session.downgrade(),
 			data: ExternalData,
 		}
 	}
 }
 
-impl fmt::Debug for Empty {
+impl fmt::Debug for Inactive {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "Empty")
+		write!(f, "Inactive")
 	}
 }
 
-impl fmt::Display for Empty {
+impl fmt::Display for Inactive {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "Empty")
+		write!(f, "Inactive")
 	}
 }
 
@@ -44,6 +44,6 @@ pub struct ExternalData;
 
 impl fmt::Display for ExternalData {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "ExternalData for Empty")
+		write!(f, "ExternalData for Inactive")
 	}
 }
