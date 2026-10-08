@@ -302,9 +302,13 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	Logger::initialise_logger(env_variables.verbosity());
 
 	loop {
-		let (loop_websocket, loop_settings) =
-			assert_connection(websocket, settings, &mut conductor.persistence)
-				.await;
+		let (loop_websocket, loop_settings) = assert_connection(
+			websocket,
+			settings,
+			&mut conductor.persistence,
+			&env_variables,
+		)
+		.await;
 		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);
