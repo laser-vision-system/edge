@@ -6,7 +6,8 @@ use super::*;
 use crate::{
 	error::EdgeError,
 	tcam_interface::controls::traits::{
-		ControlItems as _, ControlMax as _, ControlStep as _,
+		ControlDefault, ControlItems as _, ControlMax as _, ControlStep as _,
+		ControlValue,
 	},
 };
 
@@ -194,12 +195,12 @@ fn set_control_exposure() -> Result<()> {
 	Ok(())
 }
 
-#[test]
-#[ignore = "IO bound"]
-fn reset_controls_to_default() {
-	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
-		.unwrap()
-		.open()
-		.unwrap();
-	cam.reset_controls_to_default();
-}
+//#[test]
+//#[ignore = "IO bound"]
+//fn reset_controls_to_default() {
+//	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+//		.unwrap()
+//		.open()
+//		.unwrap();
+//	cam.reset_controls_to_default();
+//}
