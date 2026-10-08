@@ -76,7 +76,9 @@ impl FrameBuffer {
 
 impl From<Buffer> for FrameBuffer {
 	fn from(value: Buffer) -> Self {
-		Self { inner: value }
+		Self {
+			inner: value,
+		}
 	}
 }
 
@@ -115,48 +117,60 @@ impl DerefMut for Image {
 
 impl From<RgbImage> for Image {
 	fn from(value: RgbImage) -> Self {
-		Self { inner: value }
+		Self {
+			inner: value,
+		}
 	}
 }
 
 /// Helper function to choose the decode method.
 fn select_decode_format(buf: Buffer) -> Result<RgbConversion> {
 	match buf.source_frame_format() {
-		FrameFormat::MJPEG => Ok(Frame::<Mjpeg>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
-		FrameFormat::YUYV => Ok(Frame::<Yuyv>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
-		FrameFormat::NV12 => Ok(Frame::<Nv12>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
-		FrameFormat::RAWRGB => Ok(Frame::<RawRgb>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
-		FrameFormat::RAWBGR => Ok(Frame::<RawBgr>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
+		FrameFormat::MJPEG => {
+			Ok(Frame::<Mjpeg>::try_new(buf)
+				.map_err(|why| {
+					EdgeError::from(CameraDeviceError::from(
+						SelectDecodeFormat::from(why),
+					))
+				})?
+				.into_rgb())
+		},
+		FrameFormat::YUYV => {
+			Ok(Frame::<Yuyv>::try_new(buf)
+				.map_err(|why| {
+					EdgeError::from(CameraDeviceError::from(
+						SelectDecodeFormat::from(why),
+					))
+				})?
+				.into_rgb())
+		},
+		FrameFormat::NV12 => {
+			Ok(Frame::<Nv12>::try_new(buf)
+				.map_err(|why| {
+					EdgeError::from(CameraDeviceError::from(
+						SelectDecodeFormat::from(why),
+					))
+				})?
+				.into_rgb())
+		},
+		FrameFormat::RAWRGB => {
+			Ok(Frame::<RawRgb>::try_new(buf)
+				.map_err(|why| {
+					EdgeError::from(CameraDeviceError::from(
+						SelectDecodeFormat::from(why),
+					))
+				})?
+				.into_rgb())
+		},
+		FrameFormat::RAWBGR => {
+			Ok(Frame::<RawBgr>::try_new(buf)
+				.map_err(|why| {
+					EdgeError::from(CameraDeviceError::from(
+						SelectDecodeFormat::from(why),
+					))
+				})?
+				.into_rgb())
+		},
 		FrameFormat::GRAY => {
 			let nok_err = NokhwaError::general("GRAY/Luma cameras not support");
 			let err = EdgeError::from(CameraDeviceError::from(

@@ -21,7 +21,10 @@ use image::{
 	RgbImage,
 };
 
-pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
+pub fn benchmark_inference(
+	criterion: &mut Criterion,
+	backend: &str,
+) {
 	let mut cnn = Cnn::new().expect("CNN benchmark requires a valid model");
 	let image = RgbImage::from_pixel(640, 480, Rgb([255, 40, 90]));
 	let mut group =

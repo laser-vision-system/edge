@@ -37,7 +37,10 @@ impl Broken {
 	}
 
 	/// Update the name of this device.
-	pub fn set_name(&mut self, name: String) {
+	pub fn set_name(
+		&mut self,
+		name: String,
+	) {
 		self.name = name;
 	}
 

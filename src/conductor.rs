@@ -232,26 +232,44 @@ impl Conductor {
 	) {
 		let mut results = self.persistence.poll_for_new_cameras();
 
-		let new_cameras = results.extract_if(|_, value| match value {
-			ConnectionDetail::New { .. } => true,
-			ConnectionDetail::Update { .. } => false,
+		let new_cameras = results.extract_if(|_, value| {
+			match value {
+				ConnectionDetail::New {
+					..
+				} => true,
+				ConnectionDetail::Update {
+					..
+				} => false,
+			}
 		});
 
 		let new_cameras: HashMap<_, _> = new_cameras
 			.into_iter()
-			.filter_map(|(key, value)| match value {
-				ConnectionDetail::New { info } => Some((key, info)),
-				ConnectionDetail::Update { .. } => None,
+			.filter_map(|(key, value)| {
+				match value {
+					ConnectionDetail::New {
+						info,
+					} => Some((key, info)),
+					ConnectionDetail::Update {
+						..
+					} => None,
+				}
 			})
 			.collect();
 
 		for (camera_id, update) in results {
-			let ConnectionDetail::Update { status } = update else {
+			let ConnectionDetail::Update {
+				status,
+			} = update
+			else {
 				continue;
 			};
 			_ = websocket
 				.send_text(ServerRequests::UpdateCameraStatus(
-					UpdateCameraStatus { camera_id, status },
+					UpdateCameraStatus {
+						camera_id,
+						status,
+					},
 				))
 				.await;
 		}
@@ -269,7 +287,9 @@ impl Conductor {
 impl Default for Conductor {
 	fn default() -> Self {
 		let persistence = Persistence::default();
-		Self { persistence }
+		Self {
+			persistence,
+		}
 	}
 }
 

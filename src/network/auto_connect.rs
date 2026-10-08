@@ -65,7 +65,10 @@ impl AddressComp {
 }
 
 impl fmt::Display for AddressComp {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(
 			f,
 			"{}{}{}{}",
@@ -114,14 +117,19 @@ async fn get_response(
 		.get(url.to_string())
 		.send()
 		.await
-		.map_err(|why| NetworkError::ReqwestError {
-			reason: why.to_string(),
+		.map_err(|why| {
+			NetworkError::ReqwestError {
+				reason: why.to_string(),
+			}
 		})?
 		.text()
 		.await
 		.map_err(|_| NetworkError::WebSocketUnpack)?;
 
-	Ok(WebSocketResponse { url, message })
+	Ok(WebSocketResponse {
+		url,
+		message,
+	})
 }
 
 async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {

@@ -84,7 +84,9 @@ impl ControlMap {
 			})
 			.collect();
 
-		Self { inner }
+		Self {
+			inner,
+		}
 	}
 
 	#[expect(clippy::expect_used, reason = "Low priority edge case")]
@@ -102,7 +104,9 @@ impl From<Vec<CameraControl>> for ControlMap {
 			.into_iter()
 			.map(|control| (control.control(), control.into()))
 			.collect::<MapType>();
-		Self { inner }
+		Self {
+			inner,
+		}
 	}
 }
 
@@ -121,7 +125,10 @@ impl DerefMut for ControlMap {
 }
 
 impl fmt::Display for ControlMap {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "{}", self.serialise())
 	}
 }

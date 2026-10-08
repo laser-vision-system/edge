@@ -18,7 +18,9 @@ pub struct Invalid {
 
 impl Invalid {
 	pub fn new(occupied_indices: OccupiedIndices) -> Self {
-		Self { occupied_indices }
+		Self {
+			occupied_indices,
+		}
 	}
 
 	/// Map this type to a [`CameraStatus`].

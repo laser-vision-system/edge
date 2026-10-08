@@ -63,15 +63,21 @@ impl Clone for EdgeError {
 		match self {
 			// Down-convert this to a general error because serde_json's error
 			// doesn't implement clone.
-			Self::DecodeControls { reason } => Self::General {
-				reason: format!(
-					"Failed to decode the controls sent by the server: {reason}",
-				),
+			Self::DecodeControls {
+				reason,
+			} => {
+				Self::General {
+					reason: format!(
+						"Failed to decode the controls sent by the server: {reason}",
+					),
+				}
 			},
 			// Down-convert this to a general error because burn's errors
 			// don't implement clone.
-			Self::VisionError(reason) => Self::General {
-				reason: reason.to_string(),
+			Self::VisionError(reason) => {
+				Self::General {
+					reason: reason.to_string(),
+				}
 			},
 			other => other.clone(),
 		}
@@ -80,6 +86,8 @@ impl Clone for EdgeError {
 
 impl From<String> for EdgeError {
 	fn from(value: String) -> Self {
-		EdgeError::General { reason: value }
+		EdgeError::General {
+			reason: value,
+		}
 	}
 }

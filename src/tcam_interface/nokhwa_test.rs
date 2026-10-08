@@ -242,8 +242,10 @@ fn decode_to_rgba(buf: Buffer) -> Result<RgbaConversion, NokhwaError> {
 		FrameFormat::NV12 => Ok(Frame::<Nv12>::try_new(buf)?.into_rgba()),
 		FrameFormat::RAWRGB => Ok(Frame::<RawRgb>::try_new(buf)?.into_rgba()),
 		FrameFormat::RAWBGR => Ok(Frame::<RawBgr>::try_new(buf)?.into_rgba()),
-		FrameFormat::GRAY => Err(NokhwaError::general(
-			"threaded-capture does not support GRAY/Luma cameras",
-		)),
+		FrameFormat::GRAY => {
+			Err(NokhwaError::general(
+				"threaded-capture does not support GRAY/Luma cameras",
+			))
+		},
 	}
 }

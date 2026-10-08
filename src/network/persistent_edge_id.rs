@@ -31,13 +31,15 @@ fn mac_octet_converter(mac_octets: [u8; 6]) -> u64 {
 pub fn get_mac_address() -> Result<u64, NetworkError> {
 	let network_interface = get_network_interface();
 	match network_interface {
-		Some(interface) => match interface.mac {
-			Some(mac) => {
-				let mac_octets = mac.octets();
-				let mac_address = mac_octet_converter(mac_octets);
-				Ok(mac_address)
-			},
-			_ => Err(NetworkError::MacAddress),
+		Some(interface) => {
+			match interface.mac {
+				Some(mac) => {
+					let mac_octets = mac.octets();
+					let mac_address = mac_octet_converter(mac_octets);
+					Ok(mac_address)
+				},
+				_ => Err(NetworkError::MacAddress),
+			}
 		},
 		None => Err(NetworkError::MacAddress),
 	}

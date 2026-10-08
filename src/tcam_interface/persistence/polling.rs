@@ -73,7 +73,10 @@ pub struct AccessPoint {
 }
 
 impl fmt::Display for AccessPoint {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "{}", self.index)?;
 		if self.is_metadata {
 			write!(f, " (metadata device)")?;
@@ -91,7 +94,10 @@ pub struct DeviceConnection {
 }
 
 impl fmt::Display for DeviceConnection {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "{}", self.identifier)?;
 		for point in &self.points {
 			write!(f, "\n\t{point}")?;
@@ -121,7 +127,10 @@ fn convert_to_intermediaries(devices: Vec<CameraInfo>) -> IntermediaryMap {
 	for device in devices {
 		let index = device.index().to_owned();
 		let is_metadata = device.is_metadata();
-		let accesspoint = AccessPoint { index, is_metadata };
+		let accesspoint = AccessPoint {
+			index,
+			is_metadata,
+		};
 		let identifier = KeyType::from(device);
 		let entry: &mut HashSet<_> = map.entry(identifier).or_default();
 		entry.insert(accesspoint);
@@ -136,7 +145,7 @@ impl Persistence {
 	///
 	/// Returns a list of information about newly added cameras.
 	pub fn poll_for_new_cameras(
-		&mut self,
+		&mut self
 	) -> HashMap<CameraId, ConnectionDetail> {
 		let all_devices = query_for_available_cameras();
 		let inter = convert_to_intermediaries(all_devices);
@@ -195,19 +204,25 @@ impl Persistence {
 					let id = connection.identifier.as_ref();
 					let name = active.get_name().to_string();
 					let info = NewCameraInfo::new(name, CameraStatus::Active);
-					let new = ConnectionDetail::New { info };
+					let new = ConnectionDetail::New {
+						info,
+					};
 					Some((*id, new))
 				},
 				None => None,
 			}
 		} else {
 			match update {
-				Some(after) => (before != after).then(|| {
-					let id = connection.identifier.as_ref();
-					let status = after;
-					let update = ConnectionDetail::Update { status };
-					(*id, update)
-				}),
+				Some(after) => {
+					(before != after).then(|| {
+						let id = connection.identifier.as_ref();
+						let status = after;
+						let update = ConnectionDetail::Update {
+							status,
+						};
+						(*id, update)
+					})
+				},
 				None => None,
 			}
 		}

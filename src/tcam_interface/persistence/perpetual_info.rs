@@ -30,7 +30,10 @@ impl PerpetualInfo {
 		self.currently_viewed
 	}
 
-	pub fn set_currently_viewed(&mut self, state: bool) {
+	pub fn set_currently_viewed(
+		&mut self,
+		state: bool,
+	) {
 		self.currently_viewed = state;
 	}
 
@@ -40,7 +43,10 @@ impl PerpetualInfo {
 	}
 
 	/// Mark that this camera has encountered an error.
-	pub fn add_error(&mut self, increment: ErrAccType) {
+	pub fn add_error(
+		&mut self,
+		increment: ErrAccType,
+	) {
 		self.err_accumulation += increment;
 	}
 
@@ -49,7 +55,10 @@ impl PerpetualInfo {
 		reason = "This should be a no-op when err_accumulation is at 0"
 	)]
 	/// Reduce the error by up to an amount.
-	pub fn reduce_error(&mut self, amount: ErrAccType) {
+	pub fn reduce_error(
+		&mut self,
+		amount: ErrAccType,
+	) {
 		if self.err_accumulation > amount {
 			self.err_accumulation -= amount;
 		} else if self.err_accumulation > 0 {
@@ -61,7 +70,10 @@ impl PerpetualInfo {
 		self.calibrate
 	}
 
-	pub fn set_calibrate(&mut self, state: bool) {
+	pub fn set_calibrate(
+		&mut self,
+		state: bool,
+	) {
 		self.calibrate = state;
 	}
 

@@ -96,7 +96,10 @@ impl Logger {
 		}
 	}
 
-	pub fn log_info(&mut self, message: &str) {
+	pub fn log_info(
+		&mut self,
+		message: &str,
+	) {
 		if self.verbosity < 3 {
 			return;
 		}
@@ -114,7 +117,10 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_warn(&mut self, message: &str) {
+	pub fn log_warn(
+		&mut self,
+		message: &str,
+	) {
 		if self.verbosity < 2 {
 			return;
 		}
@@ -132,7 +138,10 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_error(&mut self, error: &EdgeError) {
+	pub fn log_error(
+		&mut self,
+		error: &EdgeError,
+	) {
 		if self.verbosity < 1 {
 			return;
 		}

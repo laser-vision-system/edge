@@ -69,7 +69,10 @@ impl ControlValue for ConValueInteger {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -103,7 +106,10 @@ impl ControlValue for ConValueFloat {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -147,7 +153,10 @@ impl ControlValue for ConValueBoolean {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -190,7 +199,10 @@ impl ControlValue for ConValueString {
 		self.0.clone()
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -233,7 +245,10 @@ impl ControlValue for ConValueBytes {
 		self.0.clone()
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -277,7 +292,10 @@ impl ControlValue for ConValueKeyValue {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -311,7 +329,10 @@ impl ControlValue for ConValuePoint {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -355,7 +376,10 @@ impl ControlValue for ConValueEnum {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -389,7 +413,10 @@ impl ControlValue for ConValueRGB {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }
@@ -430,7 +457,10 @@ impl ControlValue for ConValueMenu {
 		self.0
 	}
 
-	fn set_value(&mut self, value: Self::ConType) {
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	) {
 		self.0 = value;
 	}
 }

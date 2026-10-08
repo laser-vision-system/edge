@@ -74,7 +74,9 @@ impl EnvVariables {
 			    * invalid */
 		};
 
-		Self { verbosity }
+		Self {
+			verbosity,
+		}
 	}
 
 	fn get_env_variable<T>(name: &str) -> Result<T, EdgeError>
@@ -83,19 +85,25 @@ impl EnvVariables {
 		T::Err: Display,
 	{
 		match env::var(name) {
-			Ok(value) => match value.parse::<T>() {
-				Ok(parsed_value) => Ok(parsed_value),
-				Err(e) => Err(EdgeError::General {
-					reason: format!(
-						"Could not parse {name} environment variable to the expected type: {e}"
-					),
-				}),
+			Ok(value) => {
+				match value.parse::<T>() {
+					Ok(parsed_value) => Ok(parsed_value),
+					Err(e) => {
+						Err(EdgeError::General {
+							reason: format!(
+								"Could not parse {name} environment variable to the expected type: {e}"
+							),
+						})
+					},
+				}
 			},
-			Err(e) => Err(EdgeError::General {
-				reason: format!(
-					"Error reading {name} environment variable: {e}"
-				),
-			}),
+			Err(e) => {
+				Err(EdgeError::General {
+					reason: format!(
+						"Error reading {name} environment variable: {e}"
+					),
+				})
+			},
 		}
 	}
 

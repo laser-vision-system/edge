@@ -64,7 +64,10 @@ impl VisionGuard {
 		clippy::expect_used,
 		reason = "Closely protected internal option type"
 	)]
-	pub fn swap(&self, swap_to: VisionTechnique) -> Result<()> {
+	pub fn swap(
+		&self,
+		swap_to: VisionTechnique,
+	) -> Result<()> {
 		let inner = self.inner.lock().unwrap_or_else(|err| {
 			logger()
 				.lock()
@@ -83,7 +86,10 @@ impl VisionGuard {
 		clippy::expect_used,
 		reason = "Closely protected internal option type"
 	)]
-	pub fn interact<F, R>(&self, func: F) -> R
+	pub fn interact<F, R>(
+		&self,
+		func: F,
+	) -> R
 	where
 		F: FnOnce(&mut VisionVariant) -> R,
 	{
@@ -137,13 +143,19 @@ impl SessionHandle {
 /// intensity measurement.
 pub trait VisionInterface: fmt::Debug + fmt::Display {
 	/// Process all frames in a single batch, setting the return value in-place.
-	fn process(&mut self, batch: &mut [BatchItem]);
+	fn process(
+		&mut self,
+		batch: &mut [BatchItem],
+	);
 
 	/// Get a new [`VisionState`] for this technique.
 	fn new_state(&self) -> VisionState;
 
 	/// Make sure the batch item has a valid [`VisionState`].
-	fn validate_batch(&self, batch: &mut BatchItem) {
+	fn validate_batch(
+		&self,
+		batch: &mut BatchItem,
+	) {
 		if !batch.state.is_valid() {
 			*batch.state = self.new_state();
 		}
@@ -178,7 +190,10 @@ impl VisionVariant {
 	/// This method statically asserts exhaustiveness between
 	/// [this](VisionVariant) and [`VisionTechnique`].
 	#[expect(clippy::unwrap_in_result, reason = "Logger")]
-	fn swap(&mut self, swap_to: VisionTechnique) -> Result<()> {
+	fn swap(
+		&mut self,
+		swap_to: VisionTechnique,
+	) -> Result<()> {
 		if self.identifier() == swap_to {
 			logger()
 				.lock()
@@ -223,7 +238,10 @@ impl VisionVariant {
 }
 
 impl VisionInterface for VisionVariant {
-	fn process(&mut self, batch: &mut [BatchItem]) {
+	fn process(
+		&mut self,
+		batch: &mut [BatchItem],
+	) {
 		if batch.is_empty() {
 			return;
 		}
@@ -255,7 +273,10 @@ impl VisionInterface for VisionVariant {
 
 // Pass-through implementation.
 impl fmt::Display for VisionVariant {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		match self {
 			Self::Inactive(empty) => empty.fmt(f),
 			Self::AvgLightness(demonstration) => demonstration.fmt(f),
@@ -291,19 +312,35 @@ impl VisionState {
 	/// active.
 	pub fn is_valid(&self) -> bool {
 		match self {
-			Self::Inactive { handle, .. }
-			| Self::AvgLightness { handle, .. }
-			| Self::Cnn { handle, .. }
-			| Self::Diff { handle, .. } => handle.is_valid(),
+			Self::Inactive {
+				handle, ..
+			}
+			| Self::AvgLightness {
+				handle, ..
+			}
+			| Self::Cnn {
+				handle, ..
+			}
+			| Self::Diff {
+				handle, ..
+			} => handle.is_valid(),
 		}
 	}
 
 	pub fn get_deviation(&self) -> Option<f32> {
 		match self {
-			Self::Inactive { .. } => None,
-			Self::AvgLightness { data, .. } => data.deviation,
-			Self::Cnn { data, .. } => data.deviation,
-			Self::Diff { data, .. } => data.deviation,
+			Self::Inactive {
+				..
+			} => None,
+			Self::AvgLightness {
+				data, ..
+			} => data.deviation,
+			Self::Cnn {
+				data, ..
+			} => data.deviation,
+			Self::Diff {
+				data, ..
+			} => data.deviation,
 		}
 	}
 }
@@ -315,12 +352,23 @@ impl Default for VisionState {
 }
 
 impl fmt::Display for VisionState {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		match self {
-			Self::Inactive { data, .. } => data.fmt(f),
-			Self::AvgLightness { data, .. } => data.fmt(f),
-			Self::Cnn { data, .. } => data.fmt(f),
-			Self::Diff { data, .. } => data.fmt(f),
+			Self::Inactive {
+				data, ..
+			} => data.fmt(f),
+			Self::AvgLightness {
+				data, ..
+			} => data.fmt(f),
+			Self::Cnn {
+				data, ..
+			} => data.fmt(f),
+			Self::Diff {
+				data, ..
+			} => data.fmt(f),
 		}
 	}
 }
@@ -357,7 +405,10 @@ impl<'a> BatchItem<'a> {
 }
 
 impl fmt::Display for BatchItem<'_> {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		writeln!(
 			f,
 			"Batch Item: [\n\tID: {}\n\tState: {}\n\tImage\n\tCalibrate: {}\n\tSend: {}\n]",

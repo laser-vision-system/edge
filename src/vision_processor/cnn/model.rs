@@ -75,7 +75,10 @@ impl<B: Backend> LaserModel<B> {
 		Self::init(device)
 	}
 
-	pub fn load<P>(path: P, device: &B::Device) -> Result<Self>
+	pub fn load<P>(
+		path: P,
+		device: &B::Device,
+	) -> Result<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -97,7 +100,10 @@ impl<B: Backend> LaserModel<B> {
 	/// # Shapes
 	///   - Images \[`batch_size`, channels, height, width\]
 	///   - Output \[`batch_size`, 1\]
-	pub fn forward(&self, images: Tensor<B, 4>) -> Tensor<B, 2> {
+	pub fn forward(
+		&self,
+		images: Tensor<B, 4>,
+	) -> Tensor<B, 2> {
 		let [batch_size, channels, _, _] = images.dims();
 		debug_assert_eq!(channels, 3, "expected an RGB tensor");
 

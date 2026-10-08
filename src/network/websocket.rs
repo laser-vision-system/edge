@@ -47,7 +47,9 @@ pub struct WebSocket {
 
 impl WebSocket {
 	pub fn new(inner: WebsocketType) -> Self {
-		Self { inner }
+		Self {
+			inner,
+		}
 	}
 
 	#[expect(
@@ -57,7 +59,9 @@ impl WebSocket {
 	#[expect(clippy::expect_used, reason = "WIP development")]
 	pub async fn websocket_connect(url: &str) -> Self {
 		let (stream, _) = connect_async(url).await.expect("Failed to connect");
-		Self { inner: stream }
+		Self {
+			inner: stream,
+		}
 	}
 
 	pub fn is_terminated(&self) -> bool {
@@ -74,7 +78,7 @@ impl WebSocket {
 	}
 
 	pub async fn keep_alive(
-		&mut self,
+		&mut self
 	) -> Result<(), Box<dyn error::Error + Send + Sync>> {
 		let msg = "hello";
 		self.inner.send(Message::Pong(Bytes::from(msg))).await?;

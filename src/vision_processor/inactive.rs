@@ -21,7 +21,10 @@ impl Inactive {
 }
 
 impl VisionInterface for Inactive {
-	fn process(&mut self, _: &mut [BatchItem]) {
+	fn process(
+		&mut self,
+		_: &mut [BatchItem],
+	) {
 	}
 
 	fn new_state(&self) -> VisionState {
@@ -33,13 +36,19 @@ impl VisionInterface for Inactive {
 }
 
 impl fmt::Debug for Inactive {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "Inactive")
 	}
 }
 
 impl fmt::Display for Inactive {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "Inactive")
 	}
 }
@@ -49,7 +58,10 @@ impl fmt::Display for Inactive {
 pub struct ExternalData;
 
 impl fmt::Display for ExternalData {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "ExternalData for Inactive")
 	}
 }

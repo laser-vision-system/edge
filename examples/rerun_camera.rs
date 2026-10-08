@@ -35,18 +35,35 @@ impl Context {
 			RecordingStreamBuilder::new("cam_test_harness").spawn()?;
 		let demo = AvgLightness::default();
 		let state = demo.new_state();
-		Ok(Context { rec, demo, state })
+		Ok(Context {
+			rec,
+			demo,
+			state,
+		})
 	}
 
-	pub fn send_image(&self, path: &str, image: &rerun::Image) {
+	pub fn send_image(
+		&self,
+		path: &str,
+		image: &rerun::Image,
+	) {
 		self.rec.log(path, image).unwrap();
 	}
 
-	pub fn send_scalar(&self, path: &str, value: f64) {
+	pub fn send_scalar(
+		&self,
+		path: &str,
+		value: f64,
+	) {
 		self.rec.log(path, &rerun::Scalars::single(value)).unwrap();
 	}
 
-	pub fn log_frame(&mut self, path: &str, frame: Image, incr: u8) {
+	pub fn log_frame(
+		&mut self,
+		path: &str,
+		frame: Image,
+		incr: u8,
+	) {
 		let rerun_image = rerun::Image::from_elements(
 			&frame,
 			[frame.width(), frame.height()],
@@ -64,7 +81,10 @@ impl Context {
 		let mut batched = [batch];
 		self.demo.process(&mut batched);
 
-		let VisionState::AvgLightness { data, .. } = &self.state else {
+		let VisionState::AvgLightness {
+			data, ..
+		} = &self.state
+		else {
 			return;
 		};
 

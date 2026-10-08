@@ -57,7 +57,10 @@ pub trait CameraLike {
 
 	fn get_controls(&self) -> Result<ControlMap>;
 
-	fn get_control(&self, id: KnownCameraControl) -> Result<CamControl>;
+	fn get_control(
+		&self,
+		id: KnownCameraControl,
+	) -> Result<CamControl>;
 
 	fn set_control(
 		&mut self,
@@ -65,7 +68,10 @@ pub trait CameraLike {
 		value: ControlValueSetter,
 	) -> Result<()>;
 
-	fn set_controls(&mut self, controls: ControlMap) -> Result<()>;
+	fn set_controls(
+		&mut self,
+		controls: ControlMap,
+	) -> Result<()>;
 }
 
 /// An abstraction over the nokhwa camera objects.
@@ -87,9 +93,11 @@ impl CameraDevice {
 
 		let opened =
 			open_with_buffers(index, OpenRequest::any(), CAMERA_BUFFER_COUNT)
-				.map_err(|why| CameraDeviceError::NokhwaInitialisation {
-				index: index_str,
-				inner: NokhwaInitialisation::from(why),
+				.map_err(|why| {
+				CameraDeviceError::NokhwaInitialisation {
+					index: index_str,
+					inner: NokhwaInitialisation::from(why),
+				}
 			})?;
 
 		let stream_camera = match opened {
@@ -218,7 +226,10 @@ impl CameraLike for CameraDevice {
 	}
 
 	/// Get a camera control by ID.
-	fn get_control(&self, id: KnownCameraControl) -> Result<CamControl> {
+	fn get_control(
+		&self,
+		id: KnownCameraControl,
+	) -> Result<CamControl> {
 		self.inner
 			.controls()
 			.map_err(|why| {
@@ -239,7 +250,10 @@ impl CameraLike for CameraDevice {
 		self.set_value(id, value)
 	}
 
-	fn set_controls(&mut self, controls: ControlMap) -> Result<()> {
+	fn set_controls(
+		&mut self,
+		controls: ControlMap,
+	) -> Result<()> {
 		controls.into_inner().into_iter().try_for_each(|(id, val)| {
 			let CamControl::IntegerRange(control) = val else {
 				return Err(EdgeError::from(

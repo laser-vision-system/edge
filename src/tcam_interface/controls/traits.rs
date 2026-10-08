@@ -110,7 +110,10 @@ pub trait ControlValue {
 
 	fn get_value(&self) -> Self::ConType;
 	// TODO: Maybe make this hidden outside of the control description.
-	fn set_value(&mut self, value: Self::ConType);
+	fn set_value(
+		&mut self,
+		value: Self::ConType,
+	);
 }
 
 /// A type that wraps a [`ControlValue`] with other control fields.
@@ -119,7 +122,10 @@ pub trait ControlDescription {
 	type ConType: ValidControlValue;
 
 	fn get_id(&self) -> KnownCameraControl;
-	fn set_value(&mut self, value: Self::ValueType) -> Result<()>;
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<()>;
 	fn get_value(&self) -> Self::ValueType;
 }
 
@@ -143,7 +149,10 @@ pub trait ControlMin: ControlDescription {
 
 	fn get_min(&self) -> Self::MinType;
 
-	fn valid(&self, value: Self::MinType) -> bool {
+	fn valid(
+		&self,
+		value: Self::MinType,
+	) -> bool {
 		value >= self.get_min()
 	}
 }
@@ -157,7 +166,10 @@ pub trait ControlMax: ControlDescription {
 
 	fn get_max(&self) -> Self::MaxType;
 
-	fn valid(&self, value: Self::MaxType) -> bool {
+	fn valid(
+		&self,
+		value: Self::MaxType,
+	) -> bool {
 		value <= self.get_max()
 	}
 }
@@ -171,7 +183,10 @@ pub trait ControlStep: ControlDescription {
 
 	fn get_step(&self) -> Self::StepType;
 	// TODO: Default implementation.
-	fn valid(&self, value: Self::StepType) -> bool;
+	fn valid(
+		&self,
+		value: Self::StepType,
+	) -> bool;
 }
 
 /// A type that supports the `possible` field.
@@ -183,7 +198,10 @@ pub trait ControlPossible: ControlDescription {
 
 	fn get_possible(&self) -> Self::PossibleType;
 	// TODO: Default implementation.
-	fn valid(&self, value: &Self::ConType) -> bool;
+	fn valid(
+		&self,
+		value: &Self::ConType,
+	) -> bool;
 }
 
 /// A type that supports the `items` field.
@@ -191,5 +209,8 @@ pub trait ControlItems: ControlDescription {
 	type ItemType: ValidItemValue;
 
 	fn get_items(&self) -> Self::ItemType;
-	fn valid(&self, value: Self::ConType) -> bool;
+	fn valid(
+		&self,
+		value: Self::ConType,
+	) -> bool;
 }

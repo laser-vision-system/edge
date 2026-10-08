@@ -50,9 +50,15 @@ impl AvgLightness {
 }
 
 impl VisionInterface for AvgLightness {
-	fn process(&mut self, batch: &mut [BatchItem]) {
+	fn process(
+		&mut self,
+		batch: &mut [BatchItem],
+	) {
 		for item in batch {
-			let VisionState::AvgLightness { data, .. } = item.state else {
+			let VisionState::AvgLightness {
+				data, ..
+			} = item.state
+			else {
 				// TODO: This should raise an error.
 				continue;
 			};
@@ -84,13 +90,19 @@ impl VisionInterface for AvgLightness {
 }
 
 impl fmt::Debug for AvgLightness {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "AvgLightness")
 	}
 }
 
 impl fmt::Display for AvgLightness {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "AvgLightness")
 	}
 }
@@ -104,7 +116,10 @@ pub struct ExternalData {
 }
 
 impl fmt::Display for ExternalData {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "ExternalData for AvgLightness: {:?}", self.setpoint)
 	}
 }
