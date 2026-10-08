@@ -105,10 +105,14 @@ impl Conductor {
 
 		logger().lock().unwrap().send_logs();
 
+		_ = websocket.keep_alive().await;
+
 		// Vision
 		vision().interact(|vision| {
 			vision.process(&mut batch_items);
 		});
+
+		_ = websocket.keep_alive().await;
 
 		logger().lock().unwrap().send_logs();
 
