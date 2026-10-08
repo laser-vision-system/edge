@@ -176,20 +176,16 @@ pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> WebSocket {
 		ServerRequests::InitialiseConnection(InitialiseConnection {
 			edge_id: get_mac_address().unwrap(),
 		});
-	match websocket.send_text(request_enum).await {
-		Ok(()) => websocket,
-		Err(_) => websocket,
-	}
+	_ = websocket.send_text(request_enum).await;
+	websocket
 }
 
 pub async fn send_camera_list(
 	persistence: &mut Persistence,
 	mut websocket: WebSocket,
 ) -> WebSocket {
-	match websocket.send_text(persistence.get_current_cameras()).await {
-		Ok(()) => websocket,
-		Err(_) => websocket,
-	}
+	_ = websocket.send_text(persistence.get_current_cameras()).await;
+	websocket
 }
 
 pub async fn assert_connection(
@@ -240,27 +236,27 @@ async fn try_connect_once(
 	_env_variables: &EnvVariables
 ) -> Result<(WebSocket, Settings)> {
 	let websocket_url = if let Ok(url) = env::var("SERVER_URL") {
- 			if url.is_empty() {
- 				logger()
- 					.lock()
- 					.unwrap()
- 					.log_info("Connecting using auto connect");
- 				let urls = identify_network();
- 				get_websocket_url(urls).await?
- 			} else {
- 				logger().lock().unwrap().log_info(&format!(
- 					"Connecting to provided server address: {url}"
- 				));
- 				format!("ws://{url}/edge_ws")
- 			}
- 		} else {
- 			logger()
- 				.lock()
- 				.unwrap()
- 				.log_info("Connecting using auto connect");
- 			let urls = identify_network();
- 			get_websocket_url(urls).await?
- 		};
+		if url.is_empty() {
+			logger()
+				.lock()
+				.unwrap()
+				.log_info("Connecting using auto connect");
+			let urls = identify_network();
+			get_websocket_url(urls).await?
+		} else {
+			logger().lock().unwrap().log_info(&format!(
+				"Connecting to provided server address: {url}"
+			));
+			format!("ws://{url}/edge_ws")
+		}
+	} else {
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("Connecting using auto connect");
+		let urls = identify_network();
+		get_websocket_url(urls).await?
+	};
 
 	let (stream, _) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {
