@@ -40,6 +40,7 @@ cnn-model-zero-copy = [
 # Load the model from file at runtime without zero-copy.
 cnn-model-file = [
 ]
+
 [dependencies]
 burn = { version = "0.21", default-features = false, features = [
 	"std",
