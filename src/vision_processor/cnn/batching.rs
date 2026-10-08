@@ -13,10 +13,13 @@ use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_PIXELS, IMAGE_WIDTH};
 	clippy::trivially_copy_pass_by_ref,
 	reason = "Type may change with feature flag"
 )]
-pub(super) fn images_to_tensor<'a>(
-	images: impl ExactSizeIterator<Item = &'a RgbImage>,
+pub(super) fn images_to_tensor<'a, I>(
+	images: I,
 	device: &BackendDevice,
-) -> Tensor<Backend, 4> {
+) -> Tensor<Backend, 4>
+where
+	I: ExactSizeIterator<Item = &'a RgbImage>,
+{
 	let batch_size = images.len();
 	let image_size = IMAGE_PIXELS * 3;
 	let mut values = vec![0; batch_size * image_size];
