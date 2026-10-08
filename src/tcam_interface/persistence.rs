@@ -4,26 +4,51 @@ pub mod polling;
 mod states;
 
 use std::{
-	borrow::{Borrow, BorrowMut},
-	collections::{HashMap, HashSet},
+	borrow::{
+		Borrow,
+		BorrowMut,
+	},
+	collections::{
+		HashMap,
+		HashSet,
+	},
 	hash::RandomState,
 };
 
 use nokhwa::utils::CameraIndex;
 use server_edge_datatypes::{
 	edge::{
-		NewCameraInfo, RegisterCameras, ServerRequests, SetNameCamera,
-		Setpoint, StartViewingCamera, StopViewingCamera,
+		NewCameraInfo,
+		RegisterCameras,
+		ServerRequests,
+		SetNameCamera,
+		Setpoint,
+		StartViewingCamera,
+		StopViewingCamera,
 	},
-	shared::{CameraId, Configuration, ViewCameraConfig},
+	shared::{
+		CameraId,
+		Configuration,
+		ViewCameraConfig,
+	},
 };
 
 pub use self::{
 	perpetual_info::PerpetualInfo,
-	persist_entry::{MaybeImage, PersistEntry, WhyNo},
+	persist_entry::{
+		MaybeImage,
+		PersistEntry,
+		WhyNo,
+	},
 };
-use super::{Identifier, PersistenceError};
-use crate::{error::EdgeError, vision_processor::BatchItem};
+use super::{
+	Identifier,
+	PersistenceError,
+};
+use crate::{
+	error::EdgeError,
+	vision_processor::BatchItem,
+};
 
 pub type ErrAccType = u16;
 
@@ -44,8 +69,14 @@ pub struct StatusChange {
 }
 
 impl StatusChange {
-	fn new(id: CameraId, why: WhyNo) -> Self {
-		Self { id, why }
+	fn new(
+		id: CameraId,
+		why: WhyNo,
+	) -> Self {
+		Self {
+			id,
+			why,
+		}
 	}
 }
 
@@ -78,11 +109,17 @@ impl Persistence {
 			.collect()
 	}
 
-	pub fn get(&self, ident: CameraId) -> Option<&PersistEntry> {
+	pub fn get(
+		&self,
+		ident: CameraId,
+	) -> Option<&PersistEntry> {
 		self.inner.get(&ident)
 	}
 
-	pub fn get_mut(&mut self, ident: CameraId) -> Option<&mut PersistEntry> {
+	pub fn get_mut(
+		&mut self,
+		ident: CameraId,
+	) -> Option<&mut PersistEntry> {
 		self.inner.get_mut(&ident)
 	}
 }
@@ -90,7 +127,11 @@ impl Persistence {
 // Setters.
 impl Persistence {
 	// TODO: Server should send a single request to change viewing state.
-	fn set_currently_viewed(&mut self, id: CameraId, state: bool) {
+	fn set_currently_viewed(
+		&mut self,
+		id: CameraId,
+		state: bool,
+	) {
 		if let Some(entry) = self.get_mut(id) {
 			entry.set_currently_viewed(state);
 		} else {
@@ -98,7 +139,10 @@ impl Persistence {
 		}
 	}
 
-	pub fn set_entry_name(&mut self, request: SetNameCamera) {
+	pub fn set_entry_name(
+		&mut self,
+		request: SetNameCamera,
+	) {
 		if let Some(entry) = self.get_mut(request.camera_id) {
 			entry.set_name(request.name);
 		} else {
@@ -110,7 +154,10 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	pub fn start_viewing_camera(&mut self, request: StartViewingCamera) {
+	pub fn start_viewing_camera(
+		&mut self,
+		request: StartViewingCamera,
+	) {
 		self.set_currently_viewed(request.camera_id, true);
 	}
 
@@ -118,7 +165,10 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	pub fn stop_viewing_camera(&mut self, request: StopViewingCamera) {
+	pub fn stop_viewing_camera(
+		&mut self,
+		request: StopViewingCamera,
+	) {
 		self.set_currently_viewed(request.camera_id, false);
 	}
 
@@ -126,7 +176,10 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	pub fn set_configuration(&mut self, request: Configuration) {
+	pub fn set_configuration(
+		&mut self,
+		request: Configuration,
+	) {
 		let Some(entry) = self.get_mut(request.camera_id) else {
 			EdgeError::from(PersistenceError::UnknownCameraId).log();
 			return;
@@ -182,7 +235,10 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	pub fn request_calibration(&mut self, request: Setpoint) {
+	pub fn request_calibration(
+		&mut self,
+		request: Setpoint,
+	) {
 		if let Some(entry) = self.get_mut(request.camera_id) {
 			entry.request_calibration();
 		} else {
@@ -252,13 +308,15 @@ impl Persistence {
 							.try_make_batch_item_with(ident, &name, image)?;
 						Some((Some(batch_item), None))
 					},
-					MaybeImage::WhyNo(whyno) => Some((
-						None,
-						Some(StatusChange::new(
-							CameraId::from(ident.clone()),
-							whyno,
-						)),
-					)),
+					MaybeImage::WhyNo(whyno) => {
+						Some((
+							None,
+							Some(StatusChange::new(
+								CameraId::from(ident.clone()),
+								whyno,
+							)),
+						))
+					},
 				}
 			})
 			.unzip();

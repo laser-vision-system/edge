@@ -36,8 +36,16 @@ jobs:
         include:
           - os: ubuntu-22.04-arm
             arch: arm64
+            build: dev
           - os: ubuntu-22.04
             arch: amd64
+            build: release
+          - os: ubuntu-22.04-arm
+            arch: arm64
+            build: release
+          - os: ubuntu-22.04
+            arch: amd64
+            build: dev
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -49,7 +57,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.arch }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.arch }}-${{ matrix.build}}
           tags: |
               type=ref,event=branch
               type=raw,value=stable,enable={{is_default_branch}}
@@ -69,6 +77,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
+          build-args: BUILD_TARGET=${{ matrix.build }}
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}

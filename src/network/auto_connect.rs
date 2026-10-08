@@ -1,24 +1,39 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{collections::HashSet, env, fmt};
-use std::env::VarError;
+use std::{
+	collections::HashSet,
+	env,
+	fmt,
+};
+
 use pnet_datalink::interfaces;
 use reqwest::Client;
 use server_edge_datatypes::edge::{
-	InitialiseConnection, ServerRequests, Settings,
+	InitialiseConnection,
+	ServerRequests,
+	Settings,
 };
-use tokio::{task::JoinSet, time::interval};
+use tokio::{
+	task::JoinSet,
+	time::interval,
+};
 use tokio_tungstenite::connect_async;
 
 use super::{
-	NetworkError, persistent_edge_id::get_mac_address, websocket::WebSocket,
+	NetworkError,
+	persistent_edge_id::get_mac_address,
+	websocket::WebSocket,
 };
 use crate::{
-	error::Result, logger::logger, settings::AUTO_CONNECT_DELAY,
+	error::Result,
+	logger::logger,
+	settings::{
+		AUTO_CONNECT_DELAY,
+		EnvVariables,
+	},
 	tcam_interface::Persistence,
 };
-use crate::settings::EnvVariables;
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct AddressComp {
@@ -54,7 +69,10 @@ impl AddressComp {
 }
 
 impl fmt::Display for AddressComp {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(
 			f,
 			"{}{}{}{}",
@@ -103,14 +121,19 @@ async fn get_response(
 		.get(url.to_string())
 		.send()
 		.await
-		.map_err(|why| NetworkError::ReqwestError {
-			reason: why.to_string(),
+		.map_err(|why| {
+			NetworkError::ReqwestError {
+				reason: why.to_string(),
+			}
 		})?
 		.text()
 		.await
 		.map_err(|_| NetworkError::WebSocketUnpack)?;
 
-	Ok(WebSocketResponse { url, message })
+	Ok(WebSocketResponse {
+		url,
+		message,
+	})
 }
 
 async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
@@ -199,9 +222,12 @@ async fn loop_until_connection(
 	loop {
 		match try_connect_once(env_variables).await {
 			Ok(yay) => {
-				logger().lock().unwrap().log_info(&"Successfully connected to server!".to_string());
+				logger()
+					.lock()
+					.unwrap()
+					.log_info(&"Successfully connected to server!".to_string());
 				println!("Successfully connected to server!");
-				return yay
+				return yay;
 			},
 			Err(err) => {
 				err.log();
@@ -211,32 +237,37 @@ async fn loop_until_connection(
 	}
 }
 
-async fn try_connect_once(_env_variables: &EnvVariables) -> Result<(WebSocket, Settings)> {
-
+async fn try_connect_once(
+	_env_variables: &EnvVariables
+) -> Result<(WebSocket, Settings)> {
 	let websocket_url = match env::var("SERVER_URL") {
-				Ok(url) => {
-					if url.is_empty() {
-						logger().lock().unwrap().log_info(&"Connecting using auto connect".to_string());
-						println!("Connecting using auto connect");
-						let urls = identify_network();
-						get_websocket_url(urls).await?
-					}
-					else {
-						logger().lock().unwrap().log_info(&format!(
-							"Connecting to provided server address: {url}"
-						));
-						println!("Connecting to provided server address: {url}");
-						format!("ws://{}/edge_ws", url)
-					}
-
-				},
-				Err(..) => {
-					logger().lock().unwrap().log_info(&"Connecting using auto connect".to_string());
-					println!("Connecting using auto connect");
-					let urls = identify_network();
-					get_websocket_url(urls).await?
-				}
-			};
+		Ok(url) => {
+			if url.is_empty() {
+				logger()
+					.lock()
+					.unwrap()
+					.log_info(&"Connecting using auto connect".to_string());
+				println!("Connecting using auto connect");
+				let urls = identify_network();
+				get_websocket_url(urls).await?
+			} else {
+				logger().lock().unwrap().log_info(&format!(
+					"Connecting to provided server address: {url}"
+				));
+				println!("Connecting to provided server address: {url}");
+				format!("ws://{}/edge_ws", url)
+			}
+		},
+		Err(..) => {
+			logger()
+				.lock()
+				.unwrap()
+				.log_info(&"Connecting using auto connect".to_string());
+			println!("Connecting using auto connect");
+			let urls = identify_network();
+			get_websocket_url(urls).await?
+		},
+	};
 
 	let (stream, _) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {

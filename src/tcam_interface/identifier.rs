@@ -11,10 +11,17 @@
 //! All the necessary information is in the [`CameraInfo`] struct.
 
 use std::{
-	borrow::{Borrow, Cow},
+	borrow::{
+		Borrow,
+		Cow,
+	},
 	cmp::Ordering,
 	fmt,
-	hash::{DefaultHasher, Hash, Hasher},
+	hash::{
+		DefaultHasher,
+		Hash,
+		Hasher,
+	},
 };
 
 use nokhwa::utils::CameraInfo;
@@ -51,14 +58,19 @@ impl IdentMetaInfo {
 }
 
 impl fmt::Display for IdentMetaInfo {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "{} {} {}", self.name, self.description, self.misc)
 	}
 }
 
 impl Hash for IdentMetaInfo {
-	fn hash<H>(&self, state: &mut H)
-	where
+	fn hash<H>(
+		&self,
+		state: &mut H,
+	) where
 		H: Hasher,
 	{
 		self.name.hash(state);
@@ -78,13 +90,19 @@ impl From<CameraInfo> for IdentMetaInfo {
 }
 
 impl PartialEq<CameraId> for IdentMetaInfo {
-	fn eq(&self, other: &CameraId) -> bool {
+	fn eq(
+		&self,
+		other: &CameraId,
+	) -> bool {
 		self.calculate_hash().eq(other)
 	}
 }
 
 impl PartialEq<IdentMetaInfo> for CameraId {
-	fn eq(&self, other: &IdentMetaInfo) -> bool {
+	fn eq(
+		&self,
+		other: &IdentMetaInfo,
+	) -> bool {
 		other.calculate_hash().eq(self)
 	}
 }
@@ -127,17 +145,23 @@ impl Borrow<CameraId> for Identifier {
 }
 
 impl fmt::Display for Identifier {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "{}: {}", self.hashed_id, self.meta_info)
 	}
 }
 
 // Assert to the compiler that this type can be equal to itself.
-impl Eq for Identifier {}
+impl Eq for Identifier {
+}
 
 impl Hash for Identifier {
-	fn hash<H>(&self, state: &mut H)
-	where
+	fn hash<H>(
+		&self,
+		state: &mut H,
+	) where
 		H: Hasher,
 	{
 		self.hashed_id.hash(state);
@@ -169,19 +193,28 @@ impl From<Identifier> for CameraId {
 }
 
 impl PartialEq for Identifier {
-	fn eq(&self, other: &Self) -> bool {
+	fn eq(
+		&self,
+		other: &Self,
+	) -> bool {
 		self.hashed_id.eq(&other.hashed_id)
 	}
 }
 
 impl PartialOrd for Identifier {
-	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+	fn partial_cmp(
+		&self,
+		other: &Self,
+	) -> Option<Ordering> {
 		Some(self.cmp(other))
 	}
 }
 
 impl Ord for Identifier {
-	fn cmp(&self, other: &Self) -> Ordering {
+	fn cmp(
+		&self,
+		other: &Self,
+	) -> Ordering {
 		self.hashed_id.cmp(&other.hashed_id)
 	}
 }

@@ -8,7 +8,10 @@
 //! - Creates a callback camera, printing image dimensions. Simultaneously polls
 //!   the camera 5 times and saves the images.
 use std::{
-	fs::{self, OpenOptions},
+	fs::{
+		self,
+		OpenOptions,
+	},
 	io::Write as _,
 	path::Path,
 	thread,
@@ -16,13 +19,34 @@ use std::{
 };
 
 use nokhwa::{
-	self, Buffer, CameraRunner, NokhwaError, OpenRequest, OpenedCamera,
-	RunnerConfig, StreamCamera,
-	format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
-	frame::{Frame, IntoRgb as _, IntoRgba as _, RgbaConversion},
+	self,
+	Buffer,
+	CameraRunner,
+	NokhwaError,
+	OpenRequest,
+	OpenedCamera,
+	RunnerConfig,
+	StreamCamera,
+	format_types::{
+		Mjpeg,
+		Nv12,
+		RawBgr,
+		RawRgb,
+		Yuyv,
+	},
+	frame::{
+		Frame,
+		IntoRgb as _,
+		IntoRgba as _,
+		RgbaConversion,
+	},
 	open,
 	session::open_with_buffers,
-	utils::{CameraIndex, CameraInfo, FrameFormat},
+	utils::{
+		CameraIndex,
+		CameraInfo,
+		FrameFormat,
+	},
 };
 
 use crate::settings::CAMERA_BUFFER_COUNT;
@@ -34,7 +58,7 @@ const OUTPUT_PATH: &str = "./temp/nokhwa_test_output/";
 #[ignore = "IO bound"]
 fn main() {
 	println!("\t==== NOKHWA TEST ====");
-	let cameras = super::CameraDevice::query_for_available_cameras();
+	let cameras = super::query_for_available_cameras();
 	print_available_camera_info(&cameras);
 	let first_camera = cameras.first().unwrap();
 	print_camera_details(first_camera);
@@ -218,8 +242,10 @@ fn decode_to_rgba(buf: Buffer) -> Result<RgbaConversion, NokhwaError> {
 		FrameFormat::NV12 => Ok(Frame::<Nv12>::try_new(buf)?.into_rgba()),
 		FrameFormat::RAWRGB => Ok(Frame::<RawRgb>::try_new(buf)?.into_rgba()),
 		FrameFormat::RAWBGR => Ok(Frame::<RawBgr>::try_new(buf)?.into_rgba()),
-		FrameFormat::GRAY => Err(NokhwaError::general(
-			"threaded-capture does not support GRAY/Luma cameras",
-		)),
+		FrameFormat::GRAY => {
+			Err(NokhwaError::general(
+				"threaded-capture does not support GRAY/Luma cameras",
+			))
+		},
 	}
 }

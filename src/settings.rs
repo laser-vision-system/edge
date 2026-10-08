@@ -12,7 +12,11 @@
 	reason = "Temporarily allow these until environment variables are implemented"
 )]
 
-use std::{fmt::Display, str::FromStr, time::Duration};
+use std::{
+	fmt::Display,
+	str::FromStr,
+	time::Duration,
+};
 
 // ============================================================================
 // Only constants that are necessary for connecting to the server should be
@@ -37,13 +41,18 @@ pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
 /// High number increases latency and memory usage.
 pub const CAMERA_BUFFER_COUNT: u32 = 1;
 
-pub use server_edge_datatypes::edge::Settings;
+pub const IMAGE_WIDTH: u32 = 640;
+pub const IMAGE_HEIGHT: u32 = 480;
+pub const IMAGE_PIXELS: usize = (IMAGE_WIDTH * IMAGE_HEIGHT) as usize;
 
 use std::env;
 
+pub use server_edge_datatypes::edge::Settings;
+
 use crate::error::EdgeError;
 
-/// Contains all environment variables that are used to configure the application.
+/// Contains all environment variables that are used to configure the
+/// application.
 pub struct EnvVariables {
 	// Verbosity level for logging and debugging:
 	// - 0: No logs
@@ -59,12 +68,15 @@ impl EnvVariables {
 		let verbosity = match Self::get_env_variable::<u8>("VERBOSITY") {
 			Ok(v) => v,
 			Err(e) => {
-				eprintln!("{}", e);
+				eprintln!("{e}");
 				1
-			}, // Default to error logs only if the variable is not set or invalid
+			}, /* Default to error logs only if the variable is not set or
+			    * invalid */
 		};
 
-		Self { verbosity }
+		Self {
+			verbosity,
+		}
 	}
 
 	fn get_env_variable<T>(name: &str) -> Result<T, EdgeError>
@@ -73,21 +85,25 @@ impl EnvVariables {
 		T::Err: Display,
 	{
 		match env::var(name) {
-			Ok(value) => match value.parse::<T>() {
-				Ok(parsed_value) => Ok(parsed_value),
-				Err(e) => Err(EdgeError::General {
-					reason: format!(
-						"Could not parse {} environment variable to the expected type: {}",
-						name, e
-					),
-				}),
+			Ok(value) => {
+				match value.parse::<T>() {
+					Ok(parsed_value) => Ok(parsed_value),
+					Err(e) => {
+						Err(EdgeError::General {
+							reason: format!(
+								"Could not parse {name} environment variable to the expected type: {e}"
+							),
+						})
+					},
+				}
 			},
-			Err(e) => Err(EdgeError::General {
-				reason: format!(
-					"Error reading {} environment variable: {}",
-					name, e
-				),
-			}),
+			Err(e) => {
+				Err(EdgeError::General {
+					reason: format!(
+						"Error reading {name} environment variable: {e}"
+					),
+				})
+			},
 		}
 	}
 

@@ -3,20 +3,35 @@
 	reason = "Expect might not always be fulfilled"
 )]
 
-use burn::tensor::{Tensor, TensorData};
-use image::RgbImage;
+use burn::tensor::{
+	Tensor,
+	TensorData,
+};
 
-use super::config::{Backend, BackendDevice};
-use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_PIXELS, IMAGE_WIDTH};
+use super::config::{
+	Backend,
+	BackendDevice,
+};
+use crate::{
+	settings::{
+		IMAGE_HEIGHT,
+		IMAGE_PIXELS,
+		IMAGE_WIDTH,
+	},
+	tcam_interface::Image,
+};
 
 #[allow(
 	clippy::trivially_copy_pass_by_ref,
 	reason = "Type may change with feature flag"
 )]
-pub(super) fn images_to_tensor<'a>(
-	images: impl ExactSizeIterator<Item = &'a RgbImage>,
+pub(super) fn images_to_tensor<'a, I>(
+	images: I,
 	device: &BackendDevice,
-) -> Tensor<Backend, 4> {
+) -> Tensor<Backend, 4>
+where
+	I: ExactSizeIterator<Item = &'a Image>,
+{
 	let batch_size = images.len();
 	let image_size = IMAGE_PIXELS * 3;
 	let mut values = vec![0; batch_size * image_size];
@@ -55,21 +70,26 @@ pub(super) fn images_to_tensor<'a>(
 
 #[cfg(test)]
 mod tests {
-	use super::{super::config, *};
+	use image::RgbImage;
+
+	use super::{
+		super::config,
+		*,
+	};
 
 	#[test]
 	fn image_batch_tensor_is_nchw_and_keeps_images_separate() {
 		let images = [
-			RgbImage::from_pixel(
+			Image::from(RgbImage::from_pixel(
 				IMAGE_WIDTH,
 				IMAGE_HEIGHT,
 				image::Rgb([10, 20, 30]),
-			),
-			RgbImage::from_pixel(
+			)),
+			Image::from(RgbImage::from_pixel(
 				IMAGE_WIDTH,
 				IMAGE_HEIGHT,
 				image::Rgb([40, 50, 60]),
-			),
+			)),
 		];
 		let tensor = images_to_tensor(images.iter(), &config::get_device());
 		let dimensions = tensor.dims();

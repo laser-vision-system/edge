@@ -1,12 +1,30 @@
 #![expect(clippy::expect_used, reason = "This is a benchmark")]
 
-use std::{hint::black_box, iter, slice, time::Instant};
+use std::{
+	hint::black_box,
+	iter,
+	slice,
+	time::Instant,
+};
 
-use criterion::{Criterion, Throughput};
-use edge::vision_processor::{BatchItem, Cnn, VisionInterface as _};
-use image::{Rgb, RgbImage};
+use criterion::{
+	Criterion,
+	Throughput,
+};
+use edge::vision_processor::{
+	BatchItem,
+	Cnn,
+	VisionInterface as _,
+};
+use image::{
+	Rgb,
+	RgbImage,
+};
 
-pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
+pub fn benchmark_inference(
+	criterion: &mut Criterion,
+	backend: &str,
+) {
 	let mut cnn = Cnn::new().expect("CNN benchmark requires a valid model");
 	let image = RgbImage::from_pixel(640, 480, Rgb([255, 40, 90]));
 	let mut group =
@@ -20,7 +38,13 @@ pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
 			.iter_mut()
 			.enumerate()
 			.map(|(index, state)| {
-				BatchItem::new(index as u64, state, image.clone(), true, false)
+				BatchItem::new(
+					index as u64,
+					state,
+					image.clone().into(),
+					true,
+					false,
+				)
 			})
 			.collect::<Vec<_>>();
 

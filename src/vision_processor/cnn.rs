@@ -7,17 +7,30 @@ mod batching;
 mod config;
 mod model;
 
-use std::{fmt, path::PathBuf};
+use std::{
+	fmt,
+	path::PathBuf,
+};
 
-use burn::tensor::{DataError, Tensor};
+use burn::tensor::{
+	DataError,
+	Tensor,
+};
 use burn_store::BurnpackError;
 use thiserror::Error;
 
 use super::{
-	BatchItem, SessionToken, VisionError, VisionInterface, VisionState,
+	BatchItem,
+	SessionToken,
+	VisionError,
+	VisionInterface,
+	VisionState,
 	write_optional,
 };
-use crate::error::{EdgeError, Result};
+use crate::error::{
+	EdgeError,
+	Result,
+};
 
 #[derive(Debug, Error)]
 pub enum CnnError {
@@ -40,7 +53,10 @@ pub struct ExternalData {
 }
 
 impl fmt::Display for ExternalData {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "ExternalData for Cnn {{ setpoint: ")?;
 		write_optional(f, self.setpoint)?;
 		f.write_str(", intensity: ")?;
@@ -69,7 +85,10 @@ impl Cnn {
 		})
 	}
 
-	fn predict(&self, images: Tensor<config::Backend, 4>) -> Result<Vec<f32>> {
+	fn predict(
+		&self,
+		images: Tensor<config::Backend, 4>,
+	) -> Result<Vec<f32>> {
 		self.model
 			.forward(images)
 			.flatten::<1>(0, 1)
@@ -97,7 +116,10 @@ impl Cnn {
 }
 
 impl VisionInterface for Cnn {
-	fn process(&mut self, batch: &mut [BatchItem]) {
+	fn process(
+		&mut self,
+		batch: &mut [BatchItem],
+	) {
 		let tensors = self.prepare_batch(batch, &self.device);
 		match self.predict(tensors) {
 			Ok(predictions) => apply_predictions(batch, predictions),
@@ -117,18 +139,27 @@ impl VisionInterface for Cnn {
 }
 
 impl fmt::Debug for Cnn {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		f.debug_struct("Cnn").finish_non_exhaustive()
 	}
 }
 
 impl fmt::Display for Cnn {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		f.write_str("Cnn")
 	}
 }
 
-fn apply_predictions(batch: &mut [BatchItem], predictions: Vec<f32>) {
+fn apply_predictions(
+	batch: &mut [BatchItem],
+	predictions: Vec<f32>,
+) {
 	debug_assert_eq!(
 		batch.len(),
 		predictions.len(),
@@ -136,7 +167,10 @@ fn apply_predictions(batch: &mut [BatchItem], predictions: Vec<f32>) {
 	);
 
 	for (item, intensity) in batch.iter_mut().zip(predictions) {
-		if let VisionState::Cnn { data, .. } = item.state {
+		if let VisionState::Cnn {
+			data, ..
+		} = item.state
+		{
 			if item.calibrate {
 				data.setpoint = Some(intensity);
 			}
@@ -151,7 +185,10 @@ fn apply_predictions(batch: &mut [BatchItem], predictions: Vec<f32>) {
 
 fn clear_predictions(batch: &mut [BatchItem]) {
 	for item in batch.iter_mut() {
-		if let VisionState::Cnn { data, .. } = item.state {
+		if let VisionState::Cnn {
+			data, ..
+		} = item.state
+		{
 			data.intensity = None;
 			data.deviation = None;
 		}
@@ -160,12 +197,26 @@ fn clear_predictions(batch: &mut [BatchItem]) {
 
 #[cfg(test)]
 mod tests {
-	use std::{hint, iter, slice, time::Instant};
+	use std::{
+		hint,
+		iter,
+		slice,
+		time::Instant,
+	};
 
-	use image::{Rgb, RgbImage};
+	use image::{
+		Rgb,
+		RgbImage,
+	};
 
 	use super::*;
-	use crate::vision_processor::{IMAGE_HEIGHT, IMAGE_WIDTH};
+	use crate::{
+		settings::{
+			IMAGE_HEIGHT,
+			IMAGE_WIDTH,
+		},
+		tcam_interface::Image,
+	};
 
 	fn test_cnn() -> Cnn {
 		let device = config::get_device();
@@ -204,7 +255,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			7,
 			&mut state,
-			RgbImage::new(8, 8),
+			Image::from(RgbImage::new(8, 8)),
 			true,
 			false,
 		)];
@@ -212,7 +263,9 @@ mod tests {
 		apply_predictions(&mut batch, vec![12.5]);
 
 		match &batch[0].state {
-			VisionState::Cnn { data, .. } => {
+			VisionState::Cnn {
+				data, ..
+			} => {
 				assert_eq!(data.setpoint, Some(12.5));
 				assert_eq!(data.intensity, Some(12.5));
 				assert_eq!(data.deviation, Some(1.0));
@@ -231,7 +284,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			12,
 			&mut state,
-			RgbImage::new(8, 8),
+			Image::from(RgbImage::new(8, 8)),
 			false,
 			false,
 		)];
@@ -239,7 +292,9 @@ mod tests {
 		apply_predictions(&mut batch, vec![4.0]);
 
 		match &batch[0].state {
-			VisionState::Cnn { data, .. } => {
+			VisionState::Cnn {
+				data, ..
+			} => {
 				assert_eq!(data.setpoint, Some(10.0));
 				assert_eq!(data.intensity, Some(4.0));
 				assert_eq!(data.deviation, Some(0.4));
@@ -258,7 +313,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			21,
 			&mut state,
-			RgbImage::new(8, 8),
+			Image::from(RgbImage::new(8, 8)),
 			false,
 			true,
 		)];
@@ -266,7 +321,9 @@ mod tests {
 		clear_predictions(&mut batch);
 
 		match &batch[0].state {
-			VisionState::Cnn { data, .. } => {
+			VisionState::Cnn {
+				data, ..
+			} => {
 				assert_eq!(data.setpoint, Some(9.0));
 				assert_eq!(data.intensity, None);
 				assert_eq!(data.deviation, None);
@@ -280,14 +337,19 @@ mod tests {
 	fn process_runs_inference_and_updates_state() {
 		let mut cnn = test_cnn();
 		let mut state = cnn_state(ExternalData::default());
-		let image =
-			RgbImage::from_pixel(IMAGE_WIDTH, IMAGE_HEIGHT, Rgb([255, 40, 90]));
+		let image = Image::from(RgbImage::from_pixel(
+			IMAGE_WIDTH,
+			IMAGE_HEIGHT,
+			Rgb([255, 40, 90]),
+		));
 		let mut batch = [BatchItem::new(99, &mut state, image, true, false)];
 
 		cnn.process(&mut batch);
 
 		match &batch[0].state {
-			VisionState::Cnn { data, .. } => {
+			VisionState::Cnn {
+				data, ..
+			} => {
 				assert!(data.setpoint.is_some());
 				assert!(data.intensity.is_some());
 				assert!(data.deviation.is_some());
@@ -303,8 +365,11 @@ mod tests {
 		const SAMPLES: u32 = 5;
 		const WARMUP: u32 = 1;
 		let mut cnn = Cnn::new().expect("CNN profiling requires a valid model");
-		let image =
-			RgbImage::from_pixel(IMAGE_WIDTH, IMAGE_HEIGHT, Rgb([255, 40, 90]));
+		let image = Image::from(RgbImage::from_pixel(
+			IMAGE_WIDTH,
+			IMAGE_HEIGHT,
+			Rgb([255, 40, 90]),
+		));
 
 		for batch_size in [1, 10] {
 			let mut states = iter::repeat_with(|| cnn.new_state())

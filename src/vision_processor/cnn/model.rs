@@ -2,10 +2,19 @@ use std::path::Path;
 
 use burn::{
 	nn::{
-		BatchNorm, BatchNormConfig, Linear, LinearConfig, PaddingConfig2d,
-		conv::{Conv2d, Conv2dConfig},
+		BatchNorm,
+		BatchNormConfig,
+		Linear,
+		LinearConfig,
+		PaddingConfig2d,
+		conv::{
+			Conv2d,
+			Conv2dConfig,
+		},
 		pool::{
-			AdaptiveAvgPool2d, AdaptiveAvgPool2dConfig, MaxPool2d,
+			AdaptiveAvgPool2d,
+			AdaptiveAvgPool2dConfig,
+			MaxPool2d,
 			MaxPool2dConfig,
 		},
 	},
@@ -14,9 +23,15 @@ use burn::{
 };
 use burn_store::ModuleSnapshot as _;
 
-use super::{CnnError, config};
+use super::{
+	CnnError,
+	config,
+};
 use crate::{
-	error::{EdgeError, Result},
+	error::{
+		EdgeError,
+		Result,
+	},
 	vision_processor::VisionError,
 };
 
@@ -60,7 +75,10 @@ impl<B: Backend> LaserModel<B> {
 		Self::init(device)
 	}
 
-	pub fn load<P>(path: P, device: &B::Device) -> Result<Self>
+	pub fn load<P>(
+		path: P,
+		device: &B::Device,
+	) -> Result<Self>
 	where
 		P: AsRef<Path>,
 	{
@@ -82,7 +100,10 @@ impl<B: Backend> LaserModel<B> {
 	/// # Shapes
 	///   - Images \[`batch_size`, channels, height, width\]
 	///   - Output \[`batch_size`, 1\]
-	pub fn forward(&self, images: Tensor<B, 4>) -> Tensor<B, 2> {
+	pub fn forward(
+		&self,
+		images: Tensor<B, 4>,
+	) -> Tensor<B, 2> {
 		let [batch_size, channels, _, _] = images.dims();
 		debug_assert_eq!(channels, 3, "expected an RGB tensor");
 
@@ -106,13 +127,21 @@ impl<B: Backend> LaserModel<B> {
 #[cfg(test)]
 mod tests {
 	use std::{
-		env, fs, process,
-		sync::atomic::{AtomicUsize, Ordering},
+		env,
+		fs,
+		process,
+		sync::atomic::{
+			AtomicUsize,
+			Ordering,
+		},
 	};
 
 	use burn_store::BurnpackStore;
 
-	use super::{super::config, *};
+	use super::{
+		super::config,
+		*,
+	};
 
 	static NEXT_MODEL_FILE: AtomicUsize = AtomicUsize::new(0);
 

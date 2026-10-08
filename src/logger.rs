@@ -22,11 +22,20 @@
 
 use std::{
 	mem,
-	sync::{Mutex, OnceLock},
+	sync::{
+		Mutex,
+		OnceLock,
+	},
 };
 
-use chrono::{Local, NaiveDate};
-use serde::{Deserialize, Serialize};
+use chrono::{
+	Local,
+	NaiveDate,
+};
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 use crate::error::EdgeError;
 
@@ -51,7 +60,7 @@ enum LogLevel {
 ///
 /// Each log entry is a string, stored in a `Vec<String>`.
 ///
-/// All log entries are consumed upon calling the send_logs function.
+/// All log entries are consumed upon calling the `send_logs` function.
 ///
 /// ### Verbosity Levels
 /// The logger supports different verbosity levels, which can be set via the
@@ -61,7 +70,8 @@ enum LogLevel {
 /// - 2: Warning and error logs are recorded and sent.
 /// - 3: Info, warning, and error logs are recorded and sent.
 ///
-/// Any other inputs including non-numeric strings will default to level 1 (error logs only).
+/// Any other inputs including non-numeric strings will default to level 1
+/// (error logs only).
 pub struct Logger {
 	logs: Vec<String>,
 	counter: LogCounter,
@@ -71,9 +81,9 @@ pub struct Logger {
 impl Logger {
 	pub fn initialise_logger(verbosity: u8) {
 		match LOGGER.set(Mutex::new(Logger::new(verbosity))) {
-			Ok(_) => {},
+			Ok(()) => {},
 			Err(_) => {
-				println!("Logger cannot be initialised more than once.")
+				println!("Logger cannot be initialised more than once.");
 			},
 		}
 	}
@@ -86,7 +96,10 @@ impl Logger {
 		}
 	}
 
-	pub fn log_info(&mut self, message: &str) {
+	pub fn log_info(
+		&mut self,
+		message: &str,
+	) {
 		if self.verbosity < 3 {
 			return;
 		}
@@ -104,7 +117,10 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_warn(&mut self, message: &str) {
+	pub fn log_warn(
+		&mut self,
+		message: &str,
+	) {
 		if self.verbosity < 2 {
 			return;
 		}
@@ -122,7 +138,10 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_error(&mut self, error: &EdgeError) {
+	pub fn log_error(
+		&mut self,
+		error: &EdgeError,
+	) {
 		if self.verbosity < 1 {
 			return;
 		}
@@ -141,13 +160,13 @@ impl Logger {
 	}
 
 	pub fn send_logs(&mut self) {
-		let logs = mem::take(&mut self.logs);
+		let _logs = mem::take(&mut self.logs);
 
-		for log in logs {
-			// TODO: Actually send the logs to the server.
-			// TODO: When this happens, the IO bound test must be ignored.
-			println!("{log}");
-		}
+		// for log in logs {
+		// 	// TODO: Actually send the logs to the server.
+		// 	// TODO: When this happens, the IO bound test must be ignored.
+		// 	println!("{log}");
+		//}
 	}
 }
 

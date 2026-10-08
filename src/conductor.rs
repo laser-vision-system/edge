@@ -1,28 +1,50 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{collections::HashMap, error};
+use std::{
+	collections::HashMap,
+	error,
+};
 
 use server_edge_datatypes::{
 	edge::{
-		EdgeRequests, ImageAnalysis, RegisterCameras, ServerRequests,
+		EdgeRequests,
+		ImageAnalysis,
+		RegisterCameras,
+		ServerRequests,
 		UpdateCameraStatus,
 	},
-	shared::{CameraStatus, VisionTechnique},
+	shared::{
+		CameraStatus,
+		VisionTechnique,
+	},
 };
 use tokio::time::interval;
 
 use crate::{
 	error::EdgeError,
-	logger::{Logger, logger},
+	logger::{
+		Logger,
+		logger,
+	},
 	network::{
-		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
+		NetworkError,
+		auto_connect::assert_connection,
+		websocket::WebSocket,
 	},
-	settings::{EnvVariables, Settings},
+	settings::{
+		EnvVariables,
+		Settings,
+	},
 	tcam_interface::{
-		CameraDevice, Persistence, WhyNo, polling::ConnectionDetail,
+		Persistence,
+		WhyNo,
+		polling::ConnectionDetail,
 	},
-	vision_processor::{VisionInterface as _, vision},
+	vision_processor::{
+		VisionInterface as _,
+		vision,
+	},
 };
 
 /// # Conductor
@@ -37,7 +59,8 @@ impl Conductor {
 		&mut self,
 		mut websocket: WebSocket,
 		settings: Settings,
-	) -> Result<(WebSocket, Settings), Box<dyn error::Error + Send + Sync>> {
+	) -> Result<(WebSocket, Settings), Box<dyn error::Error + Send + Sync>>
+	{
 		let mut limit_interval = interval(settings.update_delay);
 		limit_interval.tick().await;
 
@@ -105,10 +128,14 @@ impl Conductor {
 
 		logger().lock().unwrap().send_logs();
 
+		_ = websocket.keep_alive().await;
+
 		// Vision
 		vision().interact(|vision| {
 			vision.process(&mut batch_items);
 		});
+
+		_ = websocket.keep_alive().await;
 
 		logger().lock().unwrap().send_logs();
 
@@ -130,7 +157,7 @@ impl Conductor {
 			}
 
 			if item.send_to_server {
-				let mut encoded = CameraDevice::encode_image(&item.image);
+				let mut encoded = item.image.encode();
 				let result =
 					websocket.send_image(item.camera_id, &mut encoded).await;
 				_ = result.inspect_err(|_| {
@@ -205,26 +232,44 @@ impl Conductor {
 	) {
 		let mut results = self.persistence.poll_for_new_cameras();
 
-		let new_cameras = results.extract_if(|_, value| match value {
-			ConnectionDetail::New { .. } => true,
-			ConnectionDetail::Update { .. } => false,
+		let new_cameras = results.extract_if(|_, value| {
+			match value {
+				ConnectionDetail::New {
+					..
+				} => true,
+				ConnectionDetail::Update {
+					..
+				} => false,
+			}
 		});
 
 		let new_cameras: HashMap<_, _> = new_cameras
 			.into_iter()
-			.filter_map(|(key, value)| match value {
-				ConnectionDetail::New { info } => Some((key, info)),
-				ConnectionDetail::Update { .. } => None,
+			.filter_map(|(key, value)| {
+				match value {
+					ConnectionDetail::New {
+						info,
+					} => Some((key, info)),
+					ConnectionDetail::Update {
+						..
+					} => None,
+				}
 			})
 			.collect();
 
 		for (camera_id, update) in results {
-			let ConnectionDetail::Update { status } = update else {
+			let ConnectionDetail::Update {
+				status,
+			} = update
+			else {
 				continue;
 			};
 			_ = websocket
 				.send_text(ServerRequests::UpdateCameraStatus(
-					UpdateCameraStatus { camera_id, status },
+					UpdateCameraStatus {
+						camera_id,
+						status,
+					},
 				))
 				.await;
 		}
@@ -242,7 +287,9 @@ impl Conductor {
 impl Default for Conductor {
 	fn default() -> Self {
 		let persistence = Persistence::default();
-		Self { persistence }
+		Self {
+			persistence,
+		}
 	}
 }
 
@@ -255,9 +302,13 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	Logger::initialise_logger(env_variables.verbosity());
 
 	loop {
-		let (loop_websocket, loop_settings) =
-			assert_connection(websocket, settings, &mut conductor.persistence, &env_variables)
-				.await;
+		let (loop_websocket, loop_settings) = assert_connection(
+			websocket,
+			settings,
+			&mut conductor.persistence,
+			&env_variables,
+		)
+		.await;
 		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);

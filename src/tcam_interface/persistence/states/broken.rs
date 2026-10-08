@@ -2,7 +2,11 @@ use std::borrow::Cow;
 
 use server_edge_datatypes::shared::CameraStatus;
 
-use super::{Active, IndexOccupier, Limbo};
+use super::{
+	Active,
+	IndexOccupier,
+	Limbo,
+};
 use crate::tcam_interface::persistence::OccupiedIndices;
 
 /// A connection in a broken state.
@@ -33,7 +37,10 @@ impl Broken {
 	}
 
 	/// Update the name of this device.
-	pub fn set_name(&mut self, name: String) {
+	pub fn set_name(
+		&mut self,
+		name: String,
+	) {
 		self.name = name;
 	}
 
@@ -73,4 +80,5 @@ impl From<Limbo> for Broken {
 	}
 }
 
-impl IndexOccupier for Broken {}
+impl IndexOccupier for Broken {
+}
