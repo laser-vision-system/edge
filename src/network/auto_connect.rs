@@ -225,7 +225,7 @@ async fn loop_until_connection(
 				logger()
 					.lock()
 					.unwrap()
-					.log_info(&"Successfully connected to server!".to_string());
+					.log_info("Successfully connected to server!");
 				return yay;
 			},
 			Err(err) => {
@@ -239,31 +239,28 @@ async fn loop_until_connection(
 async fn try_connect_once(
 	_env_variables: &EnvVariables
 ) -> Result<(WebSocket, Settings)> {
-	let websocket_url = match env::var("SERVER_URL") {
-		Ok(url) => {
-			if url.is_empty() {
-				logger()
-					.lock()
-					.unwrap()
-					.log_info(&"Connecting using auto connect".to_string());
-				let urls = identify_network();
-				get_websocket_url(urls).await?
-			} else {
-				logger().lock().unwrap().log_info(&format!(
-					"Connecting to provided server address: {url}"
-				));
-				format!("ws://{}/edge_ws", url)
-			}
-		},
-		Err(..) => {
-			logger()
-				.lock()
-				.unwrap()
-				.log_info(&"Connecting using auto connect".to_string());
-			let urls = identify_network();
-			get_websocket_url(urls).await?
-		},
-	};
+	let websocket_url = if let Ok(url) = env::var("SERVER_URL") {
+ 			if url.is_empty() {
+ 				logger()
+ 					.lock()
+ 					.unwrap()
+ 					.log_info("Connecting using auto connect");
+ 				let urls = identify_network();
+ 				get_websocket_url(urls).await?
+ 			} else {
+ 				logger().lock().unwrap().log_info(&format!(
+ 					"Connecting to provided server address: {url}"
+ 				));
+ 				format!("ws://{url}/edge_ws")
+ 			}
+ 		} else {
+ 			logger()
+ 				.lock()
+ 				.unwrap()
+ 				.log_info("Connecting using auto connect");
+ 			let urls = identify_network();
+ 			get_websocket_url(urls).await?
+ 		};
 
 	let (stream, _) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {
