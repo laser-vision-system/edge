@@ -83,7 +83,6 @@ thiserror = "2.0"
 tokio = { version = "1.26.0", features = [
 	"full"
 ] }
-tungstenite = "0.28.0"
 tokio-tungstenite = "0.30.0"
 
 # Dependencies only needed for tests, examples, or benchmarks.
