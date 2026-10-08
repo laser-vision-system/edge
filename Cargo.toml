@@ -36,7 +36,10 @@ cnn-model-zero-copy = [
 # Load the model from file at runtime without zero-copy.
 cnn-model-file = [
 ]
-
+[build]
+rustflags = [
+	"-Ctarget-feature=+fp16,+fhm"
+]
 [dependencies]
 burn = { version = "0.21", default-features = false, features = [
 	"std",
