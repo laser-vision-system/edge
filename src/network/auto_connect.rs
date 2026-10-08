@@ -1,21 +1,33 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{collections::HashSet, fmt};
+use std::{
+	collections::HashSet,
+	fmt,
+};
 
 use pnet_datalink::interfaces;
 use reqwest::Client;
 use server_edge_datatypes::edge::{
-	InitialiseConnection, ServerRequests, Settings,
+	InitialiseConnection,
+	ServerRequests,
+	Settings,
 };
-use tokio::{task::JoinSet, time::interval};
+use tokio::{
+	task::JoinSet,
+	time::interval,
+};
 use tokio_tungstenite::connect_async;
 
 use super::{
-	NetworkError, persistent_edge_id::get_mac_address, websocket::WebSocket,
+	NetworkError,
+	persistent_edge_id::get_mac_address,
+	websocket::WebSocket,
 };
 use crate::{
-	error::Result, logger::logger, settings::AUTO_CONNECT_DELAY,
+	error::Result,
+	logger::logger,
+	settings::AUTO_CONNECT_DELAY,
 	tcam_interface::Persistence,
 };
 

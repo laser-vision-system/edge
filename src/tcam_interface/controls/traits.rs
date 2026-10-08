@@ -8,12 +8,23 @@ use std::hash::Hash;
 use nokhwa::utils::ControlValueSetter;
 use nokhwa::{
 	self,
-	utils::{KnownCameraControl, MenuEntry},
+	utils::{
+		KnownCameraControl,
+		MenuEntry,
+	},
 };
 
 use super::types::{
-	ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
-	ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
+	ConTypeBool,
+	ConTypeBytes,
+	ConTypeEnum,
+	ConTypeFloat,
+	ConTypeInt,
+	ConTypeKeyValue,
+	ConTypeMenu,
+	ConTypePoint,
+	ConTypeRGB,
+	ConTypeString,
 };
 use crate::error::Result;
 
@@ -30,15 +41,24 @@ pub trait ValidControlValue: Clone + Debug + PartialEq + PartialOrd {}
 
 // ===== Value fields (used in ControlValueSetter) =====
 // ----- Explicit -----
-impl ValidControlValue for ConTypeInt {} // Integer, IntegerRange, Enum
-impl ValidControlValue for ConTypeFloat {} // Float,  FloatRange
-impl ValidControlValue for ConTypeBool {} // Boolean
-impl ValidControlValue for ConTypeString {} // String
-impl ValidControlValue for ConTypeBytes {} // Bytes
-impl ValidControlValue for ConTypeKeyValue {} // KeyValuePair
-impl ValidControlValue for ConTypePoint {} // KeyValuePair
-impl ValidControlValue for ConTypeRGB {} // KeyValuePair
-impl ValidControlValue for ConTypeMenu {} // Menu
+impl ValidControlValue for ConTypeInt {
+} // Integer, IntegerRange, Enum
+impl ValidControlValue for ConTypeFloat {
+} // Float,  FloatRange
+impl ValidControlValue for ConTypeBool {
+} // Boolean
+impl ValidControlValue for ConTypeString {
+} // String
+impl ValidControlValue for ConTypeBytes {
+} // Bytes
+impl ValidControlValue for ConTypeKeyValue {
+} // KeyValuePair
+impl ValidControlValue for ConTypePoint {
+} // KeyValuePair
+impl ValidControlValue for ConTypeRGB {
+} // KeyValuePair
+impl ValidControlValue for ConTypeMenu {
+} // Menu
 // TODO: Would these be better than the implicit?
 // TODO: Would it be better to use an array in either case?
 // impl ValidControlValue for (f64, f64) {} // Point
@@ -60,19 +80,26 @@ impl ValidControlValue for ConTypeMenu {} // Menu
 
 pub trait ValidDefaultValue: Clone + Debug + PartialEq + PartialOrd {}
 
-impl<T> ValidDefaultValue for T where T: ValidControlValue {}
+impl<T> ValidDefaultValue for T where T: ValidControlValue
+{
+}
 
-impl ValidDefaultValue for Option<ConTypeString> {}
+impl ValidDefaultValue for Option<ConTypeString> {
+}
 
 pub trait ValidPossibleValue: Clone + Debug + PartialEq + PartialOrd {}
 
-impl<T> ValidPossibleValue for T where T: ValidControlValue {}
+impl<T> ValidPossibleValue for T where T: ValidControlValue
+{
+}
 
-impl ValidPossibleValue for Vec<ConTypeEnum> {}
+impl ValidPossibleValue for Vec<ConTypeEnum> {
+}
 
 pub trait ValidItemValue: Clone + Debug + PartialEq + PartialOrd {}
 
-impl ValidItemValue for Vec<MenuEntry> {}
+impl ValidItemValue for Vec<MenuEntry> {
+}
 
 /// The type that is use to report the control's current value as well as apply
 /// a new value.

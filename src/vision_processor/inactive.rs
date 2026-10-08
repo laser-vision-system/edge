@@ -1,6 +1,11 @@
 use std::fmt;
 
-use super::{BatchItem, SessionToken, VisionInterface, VisionState};
+use super::{
+	BatchItem,
+	SessionToken,
+	VisionInterface,
+	VisionState,
+};
 
 #[derive(Clone, Default)]
 pub struct Inactive {
@@ -16,7 +21,8 @@ impl Inactive {
 }
 
 impl VisionInterface for Inactive {
-	fn process(&mut self, _: &mut [BatchItem]) {}
+	fn process(&mut self, _: &mut [BatchItem]) {
+	}
 
 	fn new_state(&self) -> VisionState {
 		VisionState::Inactive {

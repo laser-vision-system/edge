@@ -3,11 +3,21 @@
 	reason = "Expect might not always be fulfilled"
 )]
 
-use burn::tensor::{Tensor, TensorData};
+use burn::tensor::{
+	Tensor,
+	TensorData,
+};
 
-use super::config::{Backend, BackendDevice};
+use super::config::{
+	Backend,
+	BackendDevice,
+};
 use crate::{
-	settings::{IMAGE_HEIGHT, IMAGE_PIXELS, IMAGE_WIDTH},
+	settings::{
+		IMAGE_HEIGHT,
+		IMAGE_PIXELS,
+		IMAGE_WIDTH,
+	},
 	tcam_interface::Image,
 };
 
@@ -62,7 +72,10 @@ where
 mod tests {
 	use image::RgbImage;
 
-	use super::{super::config, *};
+	use super::{
+		super::config,
+		*,
+	};
 
 	#[test]
 	fn image_batch_tensor_is_nchw_and_keeps_images_separate() {

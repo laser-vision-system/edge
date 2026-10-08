@@ -22,11 +22,20 @@
 
 use std::{
 	mem,
-	sync::{Mutex, OnceLock},
+	sync::{
+		Mutex,
+		OnceLock,
+	},
 };
 
-use chrono::{Local, NaiveDate};
-use serde::{Deserialize, Serialize};
+use chrono::{
+	Local,
+	NaiveDate,
+};
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 use crate::error::EdgeError;
 

@@ -1,21 +1,37 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{borrow::Cow, collections::HashSet};
+use std::{
+	borrow::Cow,
+	collections::HashSet,
+};
 
 use nokhwa::utils::CameraIndex;
-use server_edge_datatypes::shared::{CameraId, CameraStatus};
+use server_edge_datatypes::shared::{
+	CameraId,
+	CameraStatus,
+};
 
 use super::{
 	OccupiedIndices,
 	polling::AccessPoint,
-	states::{Active, Broken, ConnectionStatus, Disconnected, Invalid, Limbo},
+	states::{
+		Active,
+		Broken,
+		ConnectionStatus,
+		Disconnected,
+		Invalid,
+		Limbo,
+	},
 };
 use crate::{
 	error::EdgeError,
 	logger::logger,
 	tcam_interface::{
-		CameraDevice, Identifier, Image, PersistenceError,
+		CameraDevice,
+		Identifier,
+		Image,
+		PersistenceError,
 		camera_device::CameraLike,
 	},
 	vision_processor::BatchItem,

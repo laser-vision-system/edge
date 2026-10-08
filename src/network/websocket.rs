@@ -1,20 +1,41 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{error, time::Duration};
+use std::{
+	error,
+	time::Duration,
+};
 
-use futures_util::{SinkExt as _, StreamExt as _, stream::FusedStream as _};
+use futures_util::{
+	SinkExt as _,
+	StreamExt as _,
+	stream::FusedStream as _,
+};
 use serde::Serialize;
 use server_edge_datatypes::edge::EdgeRequests;
-use tokio::{self, net::TcpStream, time::interval};
+use tokio::{
+	self,
+	net::TcpStream,
+	time::interval,
+};
 use tokio_tungstenite::{
-	MaybeTlsStream, WebSocketStream, connect_async,
-	tungstenite::{Bytes, Message, Utf8Bytes},
+	MaybeTlsStream,
+	WebSocketStream,
+	connect_async,
+	tungstenite::{
+		Bytes,
+		Message,
+		Utf8Bytes,
+	},
 };
 
 use crate::{
 	logger::logger,
-	settings::{API, HOST, PORT},
+	settings::{
+		API,
+		HOST,
+		PORT,
+	},
 };
 
 type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;

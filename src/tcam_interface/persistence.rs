@@ -4,26 +4,51 @@ pub mod polling;
 mod states;
 
 use std::{
-	borrow::{Borrow, BorrowMut},
-	collections::{HashMap, HashSet},
+	borrow::{
+		Borrow,
+		BorrowMut,
+	},
+	collections::{
+		HashMap,
+		HashSet,
+	},
 	hash::RandomState,
 };
 
 use nokhwa::utils::CameraIndex;
 use server_edge_datatypes::{
 	edge::{
-		NewCameraInfo, RegisterCameras, ServerRequests, SetNameCamera,
-		Setpoint, StartViewingCamera, StopViewingCamera,
+		NewCameraInfo,
+		RegisterCameras,
+		ServerRequests,
+		SetNameCamera,
+		Setpoint,
+		StartViewingCamera,
+		StopViewingCamera,
 	},
-	shared::{CameraId, Configuration, ViewCameraConfig},
+	shared::{
+		CameraId,
+		Configuration,
+		ViewCameraConfig,
+	},
 };
 
 pub use self::{
 	perpetual_info::PerpetualInfo,
-	persist_entry::{MaybeImage, PersistEntry, WhyNo},
+	persist_entry::{
+		MaybeImage,
+		PersistEntry,
+		WhyNo,
+	},
 };
-use super::{Identifier, PersistenceError};
-use crate::{error::EdgeError, vision_processor::BatchItem};
+use super::{
+	Identifier,
+	PersistenceError,
+};
+use crate::{
+	error::EdgeError,
+	vision_processor::BatchItem,
+};
 
 pub type ErrAccType = u16;
 

@@ -9,19 +9,30 @@ pub mod inactive;
 use std::{
 	cell::RefCell,
 	fmt,
-	sync::{Arc, Mutex, OnceLock, Weak},
+	sync::{
+		Arc,
+		Mutex,
+		OnceLock,
+		Weak,
+	},
 };
 
 pub use avg_lightness::AvgLightness;
 pub use cnn::Cnn;
 pub use diff::Diff;
-pub use inactive::Inactive;
-
 use image::RgbImage;
-use server_edge_datatypes::shared::{CameraId, VisionTechnique};
+pub use inactive::Inactive;
+use server_edge_datatypes::shared::{
+	CameraId,
+	VisionTechnique,
+};
 use thiserror::Error;
 
-use crate::{error::Result, logger::logger, tcam_interface::Image};
+use crate::{
+	error::Result,
+	logger::logger,
+	tcam_interface::Image,
+};
 
 #[derive(Debug, Error)]
 pub enum VisionError {

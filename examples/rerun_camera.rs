@@ -3,13 +3,25 @@
 use std::error::Error;
 
 use edge::{
-	tcam_interface::{CameraDevice, CameraLike as _, Image},
+	tcam_interface::{
+		CameraDevice,
+		CameraLike as _,
+		Image,
+	},
 	vision_processor::{
-		AvgLightness, BatchItem, VisionInterface as _, VisionState,
+		AvgLightness,
+		BatchItem,
+		VisionInterface as _,
+		VisionState,
 	},
 };
 use nokhwa::utils::CameraIndex;
-use rerun::{self, ColorModel, RecordingStream, RecordingStreamBuilder};
+use rerun::{
+	self,
+	ColorModel,
+	RecordingStream,
+	RecordingStreamBuilder,
+};
 
 struct Context {
 	rec: RecordingStream,

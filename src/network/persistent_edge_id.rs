@@ -1,4 +1,7 @@
-use pnet_datalink::{NetworkInterface, interfaces};
+use pnet_datalink::{
+	NetworkInterface,
+	interfaces,
+};
 
 use crate::network::NetworkError;
 fn get_network_interface() -> Option<NetworkInterface> {
@@ -43,7 +46,9 @@ pub fn get_mac_address() -> Result<u64, NetworkError> {
 #[cfg(test)]
 mod tests {
 	use crate::network::persistent_edge_id::{
-		get_mac_address, get_network_interface, mac_octet_converter,
+		get_mac_address,
+		get_network_interface,
+		mac_octet_converter,
 	};
 
 	#[test]

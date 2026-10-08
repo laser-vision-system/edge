@@ -1,10 +1,25 @@
 #![expect(clippy::expect_used, reason = "This is a benchmark")]
 
-use std::{hint::black_box, iter, slice, time::Instant};
+use std::{
+	hint::black_box,
+	iter,
+	slice,
+	time::Instant,
+};
 
-use criterion::{Criterion, Throughput};
-use edge::vision_processor::{BatchItem, Cnn, VisionInterface as _};
-use image::{Rgb, RgbImage};
+use criterion::{
+	Criterion,
+	Throughput,
+};
+use edge::vision_processor::{
+	BatchItem,
+	Cnn,
+	VisionInterface as _,
+};
+use image::{
+	Rgb,
+	RgbImage,
+};
 
 pub fn benchmark_inference(criterion: &mut Criterion, backend: &str) {
 	let mut cnn = Cnn::new().expect("CNN benchmark requires a valid model");

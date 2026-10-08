@@ -12,7 +12,11 @@
 	reason = "Temporarily allow these until environment variables are implemented"
 )]
 
-use std::{fmt::Display, str::FromStr, time::Duration};
+use std::{
+	fmt::Display,
+	str::FromStr,
+	time::Duration,
+};
 
 // ============================================================================
 // Only constants that are necessary for connecting to the server should be

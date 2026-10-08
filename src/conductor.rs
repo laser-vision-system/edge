@@ -1,26 +1,50 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
-use std::{collections::HashMap, error};
+use std::{
+	collections::HashMap,
+	error,
+};
 
 use server_edge_datatypes::{
 	edge::{
-		EdgeRequests, ImageAnalysis, RegisterCameras, ServerRequests,
+		EdgeRequests,
+		ImageAnalysis,
+		RegisterCameras,
+		ServerRequests,
 		UpdateCameraStatus,
 	},
-	shared::{CameraStatus, VisionTechnique},
+	shared::{
+		CameraStatus,
+		VisionTechnique,
+	},
 };
 use tokio::time::interval;
 
 use crate::{
 	error::EdgeError,
-	logger::{Logger, logger},
-	network::{
-		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
+	logger::{
+		Logger,
+		logger,
 	},
-	settings::{EnvVariables, Settings},
-	tcam_interface::{Persistence, WhyNo, polling::ConnectionDetail},
-	vision_processor::{VisionInterface as _, vision},
+	network::{
+		NetworkError,
+		auto_connect::assert_connection,
+		websocket::WebSocket,
+	},
+	settings::{
+		EnvVariables,
+		Settings,
+	},
+	tcam_interface::{
+		Persistence,
+		WhyNo,
+		polling::ConnectionDetail,
+	},
+	vision_processor::{
+		VisionInterface as _,
+		vision,
+	},
 };
 
 /// # Conductor
@@ -35,7 +59,8 @@ impl Conductor {
 		&mut self,
 		mut websocket: WebSocket,
 		settings: Settings,
-	) -> Result<(WebSocket, Settings), Box<dyn error::Error + Send + Sync>> {
+	) -> Result<(WebSocket, Settings), Box<dyn error::Error + Send + Sync>>
+	{
 		let mut limit_interval = interval(settings.update_delay);
 		limit_interval.tick().await;
 

@@ -2,10 +2,19 @@ use std::path::Path;
 
 use burn::{
 	nn::{
-		BatchNorm, BatchNormConfig, Linear, LinearConfig, PaddingConfig2d,
-		conv::{Conv2d, Conv2dConfig},
+		BatchNorm,
+		BatchNormConfig,
+		Linear,
+		LinearConfig,
+		PaddingConfig2d,
+		conv::{
+			Conv2d,
+			Conv2dConfig,
+		},
 		pool::{
-			AdaptiveAvgPool2d, AdaptiveAvgPool2dConfig, MaxPool2d,
+			AdaptiveAvgPool2d,
+			AdaptiveAvgPool2dConfig,
+			MaxPool2d,
 			MaxPool2dConfig,
 		},
 	},
@@ -14,9 +23,15 @@ use burn::{
 };
 use burn_store::ModuleSnapshot as _;
 
-use super::{CnnError, config};
+use super::{
+	CnnError,
+	config,
+};
 use crate::{
-	error::{EdgeError, Result},
+	error::{
+		EdgeError,
+		Result,
+	},
 	vision_processor::VisionError,
 };
 
@@ -106,13 +121,21 @@ impl<B: Backend> LaserModel<B> {
 #[cfg(test)]
 mod tests {
 	use std::{
-		env, fs, process,
-		sync::atomic::{AtomicUsize, Ordering},
+		env,
+		fs,
+		process,
+		sync::atomic::{
+			AtomicUsize,
+			Ordering,
+		},
 	};
 
 	use burn_store::BurnpackStore;
 
-	use super::{super::config, *};
+	use super::{
+		super::config,
+		*,
+	};
 
 	static NEXT_MODEL_FILE: AtomicUsize = AtomicUsize::new(0);
 

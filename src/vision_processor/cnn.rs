@@ -7,17 +7,30 @@ mod batching;
 mod config;
 mod model;
 
-use std::{fmt, path::PathBuf};
+use std::{
+	fmt,
+	path::PathBuf,
+};
 
-use burn::tensor::{DataError, Tensor};
+use burn::tensor::{
+	DataError,
+	Tensor,
+};
 use burn_store::BurnpackError;
 use thiserror::Error;
 
 use super::{
-	BatchItem, SessionToken, VisionError, VisionInterface, VisionState,
+	BatchItem,
+	SessionToken,
+	VisionError,
+	VisionInterface,
+	VisionState,
 	write_optional,
 };
-use crate::error::{EdgeError, Result};
+use crate::error::{
+	EdgeError,
+	Result,
+};
 
 #[derive(Debug, Error)]
 pub enum CnnError {
@@ -160,13 +173,24 @@ fn clear_predictions(batch: &mut [BatchItem]) {
 
 #[cfg(test)]
 mod tests {
-	use std::{hint, iter, slice, time::Instant};
+	use std::{
+		hint,
+		iter,
+		slice,
+		time::Instant,
+	};
 
-	use image::{Rgb, RgbImage};
+	use image::{
+		Rgb,
+		RgbImage,
+	};
 
 	use super::*;
 	use crate::{
-		settings::{IMAGE_HEIGHT, IMAGE_WIDTH},
+		settings::{
+			IMAGE_HEIGHT,
+			IMAGE_WIDTH,
+		},
 		tcam_interface::Image,
 	};
 

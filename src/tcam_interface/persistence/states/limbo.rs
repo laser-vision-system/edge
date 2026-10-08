@@ -1,12 +1,22 @@
 use std::{
 	borrow::Cow,
-	ops::{Deref, DerefMut},
+	ops::{
+		Deref,
+		DerefMut,
+	},
 };
 
 use server_edge_datatypes::shared::CameraStatus;
 
-use super::{Active, Disconnected, IndexOccupier};
-use crate::tcam_interface::{PerpetualInfo, persistence::OccupiedIndices};
+use super::{
+	Active,
+	Disconnected,
+	IndexOccupier,
+};
+use crate::tcam_interface::{
+	PerpetualInfo,
+	persistence::OccupiedIndices,
+};
 
 /// A connection in a limbo state.
 ///
@@ -100,4 +110,5 @@ impl From<Active> for Limbo {
 	}
 }
 
-impl IndexOccupier for Limbo {}
+impl IndexOccupier for Limbo {
+}

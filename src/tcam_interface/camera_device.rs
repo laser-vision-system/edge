@@ -9,24 +9,39 @@ mod nokhwa_test;
 use std::cmp::Ordering;
 
 use nokhwa::{
-	OpenRequest, OpenedCamera, StreamCamera,
+	OpenRequest,
+	OpenedCamera,
+	StreamCamera,
 	session::open_with_buffers,
 	utils::{
-		ApiBackend, CameraControl, CameraIndex, CameraInfo, ControlValueSetter,
+		ApiBackend,
+		CameraControl,
+		CameraIndex,
+		CameraInfo,
+		ControlValueSetter,
 		KnownCameraControl,
 	},
 };
 
 use super::{
-	CameraDeviceError, CannotGetControls, FrameRead, NokhwaInitialisation,
-	SetControl, StreamOpen,
+	CameraDeviceError,
+	CannotGetControls,
+	FrameRead,
+	NokhwaInitialisation,
+	SetControl,
+	StreamOpen,
 	controls::{
-		ControlMap, descriptions::CamControl, traits::ControlDescription as _,
+		ControlMap,
+		descriptions::CamControl,
+		traits::ControlDescription as _,
 	},
 	image::FrameBuffer,
 };
 use crate::{
-	error::{EdgeError, Result},
+	error::{
+		EdgeError,
+		Result,
+	},
 	logger::logger,
 	settings::CAMERA_BUFFER_COUNT,
 };

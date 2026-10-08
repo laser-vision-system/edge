@@ -7,18 +7,32 @@
 
 use std::{
 	borrow::Cow,
-	ops::{Deref, DerefMut},
+	ops::{
+		Deref,
+		DerefMut,
+	},
 };
 
-use server_edge_datatypes::shared::{CameraId, CameraStatus};
+use server_edge_datatypes::shared::{
+	CameraId,
+	CameraStatus,
+};
 
-use super::{Disconnected, IndexOccupier, Limbo};
+use super::{
+	Disconnected,
+	IndexOccupier,
+	Limbo,
+};
 use crate::{
 	error::Result,
 	tcam_interface::{
-		CameraLike, PerpetualInfo,
+		CameraLike,
+		PerpetualInfo,
 		image::Image,
-		persistence::{ErrAccType, OccupiedIndices},
+		persistence::{
+			ErrAccType,
+			OccupiedIndices,
+		},
 	},
 	vision_processor::BatchItem,
 };
@@ -182,4 +196,5 @@ impl DerefMut for Active {
 	}
 }
 
-impl IndexOccupier for Active {}
+impl IndexOccupier for Active {
+}

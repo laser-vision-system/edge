@@ -4,20 +4,35 @@
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
 use std::{
-	collections::{HashMap, HashSet},
+	collections::{
+		HashMap,
+		HashSet,
+	},
 	fmt,
 	hash::RandomState,
 };
 
-use nokhwa::utils::{CameraIndex, CameraInfo};
+use nokhwa::utils::{
+	CameraIndex,
+	CameraInfo,
+};
 use server_edge_datatypes::{
 	edge::NewCameraInfo,
-	shared::{CameraId, CameraStatus},
+	shared::{
+		CameraId,
+		CameraStatus,
+	},
 };
 
-use super::{super::Identifier, KeyType, Persistence, ValType};
+use super::{
+	super::Identifier,
+	KeyType,
+	Persistence,
+	ValType,
+};
 use crate::{
-	logger::logger, tcam_interface::camera_device::query_for_available_cameras,
+	logger::logger,
+	tcam_interface::camera_device::query_for_available_cameras,
 };
 
 // Potential inputs:
@@ -135,9 +150,13 @@ impl Persistence {
 		inter
 			.into_iter()
 			// TODO: Filter for disconnections here.
-			.filter_map(|(ident, points)| -> Option<(CameraId, ConnectionDetail)> {
-				self.on_each_connection(&DeviceConnection::from((ident, points)))
-			})
+			.filter_map(
+				|(ident, points)| -> Option<(CameraId, ConnectionDetail)> {
+					self.on_each_connection(&DeviceConnection::from((
+						ident, points,
+					)))
+				},
+			)
 			.collect::<HashMap<_, _>>()
 
 		// Cache a NewCameraInfo of each entry beforehand.

@@ -1,24 +1,51 @@
 use std::{
 	borrow::Cow,
 	io::Cursor,
-	ops::{Deref, DerefMut},
+	ops::{
+		Deref,
+		DerefMut,
+	},
 };
 
 use image::{
-	DynamicImage, GenericImageView as _, RgbImage, codecs::jpeg,
+	DynamicImage,
+	GenericImageView as _,
+	RgbImage,
+	codecs::jpeg,
 	imageops::FilterType,
 };
 use nokhwa::{
-	Buffer, NokhwaError,
-	format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
-	frame::{Frame, IntoRgb as _, RgbConversion},
+	Buffer,
+	NokhwaError,
+	format_types::{
+		Mjpeg,
+		Nv12,
+		RawBgr,
+		RawRgb,
+		Yuyv,
+	},
+	frame::{
+		Frame,
+		IntoRgb as _,
+		RgbConversion,
+	},
 	utils::FrameFormat,
 };
 
-use super::{CameraDeviceError, FrameDecodeCorruption, SelectDecodeFormat};
+use super::{
+	CameraDeviceError,
+	FrameDecodeCorruption,
+	SelectDecodeFormat,
+};
 use crate::{
-	error::{EdgeError, Result},
-	settings::{IMAGE_HEIGHT, IMAGE_WIDTH},
+	error::{
+		EdgeError,
+		Result,
+	},
+	settings::{
+		IMAGE_HEIGHT,
+		IMAGE_WIDTH,
+	},
 };
 
 #[derive(Clone, Debug)]
@@ -36,7 +63,9 @@ impl FrameBuffer {
 			// We just assume it is always corruption for now.
 			// TODO: Figure out the why.
 			// If it is because of memory, maybe try unwind and restart.
-			.map_err(|why| CameraDeviceError::from(FrameDecodeCorruption::from(why)))?;
+			.map_err(|why| {
+				CameraDeviceError::from(FrameDecodeCorruption::from(why))
+			})?;
 
 		let frame = DynamicImage::ImageRgb8(img_buffer);
 		let cropped = frame.crop_imm(0, 0, frame.width(), frame.height());
