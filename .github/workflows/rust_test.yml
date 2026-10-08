@@ -51,9 +51,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@v1
       with:
-        toolchain: stable
-    - run: rustup toolchain install nightly
-    - run: rustup override set nightly
+        toolchain: nightly
 
     - uses: Swatinem/rust-cache@v2
       with:
@@ -86,10 +84,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@v1
       with:
-        toolchain: stable
-
-    - run: rustup toolchain install nightly
-    - run: rustup override set nightly
+        toolchain: nightly
 
     - uses: Swatinem/rust-cache@v2
       with:

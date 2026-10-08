@@ -43,12 +43,9 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@v1
       with:
-        toolchain: stable
+        toolchain: nightly
         components: rustfmt
 
-    - run: rustup toolchain install nightly
-    - run: rustup override set nightly
-    - run: rustup component add --toolchain nightly-x86_64-unknown-linux-gnu rustfmt
     - run: cargo fmt -- --check
 
   clippy:
@@ -61,7 +58,7 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@v1
       with:
-        toolchain: stable
+        toolchain: nightly
         components: clippy
 
     - run: cargo clippy --all-targets --no-deps
