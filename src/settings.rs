@@ -41,13 +41,14 @@ pub const IMAGE_WIDTH: u32 = 640;
 pub const IMAGE_HEIGHT: u32 = 480;
 pub const IMAGE_PIXELS: usize = (IMAGE_WIDTH * IMAGE_HEIGHT) as usize;
 
-pub use server_edge_datatypes::edge::Settings;
-
 use std::env;
+
+pub use server_edge_datatypes::edge::Settings;
 
 use crate::error::EdgeError;
 
-/// Contains all environment variables that are used to configure the application.
+/// Contains all environment variables that are used to configure the
+/// application.
 pub struct EnvVariables {
 	// Verbosity level for logging and debugging:
 	// - 0: No logs
@@ -65,7 +66,8 @@ impl EnvVariables {
 			Err(e) => {
 				eprintln!("{e}");
 				1
-			}, // Default to error logs only if the variable is not set or invalid
+			}, /* Default to error logs only if the variable is not set or
+			    * invalid */
 		};
 
 		Self { verbosity }

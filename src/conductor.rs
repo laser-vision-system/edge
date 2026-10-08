@@ -19,9 +19,7 @@ use crate::{
 		NetworkError, auto_connect::assert_connection, websocket::WebSocket,
 	},
 	settings::{EnvVariables, Settings},
-	tcam_interface::{
-		Persistence, WhyNo, polling::ConnectionDetail,
-	},
+	tcam_interface::{Persistence, WhyNo, polling::ConnectionDetail},
 	vision_processor::{VisionInterface as _, vision},
 };
 

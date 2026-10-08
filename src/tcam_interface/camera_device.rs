@@ -103,10 +103,10 @@ impl CameraDevice {
 		Self::try_new(index)?.open()
 	}
 
-	//pub fn try_new_open_with_default_controls(
-	//	index: CameraIndex,
+	// pub fn try_new_open_with_default_controls(
+	// 	index: CameraIndex,
 	//) -> Result<Self> {
-	//	Self::try_new(index)?.open()?.with_default_controls()
+	// 	Self::try_new(index)?.open()?.with_default_controls()
 	//}
 
 	pub fn open(mut self) -> Result<Self> {
@@ -116,9 +116,9 @@ impl CameraDevice {
 		Ok(self)
 	}
 
-	//pub fn with_default_controls(mut self) -> Result<Self> {
-	//	self.reset_controls_to_default();
-	//	Ok(self)
+	// pub fn with_default_controls(mut self) -> Result<Self> {
+	// 	self.reset_controls_to_default();
+	// 	Ok(self)
 	//}
 
 	/// Set a camera control using the concrete Nokhwa value type.
@@ -238,129 +238,129 @@ impl CameraLike for CameraDevice {
 
 	///// Set every control on the camera back to its default value.
 	//#[expect(
-	//	clippy::too_many_lines,
-	//	clippy::panic,
-	//	clippy::unwrap_used,
-	//	clippy::expect_used,
-	//	reason = "WIP development"
+	// 	clippy::too_many_lines,
+	// 	clippy::panic,
+	// 	clippy::unwrap_used,
+	// 	clippy::expect_used,
+	// 	reason = "WIP development"
 	//)]
-	//pub fn reset_controls_to_default(&mut self) {
-	//	let mut controls = self.get_controls().unwrap();
-	//	if let Some(control) =
-	//		controls.get_mut(&KnownCameraControl::AutoExposure)
-	//	{
-	//		let CamControl::Menu(control) = control else {
-	//			panic!("Sorry, I didn't hardcode this setting for your camera")
-	//		};
+	// pub fn reset_controls_to_default(&mut self) {
+	// 	let mut controls = self.get_controls().unwrap();
+	// 	if let Some(control) =
+	// 		controls.get_mut(&KnownCameraControl::AutoExposure)
+	// 	{
+	// 		let CamControl::Menu(control) = control else {
+	// 			panic!("Sorry, I didn't hardcode this setting for your camera")
+	// 		};
 	//
-	//		let mut value = control.get_value();
-	//		value.set_value(1);
-	//		self.set_control(KnownCameraControl::AutoExposure, value)
-	//			.unwrap();
-	//	}
+	// 		let mut value = control.get_value();
+	// 		value.set_value(1);
+	// 		self.set_control(KnownCameraControl::AutoExposure, value)
+	// 			.unwrap();
+	// 	}
 	//
-	//	if let Some(control) =
-	//		controls.get_mut(&KnownCameraControl::ExposureAbsolute)
-	//	{
-	//		let CamControl::IntegerRange(control) = control else {
-	//			panic!("Sorry, I didn't hardcode this setting for your camera")
-	//		};
+	// 	if let Some(control) =
+	// 		controls.get_mut(&KnownCameraControl::ExposureAbsolute)
+	// 	{
+	// 		let CamControl::IntegerRange(control) = control else {
+	// 			panic!("Sorry, I didn't hardcode this setting for your camera")
+	// 		};
 	//
-	//		control.reset_to_default();
-	//		self.set_control(
-	//			KnownCameraControl::ExposureAbsolute,
-	//			control.get_value(),
-	//		)
-	//		.unwrap();
-	//	}
+	// 		control.reset_to_default();
+	// 		self.set_control(
+	// 			KnownCameraControl::ExposureAbsolute,
+	// 			control.get_value(),
+	// 		)
+	// 		.unwrap();
+	// 	}
 	//
-	//	if let Some(control) =
-	//		controls.get_mut(&KnownCameraControl::AutoExposure)
-	//	{
-	//		let CamControl::Menu(control) = control else {
-	//			panic!("Sorry, I didn't hardcode this setting for your camera")
-	//		};
+	// 	if let Some(control) =
+	// 		controls.get_mut(&KnownCameraControl::AutoExposure)
+	// 	{
+	// 		let CamControl::Menu(control) = control else {
+	// 			panic!("Sorry, I didn't hardcode this setting for your camera")
+	// 		};
 	//
-	//		let mut value = control.get_value();
-	//		value.set_value(3);
-	//		self.set_control(KnownCameraControl::AutoExposure, value)
-	//			.unwrap();
-	//	}
+	// 		let mut value = control.get_value();
+	// 		value.set_value(3);
+	// 		self.set_control(KnownCameraControl::AutoExposure, value)
+	// 			.unwrap();
+	// 	}
 	//
-	//	for (id, control) in self.get_controls().unwrap().into_inner() {
-	//		if id == KnownCameraControl::ExposureAbsolute {
-	//			continue;
-	//		}
-	//		match control {
-	//			CamControl::Integer(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::IntegerRange(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::Float(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::FloatRange(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::Boolean(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::String(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(
-	//					control.get_id(),
-	//					control.get_value().clone(),
-	//				)
-	//				.expect("default controls should always be valid");
-	//			},
-	//			CamControl::Bytes(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(
-	//					control.get_id(),
-	//					control.get_value().clone(),
-	//				)
-	//				.expect("default controls should always be valid");
-	//			},
-	//			CamControl::KeyValuePair(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::Point(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::Enum(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::RGB(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::Menu(mut control) => {
-	//				control.reset_to_default();
-	//				self.set_control(control.get_id(), control.get_value())
-	//					.expect("default controls should always be valid");
-	//			},
-	//			CamControl::None => (),
-	//		}
-	//	}
+	// 	for (id, control) in self.get_controls().unwrap().into_inner() {
+	// 		if id == KnownCameraControl::ExposureAbsolute {
+	// 			continue;
+	// 		}
+	// 		match control {
+	// 			CamControl::Integer(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::IntegerRange(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::Float(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::FloatRange(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::Boolean(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::String(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(
+	// 					control.get_id(),
+	// 					control.get_value().clone(),
+	// 				)
+	// 				.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::Bytes(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(
+	// 					control.get_id(),
+	// 					control.get_value().clone(),
+	// 				)
+	// 				.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::KeyValuePair(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::Point(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::Enum(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::RGB(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::Menu(mut control) => {
+	// 				control.reset_to_default();
+	// 				self.set_control(control.get_id(), control.get_value())
+	// 					.expect("default controls should always be valid");
+	// 			},
+	// 			CamControl::None => (),
+	// 		}
+	// 	}
 	//}
 
 	// The setting of camera controls is handled by the controls themselves.

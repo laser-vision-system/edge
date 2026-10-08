@@ -61,7 +61,8 @@ enum LogLevel {
 /// - 2: Warning and error logs are recorded and sent.
 /// - 3: Info, warning, and error logs are recorded and sent.
 ///
-/// Any other inputs including non-numeric strings will default to level 1 (error logs only).
+/// Any other inputs including non-numeric strings will default to level 1
+/// (error logs only).
 pub struct Logger {
 	logs: Vec<String>,
 	counter: LogCounter,
@@ -143,10 +144,10 @@ impl Logger {
 	pub fn send_logs(&mut self) {
 		let _logs = mem::take(&mut self.logs);
 
-		//for log in logs {
-		//	// TODO: Actually send the logs to the server.
-		//	// TODO: When this happens, the IO bound test must be ignored.
-		//	println!("{log}");
+		// for log in logs {
+		// 	// TODO: Actually send the logs to the server.
+		// 	// TODO: When this happens, the IO bound test must be ignored.
+		// 	println!("{log}");
 		//}
 	}
 }

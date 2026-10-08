@@ -283,10 +283,10 @@ fn set_control_exposure() -> Result<()> {
 
 //#[test]
 //#[ignore = "IO bound"]
-//fn reset_controls_to_default() {
-//	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
-//		.unwrap()
-//		.open()
-//		.unwrap();
-//	cam.reset_controls_to_default();
+// fn reset_controls_to_default() {
+// 	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+// 		.unwrap()
+// 		.open()
+// 		.unwrap();
+// 	cam.reset_controls_to_default();
 //}

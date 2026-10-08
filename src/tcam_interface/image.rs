@@ -4,9 +4,10 @@ use std::{
 	ops::{Deref, DerefMut},
 };
 
-use image::{DynamicImage, RgbImage, imageops::FilterType};
-use image::{GenericImageView as _, codecs::jpeg};
-
+use image::{
+	DynamicImage, GenericImageView as _, RgbImage, codecs::jpeg,
+	imageops::FilterType,
+};
 use nokhwa::{
 	Buffer, NokhwaError,
 	format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
@@ -147,12 +148,12 @@ fn enusure_dimensions(image: DynamicImage) -> DynamicImage {
 }
 
 //#[cfg(test)]
-//mod tests {
-//	use super::*;
+// mod tests {
+// 	use super::*;
 
-//	#[test]
-//	fn decode_image() {
-//		let frame = FrameBuffer;
-//		_ = frame.decode();
-//	}
+// 	#[test]
+// 	fn decode_image() {
+// 		let frame = FrameBuffer;
+// 		_ = frame.decode();
+// 	}
 //}
