@@ -66,9 +66,9 @@ pub struct EnvVariables {
 impl EnvVariables {
 	pub fn initialise() -> Self {
 		let verbosity = match Self::get_env_variable::<u8>("VERBOSITY") {
-			Ok(v) => v,
-			Err(e) => {
-				eprintln!("{e}");
+			Ok(value) => value,
+			Err(why) => {
+				eprintln!("{why}");
 				1
 			}, /* Default to error logs only if the variable is not set or
 			    * invalid */
@@ -88,19 +88,19 @@ impl EnvVariables {
 			Ok(value) => {
 				match value.parse::<T>() {
 					Ok(parsed_value) => Ok(parsed_value),
-					Err(e) => {
+					Err(why) => {
 						Err(EdgeError::General {
 							reason: format!(
-								"Could not parse {name} environment variable to the expected type: {e}"
+								"Could not parse {name} environment variable to the expected type: {why}"
 							),
 						})
 					},
 				}
 			},
-			Err(e) => {
+			Err(why) => {
 				Err(EdgeError::General {
 					reason: format!(
-						"Error reading {name} environment variable: {e}"
+						"Error reading {name} environment variable: {why}"
 					),
 				})
 			},

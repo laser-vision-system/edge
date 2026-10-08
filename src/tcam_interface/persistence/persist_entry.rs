@@ -448,7 +448,7 @@ impl PersistEntry {
 			} => {
 				logger().lock().unwrap().log_warn(
 					"Attempted to change name of an invalid connection",
-				)
+				);
 			},
 		}
 	}
@@ -484,7 +484,7 @@ impl PersistEntry {
 			} => {
 				logger().lock().unwrap().log_warn(
 					"Attempted to change currently_viewed of an invalid connection",
-				)
+				);
 			},
 		}
 	}
@@ -513,7 +513,7 @@ impl PersistEntry {
 			} => {
 				logger().lock().unwrap().log_warn(
 					"Attempted to set calibrate of an invalid connection",
-				)
+				);
 			},
 		}
 	}

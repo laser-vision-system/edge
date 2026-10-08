@@ -20,7 +20,6 @@ use std::{
 pub use avg_lightness::AvgLightness;
 pub use cnn::Cnn;
 pub use diff::Diff;
-use image::RgbImage;
 pub use inactive::Inactive;
 use server_edge_datatypes::shared::{
 	CameraId,
@@ -208,7 +207,7 @@ impl VisionVariant {
 			.log_info(&format!("Swapping to: {swap_to:?}"));
 		match swap_to {
 			VisionTechnique::Inactive => {
-				*self = Self::Inactive(Inactive::new())
+				*self = Self::Inactive(Inactive::new());
 			},
 			VisionTechnique::AvgLightness => {
 				*self = Self::AvgLightness(AvgLightness::new());

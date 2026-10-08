@@ -1,10 +1,3 @@
-// TODO: Remove all unwraps and then this.
-#![expect(
-	clippy::unwrap_used,
-	clippy::unwrap_in_result,
-	reason = "WIP development"
-)]
-
 use std::{
 	borrow::Cow,
 	ops::{

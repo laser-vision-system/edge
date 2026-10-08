@@ -33,16 +33,15 @@ impl Termination for CameraDevice {
 	}
 }
 
+type Calls = Vec<(KnownCameraControl, ControlValueSetter)>;
+
 struct FakeCamera {
 	info: CameraInfo,
-	set_calls: Rc<RefCell<Vec<(KnownCameraControl, ControlValueSetter)>>>,
+	set_calls: Rc<RefCell<Calls>>,
 }
 
 impl FakeCamera {
-	fn new() -> (
-		Self,
-		Rc<RefCell<Vec<(KnownCameraControl, ControlValueSetter)>>>,
-	) {
+	fn new() -> (Self, Rc<RefCell<Calls>>) {
 		let set_calls = Rc::new(RefCell::new(Vec::new()));
 		let camera = Self {
 			info: CameraInfo::new(

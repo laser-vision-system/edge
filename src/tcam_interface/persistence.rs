@@ -7,6 +7,7 @@ use std::{
 	borrow::{
 		Borrow,
 		BorrowMut,
+		Cow,
 	},
 	collections::{
 		HashMap,
@@ -250,17 +251,17 @@ impl Persistence {
 		let camera_list: HashMap<CameraId, NewCameraInfo> = self
 			.inner
 			.iter()
-			.filter_map(|(id, entry)| {
+			.map(|(id, entry)| {
 				let name = entry
 					.try_get_name()
-					.map(std::borrow::Cow::into_owned)
+					.map(Cow::into_owned)
 					.unwrap_or(id.to_string());
 				let camera_id = id.as_ref();
 				let camera_status = NewCameraInfo {
 					name,
 					status: entry.get_status(),
 				};
-				Some((*camera_id, camera_status))
+				(*camera_id, camera_status)
 			})
 			.collect();
 		ServerRequests::RegisterCameras(RegisterCameras {
