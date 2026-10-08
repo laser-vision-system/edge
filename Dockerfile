@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y clang
 
 COPY . .
 
-RUN cargo build --$VERSION --bin edge
+RUN cargo build --bin edge
 
 FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS runtime
 RUN apt-get update && apt-get install -y ca-certificates
