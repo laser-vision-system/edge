@@ -15,11 +15,10 @@ use server_edge_datatypes::{
 	shared::{CameraId, CameraStatus},
 };
 
-use super::{
-	super::{CameraDevice, Identifier},
-	KeyType, Persistence, ValType,
+use super::{super::Identifier, KeyType, Persistence, ValType};
+use crate::{
+	logger::logger, tcam_interface::camera_device::query_for_available_cameras,
 };
-use crate::logger::logger;
 
 // Potential inputs:
 // - Camera device.
@@ -124,7 +123,7 @@ impl Persistence {
 	pub fn poll_for_new_cameras(
 		&mut self,
 	) -> HashMap<CameraId, ConnectionDetail> {
-		let all_devices = CameraDevice::query_for_available_cameras();
+		let all_devices = query_for_available_cameras();
 		let inter = convert_to_intermediaries(all_devices);
 		self.get_new_from_inter(inter)
 	}

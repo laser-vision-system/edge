@@ -34,7 +34,7 @@ const OUTPUT_PATH: &str = "./temp/nokhwa_test_output/";
 #[ignore = "IO bound"]
 fn main() {
 	println!("\t==== NOKHWA TEST ====");
-	let cameras = super::CameraDevice::query_for_available_cameras();
+	let cameras = super::query_for_available_cameras();
 	print_available_camera_info(&cameras);
 	let first_camera = cameras.first().unwrap();
 	print_camera_details(first_camera);

@@ -1,3 +1,11 @@
+#[cfg(test)]
+#[path = "camera_device_tests.rs"]
+mod tests;
+
+#[cfg(test)]
+#[path = "nokhwa_test.rs"]
+mod nokhwa_test;
+
 use std::cmp::Ordering;
 
 use nokhwa::{
@@ -33,6 +41,7 @@ pub struct CameraDevice {
 	inner: StreamCamera,
 }
 
+/// Initialisers.
 impl CameraDevice {
 	/// Attempt to create a device at the given index.
 	#[expect(
@@ -93,7 +102,10 @@ impl CameraDevice {
 	//	self.reset_controls_to_default();
 	//	Ok(self)
 	//}
+}
 
+/// Getters.
+impl CameraDevice {
 	pub fn get_info(&self) -> &CameraInfo {
 		self.inner.info()
 	}
@@ -158,7 +170,10 @@ impl CameraDevice {
 			.ok_or_else(|| EdgeError::from(CameraDeviceError::GetControl(id)))
 			.map(CamControl::from)
 	}
+}
 
+/// Setters.
+impl CameraDevice {
 	/// Set a camera control.
 	pub fn set_control<T>(
 		&mut self,
@@ -323,32 +338,24 @@ impl CameraDevice {
 	//}
 
 	// The setting of camera controls is handled by the controls themselves.
-
-	/// Query [`nokhwa`] for all available cameras and then sort them by their
-	/// index.
-	#[expect(clippy::expect_used, reason = "Low priority edge case")]
-	pub fn query_for_available_cameras() -> Vec<CameraInfo> {
-		let mut cameras = nokhwa::query(ApiBackend::Auto)
-			.expect("The backend should be supported");
-		cameras.sort_by(|left, right| -> Ordering {
-			let left_ind = left.index().as_index().unwrap_or(u32::MAX);
-			let right_ind = right.index().as_index().unwrap_or(u32::MAX);
-			if left_ind == u32::MAX && right_ind == u32::MAX {
-				Ordering::Equal
-			} else if left_ind < right_ind {
-				Ordering::Less
-			} else {
-				Ordering::Greater
-			}
-		});
-		cameras
-	}
 }
 
-#[cfg(test)]
-#[path = "camera_device_tests.rs"]
-mod tests;
-
-#[cfg(test)]
-#[path = "nokhwa_test.rs"]
-mod nokhwa_test;
+/// Query [`nokhwa`] for all available cameras and then sort them by their
+/// index.
+#[expect(clippy::expect_used, reason = "Low priority edge case")]
+pub fn query_for_available_cameras() -> Vec<CameraInfo> {
+	let mut cameras = nokhwa::query(ApiBackend::Auto)
+		.expect("The backend should be supported");
+	cameras.sort_by(|left, right| -> Ordering {
+		let left_ind = left.index().as_index().unwrap_or(u32::MAX);
+		let right_ind = right.index().as_index().unwrap_or(u32::MAX);
+		if left_ind == u32::MAX && right_ind == u32::MAX {
+			Ordering::Equal
+		} else if left_ind < right_ind {
+			Ordering::Less
+		} else {
+			Ordering::Greater
+		}
+	});
+	cameras
+}

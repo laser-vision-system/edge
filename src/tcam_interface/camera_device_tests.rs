@@ -26,7 +26,7 @@ impl Termination for CameraDevice {
 #[test]
 #[ignore = "IO bound"]
 fn print_devices() {
-	let cameras = CameraDevice::query_for_available_cameras();
+	let cameras = query_for_available_cameras();
 
 	println!("Available devices: [");
 	for cam in cameras {
