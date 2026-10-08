@@ -6,7 +6,7 @@ Edge Processing Tier μ-com project.
 
 The Edge is the code that runs on the Raspberry Pi that ingests camera data, processes it to extract laser intensity and deviation, then sends that data to the server.
 
-The project is written in Rust for performance and memory safety.
+The project is written in Rust for performance and memory safety.changes
 
 Rust projects are managed by `Cargo`; you will need to install this to begin development.
 
@@ -54,7 +54,7 @@ docker pull ghcr.io/cos40005-p12/edge-amd64:BRANCH
 ```
 If you want to make and run a container for testing run the following:
 ```
-docker run -it --rm --net=host --privileged --name edge --restart unless-stopped --mount type=bind,src=/dev,dst=/dev ghcr.io/cos40005-p12/edge-arm64:BRANCH
+docker run --rm --net=host --privileged --name edge --mount type=bind,src=/dev,dst=/dev ghcr.io/cos40005-p12/edge-arm64:BRANCH
 ```
 For deployment on the raspberry pi instead run the following:
 ```
