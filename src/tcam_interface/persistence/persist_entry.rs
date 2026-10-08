@@ -458,12 +458,13 @@ impl PersistEntry {
 	) -> Option<BatchItem<'_>> {
 		let active = self.get_active_mut()?;
 
-		logger().lock().unwrap().log_warn(&format!(
-			"Camera at id `{}` with name '{}' has an err accumulation of `{}`",
-			ident,
-			name,
-			active.err_accumulation()
-		));
+		let err_acc = active.err_accumulation();
+		if err_acc > 0 {
+			logger().lock().unwrap().log_warn(&format!(
+				"Camera at id `{}` with name '{}' has an err accumulation of `{}`",
+				ident, name, err_acc
+			));
+		}
 
 		let batch =
 			active.make_batch_item(image, CameraId::from(ident.clone()));
