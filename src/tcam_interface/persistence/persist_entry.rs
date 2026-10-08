@@ -3,7 +3,6 @@
 
 use std::{borrow::Cow, collections::HashSet};
 
-use image::RgbImage;
 use nokhwa::utils::CameraIndex;
 use server_edge_datatypes::shared::{CameraId, CameraStatus};
 
@@ -15,7 +14,7 @@ use super::{
 use crate::{
 	error::EdgeError,
 	logger::logger,
-	tcam_interface::{CameraDevice, Identifier, PersistenceError},
+	tcam_interface::{CameraDevice, Identifier, Image, PersistenceError},
 	vision_processor::BatchItem,
 };
 
@@ -26,12 +25,12 @@ pub enum WhyNo {
 }
 
 pub enum MaybeImage {
-	Image(RgbImage),
+	Image(Image),
 	WhyNo(WhyNo),
 }
 
-impl From<RgbImage> for MaybeImage {
-	fn from(image: RgbImage) -> Self {
+impl From<Image> for MaybeImage {
+	fn from(image: Image) -> Self {
 		Self::Image(image)
 	}
 }
@@ -454,15 +453,14 @@ impl PersistEntry {
 		&mut self,
 		ident: &Identifier,
 		name: &str,
-		image: RgbImage,
+		image: Image,
 	) -> Option<BatchItem<'_>> {
 		let active = self.get_active_mut()?;
 
 		let err_acc = active.err_accumulation();
 		if err_acc > 0 {
 			logger().lock().unwrap().log_warn(&format!(
-				"Camera at id `{}` with name '{}' has an err accumulation of `{}`",
-				ident, name, err_acc
+				"Camera at id `{ident}` with name '{name}' has an err accumulation of `{err_acc}`"
 			));
 		}
 

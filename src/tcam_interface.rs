@@ -4,10 +4,12 @@
 mod camera_device;
 pub mod controls;
 mod identifier;
+mod image;
 mod persistence;
 
 pub use camera_device::CameraDevice;
 pub use identifier::Identifier;
+pub use image::Image;
 use nokhwa::{NokhwaError, utils::KnownCameraControl};
 pub use persistence::{
 	MaybeBatch, MaybeImage, PerpetualInfo, PersistEntry, Persistence, WhyNo,

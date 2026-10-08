@@ -74,17 +74,6 @@ fn get_frame() {
 
 #[test]
 #[ignore = "IO bound"]
-fn decode_image() {
-	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
-		.unwrap()
-		.open()
-		.unwrap();
-	let frame = cam.get_frame_buffer().unwrap();
-	_ = cam.decode_buffer(frame);
-}
-
-#[test]
-#[ignore = "IO bound"]
 fn get_raw_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
 	let controls = cam.get_raw_controls();

@@ -51,7 +51,7 @@ enum LogLevel {
 ///
 /// Each log entry is a string, stored in a `Vec<String>`.
 ///
-/// All log entries are consumed upon calling the send_logs function.
+/// All log entries are consumed upon calling the `send_logs` function.
 ///
 /// ### Verbosity Levels
 /// The logger supports different verbosity levels, which can be set via the
@@ -71,9 +71,9 @@ pub struct Logger {
 impl Logger {
 	pub fn initialise_logger(verbosity: u8) {
 		match LOGGER.set(Mutex::new(Logger::new(verbosity))) {
-			Ok(_) => {},
+			Ok(()) => {},
 			Err(_) => {
-				println!("Logger cannot be initialised more than once.")
+				println!("Logger cannot be initialised more than once.");
 			},
 		}
 	}
@@ -141,7 +141,7 @@ impl Logger {
 	}
 
 	pub fn send_logs(&mut self) {
-		let logs = mem::take(&mut self.logs);
+		let _logs = mem::take(&mut self.logs);
 
 		//for log in logs {
 		//	// TODO: Actually send the logs to the server.

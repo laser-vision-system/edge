@@ -10,15 +10,14 @@ use std::{
 	ops::{Deref, DerefMut},
 };
 
-use image::RgbImage;
 use server_edge_datatypes::shared::{CameraId, CameraStatus};
 
 use super::{Disconnected, IndexOccupier, Limbo};
 use crate::{
 	error::Result,
-	logger::logger,
 	tcam_interface::{
 		CameraDevice, PerpetualInfo,
+		image::Image,
 		persistence::{ErrAccType, OccupiedIndices},
 	},
 	vision_processor::BatchItem,
@@ -126,20 +125,17 @@ impl Active {
 	pub fn get_image(
 		&mut self,
 		camera_err_decrement: ErrAccType,
-	) -> Result<RgbImage> {
+	) -> Result<Image> {
 		let frame = self.get_camera_mut().get_frame_buffer()?;
-
-		self.data.reduce_error(camera_err_decrement);
-
 		// TODO: Inspect error reason. If out of memory, send log and panic.
-		let image = self.get_camera_mut().decode_buffer(frame)?;
-
+		let image = frame.try_decode()?;
+		self.data.reduce_error(camera_err_decrement);
 		Ok(image)
 	}
 
 	pub fn make_batch_item(
 		&mut self,
-		image: RgbImage,
+		image: Image,
 		id: CameraId,
 	) -> BatchItem<'_> {
 		let calibrate = self.data.get_calibrate();

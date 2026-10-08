@@ -1,22 +1,17 @@
-use std::{cmp::Ordering, io::Cursor};
-
-use image::{DynamicImage, RgbImage, imageops::FilterType};
-use image::{GenericImageView, codecs::jpeg};
+use std::cmp::Ordering;
 
 use nokhwa::{
-	Buffer, NokhwaError, OpenRequest, OpenedCamera, StreamCamera,
-	format_types::{Mjpeg, Nv12, RawBgr, RawRgb, Yuyv},
-	frame::{Frame, IntoRgb as _, RgbConversion},
+	OpenRequest, OpenedCamera, StreamCamera,
 	session::open_with_buffers,
 	utils::{
 		ApiBackend, CameraControl, CameraIndex, CameraInfo, ControlValueSetter,
-		FrameFormat, KnownCameraControl,
+		KnownCameraControl,
 	},
 };
 
 use super::{
-	CameraDeviceError, CannotGetControls, FrameDecodeCorruption, FrameRead,
-	NokhwaInitialisation, SelectDecodeFormat, SetControl, StreamOpen,
+	CameraDeviceError, CannotGetControls, FrameRead, NokhwaInitialisation,
+	SetControl, StreamOpen,
 	controls::{
 		ControlMap,
 		descriptions::CamControl,
@@ -24,11 +19,12 @@ use super::{
 			ControlDefault as _, ControlDescription as _, ControlValue as _,
 		},
 	},
+	image::FrameBuffer,
 };
 use crate::{
 	error::{EdgeError, Result},
 	logger::logger,
-	settings::{CAMERA_BUFFER_COUNT, IMAGE_HEIGHT, IMAGE_WIDTH},
+	settings::CAMERA_BUFFER_COUNT,
 };
 
 /// An abstraction over the nokhwa camera objects.
@@ -102,14 +98,6 @@ impl CameraDevice {
 		Ok(self)
 	}
 
-	#[expect(clippy::unwrap_used, reason = "WIP development")]
-	pub fn encode_image(data: &RgbImage) -> Vec<u8> {
-		let mut buff = Cursor::new(Vec::new());
-		let mut enc = jpeg::JpegEncoder::new(&mut buff);
-		enc.encode_image(data).unwrap();
-		buff.into_inner()
-	}
-
 	pub fn get_info(&self) -> &CameraInfo {
 		self.inner.info()
 	}
@@ -123,29 +111,14 @@ impl CameraDevice {
 	/// Request an image of the current camera frame.
 	///
 	/// There seems to be a 2 frame latency.
-	pub fn get_frame_buffer(&mut self) -> Result<Buffer> {
-		self
+	pub fn get_frame_buffer(&mut self) -> Result<FrameBuffer> {
+		let frame = self
 			.inner
 			.frame()
 			// Could error if the stream hasn't been opened.
-			.map_err(|why| CameraDeviceError::from(FrameRead::from(why)).into())
-	}
+			.map_err(|why| CameraDeviceError::from(FrameRead::from(why)))?;
 
-	/// Decode an image.
-	pub fn decode_buffer(&mut self, buffer: Buffer) -> Result<RgbImage> {
-		let decoded_res = select_decode_format(buffer)?;
-
-		let img_buffer = decoded_res
-			.materialize()
-			// We just assume it is always corruption for now.
-			// TODO: Figure out the why.
-			// If it is because of memory, maybe try unwind and restart.
-			.map_err(|why| CameraDeviceError::from(FrameDecodeCorruption::from(why)))?;
-
-		let frame = DynamicImage::ImageRgb8(img_buffer);
-		let cropped = frame.crop_imm(0, 0, frame.width(), frame.height());
-		let resized = enusure_dimensions(cropped).into_rgb8();
-		Ok(resized)
+		Ok(FrameBuffer::from(frame))
 	}
 
 	// == Configurations ==
@@ -373,65 +346,6 @@ impl CameraDevice {
 			}
 		});
 		cameras
-	}
-}
-
-/// Helper function to choose the decode method.
-fn select_decode_format(buf: Buffer) -> Result<RgbConversion> {
-	match buf.source_frame_format() {
-		FrameFormat::MJPEG => Ok(Frame::<Mjpeg>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
-		FrameFormat::YUYV => Ok(Frame::<Yuyv>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
-		FrameFormat::NV12 => Ok(Frame::<Nv12>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
-		FrameFormat::RAWRGB => Ok(Frame::<RawRgb>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
-		FrameFormat::RAWBGR => Ok(Frame::<RawBgr>::try_new(buf)
-			.map_err(|why| {
-				EdgeError::from(CameraDeviceError::from(
-					SelectDecodeFormat::from(why),
-				))
-			})?
-			.into_rgb()),
-		FrameFormat::GRAY => {
-			let nok_err = NokhwaError::general(
-				"threaded-capture does not support GRAY/Luma cameras",
-			);
-			let err = EdgeError::from(CameraDeviceError::from(
-				SelectDecodeFormat::from(nok_err),
-			));
-			Err(err)
-		},
-	}
-}
-
-fn enusure_dimensions(image: DynamicImage) -> DynamicImage {
-	if image.dimensions() != (IMAGE_WIDTH, IMAGE_HEIGHT) {
-		// TODO: Check which type of resize method we want to use.
-		image.resize_exact(IMAGE_WIDTH, IMAGE_HEIGHT, FilterType::Triangle)
-	} else {
-		image
 	}
 }
 

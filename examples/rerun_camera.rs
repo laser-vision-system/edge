@@ -3,14 +3,13 @@
 use std::error::Error;
 
 use edge::{
-	tcam_interface::CameraDevice,
+	tcam_interface::{CameraDevice, Image},
 	vision_processor::{
 		BatchItem, Demonstration, VisionInterface as _, VisionState,
 	},
 };
-use image::RgbImage;
 use nokhwa::utils::CameraIndex;
-use rerun::{self, ColorModel, Image, RecordingStream, RecordingStreamBuilder};
+use rerun::{self, ColorModel, RecordingStream, RecordingStreamBuilder};
 
 struct Context {
 	rec: RecordingStream,
@@ -27,7 +26,7 @@ impl Context {
 		Ok(Context { rec, demo, state })
 	}
 
-	pub fn send_image(&self, path: &str, image: &Image) {
+	pub fn send_image(&self, path: &str, image: &rerun::Image) {
 		self.rec.log(path, image).unwrap();
 	}
 
@@ -35,8 +34,8 @@ impl Context {
 		self.rec.log(path, &rerun::Scalars::single(value)).unwrap();
 	}
 
-	pub fn log_frame(&mut self, path: &str, frame: RgbImage, incr: u8) {
-		let rerun_image = Image::from_elements(
+	pub fn log_frame(&mut self, path: &str, frame: Image, incr: u8) {
+		let rerun_image = rerun::Image::from_elements(
 			&frame,
 			[frame.width(), frame.height()],
 			ColorModel::RGB,
@@ -73,7 +72,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 	loop {
 		let frame = camera.get_frame_buffer()?;
-		let image = camera.decode_buffer(frame)?;
+		let image = frame.try_decode()?;
 		context.log_frame("camera/live_feed", image, incr);
 		if incr == 50 {
 			incr = 0;

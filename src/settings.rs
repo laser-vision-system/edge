@@ -63,7 +63,7 @@ impl EnvVariables {
 		let verbosity = match Self::get_env_variable::<u8>("VERBOSITY") {
 			Ok(v) => v,
 			Err(e) => {
-				eprintln!("{}", e);
+				eprintln!("{e}");
 				1
 			}, // Default to error logs only if the variable is not set or invalid
 		};
@@ -81,15 +81,13 @@ impl EnvVariables {
 				Ok(parsed_value) => Ok(parsed_value),
 				Err(e) => Err(EdgeError::General {
 					reason: format!(
-						"Could not parse {} environment variable to the expected type: {}",
-						name, e
+						"Could not parse {name} environment variable to the expected type: {e}"
 					),
 				}),
 			},
 			Err(e) => Err(EdgeError::General {
 				reason: format!(
-					"Error reading {} environment variable: {}",
-					name, e
+					"Error reading {name} environment variable: {e}"
 				),
 			}),
 		}
