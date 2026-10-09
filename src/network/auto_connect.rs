@@ -1,17 +1,39 @@
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
-#![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
-use std::{collections::HashSet, fmt};
+use std::{
+	collections::HashSet,
+	env,
+	fmt,
+};
 
 use pnet_datalink::interfaces;
 use reqwest::Client;
-use server_edge_datatypes::edge::Settings;
-use tokio::{task::JoinSet, time::interval};
+use server_edge_datatypes::edge::{
+	InitialiseConnection,
+	ServerRequests,
+	Settings,
+};
+use tokio::{
+	task::JoinSet,
+	time::interval,
+};
 use tokio_tungstenite::connect_async;
 
-use super::{NetworkError, websocket::WebSocket};
-use crate::{error::Result, logger::logger, settings::AUTO_CONNECT_DELAY};
+use super::{
+	NetworkError,
+	persistent_edge_id::get_mac_address,
+	websocket::WebSocket,
+};
+use crate::{
+	error::Result,
+	logger::logger,
+	settings::{
+		AUTO_CONNECT_DELAY,
+		EnvVariables,
+	},
+	tcam_interface::Persistence,
+};
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 struct AddressComp {
@@ -47,7 +69,10 @@ impl AddressComp {
 }
 
 impl fmt::Display for AddressComp {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(
 			f,
 			"{}{}{}{}",
@@ -84,6 +109,10 @@ struct WebSocketResponse {
 	pub message: String,
 }
 
+#[expect(
+	clippy::map_err_ignore,
+	reason = "Temporary until error type improvements"
+)]
 async fn get_response(
 	url: AddressComp,
 	client: Client,
@@ -92,14 +121,19 @@ async fn get_response(
 		.get(url.to_string())
 		.send()
 		.await
-		.map_err(|why| NetworkError::ReqwestError {
-			reason: why.to_string(),
+		.map_err(|why| {
+			NetworkError::ReqwestError {
+				reason: why.to_string(),
+			}
 		})?
 		.text()
 		.await
 		.map_err(|_| NetworkError::WebSocketUnpack)?;
 
-	Ok(WebSocketResponse { url, message })
+	Ok(WebSocketResponse {
+		url,
+		message,
+	})
 }
 
 async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
@@ -137,29 +171,59 @@ async fn get_websocket_url(urls: HashSet<AddressComp>) -> Result<String> {
 	Err(NetworkError::AutoConnect.into())
 }
 
-/// When call,
+pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> WebSocket {
+	let request_enum =
+		ServerRequests::InitialiseConnection(InitialiseConnection {
+			edge_id: get_mac_address().unwrap(),
+		});
+	_ = websocket.send_text(request_enum).await;
+	websocket
+}
+
+pub async fn send_camera_list(
+	persistence: &mut Persistence,
+	mut websocket: WebSocket,
+) -> WebSocket {
+	_ = websocket.send_text(persistence.get_current_cameras()).await;
+	websocket
+}
+
 pub async fn assert_connection(
 	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
+	persistence: &mut Persistence,
+	env_variables: &EnvVariables,
 ) -> (WebSocket, Settings) {
-	match (websocket, settings) {
-		// All good, normal operation.
-		(Some(socket), Some(settings)) => {
-			if socket.is_terminated() {
-				return loop_until_connection().await;
-			}
+	// All good, normal operation.
+	if let (Some(socket), Some(settings)) = (websocket, settings) {
+		if socket.is_terminated() {
+			let (socket, settings) = loop_until_connection(env_variables).await;
+			let socket = send_persistent_edge_id(socket).await;
+			(send_camera_list(persistence, socket).await, settings)
+		} else {
 			(socket, settings)
-		},
-		// First time calling.
-		_ => loop_until_connection().await,
+		}
+	}
+	// First time calling.
+	else {
+		let (socket, settings) = loop_until_connection(env_variables).await;
+		(send_persistent_edge_id(socket).await, settings)
 	}
 }
 
-async fn loop_until_connection() -> (WebSocket, Settings) {
+async fn loop_until_connection(
+	env_variables: &EnvVariables
+) -> (WebSocket, Settings) {
 	let mut limit_interval = interval(AUTO_CONNECT_DELAY);
 	loop {
-		match try_connect_once().await {
-			Ok(yay) => return yay,
+		match try_connect_once(env_variables).await {
+			Ok(yay) => {
+				logger()
+					.lock()
+					.unwrap()
+					.log_info("Successfully connected to server!");
+				return yay;
+			},
 			Err(err) => {
 				err.log();
 			},
@@ -168,9 +232,32 @@ async fn loop_until_connection() -> (WebSocket, Settings) {
 	}
 }
 
-async fn try_connect_once() -> Result<(WebSocket, Settings)> {
-	let urls = identify_network();
-	let websocket_url = get_websocket_url(urls).await?;
+async fn try_connect_once(
+	_env_variables: &EnvVariables
+) -> Result<(WebSocket, Settings)> {
+	let websocket_url = if let Ok(url) = env::var("SERVER_URL") {
+		if url.is_empty() {
+			logger()
+				.lock()
+				.unwrap()
+				.log_info("Connecting using auto connect");
+			let urls = identify_network();
+			get_websocket_url(urls).await?
+		} else {
+			logger().lock().unwrap().log_info(&format!(
+				"Connecting to provided server address: {url}"
+			));
+			format!("ws://{url}/edge_ws")
+		}
+	} else {
+		logger()
+			.lock()
+			.unwrap()
+			.log_info("Connecting using auto connect");
+		let urls = identify_network();
+		get_websocket_url(urls).await?
+	};
+
 	let (stream, _) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {
 			NetworkError::AutoConnectUrl {
@@ -213,8 +300,6 @@ async fn get_default_settings(_url: &str) -> Result<Settings> {
 
 #[cfg(test)]
 mod tests {
-	#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
-
 	use super::*;
 	use crate::settings;
 

@@ -1,25 +1,31 @@
-// TODO: Remove all unwraps and then this.
-#![expect(
-	clippy::unwrap_used,
-	clippy::unwrap_in_result,
-	reason = "WIP development"
-)]
-
 use std::{
 	borrow::Cow,
-	ops::{Deref, DerefMut},
+	ops::{
+		Deref,
+		DerefMut,
+	},
 };
 
-use image::RgbImage;
-use server_edge_datatypes::shared::{CameraId, CameraStatus};
+use server_edge_datatypes::shared::{
+	CameraId,
+	CameraStatus,
+};
 
-use super::{Disconnected, IndexOccupier, Limbo};
+use super::{
+	Disconnected,
+	IndexOccupier,
+	Limbo,
+};
 use crate::{
 	error::Result,
-	logger::logger,
 	tcam_interface::{
-		CameraDevice, PerpetualInfo,
-		persistence::{ErrAccType, OccupiedIndices},
+		CameraLike,
+		PerpetualInfo,
+		image::Image,
+		persistence::{
+			ErrAccType,
+			OccupiedIndices,
+		},
 	},
 	vision_processor::BatchItem,
 };
@@ -44,42 +50,51 @@ pub struct Active {
 	///
 	/// It is not required to be unique, but is preferrable.
 	pub name: String,
-	pub camera: CameraDevice,
+	pub camera: Box<dyn CameraLike>,
 }
 
 // Constructors.
 impl Active {
-	pub fn new(
-		camera: CameraDevice,
+	pub fn new<T>(
+		camera: T,
 		occupied_indices: OccupiedIndices,
 		name: String,
-	) -> Self {
+	) -> Self
+	where
+		T: CameraLike + 'static,
+	{
 		Self {
 			occupied_indices,
 			data: PerpetualInfo::default(),
 			name,
-			camera,
+			camera: Box::new(camera),
 		}
 	}
 
-	pub fn from_disconnected(
+	pub fn from_disconnected<T>(
 		disconnected: Disconnected,
-		camera: CameraDevice,
+		camera: T,
 		occupied_indices: OccupiedIndices,
-	) -> Self {
+	) -> Self
+	where
+		T: CameraLike + 'static,
+	{
 		Self {
 			occupied_indices,
 			data: disconnected.data,
 			name: disconnected.name,
-			camera,
+			camera: Box::new(camera),
 		}
 	}
 
-	pub fn from_limbo(
+	pub fn from_limbo<T>(
 		limbo: Limbo,
-		camera: CameraDevice,
+		camera: T,
 		mut occupied_indices: OccupiedIndices,
-	) -> Self {
+	) -> Self
+	where
+		T: CameraLike + 'static,
+	{
 		// The parameter contains more indices than limbo.
 		if !occupied_indices.is_subset(&limbo.occupied_indices) {
 			occupied_indices.extend(limbo.occupied_indices);
@@ -88,7 +103,7 @@ impl Active {
 			occupied_indices,
 			data: limbo.data,
 			name: limbo.name,
-			camera,
+			camera: Box::new(camera),
 		}
 	}
 }
@@ -101,18 +116,21 @@ impl Active {
 	}
 
 	/// Update the name of this device.
-	pub fn set_name(&mut self, name: String) {
+	pub fn set_name(
+		&mut self,
+		name: String,
+	) {
 		self.name = name;
 	}
 
 	/// Get a reference to the current camera.
-	pub fn get_camera(&self) -> &CameraDevice {
-		&self.camera
+	pub fn get_camera(&self) -> &dyn CameraLike {
+		&*self.camera
 	}
 
 	/// Get a mutable reference to the current camera.
-	pub fn get_camera_mut(&mut self) -> &mut CameraDevice {
-		&mut self.camera
+	pub fn get_camera_mut(&mut self) -> &mut dyn CameraLike {
+		&mut *self.camera
 	}
 
 	/// Map this type to a [`CameraStatus`].
@@ -126,29 +144,17 @@ impl Active {
 	pub fn get_image(
 		&mut self,
 		camera_err_decrement: ErrAccType,
-	) -> Result<RgbImage> {
+	) -> Result<Image> {
 		let frame = self.get_camera_mut().get_frame_buffer()?;
-
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Successfully read frame from camera");
-		self.data.reduce_error(camera_err_decrement);
-
 		// TODO: Inspect error reason. If out of memory, send log and panic.
-		let image = self.get_camera_mut().decode_buffer(frame)?;
-
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Successfully decoded image from camera");
-
+		let image = frame.try_decode()?;
+		self.data.reduce_error(camera_err_decrement);
 		Ok(image)
 	}
 
 	pub fn make_batch_item(
 		&mut self,
-		image: RgbImage,
+		image: Image,
 		id: CameraId,
 	) -> BatchItem<'_> {
 		let calibrate = self.data.get_calibrate();
@@ -186,4 +192,5 @@ impl DerefMut for Active {
 	}
 }
 
-impl IndexOccupier for Active {}
+impl IndexOccupier for Active {
+}

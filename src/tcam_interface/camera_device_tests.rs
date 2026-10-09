@@ -1,13 +1,11 @@
-#![expect(clippy::print_stdout, reason = "Tests are allowed to print")]
-#![expect(clippy::use_debug, reason = "Tests are a debug context")]
-#![expect(clippy::panic, reason = "Tests are allowed to panic")]
-#![expect(
-	clippy::unwrap_used,
-	clippy::unwrap_in_result,
-	reason = "Tests are allowed to unwrap"
-)]
-
-use std::process::{ExitCode, Termination};
+use std::{
+	cell::RefCell,
+	process::{
+		ExitCode,
+		Termination,
+	},
+	rc::Rc,
+};
 
 use nokhwa::utils::CameraControl;
 
@@ -15,7 +13,11 @@ use super::*;
 use crate::{
 	error::EdgeError,
 	tcam_interface::controls::traits::{
-		ControlItems as _, ControlMax as _, ControlStep as _,
+		ControlDefault as _,
+		ControlItems as _,
+		ControlMax as _,
+		ControlStep as _,
+		ControlValue as _,
 	},
 };
 
@@ -31,17 +33,104 @@ impl Termination for CameraDevice {
 	}
 }
 
+type Calls = Vec<(KnownCameraControl, ControlValueSetter)>;
+
+struct FakeCamera {
+	info: CameraInfo,
+	set_calls: Rc<RefCell<Calls>>,
+}
+
+impl FakeCamera {
+	fn new() -> (Self, Rc<RefCell<Calls>>) {
+		let set_calls = Rc::new(RefCell::new(Vec::new()));
+		let camera = Self {
+			info: CameraInfo::new(
+				"fake-camera".into(),
+				"test".into(),
+				String::new(),
+				false,
+				CameraIndex::Index(0),
+			),
+			set_calls: set_calls.clone(),
+		};
+		(camera, set_calls)
+	}
+}
+
+impl CameraLike for FakeCamera {
+	fn get_info(&self) -> &CameraInfo {
+		&self.info
+	}
+
+	fn get_index(&self) -> &CameraIndex {
+		self.info.index()
+	}
+
+	fn get_frame_buffer(&mut self) -> Result<FrameBuffer> {
+		Err(EdgeError::General {
+			reason: "fake camera does not provide frames".into(),
+		})
+	}
+
+	fn get_all_supported_controls(&self) -> Result<Vec<KnownCameraControl>> {
+		Ok(Vec::new())
+	}
+
+	fn get_controls(&self) -> Result<ControlMap> {
+		Ok(ControlMap::from(Vec::new()))
+	}
+
+	fn get_control(
+		&self,
+		id: KnownCameraControl,
+	) -> Result<CamControl> {
+		Err(CameraDeviceError::GetControl(id).into())
+	}
+
+	fn set_control(
+		&mut self,
+		id: KnownCameraControl,
+		value: ControlValueSetter,
+	) -> Result<()> {
+		self.set_calls.borrow_mut().push((id, value));
+		Ok(())
+	}
+
+	fn set_controls(
+		&mut self,
+		_controls: ControlMap,
+	) -> Result<()> {
+		Ok(())
+	}
+}
+
+#[test]
+fn camera_trait_is_testable_without_a_device() {
+	let (fake_camera, calls) = FakeCamera::new();
+	let mut camera: Box<dyn CameraLike> = Box::new(fake_camera);
+	let value = ControlValueSetter::Integer(42);
+
+	camera
+		.set_control(KnownCameraControl::Brightness, value.clone())
+		.unwrap();
+
+	let recorded_calls = calls.borrow();
+	assert_eq!(recorded_calls.len(), 1);
+	assert_eq!(recorded_calls[0].0, KnownCameraControl::Brightness);
+	assert_eq!(recorded_calls[0].1, value);
+}
+
 #[test]
 #[ignore = "IO bound"]
 fn print_devices() {
-	let cameras = CameraDevice::query_for_available_cameras();
+	let cameras = query_for_available_cameras();
 
 	println!("Available devices: [");
 	for cam in cameras {
 		if cam.is_metadata() {
-			println!("\tindex `{}` (metadata):", cam.index().as_string())
+			println!("\tindex `{}` (metadata):", cam.index().as_string());
 		} else {
-			println!("\tindex `{}`:", cam.index().as_string())
+			println!("\tindex `{}`:", cam.index().as_string());
 		}
 		println!(
 			"\t\tname: {}\n\t\tdesc: {}",
@@ -83,37 +172,26 @@ fn get_frame() {
 
 #[test]
 #[ignore = "IO bound"]
-fn decode_image() {
-	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
-		.unwrap()
-		.open()
-		.unwrap();
-	let frame = cam.get_frame_buffer().unwrap();
-	let _ = cam.decode_buffer(frame);
-}
-
-#[test]
-#[ignore = "IO bound"]
 fn get_raw_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-	let c = cam.get_raw_controls();
-	println!("{c:#?}");
+	let controls = cam.get_raw_controls();
+	println!("{controls:#?}");
 }
 
 #[test]
 #[ignore = "IO bound"]
 fn get_all_available_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-	let c = cam.get_controls().unwrap();
-	println!("{c}");
+	let controls = cam.get_controls().unwrap();
+	println!("{controls}");
 }
 
 #[test]
 #[ignore = "IO bound"]
 fn get_stripped_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-	let c = cam.get_controls().unwrap().stripped();
-	println!("{c}");
+	let controls = cam.get_controls().unwrap().stripped();
+	println!("{controls}");
 }
 
 #[test]
@@ -137,7 +215,7 @@ fn set_control() -> Result<()> {
 	control
 		.set_value(new.into())
 		.expect("new value should be valid");
-	cam.set_control(id, control.get_value())?;
+	cam.set_control_value(id, control.get_value())?;
 
 	let CamControl::IntegerRange(mut control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
@@ -147,7 +225,7 @@ fn set_control() -> Result<()> {
 	println!("Modified: {}", control.get_value().get_value());
 
 	control.reset_to_default();
-	cam.set_control(id, control.get_value())?;
+	cam.set_control_value(id, control.get_value())?;
 
 	let CamControl::IntegerRange(control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
@@ -184,7 +262,7 @@ fn set_control_exposure() -> Result<()> {
 	control
 		.set_value(desired.into())
 		.expect("new value should be valid");
-	cam.set_control(id, control.get_value())?;
+	cam.set_control_value(id, control.get_value())?;
 
 	let CamControl::Menu(mut control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
@@ -198,7 +276,7 @@ fn set_control_exposure() -> Result<()> {
 	);
 
 	control.reset_to_default();
-	cam.set_control(id, control.get_value())?;
+	cam.set_control_value(id, control.get_value())?;
 
 	let CamControl::Menu(control) = cam.get_control(id)? else {
 		return Err(EdgeError::General {
@@ -214,12 +292,12 @@ fn set_control_exposure() -> Result<()> {
 	Ok(())
 }
 
-#[test]
-#[ignore = "IO bound"]
-fn reset_controls_to_default() {
-	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
-		.unwrap()
-		.open()
-		.unwrap();
-	cam.reset_controls_to_default();
-}
+//#[test]
+//#[ignore = "IO bound"]
+// fn reset_controls_to_default() {
+// 	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+// 		.unwrap()
+// 		.open()
+// 		.unwrap();
+// 	cam.reset_controls_to_default();
+//}

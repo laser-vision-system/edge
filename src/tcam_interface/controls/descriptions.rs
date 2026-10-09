@@ -1,29 +1,68 @@
+#![expect(clippy::expect_used, reason = "Low priority edge cases")]
+
 use std::hash::Hash;
 
 use nokhwa::utils::{
-	CameraControl, ControlValueDescription, KnownCameraControl, MenuEntry,
+	CameraControl,
+	ControlValueDescription,
+	KnownCameraControl,
+	MenuEntry,
 };
-use serde::{Deserialize, Serialize};
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 use super::{
 	traits::{
-		ControlDefault, ControlDescription, ControlItems, ControlMax,
-		ControlMin, ControlPossible, ControlStep, ControlValue as _,
+		ControlDefault,
+		ControlDescription,
+		ControlItems,
+		ControlMax,
+		ControlMin,
+		ControlPossible,
+		ControlStep,
+		ControlValue as _,
 	},
 	types::{
-		ConTypeBool, ConTypeBytes, ConTypeEnum, ConTypeFloat, ConTypeInt,
-		ConTypeKeyValue, ConTypeMenu, ConTypePoint, ConTypeRGB, ConTypeString,
+		ConTypeBool,
+		ConTypeBytes,
+		ConTypeEnum,
+		ConTypeFloat,
+		ConTypeInt,
+		ConTypeKeyValue,
+		ConTypeMenu,
+		ConTypePoint,
+		ConTypeRGB,
+		ConTypeString,
 	},
 	values::{
-		ConValueBoolean, ConValueBooleanType, ConValueBytes, ConValueBytesType,
-		ConValueEnum, ConValueEnumType, ConValueFloat, ConValueFloatType,
-		ConValueInteger, ConValueIntegerType, ConValueKeyValue,
-		ConValueKeyValueType, ConValueMenu, ConValueMenuType, ConValuePoint,
-		ConValuePointType, ConValueRGB, ConValueRGBType, ConValueString,
+		ConValueBoolean,
+		ConValueBooleanType,
+		ConValueBytes,
+		ConValueBytesType,
+		ConValueEnum,
+		ConValueEnumType,
+		ConValueFloat,
+		ConValueFloatType,
+		ConValueInteger,
+		ConValueIntegerType,
+		ConValueKeyValue,
+		ConValueKeyValueType,
+		ConValueMenu,
+		ConValueMenuType,
+		ConValuePoint,
+		ConValuePointType,
+		ConValueRGB,
+		ConValueRGBType,
+		ConValueString,
 		ConValueStringType,
 	},
 };
-use crate::{error::EdgeError, tcam_interface::CameraDeviceError};
+use crate::{
+	error::EdgeError,
+	tcam_interface::CameraDeviceError,
+};
 
 // ===== Field relationship bounds =====
 // (step, min, max, key): value
@@ -80,65 +119,82 @@ impl From<CameraControl> for CamControl {
 				value,
 				default,
 				step,
-			} => CamControl::Integer(IntegerControl::new(
-				control_type,
-				ConValueInteger::from(*value),
-				*default,
-				*step,
-			)),
+			} => {
+				CamControl::Integer(IntegerControl::new(
+					control_type,
+					ConValueInteger::from(*value),
+					*default,
+					*step,
+				))
+			},
 			ControlValueDescription::IntegerRange {
 				min,
 				max,
 				value,
 				step,
 				default,
-			} => CamControl::IntegerRange(IntegerRangeControl::new(
-				control_type,
-				ConValueInteger::from(*value),
-				*default,
-				*step,
-				*min,
-				*max,
-			)),
+			} => {
+				CamControl::IntegerRange(IntegerRangeControl::new(
+					control_type,
+					ConValueInteger::from(*value),
+					*default,
+					*step,
+					*min,
+					*max,
+				))
+			},
 			ControlValueDescription::Float {
 				value,
 				default,
 				step,
-			} => CamControl::Float(FloatControl::new(
-				control_type,
-				ConValueFloat::from(*value),
-				*default,
-				*step,
-			)),
+			} => {
+				CamControl::Float(FloatControl::new(
+					control_type,
+					ConValueFloat::from(*value),
+					*default,
+					*step,
+				))
+			},
 			ControlValueDescription::FloatRange {
 				min,
 				max,
 				value,
 				step,
 				default,
-			} => CamControl::FloatRange(FloatRangeControl::new(
-				control_type,
-				ConValueFloat::from(*value),
-				*default,
-				*step,
-				*min,
-				*max,
-			)),
-			ControlValueDescription::Boolean { value, default } => {
+			} => {
+				CamControl::FloatRange(FloatRangeControl::new(
+					control_type,
+					ConValueFloat::from(*value),
+					*default,
+					*step,
+					*min,
+					*max,
+				))
+			},
+			ControlValueDescription::Boolean {
+				value,
+				default,
+			} => {
 				CamControl::Boolean(BooleanControl::new(
 					control_type,
 					ConValueBoolean::from(*value),
 					*default,
 				))
 			},
-			ControlValueDescription::String { value, default } => {
+			ControlValueDescription::String {
+				value,
+				default,
+			} => {
 				CamControl::String(StringControl::new(
 					control_type,
 					ConValueString::from(value.clone()),
 					default.clone(),
 				))
 			},
-			ControlValueDescription::Bytes { value, default } => {
+			ControlValueDescription::Bytes {
+				value,
+				default,
+			} => {
 				CamControl::Bytes(BytesControl::new(
 					control_type,
 					ConValueBytes::from(value.clone()),
@@ -149,12 +205,19 @@ impl From<CameraControl> for CamControl {
 				key,
 				value,
 				default,
-			} => CamControl::KeyValuePair(KeyValuePairControl::new(
-				control_type,
-				ConValueKeyValue::from(ConTypeKeyValue::from((*key, *value))),
-				(*default).into(),
-			)),
-			ControlValueDescription::Point { value, default } => {
+			} => {
+				CamControl::KeyValuePair(KeyValuePairControl::new(
+					control_type,
+					ConValueKeyValue::from(ConTypeKeyValue::from((
+						*key, *value,
+					))),
+					(*default).into(),
+				))
+			},
+			ControlValueDescription::Point {
+				value,
+				default,
+			} => {
 				CamControl::Point(PointControl::new(
 					control_type,
 					ConValuePoint::from(ConTypePoint::from(*value)),
@@ -165,32 +228,38 @@ impl From<CameraControl> for CamControl {
 				value,
 				possible,
 				default,
-			} => CamControl::Enum(EnumControl::new(
-				control_type,
-				ConValueEnum::from(*value),
-				*default,
-				possible.clone(),
-			)),
+			} => {
+				CamControl::Enum(EnumControl::new(
+					control_type,
+					ConValueEnum::from(*value),
+					*default,
+					possible.clone(),
+				))
+			},
 			ControlValueDescription::RGB {
 				value,
 				max,
 				default,
-			} => CamControl::RGB(RGBControl::new(
-				control_type,
-				ConValueRGB::from(ConTypeRGB::from(*value)),
-				ConTypeRGB::from(*default),
-				ConTypeRGB::from(*max),
-			)),
+			} => {
+				CamControl::RGB(RGBControl::new(
+					control_type,
+					ConValueRGB::from(ConTypeRGB::from(*value)),
+					ConTypeRGB::from(*default),
+					ConTypeRGB::from(*max),
+				))
+			},
 			ControlValueDescription::Menu {
 				value,
 				items,
 				default,
-			} => CamControl::Menu(MenuControl::new(
-				control_type,
-				ConValueMenu::from(*value),
-				ConTypeMenu::from(*default),
-				items.clone(),
-			)),
+			} => {
+				CamControl::Menu(MenuControl::new(
+					control_type,
+					ConValueMenu::from(*value),
+					ConTypeMenu::from(*default),
+					items.clone(),
+				))
+			},
 		}
 	}
 }
@@ -200,7 +269,7 @@ impl From<CameraControl> for CamControl {
 
 /// A camera control that consists of a value, default, and step.
 ///
-/// Maps to [`ControlValueDescription::Integer`]
+/// Maps to [`ControlValueDescription::Integer`].
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct IntegerControl {
 	control_type: KnownCameraControl,
@@ -233,7 +302,10 @@ impl ControlDescription for IntegerControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
@@ -269,7 +341,10 @@ impl ControlStep for IntegerControl {
 		self.step
 	}
 
-	fn valid(&self, value: Self::StepType) -> bool {
+	fn valid(
+		&self,
+		value: Self::StepType,
+	) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0
 			|| (value - self.get_value().get_value()).abs() % self.get_step()
 				== 0
@@ -278,7 +353,7 @@ impl ControlStep for IntegerControl {
 
 /// A camera control that consists of a value, default, step, min, and max.
 ///
-/// Maps to [`ControlValueDescription::IntegerRange`]
+/// Maps to [`ControlValueDescription::IntegerRange`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct IntegerRangeControl {
@@ -318,7 +393,10 @@ impl ControlDescription for IntegerRangeControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
@@ -357,7 +435,10 @@ impl ControlStep for IntegerRangeControl {
 		self.step
 	}
 
-	fn valid(&self, value: Self::StepType) -> bool {
+	fn valid(
+		&self,
+		value: Self::StepType,
+	) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0
 			|| (value - self.get_value().get_value()).abs() % self.get_step()
 				== 0
@@ -382,7 +463,7 @@ impl ControlMax for IntegerRangeControl {
 
 /// A camera control that consists of a value, default, and step.
 ///
-/// Maps to [`ControlValueDescription::Float`]
+/// Maps to [`ControlValueDescription::Float`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct FloatControl {
@@ -416,7 +497,10 @@ impl ControlDescription for FloatControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
@@ -452,7 +536,10 @@ impl ControlStep for FloatControl {
 		self.step
 	}
 
-	fn valid(&self, value: Self::StepType) -> bool {
+	fn valid(
+		&self,
+		value: Self::StepType,
+	) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0.0
 			|| (value - self.get_value().get_value()).abs() % self.get_step()
 				== 0.0
@@ -461,7 +548,7 @@ impl ControlStep for FloatControl {
 
 /// A camera control that consists of a value, default, step, min, and max.
 ///
-/// Maps to [`ControlValueDescription::FloatRange`]
+/// Maps to [`ControlValueDescription::FloatRange`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct FloatRangeControl {
@@ -501,7 +588,10 @@ impl ControlDescription for FloatRangeControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		if ControlMin::valid(self, value.get_value())
 			&& ControlMax::valid(self, value.get_value())
 			&& ControlStep::valid(self, value.get_value())
@@ -540,7 +630,10 @@ impl ControlStep for FloatRangeControl {
 		self.step
 	}
 
-	fn valid(&self, value: Self::StepType) -> bool {
+	fn valid(
+		&self,
+		value: Self::StepType,
+	) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0.0
 			|| (value - self.get_value().get_value()).abs() % self.get_step()
 				== 0.0
@@ -565,7 +658,7 @@ impl ControlMax for FloatRangeControl {
 
 /// A camera control that consists of a value and default.
 ///
-/// Maps to [`ControlValueDescription::Boolean`]
+/// Maps to [`ControlValueDescription::Boolean`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct BooleanControl {
@@ -596,7 +689,10 @@ impl ControlDescription for BooleanControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -621,7 +717,7 @@ impl ControlDefault for BooleanControl {
 
 /// A camera control that consists of a value and an optional default.
 ///
-/// Maps to [`ControlValueDescription::String`]
+/// Maps to [`ControlValueDescription::String`].
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StringControl {
@@ -652,7 +748,10 @@ impl ControlDescription for StringControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -677,7 +776,7 @@ impl ControlDefault for StringControl {
 
 /// A camera control that consists of a value and default.
 ///
-/// Maps to [`ControlValueDescription::Bytes`]
+/// Maps to [`ControlValueDescription::Bytes`].
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BytesControl {
@@ -708,7 +807,10 @@ impl ControlDescription for BytesControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -733,7 +835,7 @@ impl ControlDefault for BytesControl {
 
 /// A camera control that consists of a value and default.
 ///
-/// Maps to [`ControlValueDescription::KeyValuePair`]
+/// Maps to [`ControlValueDescription::KeyValuePair`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct KeyValuePairControl {
@@ -764,7 +866,10 @@ impl ControlDescription for KeyValuePairControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -789,7 +894,7 @@ impl ControlDefault for KeyValuePairControl {
 
 /// A camera control that consists of a value and default.
 ///
-/// Maps to [`ControlValueDescription::Point`]
+/// Maps to [`ControlValueDescription::Point`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct PointControl {
@@ -820,7 +925,10 @@ impl ControlDescription for PointControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -846,7 +954,7 @@ impl ControlDefault for PointControl {
 /// A camera control that consists of a value, default, and a vector of possible
 /// options.
 ///
-/// Maps to [`ControlValueDescription::Enum`]
+/// Maps to [`ControlValueDescription::Enum`].
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EnumControl {
@@ -880,7 +988,10 @@ impl ControlDescription for EnumControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		self.value = value;
 		Ok(())
 	}
@@ -910,7 +1021,10 @@ impl ControlPossible for EnumControl {
 		self.possible.clone()
 	}
 
-	fn valid(&self, value: &Self::ConType) -> bool {
+	fn valid(
+		&self,
+		value: &Self::ConType,
+	) -> bool {
 		self.possible.contains(value)
 	}
 }
@@ -919,7 +1033,7 @@ impl ControlPossible for EnumControl {
 ///
 /// The assumption is that the min will always be 0.
 ///
-/// Maps to [`ControlValueDescription::RGB`]
+/// Maps to [`ControlValueDescription::RGB`].
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct RGBControl {
@@ -953,7 +1067,10 @@ impl ControlDescription for RGBControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
@@ -988,6 +1105,9 @@ impl ControlMax for RGBControl {
 	}
 }
 
+/// A camera control that consists of a value, default, and list of items.
+///
+/// Maps to [`ControlValueDescription::Menu`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MenuControl {
 	control_type: KnownCameraControl,
@@ -1020,7 +1140,10 @@ impl ControlDescription for MenuControl {
 		self.control_type
 	}
 
-	fn set_value(&mut self, value: Self::ValueType) -> Result<(), EdgeError> {
+	fn set_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> Result<(), EdgeError> {
 		if self.valid(value.get_value()) {
 			self.value = value;
 			Ok(())
@@ -1054,7 +1177,10 @@ impl ControlItems for MenuControl {
 		self.items.clone()
 	}
 
-	fn valid(&self, value: Self::ConType) -> bool {
+	fn valid(
+		&self,
+		value: Self::ConType,
+	) -> bool {
 		self.items.iter().any(|entry| entry.get_id() == value)
 	}
 }
@@ -1064,8 +1190,10 @@ impl ControlItems for MenuControl {
 macro_rules! impl_identifiable {
 	($type:ty) => {
 		impl Hash for $type {
-			fn hash<H>(&self, state: &mut H)
-			where
+			fn hash<H>(
+				&self,
+				state: &mut H,
+			) where
 				H: std::hash::Hasher,
 			{
 				self.get_id().hash(state);
@@ -1073,21 +1201,31 @@ macro_rules! impl_identifiable {
 		}
 
 		impl PartialEq for $type {
-			fn eq(&self, other: &Self) -> bool {
+			fn eq(
+				&self,
+				other: &Self,
+			) -> bool {
 				self.get_id() == other.get_id()
 			}
 		}
 
-		impl Eq for $type {}
+		impl Eq for $type {
+		}
 
 		impl PartialOrd for $type {
-			fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+			fn partial_cmp(
+				&self,
+				other: &Self,
+			) -> Option<std::cmp::Ordering> {
 				Some(self.cmp(other))
 			}
 		}
 
 		impl Ord for $type {
-			fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+			fn cmp(
+				&self,
+				other: &Self,
+			) -> std::cmp::Ordering {
 				self.get_id().cmp(&other.get_id())
 			}
 		}

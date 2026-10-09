@@ -4,22 +4,36 @@
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
 use std::{
-	collections::{HashMap, HashSet},
+	collections::{
+		HashMap,
+		HashSet,
+	},
 	fmt,
 	hash::RandomState,
 };
 
-use nokhwa::utils::{CameraIndex, CameraInfo};
+use nokhwa::utils::{
+	CameraIndex,
+	CameraInfo,
+};
 use server_edge_datatypes::{
 	edge::NewCameraInfo,
-	shared::{CameraId, CameraStatus},
+	shared::{
+		CameraId,
+		CameraStatus,
+	},
 };
 
 use super::{
-	super::{CameraDevice, Identifier},
-	KeyType, Persistence, ValType,
+	super::Identifier,
+	KeyType,
+	Persistence,
+	ValType,
 };
-use crate::logger::logger;
+use crate::{
+	logger::logger,
+	tcam_interface::camera_device::query_for_available_cameras,
+};
 
 // Potential inputs:
 // - Camera device.
@@ -59,7 +73,10 @@ pub struct AccessPoint {
 }
 
 impl fmt::Display for AccessPoint {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "{}", self.index)?;
 		if self.is_metadata {
 			write!(f, " (metadata device)")?;
@@ -77,7 +94,10 @@ pub struct DeviceConnection {
 }
 
 impl fmt::Display for DeviceConnection {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "{}", self.identifier)?;
 		for point in &self.points {
 			write!(f, "\n\t{point}")?;
@@ -107,7 +127,10 @@ fn convert_to_intermediaries(devices: Vec<CameraInfo>) -> IntermediaryMap {
 	for device in devices {
 		let index = device.index().to_owned();
 		let is_metadata = device.is_metadata();
-		let accesspoint = AccessPoint { index, is_metadata };
+		let accesspoint = AccessPoint {
+			index,
+			is_metadata,
+		};
 		let identifier = KeyType::from(device);
 		let entry: &mut HashSet<_> = map.entry(identifier).or_default();
 		entry.insert(accesspoint);
@@ -122,9 +145,9 @@ impl Persistence {
 	///
 	/// Returns a list of information about newly added cameras.
 	pub fn poll_for_new_cameras(
-		&mut self,
+		&mut self
 	) -> HashMap<CameraId, ConnectionDetail> {
-		let all_devices = CameraDevice::query_for_available_cameras();
+		let all_devices = query_for_available_cameras();
 		let inter = convert_to_intermediaries(all_devices);
 		self.get_new_from_inter(inter)
 	}
@@ -136,9 +159,13 @@ impl Persistence {
 		inter
 			.into_iter()
 			// TODO: Filter for disconnections here.
-			.filter_map(|(ident, points)| -> Option<(CameraId, ConnectionDetail)> {
-				self.on_each_connection(&DeviceConnection::from((ident, points)))
-			})
+			.filter_map(
+				|(ident, points)| -> Option<(CameraId, ConnectionDetail)> {
+					self.on_each_connection(&DeviceConnection::from((
+						ident, points,
+					)))
+				},
+			)
 			.collect::<HashMap<_, _>>()
 
 		// Cache a NewCameraInfo of each entry beforehand.
@@ -177,19 +204,25 @@ impl Persistence {
 					let id = connection.identifier.as_ref();
 					let name = active.get_name().to_string();
 					let info = NewCameraInfo::new(name, CameraStatus::Active);
-					let new = ConnectionDetail::New { info };
+					let new = ConnectionDetail::New {
+						info,
+					};
 					Some((*id, new))
 				},
 				None => None,
 			}
 		} else {
 			match update {
-				Some(after) => (before != after).then(|| {
-					let id = connection.identifier.as_ref();
-					let status = after;
-					let update = ConnectionDetail::Update { status };
-					(*id, update)
-				}),
+				Some(after) => {
+					(before != after).then(|| {
+						let id = connection.identifier.as_ref();
+						let status = after;
+						let update = ConnectionDetail::Update {
+							status,
+						};
+						(*id, update)
+					})
+				},
 				None => None,
 			}
 		}

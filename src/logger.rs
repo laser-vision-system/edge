@@ -16,16 +16,26 @@
 //! - `logger().send_logs()`
 
 #![expect(
-	clippy::print_stderr,
 	clippy::print_stdout,
 	reason = "This is the logger module, where this is expected behaviour"
 )]
-#![expect(clippy::inline_modules, reason = "Simple unit tests")]
 
-use std::sync::{Mutex, OnceLock};
+use std::{
+	mem,
+	sync::{
+		Mutex,
+		OnceLock,
+	},
+};
 
-use chrono::{Duration, Local, NaiveDate};
-use serde::{Deserialize, Serialize};
+use chrono::{
+	Local,
+	NaiveDate,
+};
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 use crate::error::EdgeError;
 
@@ -35,7 +45,7 @@ pub type LoggerRef = &'static Mutex<Logger>;
 static LOGGER: OnceLock<Mutex<Logger>> = OnceLock::new();
 
 pub fn logger() -> LoggerRef {
-	LOGGER.get_or_init(|| Mutex::new(Logger::new()))
+	LOGGER.get().expect("Logger has not been initialised.")
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -45,48 +55,54 @@ enum LogLevel {
 	Error,
 }
 
-// #[derive(Serialize, Deserialize)]
-// /// A single log entry.
-// struct LogEntry {
-// 	count: u32,
-// 	timestamp: String,
-// 	level: LogLevel,
-// 	message: String,
-// }
-
-// impl LogEntry {
-// 	fn new(count: u32, level: LogLevel, message: String) -> Self {
-// 		let timestamp = Local::now().to_rfc3339();
-
-// 		LogEntry {
-// 			count,
-// 			timestamp,
-// 			level,
-// 			message,
-// 		}
-// 	}
-// }
-
-// The logger struct that holds each unsent (buffered) log entry and the log
-// count.
-//
-// Each log entry is stored in a Vector.
-//
-// All log entries are consumed upon calling the send_logs function.
+/// The logger struct that holds each unsent (buffered) log entry and the log
+/// count.
+///
+/// Each log entry is a string, stored in a `Vec<String>`.
+///
+/// All log entries are consumed upon calling the `send_logs` function.
+///
+/// ### Verbosity Levels
+/// The logger supports different verbosity levels, which can be set via the
+/// `VERBOSITY` environment variable. The levels are as follows:
+/// - 0: No logs are recorded or sent.
+/// - 1: Only error logs are recorded and sent.
+/// - 2: Warning and error logs are recorded and sent.
+/// - 3: Info, warning, and error logs are recorded and sent.
+///
+/// Any other inputs including non-numeric strings will default to level 1
+/// (error logs only).
 pub struct Logger {
 	logs: Vec<String>,
 	counter: LogCounter,
+	verbosity: u8,
 }
 
 impl Logger {
-	fn new() -> Self {
-		Logger {
-			logs: Vec::new(),
-			counter: LogCounter::new(),
+	pub fn initialise_logger(verbosity: u8) {
+		match LOGGER.set(Mutex::new(Logger::new(verbosity))) {
+			Ok(()) => {},
+			Err(_) => {
+				println!("Logger cannot be initialised more than once.");
+			},
 		}
 	}
 
-	pub fn log_info(&mut self, message: &str) {
+	fn new(verbosity: u8) -> Self {
+		Logger {
+			logs: Vec::new(),
+			counter: LogCounter::new(),
+			verbosity,
+		}
+	}
+
+	pub fn log_info(
+		&mut self,
+		message: &str,
+	) {
+		if self.verbosity < 3 {
+			return;
+		}
 		let log_entry = format!(
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
@@ -101,7 +117,13 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_warn(&mut self, message: &str) {
+	pub fn log_warn(
+		&mut self,
+		message: &str,
+	) {
+		if self.verbosity < 2 {
+			return;
+		}
 		let log_entry = format!(
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
@@ -116,7 +138,13 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_error(&mut self, error: &EdgeError) {
+	pub fn log_error(
+		&mut self,
+		error: &EdgeError,
+	) {
+		if self.verbosity < 1 {
+			return;
+		}
 		let log_entry = format!(
 			"[{:05}] {}\n{:?}\n{}\n----------",
 			self.counter.next(),
@@ -132,13 +160,13 @@ impl Logger {
 	}
 
 	pub fn send_logs(&mut self) {
-		let logs = std::mem::take(&mut self.logs);
+		let _logs = mem::take(&mut self.logs);
 
-		for log in logs {
-			// TODO: Actually send the logs to the server.
-			// TODO: When this happens, the IO bound test must be ignored.
-			println!("{log}");
-		}
+		// for log in logs {
+		// 	// TODO: Actually send the logs to the server.
+		// 	// TODO: When this happens, the IO bound test must be ignored.
+		// 	println!("{log}");
+		//}
 	}
 }
 
@@ -167,31 +195,35 @@ impl LogCounter {
 
 		self.counter
 	}
-
-	fn _reset_counter(&mut self) {
-		let yesterday = Local::now().date_naive() - Duration::days(1);
-		self.date = yesterday;
-	}
-
-	fn _back_one_hour(&mut self) {
-		let hour_ago = Local::now().date_naive() - Duration::hours(1);
-		self.date = hour_ago;
-	}
-
-	fn _forward_one_hour(&mut self) {
-		let hour_forward = Local::now().date_naive() + Duration::hours(1);
-		self.date = hour_forward;
-	}
 }
 
 #[cfg(test)]
 mod test {
-	#![expect(clippy::unwrap_used, reason = "Tests are allowed to unwrap")]
+	use chrono::Duration;
 
-	use super::logger;
+	use super::*;
+
+	impl LogCounter {
+		fn reset_counter(&mut self) {
+			let yesterday = Local::now().date_naive() - Duration::days(1);
+			self.date = yesterday;
+		}
+
+		fn back_one_hour(&mut self) {
+			let hour_ago = Local::now().date_naive() - Duration::hours(1);
+			self.date = hour_ago;
+		}
+
+		fn forward_one_hour(&mut self) {
+			let hour_forward = Local::now().date_naive() + Duration::hours(1);
+			self.date = hour_forward;
+		}
+	}
 
 	#[test]
 	fn info() {
+		Logger::initialise_logger(3);
+
 		logger()
 			.lock()
 			.unwrap()
@@ -231,6 +263,8 @@ mod test {
 
 	#[test]
 	fn warn() {
+		Logger::initialise_logger(3);
+
 		logger()
 			.lock()
 			.unwrap()
@@ -270,6 +304,8 @@ mod test {
 
 	#[test]
 	fn error() {
+		Logger::initialise_logger(3);
+
 		logger()
 			.lock()
 			.unwrap()
@@ -309,15 +345,17 @@ mod test {
 
 	#[test]
 	fn new_day() {
+		Logger::initialise_logger(3);
+
 		logger().lock().unwrap().log_info("Logging today.");
 
-		logger().lock().unwrap().counter._reset_counter();
+		logger().lock().unwrap().counter.reset_counter();
 
 		logger().lock().unwrap().log_info("Reset counter.");
 		logger().lock().unwrap().log_info("Logging again today.");
 		logger().lock().unwrap().log_info("Logging again today.");
 
-		logger().lock().unwrap().counter._reset_counter();
+		logger().lock().unwrap().counter.reset_counter();
 
 		logger().lock().unwrap().log_info("Reset counter.");
 		logger().lock().unwrap().log_info("Logging again today.");
@@ -328,26 +366,28 @@ mod test {
 
 	#[test]
 	fn daylight_savings() {
+		Logger::initialise_logger(3);
+
 		logger()
 			.lock()
 			.unwrap()
 			.log_info("First log. Now going back an hour.");
 
-		logger().lock().unwrap().counter._back_one_hour();
+		logger().lock().unwrap().counter.back_one_hour();
 
 		logger()
 			.lock()
 			.unwrap()
 			.log_info("Back one hour. Now going forward one hour.");
 
-		logger().lock().unwrap().counter._forward_one_hour();
+		logger().lock().unwrap().counter.forward_one_hour();
 
 		logger()
 			.lock()
 			.unwrap()
 			.log_info("Back to normal. Going forward one hour again.");
 
-		logger().lock().unwrap().counter._forward_one_hour();
+		logger().lock().unwrap().counter.forward_one_hour();
 
 		logger().lock().unwrap().log_info("Now forward one hour.");
 

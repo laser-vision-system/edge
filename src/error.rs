@@ -3,7 +3,11 @@ use serde_json::error::Error as SerdeError;
 use crate::{
 	logger::logger,
 	network::NetworkError,
-	tcam_interface::{CameraDeviceError, PersistenceError},
+	tcam_interface::{
+		CameraDeviceError,
+		PersistenceError,
+	},
+	vision_processor::VisionError,
 };
 
 /// Specialised [`Result`] type for the Edge tier.
@@ -11,6 +15,7 @@ use crate::{
 /// Shorthand for a result with the [`EdgeError`] error type.
 ///
 /// [`Result`]: std::result::Result
+#[expect(clippy::absolute_paths, reason = "Single use aliasing")]
 pub type Result<T> = std::result::Result<T, EdgeError>;
 
 /// The error type for all operations in the Edge tier.
@@ -31,6 +36,8 @@ pub enum EdgeError {
 	NetworkError(#[from] NetworkError),
 	#[error(transparent)]
 	PersistenceError(#[from] PersistenceError),
+	#[error(transparent)]
+	VisionError(#[from] VisionError),
 	#[error("Failed to decode the controls sent by the server: {reason}")]
 	DecodeControls {
 		#[from]
@@ -56,10 +63,21 @@ impl Clone for EdgeError {
 		match self {
 			// Down-convert this to a general error because serde_json's error
 			// doesn't implement clone.
-			Self::DecodeControls { reason } => Self::General {
-				reason: format!(
-					"Failed to decode the controls sent by the server: {reason}",
-				),
+			Self::DecodeControls {
+				reason,
+			} => {
+				Self::General {
+					reason: format!(
+						"Failed to decode the controls sent by the server: {reason}",
+					),
+				}
+			},
+			// Down-convert this to a general error because burn's errors
+			// don't implement clone.
+			Self::VisionError(reason) => {
+				Self::General {
+					reason: reason.to_string(),
+				}
 			},
 			other => other.clone(),
 		}
@@ -68,6 +86,8 @@ impl Clone for EdgeError {
 
 impl From<String> for EdgeError {
 	fn from(value: String) -> Self {
-		EdgeError::General { reason: value }
+		EdgeError::General {
+			reason: value,
+		}
 	}
 }

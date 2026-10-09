@@ -11,6 +11,7 @@ LICENSE text eol=lf
 *.md text eol=lf
 *.rs text eol=lf
 *.py text eol=lf
+*.bpk -text -diff
 
 # Mark Cargo.lock as generated so it is collapsed in PRs.
 Cargo.lock linguist-generated=true

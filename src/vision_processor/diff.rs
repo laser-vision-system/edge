@@ -3,12 +3,23 @@
 
 use std::fmt;
 
-use image::{DynamicImage, GrayImage};
+use image::{
+	DynamicImage,
+	GrayImage,
+};
 use image_compare::{
-	Algorithm, Metric, gray_similarity_histogram, gray_similarity_structure,
+	Algorithm,
+	Metric,
+	gray_similarity_histogram,
+	gray_similarity_structure,
 };
 
-use super::{BatchItem, SessionToken, VisionInterface, VisionState};
+use super::{
+	BatchItem,
+	SessionToken,
+	VisionInterface,
+	VisionState,
+};
 use crate::logger::logger;
 
 struct DiffModel {
@@ -87,17 +98,17 @@ impl Diff {
 		reason = "The pixel count should never exceed the limits of a f32"
 	)]
 	fn compute_brightness_stats(img: &GrayImage) -> (u8, f32, f32) {
-		let pixels: Vec<u8> = img.pixels().map(|p| p.0[0]).collect();
+		let pixels: Vec<u8> = img.pixels().map(|pixel| pixel.0[0]).collect();
 		let n = pixels.len() as f32;
 
-		let sum: f32 = pixels.iter().map(|&p| f32::from(p)).sum();
+		let sum: f32 = pixels.iter().map(|&pixel| f32::from(pixel)).sum();
 		let mean = sum / n;
 
 		let variance = pixels
 			.iter()
-			.map(|&p| {
-				let d = f32::from(p) - mean;
-				d * d
+			.map(|&pixel| {
+				let dev = f32::from(pixel) - mean;
+				dev * dev
 			})
 			.sum::<f32>()
 			/ n;
@@ -148,16 +159,22 @@ impl Diff {
 }
 
 impl VisionInterface for Diff {
-	fn process(&mut self, batch: &mut [BatchItem]) {
+	fn process(
+		&mut self,
+		batch: &mut [BatchItem],
+	) {
 		for item in batch {
-			let VisionState::Diff { data, .. } = item.state else {
+			let VisionState::Diff {
+				data, ..
+			} = item.state
+			else {
 				// TODO: This should raise an error.
 				continue;
 			};
 
 			if item.calibrate {
 				let grey_image =
-					DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
+					DynamicImage::ImageRgb8((*item.image).clone()).into_luma8();
 				data.image = Some(grey_image.clone());
 				let (peak, mean, std_dev) =
 					Self::compute_brightness_stats(&grey_image);
@@ -169,7 +186,7 @@ impl VisionInterface for Diff {
 
 			if let Some(setpoint) = &data.image {
 				let grey_image =
-					DynamicImage::ImageRgb8(item.image.clone()).into_luma8();
+					DynamicImage::ImageRgb8((*item.image).clone()).into_luma8();
 
 				let (
 					peak_diff,
@@ -209,13 +226,19 @@ impl VisionInterface for Diff {
 }
 
 impl fmt::Debug for Diff {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "Diff")
 	}
 }
 
 impl fmt::Display for Diff {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "Diff")
 	}
 }
@@ -231,7 +254,10 @@ pub struct ExternalData {
 }
 
 impl fmt::Display for ExternalData {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(
 			f,
 			"ExternalData for Diff\n - peak: {:?}\n - mean: {:?}\n - std_dev: {:?}",

@@ -29,12 +29,18 @@
 use std::{
 	collections::BTreeMap,
 	fmt,
-	ops::{Deref, DerefMut},
+	ops::{
+		Deref,
+		DerefMut,
+	},
 };
 
 #[expect(unused_imports, reason = "Needed for module docstring")]
 use nokhwa::utils::ControlValueSetter;
-use nokhwa::utils::{CameraControl, KnownCameraControl};
+use nokhwa::utils::{
+	CameraControl,
+	KnownCameraControl,
+};
 
 pub mod descriptions;
 pub mod traits;
@@ -42,7 +48,10 @@ pub mod types;
 pub mod values;
 
 use descriptions::CamControl;
-use serde::{Deserialize, Serialize};
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 type MapType = BTreeMap<KnownCameraControl, CamControl>;
 
@@ -75,9 +84,12 @@ impl ControlMap {
 			})
 			.collect();
 
-		Self { inner }
+		Self {
+			inner,
+		}
 	}
 
+	#[expect(clippy::expect_used, reason = "Low priority edge case")]
 	pub fn serialise(&self) -> String {
 		serde_json::to_string(&self.inner).expect(
 			"everything in the inner map should be correcly serialisable",
@@ -92,7 +104,9 @@ impl From<Vec<CameraControl>> for ControlMap {
 			.into_iter()
 			.map(|control| (control.control(), control.into()))
 			.collect::<MapType>();
-		Self { inner }
+		Self {
+			inner,
+		}
 	}
 }
 
@@ -111,7 +125,10 @@ impl DerefMut for ControlMap {
 }
 
 impl fmt::Display for ControlMap {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
 		write!(f, "{}", self.serialise())
 	}
 }

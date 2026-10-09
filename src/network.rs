@@ -1,11 +1,8 @@
 //! Shared network utilities.
 
 pub mod auto_connect;
+pub mod persistent_edge_id;
 pub mod websocket;
-
-use serde::de::DeserializeOwned;
-
-use crate::error::Result;
 
 /// Errors specific to networking operations.
 #[derive(Clone, Debug, thiserror::Error)]
@@ -25,12 +22,6 @@ pub enum NetworkError {
 	IdentifyNetwork,
 	#[error("Failed to get a response: {reason}")]
 	ReqwestError { reason: String },
-}
-
-pub fn unpack<T>(data: &str) -> Result<T>
-where
-	T: DeserializeOwned,
-{
-	let data_unchecked: serde_json::Result<T> = serde_json::from_str(data);
-	data_unchecked.map_err(|_| NetworkError::WebSocketUnpack.into())
+	#[error("Could not find mac address")]
+	MacAddress,
 }
