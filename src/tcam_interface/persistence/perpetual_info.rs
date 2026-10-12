@@ -14,8 +14,8 @@ pub struct PerpetualInfo {
 	/// An error accumulation value. If this value gets too high, the camera
 	/// [`CameraStatus`] should be changed to [`Broken`].
 	///
-	/// [`CameraStatus`]: server_edge_datatypes::shared::CameraStatus
-	/// [`Broken`]: server_edge_datatypes::shared::CameraStatus::Broken
+	/// [`CameraStatus`]: api::shared::CameraStatus
+	/// [`Broken`]: api::shared::CameraStatus::Broken
 	err_accumulation: ErrAccType,
 	/// Whether to change the setpoint to the immediate next measurement.
 	calibrate: bool,
