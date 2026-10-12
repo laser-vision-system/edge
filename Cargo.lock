@@ -2203,7 +2203,7 @@ checksum = "e1d926b4d407d372f141f93bb444696142c29d32962ccbd3531117cf3aa0bfa9"
 
 [[package]]
 name = "edge"
-version = "0.219.0"
+version = "0.219.1"
 dependencies = [
  "api",
  "edge-cameras",
@@ -2218,7 +2218,7 @@ dependencies = [
 
 [[package]]
 name = "edge-cameras"
-version = "0.219.0"
+version = "0.219.1"
 dependencies = [
  "api",
  "edge-core",
@@ -2232,7 +2232,7 @@ dependencies = [
 
 [[package]]
 name = "edge-client"
-version = "0.219.0"
+version = "0.219.1"
 dependencies = [
  "api",
  "edge-cameras",
@@ -2249,7 +2249,7 @@ dependencies = [
 
 [[package]]
 name = "edge-core"
-version = "0.219.0"
+version = "0.219.1"
 dependencies = [
  "api",
  "chrono",
@@ -2261,7 +2261,7 @@ dependencies = [
 
 [[package]]
 name = "edge-vision"
-version = "0.219.0"
+version = "0.219.1"
 dependencies = [
  "api",
  "burn",

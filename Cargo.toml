@@ -9,19 +9,19 @@ members = [
 	"crates/*",
 ]
 exclude = [
-	"nokhwa",
-	"api",
+	"submodules/nokhwa",
+	"submodules/api",
 ]
 
 [workspace.package]
 edition = "2024"
-version = "0.219.0"
+version = "0.219.1"
 
 [workspace.dependencies]
 
 # Submodules
-api = { path = "./api" }
-nokhwa = { path = "./nokhwa", features = [
+api = { path = "./submodules/api" }
+nokhwa = { path = "./submodules/nokhwa", features = [
 	"serialize",
 	"input-native",
 	"runner",
