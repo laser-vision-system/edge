@@ -24,7 +24,7 @@ for backend in "${backends[@]}"; do
 	feature="cnn-backend-$backend"
 	printf '\n=== Benchmarking %s ===\n' "$feature"
 	if cargo bench --bench "cnn_inference_$backend" --no-default-features \
-		--features "$feature" -- --sample-size 100 --warm-up-time 10 \
+		--features "$feature cnn-model-zero-copy" -- --sample-size 100 --warm-up-time 10 \
 		--measurement-time 60 --save-baseline "$backend"; then
 		successes+=("$backend")
 		printf 'Results and plots saved under target/criterion/cnn_inference_%s.\n' "$backend"
