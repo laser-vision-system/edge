@@ -1,6 +1,6 @@
-[submodule "api"]
-	path = api
+[submodule "submodules/api"]
+	path = submodules/api
 	url = https://github.com/COS40005-P12/api.git
-[submodule "nokhwa"]
-	path = nokhwa
+[submodule "submodules/nokhwa"]
+	path = submodules/nokhwa
 	url = https://github.com/COS40005-P12/nokhwa.git

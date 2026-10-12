@@ -1,123 +1,67 @@
 cargo-features = ["profile-rustflags"]
 
-[package]
-name = "edge"
-version = "0.1.0"
-edition = "2024"
-
 [profile.dev]
 rustflags = ["-C", "target-feature=+fp16,+fhm"]
 
-[features]
-default = [
-	"cnn-backend-flex",
-	"cnn-model-embedded",
+[workspace]
+resolver = "3"
+members = [
+	"crates/*",
+]
+exclude = [
+	"submodules/nokhwa",
+	"submodules/api",
 ]
 
-# == Burn backend selection ==
-cnn-backend-flex = [
-	"burn/flex",
-	"dep:burn-flex",
-]
-cnn-backend-wgpu = [
-	"burn/wgpu",
-	"burn/fusion",
-	"burn-store/wgpu",
-]
-cnn-backend-cuda = [
-	"burn/cuda",
-	"burn/fusion",
-	"burn-store/cuda",
-]
+[workspace.package]
+edition = "2024"
+version = "0.219.1"
 
-# == Burn model loading mehod ==
-# Embed the model into the compiled binary.
-cnn-model-embedded = [
-]
-# Load the model from file at runtime with zero-copy.
-cnn-model-zero-copy = [
-	"burn-store/memmap",
-]
-# Load the model from file at runtime without zero-copy.
-cnn-model-file = [
-]
+[workspace.dependencies]
 
-[dependencies]
-burn = { version = "0.21", default-features = false, features = [
-	"std",
-]}
-burn-flex = { version = "0.21", default-features = false, features = [
-	"rayon",
-	"simd",
-], optional = true }
-burn-store = { version = "0.21", default-features = false, features = [
-	"std",
-	"burnpack",
-] }
-chrono = "0.4"
-futures-util = "0.3.33"
-image = { version = "0.25", default-features = false, features = [
-	"rayon",
-	"jpeg",
-] }
-image-compare = "0.5"
-lab = "0.11"
-mutually_exclusive_features = "0.1.0"
-nokhwa = { path = "nokhwa", features = [
+# Submodules
+api = { path = "./submodules/api" }
+nokhwa = { path = "./submodules/nokhwa", features = [
 	"serialize",
 	"input-native",
 	"runner",
 ] }
-pnet_datalink = "0.35.0"
-rayon = "1"
-reqwest = { version = "0.13", features = [
-	"json",
-	"multipart"
+
+# Internal crates
+edge-cameras = { path = "./crates/edge-cameras", default-features = false }
+edge-core = { path = "./crates/edge-core", default-features = false }
+edge-client = { path = "./crates/edge-client", default-features = false }
+edge-vision = { path = "./crates/edge-vision", default-features = false }
+
+# External crates
+image = { version = "0.25", default-features = false, features = [
+	"rayon",
+	"jpeg",
 ] }
+mutually_exclusive_features = "0.1"
 serde = { version = "1" , features = [
 	"derive"
 ] }
-serde_json = "1.0.151"
-api = { path = "./api"}
+serde_json = "1.0"
 thiserror = "2.0"
-tokio = { version = "1.26.0", features = [
+tokio = { version = "1.26", features = [
 	"full"
 ] }
-tokio-tungstenite = "0.30.0"
 
 # Dependencies only needed for tests, examples, or benchmarks.
-[dev-dependencies]
-criterion = "0.8"
+[workspace.dev-dependencies]
 rerun = { version = "0.35", features = [
 	"image"
 ] }
 
-[[bench]]
-name = "cnn_inference_flex"
-path = "benches/cnn_inference/flex.rs"
-required-features = ["cnn-backend-flex"]
-harness = false
-
-[[bench]]
-name = "cnn_inference_wgpu"
-path = "benches/cnn_inference/wgpu.rs"
-required-features = ["cnn-backend-wgpu"]
-harness = false
-
-[[bench]]
-name = "cnn_inference_cuda"
-path = "benches/cnn_inference/cuda.rs"
-required-features = ["cnn-backend-cuda"]
-harness = false
-
-[lints.rust]
+[workspace.lints.rust]
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.
 
-[lints.rustdoc]
+[workspace.lints.rustdoc]
 missing_crate_level_docs = "warn"
 broken_intra_doc_links = "warn"
 
-[lints.clippy]
+[workspace.lints.clippy]
 
 # ===== pedantic group lints ======
 pedantic = { level = "warn", priority = -1} # This should be upgraded to forbid in the future.
