@@ -1,0 +1,91 @@
+[package]
+name = "edge-vision"
+edition.workspace = true
+version.workspace = true
+
+[features]
+default = [
+	"cnn-backend-flex",
+	"cnn-model-embedded",
+]
+
+# == Burn backend selection ==
+cnn-backend-flex = [
+	"burn/flex",
+	"dep:burn-flex",
+]
+cnn-backend-wgpu = [
+	"burn/wgpu",
+	"burn/fusion",
+	"burn-store/wgpu",
+]
+cnn-backend-cuda = [
+	"burn/cuda",
+	"burn/fusion",
+	"burn-store/cuda",
+]
+
+# == Burn model loading mehod ==
+# Embed the model into the compiled binary.
+cnn-model-embedded = [
+]
+# Load the model from file at runtime with zero-copy.
+cnn-model-zero-copy = [
+	"burn-store/memmap",
+]
+# Load the model from file at runtime without zero-copy.
+cnn-model-file = [
+]
+
+[dependencies]
+
+# Submodules
+api.workspace = true
+
+# Internal crates
+edge-core.workspace = true
+
+# External crates
+burn = { version = "0.21", default-features = false, features = [
+	"std",
+] }
+burn-flex = { version = "0.21", default-features = false, features = [
+	"rayon",
+	"simd",
+], optional = true }
+burn-store = { version = "0.21", default-features = false, features = [
+	"std",
+	"burnpack",
+] }
+image.workspace = true
+image-compare = "0.5"
+lab = "0.11"
+mutually_exclusive_features.workspace = true
+rayon = "1"
+thiserror.workspace = true
+
+# Dependencies only needed for tests, examples, or benchmarks.
+[dev-dependencies]
+criterion = "0.8"
+image.workspace = true
+
+[[bench]]
+name = "cnn_inference_flex"
+path = "benches/cnn_inference/flex.rs"
+required-features = ["cnn-backend-flex"]
+harness = false
+
+[[bench]]
+name = "cnn_inference_wgpu"
+path = "benches/cnn_inference/wgpu.rs"
+required-features = ["cnn-backend-wgpu"]
+harness = false
+
+[[bench]]
+name = "cnn_inference_cuda"
+path = "benches/cnn_inference/cuda.rs"
+required-features = ["cnn-backend-cuda"]
+harness = false
+
+[lints]
+workspace = true

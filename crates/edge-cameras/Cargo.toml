@@ -1,0 +1,23 @@
+[package]
+name = "edge-cameras"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+
+# Submodules
+api.workspace = true
+nokhwa.workspace = true
+
+# Internal crates
+edge-core.workspace = true
+edge-vision.workspace = true
+
+# External crates
+image.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
