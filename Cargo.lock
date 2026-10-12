@@ -303,6 +303,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
+name = "api"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "strum 0.28.0",
+ "strum_macros 0.28.0",
+]
+
+[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4248,6 +4257,7 @@ checksum = "18aade80d5e09429040243ce1143ddc08a92d7a22820ac512610410a4dd5214f"
 name = "edge"
 version = "0.1.0"
 dependencies = [
+ "api",
  "burn",
  "burn-flex",
  "burn-store",
@@ -4265,7 +4275,6 @@ dependencies = [
  "rerun",
  "serde",
  "serde_json",
- "server-edge-datatypes",
  "thiserror 2.0.20",
  "tokio",
  "tokio-tungstenite",
@@ -12554,15 +12563,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "server-edge-datatypes"
-version = "0.1.0"
-dependencies = [
- "serde",
- "strum 0.28.0",
- "strum_macros 0.28.0",
 ]
 
 [[package]]
