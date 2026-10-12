@@ -12,16 +12,16 @@ use std::{
 	hash::RandomState,
 };
 
-use nokhwa::utils::{
-	CameraIndex,
-	CameraInfo,
-};
-use server_edge_datatypes::{
+use api::{
 	edge::NewCameraInfo,
 	shared::{
 		CameraId,
 		CameraStatus,
 	},
+};
+use nokhwa::utils::{
+	CameraIndex,
+	CameraInfo,
 };
 
 use super::{

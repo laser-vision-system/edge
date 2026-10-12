@@ -16,8 +16,7 @@ use std::{
 	hash::RandomState,
 };
 
-use nokhwa::utils::CameraIndex;
-use server_edge_datatypes::{
+use api::{
 	edge::{
 		NewCameraInfo,
 		RegisterCameras,
@@ -33,6 +32,7 @@ use server_edge_datatypes::{
 		ViewCameraConfig,
 	},
 };
+use nokhwa::utils::CameraIndex;
 
 pub use self::{
 	perpetual_info::PerpetualInfo,

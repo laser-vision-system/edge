@@ -1,4 +1,4 @@
-use server_edge_datatypes::shared::CameraStatus;
+use api::shared::CameraStatus;
 
 use super::IndexOccupier;
 use crate::tcam_interface::persistence::OccupiedIndices;

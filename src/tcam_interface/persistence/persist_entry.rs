@@ -6,11 +6,11 @@ use std::{
 	collections::HashSet,
 };
 
-use nokhwa::utils::CameraIndex;
-use server_edge_datatypes::shared::{
+use api::shared::{
 	CameraId,
 	CameraStatus,
 };
+use nokhwa::utils::CameraIndex;
 
 use super::{
 	OccupiedIndices,

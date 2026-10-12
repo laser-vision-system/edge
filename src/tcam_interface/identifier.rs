@@ -24,8 +24,8 @@ use std::{
 	},
 };
 
+use api::shared::CameraId;
 use nokhwa::utils::CameraInfo;
-use server_edge_datatypes::shared::CameraId;
 
 /// The internal mapping type to the [`CameraInfo`] struct.
 ///

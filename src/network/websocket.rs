@@ -6,13 +6,13 @@ use std::{
 	time::Duration,
 };
 
+use api::edge::EdgeRequests;
 use futures_util::{
 	SinkExt as _,
 	StreamExt as _,
 	stream::FusedStream as _,
 };
 use serde::Serialize;
-use server_edge_datatypes::edge::EdgeRequests;
 use tokio::{
 	self,
 	net::TcpStream,

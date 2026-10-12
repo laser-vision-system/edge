@@ -47,7 +47,7 @@ pub const IMAGE_PIXELS: usize = (IMAGE_WIDTH * IMAGE_HEIGHT) as usize;
 
 use std::env;
 
-pub use server_edge_datatypes::edge::Settings;
+pub use api::edge::Settings;
 
 use crate::error::EdgeError;
 

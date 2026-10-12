@@ -6,7 +6,7 @@ use std::{
 	},
 };
 
-use server_edge_datatypes::shared::CameraStatus;
+use api::shared::CameraStatus;
 
 use super::{
 	Active,

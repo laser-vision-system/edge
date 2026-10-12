@@ -6,7 +6,7 @@ use std::{
 	},
 };
 
-use server_edge_datatypes::shared::{
+use api::shared::{
 	CameraId,
 	CameraStatus,
 };

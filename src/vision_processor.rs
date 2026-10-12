@@ -17,14 +17,14 @@ use std::{
 	},
 };
 
+use api::shared::{
+	CameraId,
+	VisionTechnique,
+};
 pub use avg_lightness::AvgLightness;
 pub use cnn::Cnn;
 pub use diff::Diff;
 pub use inactive::Inactive;
-use server_edge_datatypes::shared::{
-	CameraId,
-	VisionTechnique,
-};
 use thiserror::Error;
 
 use crate::{

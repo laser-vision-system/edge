@@ -6,7 +6,7 @@ use std::{
 	error,
 };
 
-use server_edge_datatypes::{
+use api::{
 	edge::{
 		EdgeRequests,
 		ImageAnalysis,

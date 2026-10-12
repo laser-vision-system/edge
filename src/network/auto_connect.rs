@@ -7,13 +7,13 @@ use std::{
 	fmt,
 };
 
-use pnet_datalink::interfaces;
-use reqwest::Client;
-use server_edge_datatypes::edge::{
+use api::edge::{
 	InitialiseConnection,
 	ServerRequests,
 	Settings,
 };
+use pnet_datalink::interfaces;
+use reqwest::Client;
 use tokio::{
 	task::JoinSet,
 	time::interval,

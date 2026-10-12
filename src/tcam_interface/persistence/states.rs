@@ -5,12 +5,12 @@ pub mod invalid;
 pub mod limbo;
 
 pub use active::Active;
+use api::shared::CameraStatus;
 pub use broken::Broken;
 pub use disconnected::Disconnected;
 pub use invalid::Invalid;
 pub use limbo::Limbo;
 use nokhwa::utils::CameraIndex;
-use server_edge_datatypes::shared::CameraStatus;
 
 use super::OccupiedIndices;
 use crate::tcam_interface::CameraLike;
