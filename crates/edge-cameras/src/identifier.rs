@@ -278,4 +278,14 @@ mod tests {
 		assert_eq!(first.cmp(&third), second.cmp(&third));
 		assert_ne!(first.cmp(&second), first.cmp(&third));
 	}
+
+	#[test]
+	fn identifier_is_deterministic() {
+		let ident =
+			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
+
+		let numeric: u64 = *ident.borrow();
+
+		assert_eq!(numeric, 0x3BC7_0313_155B_3C38_u64);
+	}
 }
