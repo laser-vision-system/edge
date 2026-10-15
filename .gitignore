@@ -28,3 +28,6 @@ rustc-ice-*.txt
 
 # Folder for temporary files
 temp/
+
+# Rustrovers folder
+.idea/

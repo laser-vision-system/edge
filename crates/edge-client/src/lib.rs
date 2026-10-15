@@ -19,3 +19,8 @@ pub mod auto_connect;
 pub mod error;
 pub mod persistent_edge_id;
 pub mod websocket;
+mod client;
+mod commands;
+pub mod client_handler;
+mod client_interface;
+pub mod camera_requests;

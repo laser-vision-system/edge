@@ -24,7 +24,9 @@ pub enum EdgeClientError {
 	#[error("Error while finding the default interface")]
 	IdentifyNetwork,
 	#[error("Failed to get a response: {reason}")]
-	ReqwestError { reason: String },
+	RequestError { reason: String },
 	#[error("Could not find mac address")]
 	MacAddress,
+	#[error("Websocket closed by server")]
+	WebsocketClosed,
 }

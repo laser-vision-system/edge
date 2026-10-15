@@ -26,8 +26,9 @@ use tokio::{
 	task::JoinSet,
 	time::interval,
 };
-use tokio_tungstenite::connect_async;
-
+use tokio::net::TcpStream;
+use tokio_tungstenite::{connect_async, WebSocketStream};
+use tokio_tungstenite::MaybeTlsStream;
 use crate::{
 	error::{
 		EdgeClientError,
@@ -124,7 +125,7 @@ async fn get_response(
 		.send()
 		.await
 		.map_err(|why| {
-			EdgeClientError::ReqwestError {
+			EdgeClientError::RequestError {
 				reason: why.to_string(),
 			}
 		})?
@@ -192,53 +193,7 @@ pub async fn send_camera_list(
 	websocket
 }
 
-pub async fn assert_connection(
-	websocket: Option<WebSocket>,
-	settings: Option<Settings>,
-	persistence: &mut Persistence,
-	env_variables: &EnvVariables,
-) -> (WebSocket, Settings) {
-	// All good, normal operation.
-	if let (Some(socket), Some(settings)) = (websocket, settings) {
-		if socket.is_terminated() {
-			let (socket, settings) = loop_until_connection(env_variables).await;
-			let socket = send_persistent_edge_id(socket).await;
-			(send_camera_list(persistence, socket).await, settings)
-		} else {
-			(socket, settings)
-		}
-	}
-	// First time calling.
-	else {
-		let (socket, settings) = loop_until_connection(env_variables).await;
-		(send_persistent_edge_id(socket).await, settings)
-	}
-}
-
-async fn loop_until_connection(
-	env_variables: &EnvVariables
-) -> (WebSocket, Settings) {
-	let mut limit_interval = interval(AUTO_CONNECT_DELAY);
-	loop {
-		match try_connect_once(env_variables).await {
-			Ok(yay) => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_info("Successfully connected to server!");
-				return yay;
-			},
-			Err(err) => {
-				logger().lock().unwrap().log_error(&err);
-			},
-		}
-		limit_interval.tick().await;
-	}
-}
-
-async fn try_connect_once(
-	_env_variables: &EnvVariables
-) -> EdgeClientResult<(WebSocket, Settings)> {
+pub async fn get_ws_stream() -> (EdgeClientResult<WebSocketStream<MaybeTlsStream<TcpStream>>>, String) {
 	let websocket_url = if let Ok(url) = env::var("SERVER_URL") {
 		if url.is_empty() {
 			logger()
@@ -268,9 +223,7 @@ async fn try_connect_once(
 				reason: why.to_string(),
 			}
 		})?;
-	let return_websocket = WebSocket::new(stream);
-	let return_settings = get_default_settings(&websocket_url.clone()).await?;
-	Ok((return_websocket, return_settings))
+	(Ok(stream), websocket_url)
 }
 
 // TODO: Remove this once the server request is implemented.

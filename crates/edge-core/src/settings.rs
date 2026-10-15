@@ -29,6 +29,7 @@ pub const PORT: &str = "8080";
 
 pub const RETRY_DELAY: Duration = Duration::from_secs(1);
 pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
+pub const WS_KEEP_ALIVE: Duration = Duration::from_secs(6);
 
 // ============================================================================
 // All other settings values should be defined within this struct.
