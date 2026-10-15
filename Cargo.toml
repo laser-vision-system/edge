@@ -58,21 +58,23 @@ rerun = { version = "0.35", features = [
 unsafe_code = "deny" # We should avoid using unsafe code as much as possible.
 
 [workspace.lints.rustdoc]
-missing_crate_level_docs = "warn"
-broken_intra_doc_links = "warn"
+missing_crate_level_docs = "deny"
+broken_intra_doc_links = "deny"
 
 [workspace.lints.clippy]
 
 # ===== pedantic group lints ======
-pedantic = { level = "warn", priority = -1} # This should be upgraded to forbid in the future.
-missing_errors_doc = "allow" # Consider upgrading in the future.
-missing_panics_doc = "allow" # Consider upgrading in the future.
+
+pedantic = { level = "deny", priority = -1 }
 must_use_candidate = "allow" # We don't need to be constantly alerted to this.
+missing_errors_doc = "deny" # Documentation should be thorough
+missing_panics_doc = "deny" # Documentation should be thorough
 
 # ===== restriction group lints ======
 
 # Allowed
 
+absolute_paths = "allow" # This is for external crate paths, not file paths.
 arithmetic_side_effects = "allow" # TODO: Upgrade in future?
 as_underscore = "allow" # Consider upgrading.
 clone_on_ref_ptr = "allow" # Okay as long as you are aware.
@@ -83,7 +85,7 @@ implicit_return = "allow" # You are encouraged to omit `return`.
 inline_modules = "allow" # Currently complains about inline test modules.
 iter_over_hash_type = "allow" # We do not care about order.
 let_underscore_untyped = "allow" # Overlaps with `let_underscore_must_use`, little other value added.
-missing_docs_in_private_items = "allow" # TODO: Upgrade in the future.
+missing_docs_in_private_items = "warn" # TODO: Consider upgrading after all public documentation is done.
 missing_inline_in_public_items = "allow" # TODO: Maybe upgrade in the future for performance.
 module_name_repetitions = "allow" # Doesn't seem to help, often forces dumb renaming.
 multiple_inherent_impl = "allow" # This is fine in a single file, but discouraged across different files.
@@ -93,7 +95,6 @@ pattern_type_mismatch = "allow" # Encourages good ownership understanding, but a
 
 # Warn
 
-absolute_paths = "warn" # Encourage the use of relative paths without expressly denying it. This is for external crates, not file paths.
 allow_attributes = "warn" # Encourage the use of `#[except]`.
 assertions_on_result_states = "warn" # Please mark when you intend to do this.
 decimal_literal_representation = "warn" # May help readability.
@@ -179,7 +180,7 @@ unneeded_field_pattern = "deny" # Enforce a justification.
 unreachable = "deny" # Enforce a justification.
 unused_result_ok = "deny" # Prevents silencing potential errors.
 unwrap_in_result = "deny" # Enforce a justification.
-unwrap_used = "deny" # Enforce a justification. #TODO: Upgrade in the future.
+unwrap_used = "deny" # Enforce a justification. Not forbidden to avoid issues with external macros.
 verbose_file_reads = "deny" # Inferior to `fs::read`.
 
 # Forbid
