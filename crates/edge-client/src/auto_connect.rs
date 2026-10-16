@@ -176,15 +176,6 @@ async fn get_websocket_url(
 	Err(EdgeClientError::AutoConnect)
 }
 
-pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> WebSocket {
-	let request_enum =
-		ServerRequests::InitialiseConnection(InitialiseConnection {
-			edge_id: get_mac_address().unwrap(),
-		});
-	_ = websocket.send_text(request_enum).await;
-	websocket
-}
-
 pub async fn send_camera_list(
 	persistence: &mut Persistence,
 	mut websocket: WebSocket,

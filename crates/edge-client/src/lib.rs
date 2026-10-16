@@ -23,4 +23,4 @@ mod client;
 mod commands;
 pub mod client_handler;
 mod client_interface;
-pub mod camera_requests;
+pub mod websocket_requests;

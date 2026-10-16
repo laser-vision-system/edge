@@ -1,4 +1,4 @@
-use api::shared::ConnId;
+use api::shared::{CameraId, ConnId};
 
 pub enum CameraRequest{
     SetNameCamera(String),
@@ -7,8 +7,10 @@ pub enum CameraRequest{
     Configuration(String),
     ViewCameraConfig(ConnId),
     Setpoint,
-    ForceRetryCamera,
-    ForgetCameraRequest(ConnId),
 }
 
+pub enum PersistenceRequest {
+    ForceRetryCamera(CameraId),
+    ForgetCameraRequest(ConnId, CameraId),
+}
 

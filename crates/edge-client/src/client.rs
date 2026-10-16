@@ -1,21 +1,28 @@
 use std::collections::{HashMap, HashSet};
+use std::error;
 use api::shared::VisionTechnique;
-use api::edge::EdgeRequests;
+use api::edge::{EdgeRequests, InitialiseConnection, ServerRequests};
 use api::shared::CameraId;
 use futures_util::{SinkExt, StreamExt};
 use futures_util::stream::FusedStream;
+use reqwest::header::Entry::Vacant;
+use reqwest::header::VacantEntry;
+use serde::Serialize;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::time::interval;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
-use tokio_tungstenite::tungstenite::{Bytes, Message};
+use tokio_tungstenite::tungstenite::{Bytes, Message, Utf8Bytes};
+use edge_cameras::persistence::Persistence;
 use edge_core::logger::logger;
 use edge_core::settings::{AUTO_CONNECT_DELAY, WS_KEEP_ALIVE};
 use crate::client_interface::ClientInterface;
 use crate::commands::Command;
 use crate::auto_connect::get_ws_stream;
-use crate::camera_requests::CameraRequest;
+use crate::websocket_requests::{CameraRequest, PersistenceRequest};
 use crate::error::EdgeClientError;
+use crate::persistent_edge_id::get_mac_address;
+use crate::websocket::WebSocket;
 
 type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
@@ -26,6 +33,7 @@ pub struct Client {
     cmd_rx: UnboundedReceiver<Command>,
     status_tx: UnboundedSender<bool>,
     vision_tx: UnboundedSender<VisionTechnique>,
+    persistence_tx: UnboundedSender<PersistenceRequest>,
     cameras: HashMap<CameraId, UnboundedSender<CameraRequest>>,
     listeners: HashSet<UnboundedSender<EdgeRequests>>,
     url: Option<String>
@@ -44,25 +52,58 @@ impl Client {
         }
     }
 
+    async fn send_persistent_edge_id(&mut self, mut websocket: WebsocketType) -> WebsocketType {
+        let request_enum =
+            ServerRequests::InitialiseConnection(InitialiseConnection {
+                edge_id: get_mac_address().unwrap(),
+            });
+        websocket = self.send_text(websocket, request_enum).await;
+        websocket
+    }
+
+    async fn send_text<T>(
+        &mut self,
+        mut websocket: WebsocketType,
+        data: T,
+    ) -> WebsocketType
+    where
+        T: Serialize,
+    {
+        websocket
+            .send(Message::Text(Utf8Bytes::from(&serde_json::to_string(
+                &data,
+            )?)))
+            .await?;
+        websocket
+    }
+
     /// Forwards the SetProcessingType request to `vision_rx`
     async fn set_processing_type(&mut self, vision: VisionTechnique) {
-        self.vision_tx.send(vision).unwrap();
+        self.vision_tx.send(vision).expect("Vision channel closed");
     }
 
     /// Forwards non-vision-processing requests to their respective camera,
     /// logs an error if the request uses an invalid camera ID
     // NOTE FOR REVIEW: are there any camera requests that shouldn't be directed to the cameras
     // themselves?
-    async fn camera_request(&mut self, request: CameraRequest, camera: CameraId){
-        if !self.cameras.contains_key(&camera) {
-            logger()
-                .lock()
-                .unwrap()
-                .log_warn(&format!("Command received for invalid camera ID: {:?} ", camera));
-            return
-        }
+    async fn camera_request(&mut self, request: CameraRequest, camera: CameraId) {
+        let result =self.cameras.entry(camera)
+            .and_modify(|entry| entry.send(request)?);
 
-        let _ =self.cameras.get_mut(&camera).unwrap().send(request);
+        match result {
+            Vacant(_) => {
+                logger()
+                    .lock()
+                    .unwrap()
+                    .log_warn(&format!("Command received for invalid camera ID: {:?} ", camera));
+            }
+
+            _ => {}
+        }
+    }
+
+    async fn persistence_request(&mut self, request: PersistenceRequest) {
+        self.persistence_tx.send(request).expect("Persistence channel closed");
     }
 
     /// Forwards all requests to miscellaneous listeners. In place for migration purposes.
@@ -77,7 +118,7 @@ impl Client {
         loop {
             tokio::select! {
                 Some(Ok(cmd))  = self.cmd_rx.recv() => {
-                    if let Err(e) = self.process_command(cmd).await {
+                    if let Err(e) = self.process_command(cmd, websocket).await {
 
                     }
                 }
@@ -99,7 +140,7 @@ impl Client {
     }
 
     /// Handles Commands send by the client handler.
-    async fn process_command(&mut self, command: Command) -> Result<None, EdgeClientError>  {
+    async fn process_command(&mut self, command: Command, mut websocket: WebsocketType) -> Result<None, EdgeClientError>  {
         match command {
 
         }
@@ -175,12 +216,12 @@ impl Client {
             }
 
             EdgeRequests::ForceRetryCamera(data) => {
-                let request = CameraRequest::ForceRetryCamera;
-                self.camera_request(request, data.camera_id).await;
+                let request = PersistenceRequest::ForceRetryCamera(data.camera_id);
+                self.persistence_request(request).await;
             }
             EdgeRequests::ForgetCameraRequest(data) => {
-                let request = CameraRequest::ForgetCameraRequest(data.conn_id);
-                self.camera_request(request, data.camera_id).await;
+                let request = PersistenceRequest::ForgetCameraRequest(data.conn_id, data.camera_id);
+                self.persistence_request(request).await;
             }
 
             _ => {}
@@ -192,12 +233,14 @@ impl ClientInterface for Client {
     async fn new(
         cmd_rx: UnboundedReceiver<Command>,
         status_tx: UnboundedSender<bool>,
-        vision_tx: UnboundedSender<VisionTechnique>
+        vision_tx: UnboundedSender<VisionTechnique>,
+        persistence_tx: UnboundedSender<PersistenceRequest>,
     ) -> Self {
         Client {
             cmd_rx,
             status_tx,
             vision_tx,
+            persistence_tx,
             cameras: HashMap::new(),
             listeners: HashSet::new(),
             url: None
@@ -206,7 +249,9 @@ impl ClientInterface for Client {
 
     async fn run(mut self) {
         loop {
-            let (websocket, url) = self.connect_ws().await;
+            let (mut websocket, url) = self.connect_ws().await;
+
+            websocket = self.send_persistent_edge_id(websocket).await;
 
             self.url = Some(url); // Saving the url here so eventually we can implement a get_default_settings method
 
