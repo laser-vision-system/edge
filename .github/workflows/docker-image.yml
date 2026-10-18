@@ -18,7 +18,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   # Only if we want a new push to replace an existing build-in-progress.
@@ -57,10 +56,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-              ${{ matrix.arch }}
-              -${{ matrix.build}}
               type=ref,event=branch
               type=raw,value=stable,enable={{is_default_branch}}
               type=schedule,pattern={{date 'YYYY-MM-DD'}}
@@ -82,7 +78,7 @@ jobs:
           build-args: BUILD_TARGET=${{ matrix.build }}
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:${{matrix.arch}}-${{matrix.build}}-${{steps.meta.outputs.tags}}
           builder: container-builder
           platforms: linux/${{ matrix.arch }}
           cache-from: type=gha
