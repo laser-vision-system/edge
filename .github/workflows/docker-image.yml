@@ -18,6 +18,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   # Only if we want a new push to replace an existing build-in-progress.
