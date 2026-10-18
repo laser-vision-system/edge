@@ -27,4 +27,7 @@ rustc-ice-*.txt
 .DS_Store
 
 # Folder for temporary files
+temp/
+
+# not needed
 .idea/
