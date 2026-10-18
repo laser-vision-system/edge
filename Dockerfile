@@ -1,7 +1,7 @@
 FROM --platform=$BUILDPLATFORM rust:bookworm AS builder
-WORKDIR /app
+WORKDIR /ap
 
-ARG BUILD_TARGET=dev
+ARG BUILD_TARGET
 
 RUN apt-get update && apt-get install -y clang
 RUN rustup toolchain install nightly
@@ -12,6 +12,9 @@ COPY . .
 RUN cargo build --profile $BUILD_TARGET --bin edge
 
 FROM --platform=$BUILDPLATFORM debian:trixie AS runtime
+ARG BINARY_DIR
+COPY docker_binary.sh /docker_binary.sh 
+RUN ./docker_binary.sh 
 RUN apt-get update && apt-get install -y ca-certificates
-COPY --from=builder /app/target/release/edge /edge
+COPY --from=builder /app/target/docker/$BINARY_DIR/edge /edge
 CMD ["/edge"]
