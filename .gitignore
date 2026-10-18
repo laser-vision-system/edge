@@ -28,3 +28,7 @@ rustc-ice-*.txt
 
 # Folder for temporary files
 temp/
+
+# not needed
+.idea/
+
