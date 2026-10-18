@@ -14,7 +14,7 @@ RUN cargo build --profile $BUILD_TARGET --bin edge
 FROM --platform=$BUILDPLATFORM debian:trixie AS runtime
 ARG BINARY_DIR
 COPY docker_binary.sh /docker_binary.sh 
-RUN ./docker_binary.sh $BINARY_DIR
+RUN . ./docker_binary.sh $BINARY_DIR
 RUN apt-get update && apt-get install -y ca-certificates
 COPY --from=builder /app/target/docker/$BINARY_DIR/edge /edge
 CMD ["/edge"]
