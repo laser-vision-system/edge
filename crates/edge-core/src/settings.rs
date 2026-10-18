@@ -61,11 +61,12 @@ pub struct EnvVariables {
 	// - 3: Info, warning, and error logs
 	// Any other strings will be treated as 1.
 	verbosity: u8,
+	server_url: Option<String>,
 }
 
 impl EnvVariables {
 	pub fn initialise() -> Self {
-		let verbosity = match Self::get_env_variable::<u8>("VERBOSITY") {
+		let verbosity = match Self::retrieve_env_variable::<u8>("VERBOSITY") {
 			Ok(value) => value,
 			Err(why) => {
 				eprintln!("{why}");
@@ -74,12 +75,21 @@ impl EnvVariables {
 			    * invalid */
 		};
 
+		let server_url = match Self::retrieve_env_variable::<String>("SERVER_URL") {
+			Ok(value) => Some(value),
+			Err(why) => {
+				eprintln!("{why}");
+				None
+			},
+		};
+
 		Self {
 			verbosity,
+			server_url,
 		}
 	}
 
-	fn get_env_variable<T>(name: &str) -> Result<T, EdgeCoreError>
+	fn retrieve_env_variable<T>(name: &str) -> Result<T, EdgeCoreError>
 	where
 		T: FromStr,
 		T::Err: Display,
@@ -105,30 +115,15 @@ impl EnvVariables {
 		}
 	}
 
-	// fn get_verbosity() -> Result<u8, EdgeError> {
-	// 	match env::var("VERBOSITY") {
-	// 		Ok(v) => match v.parse::<u8>() {
-	// 			Ok(v) => Ok(v),
-	// 			Err(e) => Err(EdgeError::General {
-	// 				reason: format!(
-	// 					"Could not parse VERBOSITY environment variable to u8: {}",
-	// 					e
-	// 				),
-	// 			}),
-	// 		},
-	// 		Err(e) => {
-	// 			Err(EdgeError::General {
-	// 				reason: format!(
-	// 					"Error reading VERBOSITY environment variable: {}",
-	// 					e
-	// 				),
-	// 			})
-	// 		},
-	// 	}
-	// }
-
 	pub fn verbosity(&self) -> u8 {
 		self.verbosity
+	}
+
+	pub fn server_url(&self) -> Option<&str> {
+		match &self.server_url {
+			Some(server_url) => Some(server_url),
+			None => None
+		}
 	}
 }
 
@@ -136,6 +131,7 @@ impl Default for EnvVariables {
 	fn default() -> Self {
 		EnvVariables {
 			verbosity: 1, // Default to error logs only
+			server_url: None,
 		}
 	}
 }
