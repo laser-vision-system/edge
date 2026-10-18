@@ -13,5 +13,7 @@ RUN cargo build --release --bin edge
 
 FROM --platform=$BUILDPLATFORM debian:trixie AS runtime
 RUN apt-get update && apt-get install -y ca-certificates
-COPY --from=builder /app/target/release/edge /edge
+COPY --from=builder /app/target/docker/release/ /
+COPY --from=builder /app/target/docker/debug/ /
+
 CMD ["/edge"]
