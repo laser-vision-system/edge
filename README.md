@@ -54,15 +54,15 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 After you are logged in run the following command to pull the image:
 ```
 # For raspbery pi's or MAC machines
-docker pull ghcr.io/cos40005-p12/edge-arm64:BRANCH
+docker pull ghcr.io/laser-vision-system/edge-arm64:BRANCH
 # For other hardware
-docker pull ghcr.io/cos40005-p12/edge-amd64:BRANCH
+docker pull ghcr.io/laser-vision-system/edge-amd64:BRANCH
 ```
 If you want to make and run a container for testing run the following:
 ```
-docker run --rm --net=host --privileged --name edge --mount type=bind,src=/dev,dst=/dev ghcr.io/cos40005-p12/edge-arm64:BRANCH
+docker run --rm --net=host --privileged --name edge --mount type=bind,src=/dev,dst=/dev ghcr.io/laser-vision-system/edge-arm64:BRANCH
 ```
 For deployment on the raspberry pi instead run the following:
 ```
-docker run --net=host --privileged --name edge --restart unless-stopped --mount type=bind,src=/dev,dst=/dev ghcr.io/cos40005-p12/edge-arm64:BRANCH
+docker run --net=host --privileged --name edge --restart unless-stopped --mount type=bind,src=/dev,dst=/dev ghcr.io/laser-vision-system/edge-arm64:BRANCH
 ```
