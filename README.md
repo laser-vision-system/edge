@@ -18,12 +18,12 @@ See [CONTRIBUTING](docs/CONTRIBUTING.md).
 
 ### Feature flags
 
-Available backend features are `cnn-backend-flex`, `cnn-backend-wgpu`, `cnn-backend-cuda`, `cnn-backend-rocm`, and `cnn-backend-tch`.
+Available backend features are `cnn-backend-flex`, `cnn-backend-wgpu`, and `cnn-backend-cuda`.
 
-Wgpu is enabled by default. To build with another Burn backend, disable default features and select exactly one backend, for example:
+Flex is enabled by default. To build with another Burn backend, disable default features and select exactly one backend, for example:
 
 ```sh
-cargo build --no-default-features --features cnn-backend-cuda
+cargo build --no-default-features --features cnn-backend-wgpu
 ```
 
 ### CNN benchmarks
@@ -34,7 +34,13 @@ Run the inference benchmark once for every backend with:
 ./scripts/bench-cnn-backends.sh
 ```
 
-The script builds each backend separately and measures batches of 1 and 10 images plus ten sequential single-image calls with 100 Criterion samples, a 10-second warm-up, and a 60-second target measurement time for each case. The longer profile favors stable estimates and may take considerably longer for CPU backends. It generates gnuplot charts and stores each backend's results independently under `target/criterion/cnn_inference_<backend>`. A vertical summary reports Criterion's mean time spent in `process` for each case. Batch and image setup happens before timing; tensor preparation performed internally by `process` remains part of the measurement. Pass backend names to limit the run, for example `./scripts/bench-cnn-backends.sh wgpu flex`. Direct runs use the corresponding dedicated target, for example `cargo bench --bench cnn_inference_flex --no-default-features --features cnn-backend-flex`. The benchmark loads `models/laser-cnn.bpk` once per backend; backends that need unavailable hardware or system libraries may fail, while the script continues with the remaining backends and reports failures at the end.
+The script builds each backend separately and measures batches of 1 and 10 images plus ten sequential single-image calls with 100 Criterion samples, a 10-second warm-up, and a 60-second target measurement time for each case. The flex backend will take significantly longer than the other backends. The script generates gnuplot charts and stores each backend's results independently in `target/criterion/cnn_inference_<backend>`.
+
+Once a backend has completed, a summary is printed to the terminal which reports Criterion's mean time spent in `process` for each case. Batch and image setup happens before timing; tensor preparation performed internally by `process` remains part of the measurement.
+
+Pass backend names to limit the run, for example `./scripts/bench-cnn-backends.sh wgpu flex`. Direct runs use the corresponding dedicated target, for example `cargo bench --bench cnn_inference_flex --no-default-features --features cnn-backend-flex`.
+
+The benchmark loads `models/laser-cnn.bpk` once per backend; backends that need unavailable hardware or system libraries may fail, while the script continues with the remaining backends and reports failures at the end.
 
 ## Docker image
 
