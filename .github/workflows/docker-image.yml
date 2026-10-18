@@ -57,8 +57,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.arch }}-${{ matrix.build}}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+              ${{ matrix.arch }}
+              -${{ matrix.build}}
               type=ref,event=branch
               type=raw,value=stable,enable={{is_default_branch}}
               type=schedule,pattern={{date 'YYYY-MM-DD'}}
