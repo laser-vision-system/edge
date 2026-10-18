@@ -1,3 +1,4 @@
+BUILD_TARGET=${1:-release}
 if [ "${BUILD_TARGET}" = "dev" ]; then 
 BINARY_DIR=debug;
 echo $BINARY_DIR;
