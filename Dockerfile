@@ -9,7 +9,7 @@ RUN rustup override set nightly
 
 COPY . .
 
-RUN cargo build --$BUILD_TARGET --bin edge
+RUN cargo build --profile $BUILD_TARGET --bin edge
 
 FROM --platform=$BUILDPLATFORM debian:trixie AS runtime
 RUN apt-get update && apt-get install -y ca-certificates
