@@ -59,7 +59,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.arch }}-${{ matrix.build}}
           tags: |
-              -type=ref,event=branch
+              type=ref,event=branch
               type=raw,value=stable,enable={{is_default_branch}}
               type=schedule,pattern={{date 'YYYY-MM-DD'}}
 
