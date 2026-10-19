@@ -30,11 +30,9 @@ use edge_client::{
 	error::EdgeClientError,
 	websocket::WebSocket,
 };
-use edge_core::{
-	logger::{
-		Logger,
-		logger,
-	},
+use edge_core::logger::{
+	Logger,
+	logger,
 };
 use edge_vision::{
 	vision,
