@@ -188,7 +188,7 @@ impl Persistence {
 			.and_modify(|entry| before = entry.get_status())
 			.and_modify(|entry| update = entry.update(&connection.points))
 			.or_insert_with(|| {
-				logger().lock().unwrap().log_info(&format!(
+				logger().log_info(&format!(
 					"New identifier added: {}",
 					connection.identifier
 				));
@@ -256,7 +256,7 @@ impl Persistence {
 	//
 	// 	// Stop now if this is a metadata device.
 	// 	if is_metadata {
-	// 		logger().lock().unwrap().log_warn(&format!(
+	// 		logger().log_warn(&format!(
 	// 			"This index ({}) represents a metadata device",
 	// 			index
 	// 		));

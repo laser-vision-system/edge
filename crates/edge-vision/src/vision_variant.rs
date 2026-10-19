@@ -59,17 +59,11 @@ impl VisionVariant {
 		swap_to: VisionTechnique,
 	) -> EdgeVisionResult<()> {
 		if self.identifier() == swap_to {
-			logger()
-				.lock()
-				.unwrap()
-				.log_info(&format!("{swap_to:?} is already active"));
+			logger().log_info(&format!("{swap_to:?} is already active"));
 			return Ok(());
 		}
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info(&format!("Swapping to: {swap_to:?}"));
+		logger().log_info(&format!("Swapping to: {swap_to:?}"));
 		match swap_to {
 			VisionTechnique::Inactive => {
 				*self = Self::Inactive(Inactive::new());
@@ -80,7 +74,7 @@ impl VisionVariant {
 			VisionTechnique::Cnn => *self = Self::Cnn(Box::new(Cnn::new()?)),
 			VisionTechnique::Diff => *self = Self::Diff(Diff::new()),
 			_ => {
-				logger().lock().unwrap().log_warn(
+				logger().log_warn(
 					"Attempting to swap to an unsupported vison technique, nothing changes",
 				);
 			},
@@ -123,7 +117,7 @@ impl VisionInterface for VisionVariant {
 			.map(ToString::to_string)
 			.collect::<Vec<_>>()
 			.join("\n");
-		logger().lock().unwrap().log_info(&process_results);
+		logger().log_info(&process_results);
 	}
 
 	fn new_state(&self) -> VisionState {

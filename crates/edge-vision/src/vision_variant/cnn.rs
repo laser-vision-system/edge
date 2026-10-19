@@ -122,7 +122,7 @@ impl VisionInterface for Cnn {
 		match self.predict(tensors) {
 			Ok(predictions) => apply_predictions(batch, predictions),
 			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
+				logger().log_error(&why);
 				clear_predictions(batch);
 			},
 		}

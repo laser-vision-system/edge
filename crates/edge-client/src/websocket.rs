@@ -116,7 +116,7 @@ impl WebSocket {
 				match msg {
 					Message::Text(text) => {
 						#[cfg(debug_assertions)]
-						logger().lock().unwrap().log_info(&format!("Received message: {text}"));
+						logger().log_info(&format!("Received message: {text}"));
 						process_incoming(&text)
 					}
 					_ => None,
@@ -131,10 +131,7 @@ fn process_incoming(text: &str) -> Option<EdgeRequests> {
 	let msg_unchecked: Result<EdgeRequests, _> =
 		serde_json::from_str(text.trim());
 
-	logger()
-		.lock()
-		.unwrap()
-		.log_info(&format!("Received from Server: {}", text.trim()));
+	logger().log_info(&format!("Received from Server: {}", text.trim()));
 
 	let Ok(msg) = msg_unchecked else { return None };
 
