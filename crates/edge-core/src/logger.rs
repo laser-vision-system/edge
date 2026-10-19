@@ -21,6 +21,7 @@
 )]
 
 use std::{
+	cell::RefCell,
 	fmt::Display,
 	mem,
 	sync::{
@@ -38,14 +39,92 @@ use serde::{
 	Serialize,
 };
 
+use crate::{
+	settings,
+};
+
 // Declare a type alias for easy imports
-pub type LoggerRef = &'static Mutex<Logger>;
+pub type LoggerRef = &'static LoggerGuard;
 
-static LOGGER: OnceLock<Mutex<Logger>> = OnceLock::new();
+static LOGGER: OnceLock<LoggerGuard> = OnceLock::new();
 
-#[expect(clippy::expect_used, reason = "WIP development")]
 pub fn logger() -> LoggerRef {
-	LOGGER.get().expect("Logger has not been initialised.")
+	LOGGER.get_or_init(LoggerGuard::new)
+}
+
+pub struct LoggerGuard {
+	inner: Mutex<RefCell<Logger>>,
+}
+
+impl LoggerGuard {
+	fn new() -> Self {
+		Self {
+			inner: Mutex::new(RefCell::new(Logger::new())),
+		}
+	}
+
+	pub fn log_info(
+		&self,
+		message: &str,
+	) {
+		let guard = match self.inner.lock() {
+			Ok(cell) => cell,
+			Err(why) => {
+				eprintln!("Logger was poisoned!");
+				why.into_inner()
+			},
+		};
+		let mut logger = guard.borrow_mut();
+
+		logger.log_info(message);
+	}
+
+	pub fn log_warn(
+		&self,
+		message: &str,
+	) {
+		let guard = match self.inner.lock() {
+			Ok(cell) => cell,
+			Err(why) => {
+				eprintln!("Logger was poisoned!");
+				why.into_inner()
+			},
+		};
+		let mut logger = guard.borrow_mut();
+
+		logger.log_warn(message);
+	}
+
+	pub fn log_error<T>(
+		&self,
+		error: &T,
+	) where
+		T: Display + ?Sized,
+	{
+		let guard = match self.inner.lock() {
+			Ok(cell) => cell,
+			Err(why) => {
+				eprintln!("Logger was poisoned!");
+				why.into_inner()
+			},
+		};
+		let mut logger = guard.borrow_mut();
+
+		logger.log_error(error);
+	}
+
+	pub fn send_logs(&self) {
+		let guard = match self.inner.lock() {
+			Ok(cell) => cell,
+			Err(why) => {
+				eprintln!("Logger was poisoned!");
+				why.into_inner()
+			},
+		};
+		let mut logger = guard.borrow_mut();
+
+		logger.send_logs()
+	}
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -79,19 +158,35 @@ pub struct Logger {
 }
 
 impl Logger {
-	pub fn initialise_logger(verbosity: u8) {
-		match LOGGER.set(Mutex::new(Logger::new(verbosity))) {
-			Ok(()) => {},
-			Err(_) => {
-				println!("Logger cannot be initialised more than once.");
-			},
-		}
-	}
-
-	fn new(verbosity: u8) -> Self {
+	fn new() -> Self {
+		let (logs, counter, verbosity) =
+			match settings::retrieve_env_variable::<u8>("VERBOSITY") {
+				Ok(verbosity) => {
+					let logs = Vec::new();
+					let counter = LogCounter::new();
+					let verbosity = verbosity;
+					(logs, counter, verbosity)
+				},
+				Err(why) => {
+					let mut logs = Vec::new();
+					let mut counter = LogCounter::new();
+					let log_entry = format!(
+						"[{:05}] {}\n{:?}\n{}\n----------",
+						counter.next(),
+						Local::now().to_rfc3339(),
+						LogLevel::Error,
+						format!(
+							"Could not read verbosity: {why}. Defaulting to 1."
+						),
+					);
+					logs.push(log_entry);
+					let verbosity = 1;
+					(logs, counter, verbosity)
+				},
+			};
 		Logger {
-			logs: Vec::new(),
-			counter: LogCounter::new(),
+			logs,
+			counter,
 			verbosity,
 		}
 	}
@@ -223,177 +318,110 @@ mod test {
 		}
 	}
 
+	// Logger guard test
+
 	#[test]
 	fn info() {
-		Logger::initialise_logger(3);
+		logger().log_info("This is INFO log test 1.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("This is INFO log test 1.");
+		logger().log_info("This is INFO log test 2.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("This is INFO log test 2.");
+		logger().log_info("This is INFO log test 3.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("This is INFO log test 3.");
+		logger().send_logs();
+		logger().send_logs();
 
-		logger().lock().unwrap().send_logs();
-		logger().lock().unwrap().send_logs();
+		logger().log_info("This is INFO log test 4.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("This is INFO log test 4.");
+		logger().log_info("This is INFO log test 5.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("This is INFO log test 5.");
+		logger().log_info("This is INFO log test 6.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("This is INFO log test 6.");
-
-		logger().lock().unwrap().send_logs();
-		logger().lock().unwrap().send_logs();
+		logger().send_logs();
+		logger().send_logs();
 	}
 
 	#[test]
 	fn warn() {
-		Logger::initialise_logger(3);
+		logger().log_warn("This is WARN log test 1.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_warn("This is WARN log test 1.");
+		logger().log_warn("This is WARN log test 2.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_warn("This is WARN log test 2.");
+		logger().log_warn("This is WARN log test 3.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_warn("This is WARN log test 3.");
+		logger().send_logs();
+		logger().send_logs();
 
-		logger().lock().unwrap().send_logs();
-		logger().lock().unwrap().send_logs();
+		logger().log_warn("This is WARN log test 4.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_warn("This is WARN log test 4.");
+		logger().log_warn("This is WARN log test 5.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_warn("This is WARN log test 5.");
+		logger().log_warn("This is WARN log test 6.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_warn("This is WARN log test 6.");
-
-		logger().lock().unwrap().send_logs();
-		logger().lock().unwrap().send_logs();
+		logger().send_logs();
+		logger().send_logs();
 	}
 
 	#[test]
 	fn error() {
-		Logger::initialise_logger(3);
+		logger().log_error("This is an ERROR log test 1.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test 1.");
+		logger().log_error("This is an ERROR log test 2.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test 2.");
+		logger().log_error("This is an ERROR log test 3.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test 3.");
+		logger().send_logs();
+		logger().send_logs();
 
-		logger().lock().unwrap().send_logs();
-		logger().lock().unwrap().send_logs();
+		logger().log_error("This is an ERROR log test 1.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test 1.");
+		logger().log_error("This is an ERROR log test 2.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test 2.");
+		logger().log_error("This is an ERROR log test 3.");
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_error("This is an ERROR log test 3.");
-
-		logger().lock().unwrap().send_logs();
-		logger().lock().unwrap().send_logs();
+		logger().send_logs();
+		logger().send_logs();
 	}
 
 	#[test]
 	fn new_day() {
-		Logger::initialise_logger(3);
+		let mut logger = Logger::new();
 
-		logger().lock().unwrap().log_info("Logging today.");
+		logger.log_info("Logging today.");
 
-		logger().lock().unwrap().counter.reset_counter();
+		logger.counter.reset_counter();
 
-		logger().lock().unwrap().log_info("Reset counter.");
-		logger().lock().unwrap().log_info("Logging again today.");
-		logger().lock().unwrap().log_info("Logging again today.");
+		logger.log_info("Reset counter.");
+		logger.log_info("Logging again today.");
+		logger.log_info("Logging again today.");
 
-		logger().lock().unwrap().counter.reset_counter();
+		logger.counter.reset_counter();
 
-		logger().lock().unwrap().log_info("Reset counter.");
-		logger().lock().unwrap().log_info("Logging again today.");
-		logger().lock().unwrap().log_info("Logging again today.");
+		logger.log_info("Reset counter.");
+		logger.log_info("Logging again today.");
+		logger.log_info("Logging again today.");
 
-		logger().lock().unwrap().send_logs();
+		logger.send_logs();
 	}
 
 	#[test]
 	fn daylight_savings() {
-		Logger::initialise_logger(3);
+		let mut logger = Logger::new();
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("First log. Now going back an hour.");
+		logger.log_info("First log. Now going back an hour.");
 
-		logger().lock().unwrap().counter.back_one_hour();
+		logger.counter.back_one_hour();
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Back one hour. Now going forward one hour.");
+		logger.log_info("Back one hour. Now going forward one hour.");
 
-		logger().lock().unwrap().counter.forward_one_hour();
+		logger.counter.forward_one_hour();
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Back to normal. Going forward one hour again.");
+		logger.log_info("Back to normal. Going forward one hour again.");
 
-		logger().lock().unwrap().counter.forward_one_hour();
+		logger.counter.forward_one_hour();
 
-		logger().lock().unwrap().log_info("Now forward one hour.");
+		logger.log_info("Now forward one hour.");
 
-		logger().lock().unwrap().send_logs();
+		logger.send_logs();
 	}
 }
