@@ -158,28 +158,30 @@ pub struct Logger {
 
 impl Logger {
 	fn new() -> Self {
-		let (logs, counter, verbosity) =
-			match settings::retrieve_env_variable::<u8>("VERBOSITY") {
-				Ok(verbosity) => {
-					let logs = Vec::new();
-					let counter = LogCounter::new();
-					(logs, counter, verbosity)
-				},
-				Err(why) => {
-					let mut logs = Vec::new();
-					let mut counter = LogCounter::new();
-					let log_entry = format!(
-						"[{:05}] {}\n{:?}\nCould not read verbosity: {}. Defaulting to 1\n----------",
-						counter.next(),
-						Local::now().to_rfc3339(),
-						LogLevel::Error,
-						why,
-					);
-					logs.push(log_entry);
-					let verbosity = 1;
-					(logs, counter, verbosity)
-				},
-			};
+		let (logs, counter, verbosity) = match settings::retrieve_env_variable::<
+			u8,
+		>("VERBOSITY")
+		{
+			Ok(verbosity) => {
+				let logs = Vec::new();
+				let counter = LogCounter::new();
+				(logs, counter, verbosity)
+			},
+			Err(why) => {
+				let mut logs = Vec::new();
+				let mut counter = LogCounter::new();
+				let log_entry = format!(
+					"[{:05}] {}\n{:?}\nCould not read verbosity: {}. Defaulting to 1\n----------",
+					counter.next(),
+					Local::now().to_rfc3339(),
+					LogLevel::Error,
+					why,
+				);
+				logs.push(log_entry);
+				let verbosity = 1;
+				(logs, counter, verbosity)
+			},
+		};
 		Logger {
 			logs,
 			counter,

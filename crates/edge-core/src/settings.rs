@@ -1,5 +1,4 @@
 //! # Settings
-//!
 
 use std::{
 	fmt::Display,
@@ -41,10 +40,11 @@ pub use api::edge::Settings;
 use crate::error::EdgeCoreError;
 
 /// Retrieve an environemant variable and attempt to parse it.
-/// 
+///
 /// # Errors
 /// - If the environment variable cannot be retrieved.
-/// - If the retrieved environment variable string cannot be parsed into the provided type.
+/// - If the retrieved environment variable string cannot be parsed into the
+///   provided type.
 pub fn retrieve_env_variable<T>(name: &str) -> Result<T, EdgeCoreError>
 where
 	T: FromStr,
