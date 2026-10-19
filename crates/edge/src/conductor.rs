@@ -35,7 +35,6 @@ use edge_core::{
 		Logger,
 		logger,
 	},
-	settings::EnvVariables,
 };
 use edge_vision::{
 	vision,
@@ -296,8 +295,6 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let mut websocket: Option<WebSocket> = None;
 	let mut settings: Option<Settings> = None;
 	let mut conductor = Conductor::default();
-	let env_variables = EnvVariables::initialise();
-	Logger::initialise_logger(env_variables.verbosity());
 
 	loop {
 		let (loop_websocket, loop_settings) = assert_connection(

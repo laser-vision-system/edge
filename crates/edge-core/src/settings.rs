@@ -51,87 +51,28 @@ pub use api::edge::Settings;
 
 use crate::error::EdgeCoreError;
 
-/// Contains all environment variables that are used to configure the
-/// application.
-pub struct EnvVariables {
-	// Verbosity level for logging and debugging:
-	// - 0: No logs
-	// - 1: Error logs only
-	// - 2: Warning and error logs
-	// - 3: Info, warning, and error logs
-	// Any other strings will be treated as 1.
-	verbosity: u8,
-	server_url: Option<String>,
-}
-
-impl EnvVariables {
-	pub fn initialise() -> Self {
-		let verbosity = match Self::retrieve_env_variable::<u8>("VERBOSITY") {
-			Ok(value) => value,
-			Err(why) => {
-				eprintln!("{why}");
-				1
-			}, /* Default to error logs only if the variable is not set or
-			    * invalid */
-		};
-
-		let server_url = match Self::retrieve_env_variable::<String>("SERVER_URL") {
-			Ok(value) => Some(value),
-			Err(why) => {
-				eprintln!("{why}");
-				None
-			},
-		};
-
-		Self {
-			verbosity,
-			server_url,
-		}
-	}
-
-	fn retrieve_env_variable<T>(name: &str) -> Result<T, EdgeCoreError>
-	where
-		T: FromStr,
-		T::Err: Display,
-	{
-		match env::var(name) {
-			Ok(value) => {
-				match value.parse::<T>() {
-					Ok(parsed_value) => Ok(parsed_value),
-					Err(why) => {
-						Err(EdgeCoreError::EnvVarParse {
-							name: name.to_owned(),
-							why: why.to_string(),
-						})
-					},
-				}
-			},
-			Err(why) => {
-				Err(EdgeCoreError::EnvVar {
-					name: name.to_owned(),
-					source: why,
-				})
-			},
-		}
-	}
-
-	pub fn verbosity(&self) -> u8 {
-		self.verbosity
-	}
-
-	pub fn server_url(&self) -> Option<&str> {
-		match &self.server_url {
-			Some(server_url) => Some(server_url),
-			None => None
-		}
-	}
-}
-
-impl Default for EnvVariables {
-	fn default() -> Self {
-		EnvVariables {
-			verbosity: 1, // Default to error logs only
-			server_url: None,
-		}
+pub fn retrieve_env_variable<T>(name: &str) -> Result<T, EdgeCoreError>
+where
+	T: FromStr,
+	T::Err: Display,
+{
+	match env::var(name) {
+		Ok(value) => {
+			match value.parse::<T>() {
+				Ok(parsed_value) => Ok(parsed_value),
+				Err(why) => {
+					Err(EdgeCoreError::EnvVarParse {
+						name: name.to_owned(),
+						why: why.to_string(),
+					})
+				},
+			}
+		},
+		Err(why) => {
+			Err(EdgeCoreError::EnvVar {
+				name: name.to_owned(),
+				source: why,
+			})
+		},
 	}
 }
