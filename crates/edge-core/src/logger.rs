@@ -17,6 +17,7 @@
 
 #![expect(
 	clippy::print_stdout,
+	clippy::print_stderr,
 	reason = "This is the logger module, where this is expected behaviour"
 )]
 
@@ -39,9 +40,7 @@ use serde::{
 	Serialize,
 };
 
-use crate::{
-	settings,
-};
+use crate::settings;
 
 // Declare a type alias for easy imports
 pub type LoggerRef = &'static LoggerGuard;
@@ -123,7 +122,7 @@ impl LoggerGuard {
 		};
 		let mut logger = guard.borrow_mut();
 
-		logger.send_logs()
+		logger.send_logs();
 	}
 }
 
@@ -164,7 +163,6 @@ impl Logger {
 				Ok(verbosity) => {
 					let logs = Vec::new();
 					let counter = LogCounter::new();
-					let verbosity = verbosity;
 					(logs, counter, verbosity)
 				},
 				Err(why) => {
