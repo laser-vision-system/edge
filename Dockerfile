@@ -4,13 +4,13 @@ WORKDIR /ap
 ARG BUILD_TARGET
 ARG BINARY_DIR
 
-RUN . ./docker_binary.sh $BINARY_DIR
-
 RUN apt-get update && apt-get install -y clang
 RUN rustup toolchain install nightly
 RUN rustup override set nightly
 
 COPY . .
+
+RUN . ./docker_binary.sh $BINARY_DIR
 
 RUN cargo build --profile $BUILD_TARGET --bin edge
 
