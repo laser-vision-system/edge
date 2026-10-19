@@ -109,7 +109,7 @@ impl CameraDevice {
 				});
 			},
 			OpenedCamera::Hybrid(hybrid) => {
-				logger().lock().unwrap().log_warn(
+				logger().log_warn(
 					"HybridCamera detected, converting to StreamCamera",
 				);
 				hybrid.into()

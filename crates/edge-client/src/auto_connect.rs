@@ -15,10 +15,7 @@ use api::edge::{
 use edge_cameras::persistence::Persistence;
 use edge_core::{
 	logger::logger,
-	settings::{
-		AUTO_CONNECT_DELAY,
-		EnvVariables,
-	},
+	settings::AUTO_CONNECT_DELAY,
 };
 use pnet_datalink::interfaces;
 use reqwest::Client;
@@ -157,7 +154,7 @@ async fn get_websocket_url(
 					let url = response.url;
 					let new_url =
 						format!("ws://{}{}/edge_ws", url.host, url.port);
-					logger().lock().unwrap().log_info(&format!(
+					logger().log_info(&format!(
 						"Correct message response recived from: {new_url}"
 					));
 					return Ok(new_url);
@@ -165,7 +162,7 @@ async fn get_websocket_url(
 			},
 			#[cfg(debug_assertions)]
 			Ok(Err(why)) => {
-				logger().lock().unwrap().log_error(&why);
+				logger().log_error(&why);
 			},
 			// Ignore failures silently
 			_ => {},
@@ -196,12 +193,11 @@ pub async fn assert_connection(
 	websocket: Option<WebSocket>,
 	settings: Option<Settings>,
 	persistence: &mut Persistence,
-	env_variables: &EnvVariables,
 ) -> (WebSocket, Settings) {
 	// All good, normal operation.
 	if let (Some(socket), Some(settings)) = (websocket, settings) {
 		if socket.is_terminated() {
-			let (socket, settings) = loop_until_connection(env_variables).await;
+			let (socket, settings) = loop_until_connection().await;
 			let socket = send_persistent_edge_id(socket).await;
 			(send_camera_list(persistence, socket).await, settings)
 		} else {
@@ -210,54 +206,41 @@ pub async fn assert_connection(
 	}
 	// First time calling.
 	else {
-		let (socket, settings) = loop_until_connection(env_variables).await;
+		let (socket, settings) = loop_until_connection().await;
 		(send_persistent_edge_id(socket).await, settings)
 	}
 }
 
-async fn loop_until_connection(
-	env_variables: &EnvVariables
-) -> (WebSocket, Settings) {
+async fn loop_until_connection() -> (WebSocket, Settings) {
 	let mut limit_interval = interval(AUTO_CONNECT_DELAY);
 	loop {
-		match try_connect_once(env_variables).await {
+		match try_connect_once().await {
 			Ok(yay) => {
-				logger()
-					.lock()
-					.unwrap()
-					.log_info("Successfully connected to server!");
+				logger().log_info("Successfully connected to server!");
 				return yay;
 			},
 			Err(err) => {
-				logger().lock().unwrap().log_error(&err);
+				logger().log_error(&err);
 			},
 		}
 		limit_interval.tick().await;
 	}
 }
 
-async fn try_connect_once(
-	_env_variables: &EnvVariables
-) -> EdgeClientResult<(WebSocket, Settings)> {
+async fn try_connect_once() -> EdgeClientResult<(WebSocket, Settings)> {
 	let websocket_url = if let Ok(url) = env::var("SERVER_URL") {
 		if url.is_empty() {
-			logger()
-				.lock()
-				.unwrap()
-				.log_info("Connecting using auto connect");
+			logger().log_info("Connecting using auto connect");
 			let urls = identify_network();
 			get_websocket_url(urls).await?
 		} else {
-			logger().lock().unwrap().log_info(&format!(
+			logger().log_info(&format!(
 				"Connecting to provided server address: {url}"
 			));
 			format!("ws://{url}/edge_ws")
 		}
 	} else {
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Connecting using auto connect");
+		logger().log_info("Connecting using auto connect");
 		let urls = identify_network();
 		get_websocket_url(urls).await?
 	};

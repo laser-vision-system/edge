@@ -136,7 +136,7 @@ impl Persistence {
 			entry.set_currently_viewed(state);
 		} else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 		}
 	}
 
@@ -149,7 +149,7 @@ impl Persistence {
 			entry.set_name(request.name);
 		} else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 		}
 	}
 
@@ -186,13 +186,13 @@ impl Persistence {
 	) {
 		let Some(entry) = self.get_mut(request.camera_id) else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 			return;
 		};
 		let Some(active) = entry.get_active_mut() else {
 			//"Not active"
 			let err = EdgeCamerasError::IncorrectConnectionStatus;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 			return;
 		};
 		match serde_json::from_str(&request.configuration) {
@@ -200,11 +200,11 @@ impl Persistence {
 				if let Err(why) = active.get_camera_mut().set_controls(map) {
 					// TODO: Error type for "Failed to apply request controls to
 					// the camera"
-					logger().lock().unwrap().log_error(&why);
+					logger().log_error(&why);
 				}
 			},
 			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
+				logger().log_error(&why);
 			},
 		}
 	}
@@ -216,20 +216,20 @@ impl Persistence {
 	) -> Option<Configuration> {
 		let Some(entry) = self.get_mut(request.camera_id) else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 			return None;
 		};
 		let Some(active) = entry.get_active_mut() else {
 			// TODO: Error type for "Not active"
 			let err = EdgeCamerasError::IncorrectConnectionStatus;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 			return None;
 		};
 		let controls = active.get_camera_mut().get_controls();
 		let important_controls = match controls {
 			Ok(controls) => controls.stripped(),
 			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
+				logger().log_error(&why);
 				return None;
 			},
 		};
@@ -253,7 +253,7 @@ impl Persistence {
 			entry.request_calibration();
 		} else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 		}
 	}
 

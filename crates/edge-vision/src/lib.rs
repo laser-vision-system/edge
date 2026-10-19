@@ -82,10 +82,7 @@ impl VisionGuard {
 		swap_to: VisionTechnique,
 	) -> EdgeVisionResult<()> {
 		let inner = self.inner.lock().unwrap_or_else(|err| {
-			logger()
-				.lock()
-				.unwrap()
-				.log_warn("Vision mutex was poisoned");
+			logger().log_warn("Vision mutex was poisoned");
 			err.into_inner()
 		});
 		let mut vision = inner.borrow_mut();
@@ -108,10 +105,7 @@ impl VisionGuard {
 		F: FnOnce(&mut VisionVariant) -> R,
 	{
 		let inner = self.inner.lock().unwrap_or_else(|err| {
-			logger()
-				.lock()
-				.unwrap()
-				.log_warn("Vision mutex was poisoned");
+			logger().log_warn("Vision mutex was poisoned");
 			err.into_inner()
 		});
 		let mut vision = inner.borrow_mut();

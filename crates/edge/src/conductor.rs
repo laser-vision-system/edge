@@ -77,14 +77,14 @@ impl Conductor {
 			.await;
 		}
 
-		logger().lock().unwrap().send_logs();
+		logger().send_logs();
 
 		_ = websocket.keep_alive().await;
 
 		if let Some(swap_to) = requested_vision_type
 			&& let Err(error) = vision().swap(swap_to)
 		{
-			logger().lock().unwrap().log_error(&error);
+			logger().log_error(&error);
 		}
 
 		// TODO: There should be something in between this call that does the
@@ -121,7 +121,7 @@ impl Conductor {
 			}
 		}
 
-		logger().lock().unwrap().send_logs();
+		logger().send_logs();
 
 		_ = websocket.keep_alive().await;
 
@@ -132,7 +132,7 @@ impl Conductor {
 
 		_ = websocket.keep_alive().await;
 
-		logger().lock().unwrap().send_logs();
+		logger().send_logs();
 
 		// Send result
 		for item in &batch_items {
@@ -214,7 +214,7 @@ impl Conductor {
 				requested_vision_type.replace(processing_req.processing_type);
 			},
 			_ => {
-				logger().lock().unwrap().log_warn(
+				logger().log_warn(
 					"received request that is not currently supported",
 				);
 			},
@@ -295,13 +295,9 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let mut conductor = Conductor::default();
 
 	loop {
-		let (loop_websocket, loop_settings) = assert_connection(
-			websocket,
-			settings,
-			&mut conductor.persistence,
-			&env_variables,
-		)
-		.await;
+		let (loop_websocket, loop_settings) =
+			assert_connection(websocket, settings, &mut conductor.persistence)
+				.await;
 		let result = conductor.loop_once(loop_websocket, loop_settings).await?;
 		websocket = Some(result.0);
 		settings = Some(result.1);
