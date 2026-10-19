@@ -169,13 +169,11 @@ impl Logger {
 					let mut logs = Vec::new();
 					let mut counter = LogCounter::new();
 					let log_entry = format!(
-						"[{:05}] {}\n{:?}\n{}\n----------",
+						"[{:05}] {}\n{:?}\nCould not read verbosity: {}. Defaulting to 1\n----------",
 						counter.next(),
 						Local::now().to_rfc3339(),
 						LogLevel::Error,
-						format!(
-							"Could not read verbosity: {why}. Defaulting to 1."
-						),
+						why,
 					);
 					logs.push(log_entry);
 					let verbosity = 1;

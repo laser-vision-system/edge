@@ -1,16 +1,5 @@
 //! # Settings
 //!
-//! TODO: Replace constants with values from environment variables.
-
-#![expect(
-	clippy::print_stderr,
-	reason = "Logger can not be initialised until this module is initialised, so this is expected behaviour."
-)]
-// TODO: Resolve this.
-#![allow(
-	unused,
-	reason = "Temporarily allow these until environment variables are implemented"
-)]
 
 use std::{
 	fmt::Display,
@@ -51,6 +40,11 @@ pub use api::edge::Settings;
 
 use crate::error::EdgeCoreError;
 
+/// Retrieve an environemant variable and attempt to parse it.
+/// 
+/// # Errors
+/// - If the environment variable cannot be retrieved.
+/// - If the retrieved environment variable string cannot be parsed into the provided type.
 pub fn retrieve_env_variable<T>(name: &str) -> Result<T, EdgeCoreError>
 where
 	T: FromStr,
