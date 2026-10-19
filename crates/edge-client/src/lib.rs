@@ -1,5 +1,7 @@
 //! Shared network utilities.
 
+#![warn(missing_docs)]
+
 #![cfg_attr(
 	test,
 	allow(

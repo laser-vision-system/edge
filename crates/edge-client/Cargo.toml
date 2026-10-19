@@ -24,6 +24,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tokio-tungstenite = "0.30"
+tungstenite = "0.30.0"
 
 [lints]
 workspace = true

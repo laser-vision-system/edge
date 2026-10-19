@@ -7,6 +7,7 @@ use crate::websocket_requests::PersistenceRequest;
 pub trait ClientInterface {
     async fn new(
         cmd_rx: UnboundedReceiver<Command>,
+        internal_status_tx: UnboundedSender<bool>,
         status_tx: UnboundedSender<bool>,
         vision_tx: UnboundedSender<VisionTechnique>,
         persistence_tx: UnboundedSender<PersistenceRequest>,

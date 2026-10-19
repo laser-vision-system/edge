@@ -22,6 +22,7 @@ use edge_core::{
 };
 use pnet_datalink::interfaces;
 use reqwest::Client;
+use serde::de::DeserializeOwned;
 use tokio::{
 	task::JoinSet,
 	time::interval,
@@ -29,6 +30,7 @@ use tokio::{
 use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, WebSocketStream};
 use tokio_tungstenite::MaybeTlsStream;
+
 use crate::{
 	error::{
 		EdgeClientError,
@@ -125,7 +127,7 @@ async fn get_response(
 		.send()
 		.await
 		.map_err(|why| {
-			EdgeClientError::RequestError {
+			EdgeClientError::ReqwestError {
 				reason: why.to_string(),
 			}
 		})?
@@ -222,28 +224,31 @@ pub async fn get_ws_stream() -> (EdgeClientResult<WebSocketStream<MaybeTlsStream
 	clippy::unused_async,
 	reason = "Async will be needed once this function is re-enabled"
 )]
-async fn get_default_settings(_url: &str) -> EdgeClientResult<Settings> {
+pub async fn get_default_settings(url: &str) -> EdgeClientResult<Settings> {
 	// TODO: Get the default settings from the server
 	// Build the settings struct from the received data.
 	// If the server fails to send correct settings, use Settings::default() as
 	// a fallback and report the issue to the server in as much detail as
 	// possible.
 
-	Ok(Settings::default())
+	let client = Client::new();
+	let temp_settings = client
+	 	.get(url)
+	 	.send()
+	 	.await
+	 	.map_err(|_| EdgeClientError::ServerConnection)?;
+	unpack(
+		temp_settings
+	 		.text()
+	 		.await
+			.map_err(|_| EdgeClientError::WebSocketUnpack)?
+	 		.as_str(),
+	)
+}
 
-	// let client = Client::new();
-	// let temp_settings = client
-	// 	.get(url)
-	// 	.send()
-	// 	.await
-	// 	.map_err(|_| EdgeClientError::ServerConnection)?;
-	// unpack(
-	// 	temp_settings
-	// 		.text()
-	// 		.await
-	// 		.map_err(|_| EdgeClientError::WebSocketUnpack)?
-	// 		.as_str(),
-	//)
+pub fn unpack<T: DeserializeOwned>(data: &str) -> EdgeClientResult<T> {
+	let data_unchecked: serde_json::Result<T> = serde_json::from_str(data);
+	data_unchecked.map_err(|_| EdgeClientError::WebSocketUnpack)
 }
 
 #[cfg(test)]
