@@ -2239,6 +2239,7 @@ dependencies = [
  "edge-core",
  "futures-util",
  "pnet_datalink",
+ "regex",
  "reqwest 0.13.5",
  "serde",
  "serde_json",

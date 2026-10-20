@@ -1,7 +1,5 @@
 //! Shared network utilities.
 
-#![warn(missing_docs)]
-
 #![cfg_attr(
 	test,
 	allow(
@@ -17,12 +15,7 @@
 	)
 )]
 
-pub mod auto_connect;
+pub mod client;
+pub mod handler;
+pub mod interface;
 pub mod error;
-pub mod persistent_edge_id;
-pub mod websocket;
-mod client;
-mod commands;
-pub mod client_handler;
-mod client_interface;
-pub mod websocket_requests;

@@ -7,37 +7,24 @@ use std::{
 	fmt,
 };
 
-use api::edge::{
-	InitialiseConnection,
-	ServerRequests,
-	Settings,
-};
-use edge_cameras::persistence::Persistence;
-use edge_core::{
-	logger::logger,
-	settings::{
-		AUTO_CONNECT_DELAY,
-		EnvVariables,
-	},
-};
+use api::edge::Settings;
+use edge_core::logger::logger;
 use pnet_datalink::interfaces;
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 use tokio::{
+	net::TcpStream,
 	task::JoinSet,
-	time::interval,
 };
-use tokio::net::TcpStream;
-use tokio_tungstenite::{connect_async, WebSocketStream};
-use tokio_tungstenite::MaybeTlsStream;
+use tokio_tungstenite::{
+	connect_async,
+	MaybeTlsStream,
+	WebSocketStream,
+};
 
-use crate::{
-	error::{
-		EdgeClientError,
-		EdgeClientResult,
-	},
-	persistent_edge_id::get_mac_address,
-	websocket::WebSocket,
+use crate::error::{
+	EdgeClientError,
+	EdgeClientResult,
 };
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
@@ -161,7 +148,7 @@ async fn get_websocket_url(
 					let new_url =
 						format!("ws://{}{}/edge_ws", url.host, url.port);
 					logger().lock().unwrap().log_info(&format!(
-						"Correct message response recived from: {new_url}"
+						"Correct message response received from: {new_url}"
 					));
 					return Ok(new_url);
 				}
@@ -178,15 +165,10 @@ async fn get_websocket_url(
 	Err(EdgeClientError::AutoConnect)
 }
 
-pub async fn send_camera_list(
-	persistence: &mut Persistence,
-	mut websocket: WebSocket,
-) -> WebSocket {
-	_ = websocket.send_text(persistence.get_current_cameras()).await;
-	websocket
-}
-
-pub async fn get_ws_stream() -> (EdgeClientResult<WebSocketStream<MaybeTlsStream<TcpStream>>>, String) {
+pub async fn get_ws_stream() -> (
+	EdgeClientResult<WebSocketStream<MaybeTlsStream<TcpStream>>>,
+	String,
+) {
 	let websocket_url = if let Ok(url) = env::var("SERVER_URL") {
 		if url.is_empty() {
 			logger()
@@ -194,7 +176,7 @@ pub async fn get_ws_stream() -> (EdgeClientResult<WebSocketStream<MaybeTlsStream
 				.unwrap()
 				.log_info("Connecting using auto connect");
 			let urls = identify_network();
-			get_websocket_url(urls).await?
+			get_websocket_url(urls).await.unwrap()
 		} else {
 			logger().lock().unwrap().log_info(&format!(
 				"Connecting to provided server address: {url}"
@@ -207,7 +189,7 @@ pub async fn get_ws_stream() -> (EdgeClientResult<WebSocketStream<MaybeTlsStream
 			.unwrap()
 			.log_info("Connecting using auto connect");
 		let urls = identify_network();
-		get_websocket_url(urls).await?
+		get_websocket_url(urls).await.unwrap()
 	};
 
 	let (stream, _) =
@@ -215,7 +197,7 @@ pub async fn get_ws_stream() -> (EdgeClientResult<WebSocketStream<MaybeTlsStream
 			EdgeClientError::AutoConnectUrl {
 				reason: why.to_string(),
 			}
-		})?;
+		}).unwrap();
 	(Ok(stream), websocket_url)
 }
 
@@ -231,18 +213,20 @@ pub async fn get_default_settings(url: &str) -> EdgeClientResult<Settings> {
 	// a fallback and report the issue to the server in as much detail as
 	// possible.
 
+	let url = format!("http://{url}/default_config");
+
 	let client = Client::new();
 	let temp_settings = client
-	 	.get(url)
-	 	.send()
-	 	.await
-	 	.map_err(|_| EdgeClientError::ServerConnection)?;
+		.get(url)
+		.send()
+		.await
+		.map_err(|_| EdgeClientError::ServerConnection)?;
 	unpack(
 		temp_settings
-	 		.text()
-	 		.await
+			.text()
+			.await
 			.map_err(|_| EdgeClientError::WebSocketUnpack)?
-	 		.as_str(),
+			.as_str(),
 	)
 }
 

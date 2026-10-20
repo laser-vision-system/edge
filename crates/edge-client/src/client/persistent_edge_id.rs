@@ -1,6 +1,6 @@
 use pnet_datalink::{
-	NetworkInterface,
 	interfaces,
+	NetworkInterface,
 };
 
 use crate::error::{
