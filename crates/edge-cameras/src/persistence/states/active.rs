@@ -142,6 +142,11 @@ impl Active {
 
 // Operational.
 impl Active {
+	/// Poll the camera for an image.
+	///
+	/// # Errors
+	///
+	/// If the camera hasn't been opened yet.
 	pub fn get_image(
 		&mut self,
 		camera_err_decrement: ErrAccType,

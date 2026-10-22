@@ -50,25 +50,47 @@ pub trait CameraLike {
 
 	fn get_index(&self) -> &CameraIndex;
 
+	/// Request an image of the current camera frame.
+	///
+	/// Latency is based on the buffer count.
+	///
+	/// # Errors
+	///
+	/// If the stream hasn't been opened yet.
 	fn get_frame_buffer(&mut self) -> EdgeCamerasResult<FrameBuffer>;
 
+	/// # Errors
+	///
+	/// If this camera has no controls.
 	fn get_all_supported_controls(
 		&self
 	) -> EdgeCamerasResult<Vec<KnownCameraControl>>;
 
+	/// # Errors
+	///
+	/// If this camera has no controls.
 	fn get_controls(&self) -> EdgeCamerasResult<ControlMap>;
 
+	/// # Errors
+	///
+	/// If the control id could not be found on this camera.
 	fn get_control(
 		&self,
 		id: KnownCameraControl,
 	) -> EdgeCamerasResult<CamControl>;
 
+	/// # Errors
+	///
+	/// If attempting to set the controls to an invalid value.
 	fn set_control(
 		&mut self,
 		id: KnownCameraControl,
 		value: ControlValueSetter,
 	) -> EdgeCamerasResult<()>;
 
+	/// # Errors
+	///
+	/// If attempting to set the controls to an invalid value.
 	fn set_controls(
 		&mut self,
 		controls: ControlMap,
@@ -84,6 +106,10 @@ pub struct CameraDevice {
 /// Initialisers.
 impl CameraDevice {
 	/// Attempt to create a device at the given index.
+	///
+	/// # Errors
+	///
+	/// If the camera's type is unsupported.
 	pub fn try_new(index: CameraIndex) -> EdgeCamerasResult<Self> {
 		let index_str = index.to_string();
 
@@ -116,6 +142,11 @@ impl CameraDevice {
 		})
 	}
 
+	/// Create the camera at the index and immediately open it.
+	///
+	/// # Errors
+	///
+	/// If the camera's type is unsupported.
 	pub fn try_new_open(index: CameraIndex) -> EdgeCamerasResult<Self> {
 		Self::try_new(index)?.open()
 	}
@@ -126,6 +157,11 @@ impl CameraDevice {
 	// 	Self::try_new(index)?.open()?.with_default_controls()
 	//}
 
+	/// Make the camera ready to be read from.
+	///
+	/// # Errors
+	///
+	/// If nokhwa could not open the camera.
 	pub fn open(mut self) -> EdgeCamerasResult<Self> {
 		self.inner
 			.open()
@@ -139,6 +175,10 @@ impl CameraDevice {
 	//}
 
 	/// Set a camera control using the concrete Nokhwa value type.
+	///
+	/// # Errors
+	///
+	/// If attempting to set the control to an invalid value.
 	pub fn set_control_value<T>(
 		&mut self,
 		id: KnownCameraControl,
@@ -180,9 +220,6 @@ impl CameraLike for CameraDevice {
 		self.inner.info().index()
 	}
 
-	/// Request an image of the current camera frame.
-	///
-	/// There seems to be a 2 frame latency.
 	fn get_frame_buffer(&mut self) -> EdgeCamerasResult<FrameBuffer> {
 		let frame = self
 			.inner
@@ -386,6 +423,10 @@ impl CameraLike for CameraDevice {
 
 /// Query [`nokhwa`] for all available cameras and then sort them by their
 /// index.
+///
+/// # Panics
+///
+/// If no nokhwa backend was available.
 #[expect(clippy::expect_used, reason = "Low priority edge case")]
 pub fn query_for_available_cameras() -> Vec<CameraInfo> {
 	let mut cameras = nokhwa::query(ApiBackend::Auto)

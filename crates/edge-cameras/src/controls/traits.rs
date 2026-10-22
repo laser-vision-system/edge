@@ -122,6 +122,11 @@ pub trait ControlDescription {
 	type ConType: ValidControlValue;
 
 	fn get_id(&self) -> KnownCameraControl;
+	/// Try to set the value for this control description.
+	///
+	/// # Errors
+	///
+	/// If the control is invalid, given the controls other requirements.
 	fn set_value(
 		&mut self,
 		value: Self::ValueType,

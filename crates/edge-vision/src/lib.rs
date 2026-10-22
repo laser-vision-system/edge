@@ -72,6 +72,16 @@ impl VisionGuard {
 		}
 	}
 
+	/// Swap to a different [`VisionTechnique`].
+	///
+	/// # Errors
+	///
+	/// If attempting to swap to the CNN model, which could not be loaded.
+	///
+	/// # Panics
+	///
+	/// This should never panic unless the code was modified in a way which did
+	/// not respect the internal swapping control.
 	#[expect(
 		clippy::expect_used,
 		reason = "Closely protected internal option type"
@@ -91,6 +101,12 @@ impl VisionGuard {
 			.swap(swap_to)
 	}
 
+	/// Call a function on the internal [`VisionVariant`].
+	///
+	/// # Panics
+	///
+	/// This should never panic unless the code was modified in a way which did
+	/// not respect the internal swapping control.
 	#[expect(
 		clippy::expect_used,
 		reason = "Closely protected internal option type"

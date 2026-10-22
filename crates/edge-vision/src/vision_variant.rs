@@ -53,6 +53,10 @@ impl VisionVariant {
 	///
 	/// This method statically asserts exhaustiveness between
 	/// [this](VisionVariant) and [`VisionTechnique`].
+	///
+	/// # Errors
+	///
+	/// If attempting to swap to the CNN model, which could not be loaded.
 	pub fn swap(
 		&mut self,
 		swap_to: VisionTechnique,

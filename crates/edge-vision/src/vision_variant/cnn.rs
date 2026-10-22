@@ -73,6 +73,11 @@ pub struct Cnn {
 }
 
 impl Cnn {
+	/// Create and load the CNN model.
+	///
+	/// # Errors
+	///
+	/// If the model could not be loaded correctly.
 	pub fn new() -> EdgeVisionResult<Self> {
 		let device = config::get_device();
 		let path = config::model_path();

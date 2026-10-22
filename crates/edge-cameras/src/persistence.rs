@@ -276,6 +276,12 @@ impl Persistence {
 }
 
 impl Persistence {
+	/// Get the [`BatchItem`] or [`StatusChange`] from all active entries.
+	///
+	/// # Panics
+	///
+	/// If an active camera has somehow become invalid.
+	// TODO: Give invalid cameras names?
 	#[expect(clippy::expect_used, reason = "WIP development")]
 	pub fn poll_active_entries(
 		&mut self,
