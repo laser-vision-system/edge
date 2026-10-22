@@ -252,7 +252,7 @@ pub fn unpack<T: DeserializeOwned>(data: &str) -> EdgeClientResult<T> {
 #[cfg(test)]
 mod tests {
 	use edge_core::settings;
-
+	use crate::client;
 	use super::*;
 
 	#[test]
@@ -268,7 +268,7 @@ mod tests {
 			.rev()
 			.collect::<Vec<_>>()
 			.join("");
-		please.push_str(settings::API);
+		please.push_str(client::client::API);
 
 		println!("{please}");
 	}

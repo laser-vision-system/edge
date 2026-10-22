@@ -77,6 +77,8 @@ use crate::{
 use crate::handle::client_handle::ClientHandle;
 use crate::interface::types::{CameraRx, CameraTx, ListenerRx, ListenerTx, PersistenceRx, PersistenceTx, StatusRx, StatusTx, VisionRx, VisionTx};
 
+pub const API: &str = "/edge_ws";
+pub const PORT: &str = "8080";
 pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
 pub const WS_KEEP_ALIVE: Duration = Duration::from_secs(6);
 type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;

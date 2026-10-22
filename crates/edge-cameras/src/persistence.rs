@@ -155,24 +155,14 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	pub fn start_viewing_camera(
+	pub fn toggle_viewing_camera(
 		&mut self,
 		camera_id: CameraId,
+		start_viewing: bool
 	) {
-		self.set_currently_viewed(camera_id, true);
+		self.set_currently_viewed(camera_id, start_viewing);
 	}
-
-	#[expect(
-		clippy::needless_pass_by_value,
-		reason = "The request should not be used after this method call"
-	)]
-	pub fn stop_viewing_camera(
-		&mut self,
-		camera_id: CameraId,
-	) {
-		self.set_currently_viewed(camera_id, false);
-	}
-
+	
 	#[expect(
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"

@@ -191,12 +191,10 @@ impl Conductor {
 
 			},
 			EdgeRequests::ToggleViewingCamera(toggle_view_cam_req) => {
-				if toggle_view_cam_req.start_viewing {
-					self.persistence.start_viewing_camera(toggle_view_cam_req.camera_id);
-				} else {
-					self.persistence.stop_viewing_camera(toggle_view_cam_req.camera_id);
-				}
-
+				self.persistence.toggle_viewing_camera(
+					toggle_view_cam_req.camera_id,
+					toggle_view_cam_req.start_viewing
+				);
 			},
 			EdgeRequests::Configuration(set_config_req) => {
 				self.persistence.set_configuration(set_config_req);
