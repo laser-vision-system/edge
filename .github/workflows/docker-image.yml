@@ -79,7 +79,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          build-args: BUILD_TARGET=${{ matrix.build }} BINARY_DIR=BUILD_TARGET=${{ matrix.dir }}
+          build-args: BUILD_TARGET=${{ matrix.build }} BINARY_DIR=${{ matrix.dir }}
           context: .
           push: true
           tags: ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:${{matrix.arch}}-${{matrix.build}}-${{steps.meta.outputs.tags}}
