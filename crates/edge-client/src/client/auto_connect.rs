@@ -176,7 +176,13 @@ pub async fn get_ws_stream() -> (
 				.unwrap()
 				.log_info("Connecting using auto connect");
 			let urls = identify_network();
-			get_websocket_url(urls).await.unwrap()
+			match get_websocket_url(urls).await {
+				Ok(url) => url,
+
+				Err(err) => {
+					return (Err(err), "".to_string());
+				}
+			}
 		} else {
 			logger().lock().unwrap().log_info(&format!(
 				"Connecting to provided server address: {url}"
@@ -189,15 +195,23 @@ pub async fn get_ws_stream() -> (
 			.unwrap()
 			.log_info("Connecting using auto connect");
 		let urls = identify_network();
-		get_websocket_url(urls).await.unwrap()
+		match get_websocket_url(urls).await {
+			Ok(url) => url,
+
+			Err(err) => {
+				return (Err(err), "".to_string());
+			}
+		}
 	};
 
-	let (stream, _) =
+	let Ok((stream, _)) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {
 			EdgeClientError::AutoConnectUrl {
 				reason: why.to_string(),
 			}
-		}).unwrap();
+		}) else {
+		return (Err(EdgeClientError::WebSocketConnection), "".to_string());
+	};
 	(Ok(stream), websocket_url)
 }
 
