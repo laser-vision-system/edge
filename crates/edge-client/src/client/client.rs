@@ -60,7 +60,6 @@ use crate::{
     client::{
         auto_connect,
         auto_connect::get_ws_stream,
-        client_interface::ClientInterface,
         persistent_edge_id::get_mac_address,
     },
     error::{
@@ -75,6 +74,7 @@ use crate::{
         },
     },
 };
+use crate::handle::client_handle::ClientHandle;
 use crate::interface::types::{CameraRx, CameraTx, ListenerRx, ListenerTx, PersistenceRx, PersistenceTx, StatusRx, StatusTx, VisionRx, VisionTx};
 
 pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
@@ -703,7 +703,7 @@ impl Client {
 	///
 	/// # Errors
 	/// Returns an error if the websocket was closed
-	pub async fn send_image(
+	async fn send_image(
 		&mut self,
 		websocket: &mut WebsocketType,
 		camera_id: u64,
@@ -736,13 +736,12 @@ impl Client {
 	}
 }
 
-impl ClientInterface for Client {
-	fn new() -> (
-		UnboundedSender<Command>,
-		StatusRx,
+impl Client {
+	pub async fn new() -> (
 		StatusRx,
 		VisionRx,
 		PersistenceRx,
+		ClientHandle,
 		Self
 	) {
 		let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
@@ -753,11 +752,13 @@ impl ClientInterface for Client {
 		let mut status_listeners = Vec::new();
 		status_listeners.insert(0, internal_status_tx);
 		(
-			cmd_tx,
-			internal_status_rx,
 			status_rx,
 			vision_rx,
 			persistence_rx,
+			ClientHandle::new(
+				cmd_tx,
+				internal_status_rx,
+			),
 			Client {
 				cmd_rx,
 				status_listeners,
@@ -767,12 +768,12 @@ impl ClientInterface for Client {
 				cameras: HashMap::new(),
 				listeners: Vec::new(),
 				url: None,
-			}
+			},
 		)
 	}
 
 
-	async fn run(&mut self)  {
+	pub async fn run(mut self) -> EdgeClientResult<()> {
 		loop {
 			let (mut websocket, url) = self.connect_ws().await;
 
@@ -790,5 +791,6 @@ impl ClientInterface for Client {
 
 			self.status_update(false);
 		}
+		Ok(())
 	}
 }

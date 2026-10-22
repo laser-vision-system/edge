@@ -12,9 +12,9 @@ use api::{
 		Deviation,
 	},
 };
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
 use crate::{
-	client::client_interface::ClientInterface,
 	error::EdgeClientResult,
 	handle::camera_client_handle::CameraClientHandle,
 	interface::commands::Command,
@@ -41,36 +41,18 @@ impl ClientHandle {
 	///
 	/// The client expects these receivers to never be dropped,
 	/// and will panic upon sending data to them if they are.
-	pub fn new<T>() -> (
-		Self,
-		StatusRx,
-		VisionRx,
-		PersistenceRx,
-		T
-	) where T: ClientInterface
+	pub fn new(
+		cmd_tx: UnboundedSender<Command>,
+		internal_status_rx: StatusRx,
+	) -> Self
 	{
-		let (
-			cmd_tx,
-			internal_status_rx,
-			status_rx,
-			vision_rx,
-			persistence_rx,
-			thread
-		) = T::new();
-
-		(
-			ClientHandle {
-				base: BasicClientHandle::new(
-					cmd_tx,
-					false,
-					internal_status_rx,
-				),
-			},
-			status_rx,
-			vision_rx,
-			persistence_rx,
-			thread,
-		)
+		ClientHandle {
+			base: BasicClientHandle::new(
+				cmd_tx,
+				false,
+				internal_status_rx,
+			),
+		}
 	}
 
 	/// Gets the event receiver for a new camera.

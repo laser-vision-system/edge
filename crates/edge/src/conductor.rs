@@ -5,7 +5,6 @@ use std::{
 	collections::HashMap,
 	error,
 };
-
 use api::{
 	edge::{
 		EdgeRequests,
@@ -20,6 +19,7 @@ use api::{
 		VisionTechnique,
 	},
 };
+use tokio::{join, spawn};
 use edge_cameras::persistence::{
 	Persistence,
 	WhyNo,
@@ -41,9 +41,8 @@ use edge_vision::{
 };
 use tokio::time::interval;
 use edge_client::client::client::Client;
-use edge_client::client::client_interface::ClientInterface as _;
 use edge_client::handle::client_handle::ClientHandle;
-use edge_client::interface::types::{ListenerRx, PersistenceRx, StatusRx, VisionRx};
+use edge_client::interface::types::{ListenerRx, ListenerTx, PersistenceRx, StatusRx, VisionRx};
 use crate::error::EdgeError;
 
 /// # Conductor
@@ -286,35 +285,57 @@ impl Default for Conductor {
 	}
 }
 
-/// Call this function to begin the system.
-pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
-	let mut conductor = Conductor::default();
-	let env_variables = EnvVariables::initialise();
-	Logger::initialise_logger(env_variables.verbosity());
-
-
-	let handles =  ClientHandle::new::<Client>();
-	let mut client = handles.0;
-	let mut status_rx = handles.1;
-
-	// TODO: Integrate these into the system during proper integration
-	// let vision_rx: VisionRx = handles.2;
-	//let persistence_rx: PersistenceRx = handles.3;
-
-	let mut thread = handles.4;
-
-	let _thread = thread.run();
+async fn main_loop(
+	mut client: ClientHandle,
+	mut conductor: Conductor,
+	mut status_rx: StatusRx,
+) -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let mut listener = client.subscribe_new_listener().await;
 	let mut settings = client.get_default_setting().await
 		.unwrap_or(Settings::default());
-
-
 	loop {
 		client.assert_connection().await;
 		let result = conductor.loop_once(&mut client, status_rx, listener, settings).await?;
 		status_rx = result.0;
 		listener = result.1;
 		settings = result.2;
-	}
+	};
+}
+
+/// Call this function to begin the system.
+pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
+	let conductor = Conductor::default();
+
+	let env_variables = EnvVariables::initialise();
+	Logger::initialise_logger(env_variables.verbosity());
+
+	let handles =  Client::new().await;
+	let client = handles.3;
+	let status_rx = handles.0;
+
+	// TODO: Integrate these into the system during proper integration
+	//let vision_rx: VisionRx = handles.1;
+	//let persistence_rx: PersistenceRx = handles.2;
+
+	let client_thread = handles.4;
+	let thread = spawn(client_thread.run());
+
+	join!(
+		async move {
+			thread.await
+			.expect("Could not join websocket thread")
+			.expect("websocket thread panicked");
+		},
+		async move {
+			main_loop(
+				client,
+				conductor,
+				status_rx,
+			).await.expect("main thread panicked");
+		}
+	);
+
+	Ok(())
+	
 
 }
