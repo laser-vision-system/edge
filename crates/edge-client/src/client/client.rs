@@ -330,8 +330,8 @@ impl Client {
 					self.check_listeners();
 				}
 			}
-			websocket.send(Message::Close(None)).await.unwrap_or(());
 		}
+		websocket.send(Message::Close(None)).await.unwrap_or(());
 	}
 
 	/// Processes Commands send by the client handle.
