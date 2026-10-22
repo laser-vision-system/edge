@@ -53,7 +53,6 @@ impl VisionVariant {
 	///
 	/// This method statically asserts exhaustiveness between
 	/// [this](VisionVariant) and [`VisionTechnique`].
-	#[expect(clippy::unwrap_used, clippy::unwrap_in_result, reason = "Logger")]
 	pub fn swap(
 		&mut self,
 		swap_to: VisionTechnique,
@@ -96,7 +95,6 @@ impl VisionVariant {
 }
 
 impl VisionInterface for VisionVariant {
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	fn process(
 		&mut self,
 		batch: &mut [BatchItem],

@@ -113,7 +113,6 @@ impl Cnn {
 }
 
 impl VisionInterface for Cnn {
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	fn process(
 		&mut self,
 		batch: &mut [BatchItem],

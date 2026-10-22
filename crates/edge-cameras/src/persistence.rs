@@ -125,7 +125,6 @@ impl Persistence {
 
 // Setters.
 impl Persistence {
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	// TODO: Server should send a single request to change viewing state.
 	fn set_currently_viewed(
 		&mut self,
@@ -140,7 +139,6 @@ impl Persistence {
 		}
 	}
 
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn set_entry_name(
 		&mut self,
 		request: SetNameCamera,
@@ -179,7 +177,6 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn set_configuration(
 		&mut self,
 		request: Configuration,
@@ -209,7 +206,6 @@ impl Persistence {
 		}
 	}
 
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn get_configuration(
 		&mut self,
 		request: ViewCameraConfig,
@@ -244,7 +240,6 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn request_calibration(
 		&mut self,
 		request: Setpoint,

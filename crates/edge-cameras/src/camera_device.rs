@@ -84,11 +84,6 @@ pub struct CameraDevice {
 /// Initialisers.
 impl CameraDevice {
 	/// Attempt to create a device at the given index.
-	#[expect(
-		clippy::unwrap_used,
-		clippy::unwrap_in_result,
-		reason = "WIP development"
-	)]
 	pub fn try_new(index: CameraIndex) -> EdgeCamerasResult<Self> {
 		let index_str = index.to_string();
 

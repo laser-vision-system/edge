@@ -22,7 +22,6 @@ pub enum EdgeError {
 }
 
 impl EdgeError {
-	#[expect(clippy::unwrap_used, reason = "WIP development")]
 	pub fn log(self) {
 		logger().log_error(&self);
 	}

@@ -1,8 +1,5 @@
 //! Polling logic for the [`Persistence`] struct.
 
-// TODO: Remove all unwraps and then this.
-#![expect(clippy::unwrap_used, reason = "WIP development")]
-
 use std::{
 	collections::{
 		HashMap,

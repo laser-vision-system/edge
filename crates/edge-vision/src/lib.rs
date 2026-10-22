@@ -76,7 +76,6 @@ impl VisionGuard {
 		clippy::expect_used,
 		reason = "Closely protected internal option type"
 	)]
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn swap(
 		&self,
 		swap_to: VisionTechnique,
@@ -96,7 +95,6 @@ impl VisionGuard {
 		clippy::expect_used,
 		reason = "Closely protected internal option type"
 	)]
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn interact<F, R>(
 		&self,
 		func: F,
