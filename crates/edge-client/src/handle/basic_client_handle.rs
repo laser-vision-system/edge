@@ -100,7 +100,8 @@ impl BasicClientHandle {
 
 	/// Sleeps until the status changes
 	pub async fn await_status_change(&mut self) -> bool {
-		self.internal_status_rx.recv().await.expect("status change channel closed")
+		self.status = self.internal_status_rx.recv().await.expect("status change channel closed");
+		self.status
 	}
 
 	/// Sends the `UpdateCameraStatus` command to the server.
