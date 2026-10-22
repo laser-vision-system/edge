@@ -118,12 +118,12 @@ impl Client {
 	/// Removes the protocol and endpoint from a url.
 	///
 	/// # Panics
-	/// This function will panic if given a value not it protocol://*.*.*.*/edge_ws format, or if
+	/// This function will panic if given a value not it protocol://*.*.*.*:****/edge_ws format, or if
 	/// the internal regex is invalid
 	fn convert_url(
 		url: String,
 	) -> String {
-		let regex = Regex::new(r"^[A-z]+://([0-9.]+)/edge_ws").expect("invalid regex");
+		let regex = Regex::new(r"^[A-z]+://([0-9.]+:[0-9]+)/edge_ws").expect("invalid regex");
 
 		let captures = regex.captures(&url);
 
