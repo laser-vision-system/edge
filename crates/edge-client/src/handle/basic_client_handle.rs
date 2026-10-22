@@ -1,4 +1,4 @@
-//! Base client handler struct, defining methods for all other client handler structs to use.
+//! Base client handle struct, defining methods for all other client handle structs to use.
 use api::{
     shared::{
         AlertType,
@@ -14,7 +14,7 @@ use tokio::sync::{
         UnboundedSender,
     },
 };
-
+use tokio::sync::mpsc::error::SendError;
 use crate::{
     error::{
         EdgeClientError,
@@ -23,11 +23,11 @@ use crate::{
     interface::commands::Command,
 };
 
-/// Base client handler, providing common methods and data for other client
+/// Base client handle, providing common methods and data for other client
 /// handlers to use.
-pub struct BasicClientHandler {
+pub struct BasicClientHandle {
 	/// Transmission channel to the client thread.
-	pub cmd_tx: UnboundedSender<Command>,
+	cmd_tx: UnboundedSender<Command>,
 
 	/// Last known status of the websocket.
 	status: bool,
@@ -36,17 +36,43 @@ pub struct BasicClientHandler {
 	internal_status_rx: UnboundedReceiver<bool>,
 }
 
-impl BasicClientHandler {
+// TODO: Move the camera request methods out of this class into the CameraClientHandle class.
+impl BasicClientHandle {
 	pub fn new(
 		cmd_tx: UnboundedSender<Command>,
 		status: bool,
 		internal_status_rx: UnboundedReceiver<bool>,
 	) -> Self {
-		BasicClientHandler {
+		BasicClientHandle {
 			cmd_tx,
 			status,
 			internal_status_rx,
 		}
+	}
+
+	/// Sends an arbitrary command to the client.
+	pub fn send(&mut self, cmd: Command) -> Result<(), SendError<Command>> {
+		self.cmd_tx.send(cmd)
+	}
+
+	/// Creates a clone of the sender TX.
+	pub fn get_sender(&mut self) -> UnboundedSender<Command> {
+		self.cmd_tx.clone()
+	}
+
+	/// Sends a command to the client, on the condition that the websocket connection is up
+	///
+	/// # Errors:
+	/// Returns a `WebsocketDown` error if the status is false.
+	///
+	/// # Panics:
+	/// If the client thread is closed, panics.
+	pub fn send_ws_request(&mut self, cmd: Command) -> EdgeClientResult<()> {
+		self.update_status()?;
+
+		self.cmd_tx.send(cmd).expect("Client thread closed");
+
+		Ok(())
 	}
 
 	/// Updates the status, and returns it.
@@ -71,6 +97,12 @@ impl BasicClientHandler {
 		Err(EdgeClientError::WebsocketDown)
 	}
 
+
+	/// Sleeps until the status changes
+	pub async fn await_status_change(&mut self) -> bool {
+		self.internal_status_rx.recv().await.expect("status change channel closed")
+	}
+
 	/// Sends the `UpdateCameraStatus` command to the server.
 	///
 	/// # Errors:
@@ -80,16 +112,10 @@ impl BasicClientHandler {
 		camera_id: CameraId,
 		status: CameraStatus,
 	) -> EdgeClientResult<()> {
-		self.update_status()?;
-
-		self.cmd_tx
-			.send(Command::UpdateCameraStatus {
+		self.send_ws_request(Command::UpdateCameraStatus {
 				camera_id,
 				status,
 			})
-			.expect("Client thread closed");
-
-		Ok(())
 	}
 
 	/// Sends the `ImageAnalysis` command to the server.
@@ -101,16 +127,10 @@ impl BasicClientHandler {
 		camera_id: CameraId,
 		deviation: Deviation,
 	) -> EdgeClientResult<()> {
-		self.update_status()?;
-
-		self.cmd_tx
-			.send(Command::ImageAnalysis {
+		self.send_ws_request(Command::ImageAnalysis {
 				camera_id,
 				deviation,
 			})
-			.expect("Client thread closed");
-
-		Ok(())
 	}
 
 	/// Sends the `Configuration` command to the server.
@@ -123,17 +143,11 @@ impl BasicClientHandler {
 		camera_id: CameraId,
 		configuration: String,
 	) -> EdgeClientResult<()> {
-		self.update_status()?;
-
-		self.cmd_tx
-			.send(Command::Configuration {
+		self.send_ws_request(Command::Configuration {
 				conn_id,
 				camera_id,
 				configuration,
 			})
-			.expect("Client thread closed");
-
-		Ok(())
 	}
 
 	/// Sends the `ConfirmForgetCamera` command to the server.
@@ -146,17 +160,11 @@ impl BasicClientHandler {
 		camera_id: CameraId,
 		confirm: bool,
 	) -> EdgeClientResult<()> {
-		self.update_status()?;
-
-		self.cmd_tx
-			.send(Command::ForgetCameraRequest {
+		self.send_ws_request(Command::ForgetCameraRequest {
 				conn_id,
 				camera_id,
 				confirm,
 			})
-			.expect("Client thread closed");
-
-		Ok(())
 	}
 
 	/// Sends the `Alert` command to the server.
@@ -171,19 +179,20 @@ impl BasicClientHandler {
 		alert_name: String,
 		alert_description: String,
 	) -> EdgeClientResult<()> {
-		self.update_status()?;
-
-		self.cmd_tx
-			.send(Command::Alert {
+		self.send_ws_request(Command::Alert {
 				camera_id,
 				alert_type,
 				alert_code,
 				alert_name,
 				alert_description,
 			})
-			.expect("Client thread closed");
+	}
 
-		Ok(())
+	pub fn send_image(&mut self, camera_id: CameraId, frame: Vec<u8>) -> EdgeClientResult<()> {
+		self.send_ws_request( Command::SendImage {
+			camera_id,
+			frame,
+		})
 	}
 
 	/// Sends the `SetNameCamera` command to the server.
@@ -195,17 +204,9 @@ impl BasicClientHandler {
 		camera_id: CameraId,
 		name: String,
 	) -> EdgeClientResult<()> {
-		self.update_status()?;
-
-		self.cmd_tx
-			.send(Command::SetNameCamera {
+		self.send_ws_request(Command::SetNameCamera {
 				camera_id,
 				name,
 			})
-			.expect("Client thread closed");
-
-		Ok(())
 	}
-
-
 }

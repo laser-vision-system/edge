@@ -1,41 +1,38 @@
 use std::collections::HashMap;
 use api::{
-    edge::{
-        NewCameraInfo,
-        Settings,
-    },
-    shared::{
-        AlertType,
-        CameraId,
-        CameraStatus,
-        ConnId,
-        Deviation,
-    },
+	edge::{
+		NewCameraInfo,
+		Settings,
+	},
+	shared::{
+		AlertType,
+		CameraId,
+		CameraStatus,
+		ConnId,
+		Deviation,
+	},
 };
-use edge_core::logger::logger;
 use tokio::sync::oneshot;
 use crate::{
-    client::client_interface::ClientInterface,
-    error::EdgeClientResult,
-    handler::{
-        basic_client_handler::BasicClientHandler,
-        camera_client_handler::CameraClientHandler,
-    },
-    interface::{
-        commands::Command,
-    },
+	client::client_interface::ClientInterface,
+	error::EdgeClientResult,
+	handle::camera_client_handle::CameraClientHandle,
+	interface::commands::Command,
 };
-use crate::interface::types::{CameraRx, ListenerRx, PersistenceRx, StatusRx, VisionRx};
+use crate::handle::basic_client_handle::BasicClientHandle;
+use crate::interface::types::{ListenerRx, PersistenceRx, StatusRx, VisionRx};
 
 /// Interface for other threads to access the websocket client.
 ///
 /// Contains all functions necessary to communicate with the websocket,
 /// and to get receivers for messages from the websocket thread.
-pub struct ClientHandler {
-	base: BasicClientHandler,
+pub struct ClientHandle {
+	base: BasicClientHandle,
 }
 
-impl ClientHandler {
+
+// TODO: Remove all the camera command methods here, once the proper integration has been done.
+impl ClientHandle {
 	/// Starts a websocket client on a separate thread.
 	/// Returns itself, for communications with the thread,
 	/// as well as a receiver which sends true when the websocket comes online,
@@ -61,14 +58,9 @@ impl ClientHandler {
 			thread
 		) = T::new();
 
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Websocket client thread started");
-
 		(
-			ClientHandler {
-				base: BasicClientHandler::new(
+			ClientHandle {
+				base: BasicClientHandle::new(
 					cmd_tx,
 					false,
 					internal_status_rx,
@@ -90,13 +82,12 @@ impl ClientHandler {
 	pub async fn subscribe_new_camera(
 		&mut self,
 		camera_id: CameraId,
-	) -> (CameraRx, CameraClientHandler)
+	) -> CameraClientHandle
 	{
 		let (res_receiver_tx, res_receiver_rx) = oneshot::channel();
 		let (res_status_tx, res_status_rx) = oneshot::channel();
 
 		self.base
-			.cmd_tx
 			.send(Command::SubscribeNewCamera {
 				camera_id,
 				res_tx: res_receiver_tx,
@@ -104,23 +95,22 @@ impl ClientHandler {
 			.expect("Client thread closed");
 
 		self.base
-			.cmd_tx
 			.send(Command::GetNewStatusChannel {
 				res_tx: res_status_tx,
 			})
 			.expect("Client thread closed");
 
-		let receiver = res_receiver_rx.await.expect("Return handler dropped");
+		let receiver = res_receiver_rx.await.expect("Return handle dropped");
 		let status_receiver =
-			res_status_rx.await.expect("Return handler dropped");
+			res_status_rx.await.expect("Return handle dropped");
 
-		let handler = CameraClientHandler::new(
+		CameraClientHandle::new(
 			camera_id,
-			self.base.cmd_tx.clone(),
+			self.base.get_sender(),
+			receiver,
 			self.base.status(),
-			status_receiver,
-		);
-		(receiver, handler)
+			status_receiver
+		)
 	}
 
 	/// Gets a generic listener for handling any websocket request.
@@ -137,13 +127,22 @@ impl ClientHandler {
 		let (res_tx, res_rx) = oneshot::channel();
 
 		self.base
-			.cmd_tx
 			.send(Command::SubscribeNewListener {
 				res_tx,
 			})
 			.expect("Client thread closed");
 
-		res_rx.await.expect("Return handler dropped")
+		res_rx.await.expect("Return handle dropped")
+	}
+
+	/// Sleeps until the websocket is up
+	pub async fn assert_connection(&mut self) {
+		if self.status() {
+			return;
+		}
+		while !self.base.await_status_change().await {
+
+		}
 	}
 
 	/// Sends the `RegisterCameras` command to the server
@@ -158,25 +157,15 @@ impl ClientHandler {
 		&mut self,
 		cameras: HashMap<CameraId, NewCameraInfo>,
 	) -> EdgeClientResult<()> {
-		self.update_status()?;
-
 		self.base
-			.cmd_tx
-			.send(Command::RegisterCameras {
+			.send_ws_request(Command::RegisterCameras {
 				cameras,
 			})
-			.expect("Client thread closed");
-		Ok(())
 	}
 
 	/// Gets the current status of the websocket.
 	pub fn status(&mut self) -> bool {
 		self.base.status()
-	}
-
-	/// Updates the
-	fn update_status(&mut self) -> EdgeClientResult<()> {
-		self.base.update_status()
 	}
 
 	/// Sends the `UpdateCameraStatus` command to the server
@@ -272,6 +261,22 @@ impl ClientHandler {
 		)
 	}
 
+	/// Sends an image to the server
+	///
+	/// # Errors
+	///
+	/// Returns a `WebsocketDown` error if the status is false.
+	///
+	/// # Panics
+	/// This function will panic if the client thread is closed.
+	pub fn send_image(
+		&mut self,
+		camera_id: CameraId,
+		image: Vec<u8>,
+	) -> EdgeClientResult<()>  {
+		self.base.send_image(camera_id, image)
+	}
+
 	/// Sends the `SetNameCamera` command to the server
 	///
 	/// # Errors
@@ -295,13 +300,13 @@ impl ClientHandler {
     pub async fn get_default_setting(&mut self) -> EdgeClientResult<Settings> {
         let (res_tx, res_rx) = oneshot::channel();
 
-        self.base.cmd_tx
+        self.base
             .send(Command::GetDefaultSettings {
                 res_tx,
             })
             .expect("Client thread closed");
 
-        res_rx.await.expect("Return handler dropped")
+        res_rx.await.expect("Return handle dropped")
     }
 
 	/// Gets the url currently being used for the websocket.
@@ -311,12 +316,12 @@ impl ClientHandler {
     pub async fn get_server_url(&mut self) -> String {
         let (res_tx, res_rx) = oneshot::channel();
 
-        self.base.cmd_tx
+        self.base
             .send(Command::GetServerURL {
                 res_tx,
             })
             .expect("Client thread closed");
 
-        res_rx.await.expect("Return handler dropped")
+        res_rx.await.expect("Return handle dropped")
     }
 }

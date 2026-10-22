@@ -1,3 +1,5 @@
+
+
 use std::collections::HashMap;
 
 use api::{
@@ -22,7 +24,7 @@ use crate::{
 };
 use crate::interface::types::{CameraRx, ListenerRx, StatusRx};
 
-/// Commands used internally by the client handler and the client to call
+/// Commands used internally by the client handle and the client to call
 /// functions across threads
 pub enum Command {
 	// Thread commands:

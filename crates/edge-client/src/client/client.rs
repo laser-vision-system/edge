@@ -4,6 +4,7 @@ use std::collections::{
     HashMap,
 };
 use std::collections::hash_map::Entry;
+use std::time::Duration;
 use api::{
     edge::{
         Alert,
@@ -29,10 +30,6 @@ use api::{
 };
 use edge_core::{
     logger::logger,
-    settings::{
-        AUTO_CONNECT_DELAY,
-        WS_KEEP_ALIVE,
-    },
 };
 use futures_util::{
     stream::FusedStream as _,
@@ -80,6 +77,8 @@ use crate::{
 };
 use crate::interface::types::{CameraRx, CameraTx, ListenerRx, ListenerTx, PersistenceRx, PersistenceTx, StatusRx, StatusTx, VisionRx, VisionTx};
 
+pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
+pub const WS_KEEP_ALIVE: Duration = Duration::from_secs(6);
 type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 /// The main websocket client implementation.
@@ -335,7 +334,7 @@ impl Client {
 		}
 	}
 
-	/// Processes Commands send by the client handler.
+	/// Processes Commands send by the client handle.
 	///
 	/// # Panics
 	/// This will panic if the return channels close before it returns,
@@ -557,7 +556,7 @@ impl Client {
 	}
 }
 
-/// Methods for handling commands from the handler.
+/// Methods for handling commands from the handle.
 impl Client {
 	/// Adds a new camera receiver to the internal camera list, and returns the
 	/// associated receiver

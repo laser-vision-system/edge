@@ -23,8 +23,6 @@ use api::{
 		ServerRequests,
 		SetNameCamera,
 		Setpoint,
-		StartViewingCamera,
-		StopViewingCamera,
 	},
 	shared::{
 		CameraId,
@@ -159,9 +157,9 @@ impl Persistence {
 	)]
 	pub fn start_viewing_camera(
 		&mut self,
-		request: StartViewingCamera,
+		camera_id: CameraId,
 	) {
-		self.set_currently_viewed(request.camera_id, true);
+		self.set_currently_viewed(camera_id, true);
 	}
 
 	#[expect(
@@ -170,9 +168,9 @@ impl Persistence {
 	)]
 	pub fn stop_viewing_camera(
 		&mut self,
-		request: StopViewingCamera,
+		camera_id: CameraId,
 	) {
-		self.set_currently_viewed(request.camera_id, false);
+		self.set_currently_viewed(camera_id, false);
 	}
 
 	#[expect(
@@ -257,7 +255,7 @@ impl Persistence {
 		}
 	}
 
-	pub fn get_current_cameras(&mut self) -> ServerRequests {
+	pub fn get_current_cameras(&mut self) -> HashMap<CameraId, NewCameraInfo> {
 		let camera_list: HashMap<CameraId, NewCameraInfo> = self
 			.inner
 			.iter()
@@ -274,9 +272,7 @@ impl Persistence {
 				(*camera_id, camera_status)
 			})
 			.collect();
-		ServerRequests::RegisterCameras(RegisterCameras {
-			cameras: camera_list,
-		})
+		camera_list
 	}
 }
 
