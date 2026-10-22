@@ -20,7 +20,7 @@ use crate::{
         EdgeClientError,
         EdgeClientResult,
     },
-    interface::commands::Command,
+    interface::Command,
 };
 
 /// Base client handle, providing common methods and data for other client

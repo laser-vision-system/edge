@@ -1,4 +1,6 @@
 //! Defines the behavior of the websocket thread.
+mod auto_connect;
+mod persistent_edge_id;
 
 use std::collections::{
     HashMap,
@@ -57,25 +59,22 @@ use tokio_tungstenite::{
 };
 use regex::Regex;
 use crate::{
-    client::{
-        auto_connect,
+	client::{
         auto_connect::get_ws_stream,
         persistent_edge_id::get_mac_address,
     },
-    error::{
+	error::{
         EdgeClientError,
         EdgeClientResult,
     },
-    interface::{
-        commands::Command,
-        websocket_requests::{
-            CameraRequest,
-            PersistenceRequest,
-        },
+	interface::{
+        Command,
+		CameraRequest,
+		PersistenceRequest,
     },
 };
-use crate::handle::client_handle::ClientHandle;
-use crate::interface::types::{CameraRx, CameraTx, ListenerRx, ListenerTx, PersistenceRx, PersistenceTx, StatusRx, StatusTx, VisionRx, VisionTx};
+use crate::handle::ClientHandle;
+use crate::interface::{CameraRx, CameraTx, ListenerRx, ListenerTx, PersistenceRx, PersistenceTx, StatusRx, StatusTx, VisionRx, VisionTx};
 
 pub const API: &str = "/edge_ws";
 pub const PORT: &str = "8080";
@@ -83,7 +82,7 @@ pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
 pub const WS_KEEP_ALIVE: Duration = Duration::from_secs(6);
 type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
-/// The main websocket client implementation.
+/// The main websocket client_2 implementation.
 #[derive(Debug)]
 pub struct Client {
 	/// Channel for receiving instructions from other threads.
@@ -336,7 +335,7 @@ impl Client {
 		websocket.send(Message::Close(None)).await.unwrap_or(());
 	}
 
-	/// Processes Commands send by the client handle.
+	/// Processes Commands send by the client_2 handle.
 	///
 	/// # Panics
 	/// This will panic if the return channels close before it returns,

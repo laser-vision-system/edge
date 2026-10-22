@@ -12,11 +12,11 @@ use tokio::sync::mpsc::{
 use tokio::sync::mpsc::error::TryRecvError;
 use crate::{
 	error::EdgeClientResult,
-	interface::commands::Command,
+	interface::Command,
 };
 use crate::handle::basic_client_handle::BasicClientHandle;
-use crate::interface::types::CameraRx;
-use crate::interface::websocket_requests::CameraRequest;
+use crate::interface::CameraRx;
+use crate::interface::CameraRequest;
 
 pub struct CameraClientHandle {
 	camera_id: CameraId,

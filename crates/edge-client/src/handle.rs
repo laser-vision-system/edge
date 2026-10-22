@@ -1,3 +1,6 @@
+mod basic_client_handle;
+pub mod camera_client_handle;
+
 use std::collections::HashMap;
 use api::{
 	edge::{
@@ -17,10 +20,10 @@ use tokio::sync::oneshot;
 use crate::{
 	error::EdgeClientResult,
 	handle::camera_client_handle::CameraClientHandle,
-	interface::commands::Command,
+	interface::Command,
 };
 use crate::handle::basic_client_handle::BasicClientHandle;
-use crate::interface::types::{ListenerRx, PersistenceRx, StatusRx, VisionRx};
+use crate::interface::{ListenerRx, PersistenceRx, StatusRx, VisionRx};
 
 /// Interface for other threads to access the websocket client.
 ///

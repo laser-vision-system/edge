@@ -268,7 +268,7 @@ mod tests {
 			.rev()
 			.collect::<Vec<_>>()
 			.join("");
-		please.push_str(client::client::API);
+		please.push_str(client::API);
 
 		println!("{please}");
 	}

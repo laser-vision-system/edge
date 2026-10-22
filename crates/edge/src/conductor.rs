@@ -40,9 +40,9 @@ use edge_vision::{
 	vision_interface::VisionInterface as _,
 };
 use tokio::time::interval;
-use edge_client::client::client::Client;
-use edge_client::handle::client_handle::ClientHandle;
-use edge_client::interface::types::{ListenerRx, ListenerTx, PersistenceRx, StatusRx, VisionRx};
+use edge_client::client::Client;
+use edge_client::handle::ClientHandle;
+use edge_client::interface::{ListenerRx, ListenerTx, PersistenceRx, StatusRx, VisionRx};
 use crate::error::EdgeError;
 
 /// # Conductor
