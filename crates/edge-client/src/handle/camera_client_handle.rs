@@ -116,7 +116,7 @@ impl CameraClientHandle {
 		configuration: String,
 	) -> EdgeClientResult<()> {
 		self.base
-			.configuration(self.camera_id, conn_id, configuration)
+			.configuration(conn_id, self.camera_id, configuration)
 	}
 
 	/// Sends the `Alert` command to the server

@@ -197,7 +197,7 @@ impl ClientHandle {
 		configuration: String,
 	) -> EdgeClientResult<()> {
 		self.base
-			.configuration(camera_id, conn_id, configuration)
+			.configuration(conn_id, camera_id, configuration)
 	}
 
 	/// Sends the `ConfirmForgetCamera` command to the server
