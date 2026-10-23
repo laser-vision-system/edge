@@ -1,3 +1,5 @@
+//! Image metric comparison.
+
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
@@ -26,10 +28,15 @@ use crate::{
 /// Closely associated data used by external holders.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ExternalData {
+	/// The image data used as the setpoint.
 	pub image: Option<GrayImage>,
+	/// The peak brightness metric.
 	pub peak: Option<f32>,
+	/// The average brightness metric.
 	pub mean: Option<f32>,
+	/// The standard deviation metric.
 	pub std_dev: Option<f32>,
+	/// The calculated deviation value, if the setpoint exists.
 	pub deviation: Option<f32>,
 }
 
@@ -107,6 +114,10 @@ impl Default for DiffModel {
 	}
 }
 
+/// A [`VisionVariant`] that uses image metric comparison to estimate deviation
+/// directly.
+///
+/// [`VisionVariant`]: super::VisionVariant
 #[derive(Default)]
 pub struct Diff {
 	session: SessionToken,
@@ -114,6 +125,7 @@ pub struct Diff {
 }
 
 impl Diff {
+	/// Create a new [`Diff`] instance.
 	pub fn new() -> Self {
 		Self {
 			session: SessionToken::new(),

@@ -1,3 +1,5 @@
+//! Unintelligent average pixel lightness.
+
 use std::fmt;
 
 use image::RgbImage;
@@ -15,8 +17,11 @@ use crate::{
 /// Closely associated data used by external holders.
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ExternalData {
+	/// The intensity value used for deviation measurement.
 	pub setpoint: Option<f32>,
+	/// The current avg lightness value.
 	pub intensity: Option<f32>,
+	/// The calculated deviation value, if the setpoint exists.
 	pub deviation: Option<f32>,
 }
 
@@ -35,12 +40,17 @@ impl fmt::Display for ExternalData {
 	}
 }
 
+/// A [`VisionVariant`] that calculates intensity with the average pixel
+/// lightness.
+///
+/// [`VisionVariant`]: super::VisionVariant
 #[derive(Clone, Default)]
 pub struct AvgLightness {
 	session: SessionToken,
 }
 
 impl AvgLightness {
+	/// Create a new [`AvgLightness`] instance.
 	pub fn new() -> Self {
 		Self {
 			session: SessionToken::new(),

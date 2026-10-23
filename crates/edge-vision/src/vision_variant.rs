@@ -1,3 +1,5 @@
+//! The different vision techniques that are available.
+
 #![expect(
 	clippy::new_without_default,
 	reason = "Constructing should be hidden"
@@ -26,16 +28,25 @@ use crate::{
 	vision_state::VisionState,
 };
 
+/// Defines the available vision techniques.
+///
 /// This type should not be visible outside of this crate.
 #[derive(Debug)]
 pub enum VisionVariant {
+	/// The absense of any vision processing.
 	Inactive(Inactive),
+	/// Unintelligent average pixel lightness.
 	AvgLightness(AvgLightness),
+	/// Convolutional neural network.
 	Cnn(Box<Cnn>),
+	/// Image metric comparison.
 	Diff(Diff),
 }
 
 impl VisionVariant {
+	/// Create a new [`VisionVariant`].
+	///
+	/// You are probably doing something wrong if you are calling this directly.
 	pub fn new() -> Self {
 		Self::Inactive(Inactive::default())
 	}

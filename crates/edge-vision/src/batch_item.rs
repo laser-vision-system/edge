@@ -1,3 +1,5 @@
+//! Provides the [`BatchItem`] type.
+
 use std::fmt;
 
 use api::shared::CameraId;
@@ -11,14 +13,20 @@ use crate::vision_state::VisionState;
 /// swapped to using an [`mpsc`](std::sync::mpsc) for multithreading. The
 /// [`VisionState`] would be sent back through it.
 pub struct BatchItem<'a> {
+	/// The unique identifier for a camera.
 	pub camera_id: CameraId,
+	/// Variant-specific data held by the camera.
 	pub state: &'a mut VisionState,
+	/// Image data used for vision processing.
 	pub image: Image,
+	/// Whether the setpoint should be taken from this invocation.
 	pub calibrate: bool,
+	/// Whether the image data should be sent to the server.
 	pub send_to_server: bool,
 }
 
 impl<'a> BatchItem<'a> {
+	/// Build a new [`BatchItem`].
 	pub fn new(
 		camera_id: CameraId,
 		state: &'a mut VisionState,

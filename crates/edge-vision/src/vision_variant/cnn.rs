@@ -1,3 +1,5 @@
+//! Convolutional neural network.
+
 #![expect(
 	clippy::allow_attributes,
 	reason = "Expect might not always be fulfilled"
@@ -31,14 +33,20 @@ use crate::{
 	write_optional,
 };
 
+/// The errors that can arise with the [`Cnn`].
 #[derive(Debug, thiserror::Error)]
 pub enum CnnError {
+	/// When a model fails to load.
 	#[error("failed to load CNN model from {path}: {source}")]
 	ModelLoad {
+		/// The path to the model file. Not relevant if using an embedded
+		/// model.
 		path: PathBuf,
+		/// The source error from [`BurnpackStore`](burn_store::BurnpackStore).
 		#[source]
 		source: BurnpackError,
 	},
+	/// If the prediction results are malformed.
 	#[error(transparent)]
 	Predict(#[from] DataError),
 }
@@ -46,8 +54,11 @@ pub enum CnnError {
 /// Closely associated data used by external holders.
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ExternalData {
+	/// The intensity value used for deviation measurement.
 	pub setpoint: Option<f32>,
+	/// The currently predicted intensity.
 	pub intensity: Option<f32>,
+	/// The calculated deviation value, if the setpoint exists.
 	pub deviation: Option<f32>,
 }
 
@@ -66,6 +77,10 @@ impl fmt::Display for ExternalData {
 	}
 }
 
+/// A [`VisionVariant`] that uses a convolutional neural network to predict
+/// intensity.
+///
+/// [`VisionVariant`]: super::VisionVariant
 pub struct Cnn {
 	session: SessionToken,
 	device: config::BackendDevice,
@@ -73,7 +88,7 @@ pub struct Cnn {
 }
 
 impl Cnn {
-	/// Create and load the CNN model.
+	/// Create and load the [`Cnn`] model.
 	///
 	/// # Errors
 	///
