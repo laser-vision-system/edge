@@ -124,10 +124,10 @@ impl Conductor {
 		for item in &batch_items {
 			let deviation_maybe = item.state.get_deviation();
 			let cam_id = item.camera_id;
-			if let Some(deviation) = deviation_maybe {
-				if let Err(why) = client.image_analysis(cam_id, deviation) {
-					logger().log_error(&why);
-				}
+			if let Some(deviation) = deviation_maybe
+				&& let Err(why) = client.image_analysis(cam_id, deviation)
+			{
+				logger().log_error(&why);
 			}
 
 			if item.send_to_server {

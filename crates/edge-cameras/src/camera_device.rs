@@ -158,9 +158,7 @@ impl CameraDevice {
 	///
 	/// If nokhwa could not open the camera.
 	pub fn open(mut self) -> EdgeCamerasResult<Self> {
-		self.inner
-			.open()
-			.map_err(|why| EdgeCamerasError::StreamOpen(why))?;
+		self.inner.open().map_err(EdgeCamerasError::StreamOpen)?;
 		Ok(self)
 	}
 
@@ -220,7 +218,7 @@ impl CameraLike for CameraDevice {
 			.inner
 			.frame()
 			// Could error if the stream hasn't been opened.
-			.map_err(|why| EdgeCamerasError::FrameRead(why))?;
+			.map_err(EdgeCamerasError::FrameRead)?;
 
 		Ok(FrameBuffer::from(frame))
 	}
@@ -231,7 +229,7 @@ impl CameraLike for CameraDevice {
 	) -> EdgeCamerasResult<Vec<KnownCameraControl>> {
 		self.inner
 			.controls()
-			.map_err(|why| EdgeCamerasError::CannotGetControls(why))?
+			.map_err(EdgeCamerasError::CannotGetControls)?
 			.iter()
 			.map(CameraControl::control)
 			.map(Ok)
@@ -242,7 +240,7 @@ impl CameraLike for CameraDevice {
 	fn get_controls(&self) -> EdgeCamerasResult<ControlMap> {
 		self.inner
 			.controls()
-			.map_err(|why| EdgeCamerasError::CannotGetControls(why))
+			.map_err(EdgeCamerasError::CannotGetControls)
 			.map(ControlMap::from)
 	}
 
@@ -253,7 +251,7 @@ impl CameraLike for CameraDevice {
 	) -> EdgeCamerasResult<CamControl> {
 		self.inner
 			.controls()
-			.map_err(|why| EdgeCamerasError::CannotGetControls(why))?
+			.map_err(EdgeCamerasError::CannotGetControls)?
 			.into_iter()
 			.find(|con| con.control() == id)
 			.ok_or(EdgeCamerasError::GetControl(id))

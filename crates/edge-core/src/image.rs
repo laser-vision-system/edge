@@ -64,7 +64,7 @@ impl FrameBuffer {
 			// We just assume it is always corruption for now.
 			// TODO: Figure out the why.
 			// If it is because of memory, maybe try unwind and restart.
-			.map_err(|why| EdgeCoreError::FrameDecodeCorruption(why))?;
+			.map_err(EdgeCoreError::FrameDecodeCorruption)?;
 
 		let frame = DynamicImage::ImageRgb8(img_buffer);
 		let cropped = frame.crop_imm(0, 0, frame.width(), frame.height());
@@ -132,27 +132,27 @@ fn select_decode_format(buf: Buffer) -> EdgeCoreResult<RgbConversion> {
 	match buf.source_frame_format() {
 		FrameFormat::MJPEG => {
 			Ok(Frame::<Mjpeg>::try_new(buf)
-				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		FrameFormat::YUYV => {
 			Ok(Frame::<Yuyv>::try_new(buf)
-				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		FrameFormat::NV12 => {
 			Ok(Frame::<Nv12>::try_new(buf)
-				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		FrameFormat::RAWRGB => {
 			Ok(Frame::<RawRgb>::try_new(buf)
-				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		FrameFormat::RAWBGR => {
 			Ok(Frame::<RawBgr>::try_new(buf)
-				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		// TODO: Support this type of input
