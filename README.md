@@ -49,7 +49,7 @@ In order to run our docker image you will need to pull the image from github. to
 # Create a new personal access token (classic) with the appropriate scopes for the tasks you want to accomplish. If your organization requires SSO, you must enable SSO for your new token.
 # Select the read:packages scope to download container images and read their metadata.
 export CR_PAT=YOUR_TOKEN
-echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
+echo $CR_PAT | sudo docker login ghcr.io -u USERNAME --password-stdin
 ```
 After you are logged in run the following command to pull the image:
 ```
