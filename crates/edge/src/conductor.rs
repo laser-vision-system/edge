@@ -301,21 +301,13 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	} = Client::new().await;
 	let conductor = Conductor::default();
 
-	let thread = spawn(client.run());
+	let client_thread = spawn(client.run());
 
-	join!(
-		async move {
-			thread
-				.await
-				.expect("Could not join websocket thread")
-				.expect("websocket thread panicked");
-		},
-		async move {
-			main_loop(conductor_client_handle, conductor, status_handle)
-				.await
-				.expect("main thread panicked");
-		}
+	let (client_res, main_res) = join!(
+		client_thread,
+		main_loop(conductor_client_handle, conductor, status_handle)
 	);
 
-	Ok(())
+	client_res??;
+	main_res
 }
