@@ -1,3 +1,5 @@
+#![expect(deprecated, reason = "Temporarily used for backwards compatibility")]
+
 use std::collections::HashMap;
 
 use api::{

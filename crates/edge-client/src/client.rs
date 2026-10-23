@@ -1,4 +1,7 @@
 //! Defines the behavior of the websocket thread.
+
+#![expect(deprecated, reason = "Temporarily used for backwards compatibility")]
+
 mod auto_connect;
 mod persistent_edge_id;
 
@@ -124,7 +127,7 @@ pub struct Client {
 	vision_tx: VisionTx,
 
 	/// Dedicated transmitter for commands destined for the `Persistence`
-	/// struct. If this closes, this thread will panic
+	/// struct. If this closes, this thread will panic.
 	persistence_tx: PersistenceTx,
 
 	/// Dynamic list of camera command receivers with associated camera IDs.
@@ -143,14 +146,19 @@ impl Client {
 	/// Removes the protocol and endpoint from a url.
 	///
 	/// # Panics
+	///
 	/// This function will panic if given a value not it
 	/// `protocol://*.*.*.*:****/edge_ws format`, or if the internal regex is
-	/// invalid
-	fn convert_url(url: String) -> String {
+	/// invalid.
+	#[expect(
+		clippy::expect_used,
+		reason = "Ideally, we'd want this to be a compile-time error"
+	)]
+	fn convert_url(url: &String) -> String {
 		let regex = Regex::new("^[A-z]+://([0-9.]+:[0-9]+)/edge_ws")
 			.expect("invalid regex");
 
-		let captures = regex.captures(&url);
+		let captures = regex.captures(url);
 
 		let capture =
 			captures.expect("Invalid url").get(1).expect("Invalid url");
@@ -177,7 +185,9 @@ impl Client {
 	/// websocket.
 	///
 	/// # Panics
+	///
 	/// If we are unable to acquire our own MAC address, this panics.
+	#[expect(clippy::expect_used, reason = "WIP development")]
 	async fn send_persistent_edge_id(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -192,7 +202,10 @@ impl Client {
 	/// Sends an arbitrary serializable struct to the server.
 	///
 	/// # Errors
-	/// Returns a [`EdgeClientError::WebsocketClosed`] if the text does not send
+	///
+	/// Returns a [`EdgeClientError::WebsocketClosed`] if the text does not
+	/// send.
+	#[expect(clippy::expect_used, reason = "Serialisation should never fail")]
 	async fn send_text<T>(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -204,14 +217,14 @@ impl Client {
 		let result = websocket
 			.send(Message::Text(Utf8Bytes::from(
 				&serde_json::to_string(&data)
-					.expect("Unable to serialize struct"),
+					.expect("Unable to serialise struct"),
 			)))
 			.await;
 
 		self.process_ws_err(result)
 	}
 
-	/// Converts `tungstenite::error` into an [`EdgeClientError`]
+	/// Converts `tungstenite::error` into an [`EdgeClientError`].
 	fn process_ws_err(
 		&mut self,
 		result: Result<(), Error>,
@@ -246,7 +259,7 @@ impl Client {
 		Ok(())
 	}
 
-	/// Forwards the `SetProcessingType` request to `vision_rx`
+	/// Forwards the `SetProcessingType` request to `vision_rx`.
 	fn set_processing_type(
 		&mut self,
 		vision: VisionTechnique,
@@ -527,7 +540,7 @@ impl Client {
 			Ok(data) => data,
 			Err(e) => {
 				logger().log_warn(&format!(
-					"Could not deserialize websocket message due to: {:?}",
+					"Could not deserialise websocket message due to: {:?}",
 					e.to_string()
 				));
 				return;
@@ -806,7 +819,7 @@ impl Client {
 
 			self.send_persistent_edge_id(&mut websocket).await;
 
-			self.url = Some(Self::convert_url(url)); // Saving the url here so eventually we can implement a get_default_settings method
+			self.url = Some(Self::convert_url(&url)); // Saving the url here so eventually we can implement a get_default_settings method
 
 			self.status_update(true);
 

@@ -1,3 +1,5 @@
+#![expect(deprecated, reason = "Temporarily used for backwards compatibility")]
+
 use std::{
 	collections::HashMap,
 	error,
@@ -68,7 +70,7 @@ impl Conductor {
 		let status_rx = self.handle_reconnect(client, status_rx);
 
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
-		self.update_camera_device_connections(client).await;
+		self.update_camera_device_connections(client);
 
 		// Save the most recent vision swap request, instead of trying to swap
 		// more than once.
@@ -160,8 +162,7 @@ impl Conductor {
 		}
 
 		if is_updated {
-			let _ =
-				client.register_cameras(self.persistence.get_current_cameras());
+			_ = client.register_cameras(self.persistence.get_current_cameras());
 		}
 		status_rx
 	}
@@ -175,7 +176,7 @@ impl Conductor {
 		match request {
 			EdgeRequests::SetNameCamera(cam_name_req) => {
 				self.persistence.set_entry_name(cam_name_req.clone());
-				let _ = client
+				_ = client
 					.set_name_camera(cam_name_req.camera_id, cam_name_req.name);
 			},
 			EdgeRequests::ToggleViewingCamera(toggle_view_cam_req) => {
@@ -214,7 +215,7 @@ impl Conductor {
 		}
 	}
 
-	async fn update_camera_device_connections(
+	fn update_camera_device_connections(
 		&mut self,
 		client: &mut ConductorClientHandle,
 	) {
@@ -302,13 +303,16 @@ async fn flatten<T>(
 }
 
 /// Call this function to begin the system.
+///
+/// # Errors
+///
+/// If either the main loop or client thread return an error.
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let ClientResult {
 		status_handle,
-		vision_client_handle: _,
-		persistence_client_handle: _,
 		conductor_client_handle,
 		client,
+		..
 	} = Client::new().await;
 	let conductor = Conductor::default();
 
