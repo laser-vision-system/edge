@@ -36,9 +36,10 @@ use edge_vision::{
 	vision_interface::VisionInterface as _,
 };
 use tokio::{
-	join,
 	spawn,
+	task::JoinHandle,
 	time::interval,
+	try_join,
 };
 
 use crate::error::EdgeError;
@@ -290,6 +291,16 @@ async fn main_loop(
 	}
 }
 
+async fn flatten<T>(
+	handle: JoinHandle<Result<T, EdgeClientError>>
+) -> Result<T, Box<dyn error::Error + Send + Sync>> {
+	match handle.await {
+		Ok(Ok(result)) => Ok(result),
+		Ok(Err(err)) => Err(Box::new(err)),
+		Err(err) => Err(Box::new(err)),
+	}
+}
+
 /// Call this function to begin the system.
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let ClientResult {
@@ -303,11 +314,10 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 
 	let client_thread = spawn(client.run());
 
-	let (client_res, main_res) = join!(
-		client_thread,
-		main_loop(conductor_client_handle, conductor, status_handle)
-	);
-
-	client_res??;
-	main_res
+	try_join!(
+		biased;
+		flatten(client_thread),
+		main_loop(conductor_client_handle, conductor, status_handle),
+	)
+	.map(|((), ())| ())
 }
