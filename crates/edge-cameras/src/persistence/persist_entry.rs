@@ -168,9 +168,9 @@ impl PersistEntry {
 	pub fn active_to_broken(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Active {
-				active,
-			} => ConnectionStatus::from(Broken::from(active)),
+			ConnectionStatus::Active(active) => {
+				ConnectionStatus::from(Broken::from(active))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -179,9 +179,9 @@ impl PersistEntry {
 	pub fn active_to_disconnected(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Active {
-				active,
-			} => ConnectionStatus::from(Disconnected::from(active)),
+			ConnectionStatus::Active(active) => {
+				ConnectionStatus::from(Disconnected::from(active))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -190,9 +190,9 @@ impl PersistEntry {
 	pub fn active_to_limbo(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Active {
-				active,
-			} => ConnectionStatus::from(Limbo::from(active)),
+			ConnectionStatus::Active(active) => {
+				ConnectionStatus::from(Limbo::from(active))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -201,9 +201,9 @@ impl PersistEntry {
 	pub fn broken_to_disconnected(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Broken {
-				broken,
-			} => ConnectionStatus::from(Disconnected::from(broken)),
+			ConnectionStatus::Broken(broken) => {
+				ConnectionStatus::from(Disconnected::from(broken))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -218,9 +218,7 @@ impl PersistEntry {
 	{
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Disconnected {
-				disconnected,
-			} => {
+			ConnectionStatus::Disconnected(disconnected) => {
 				// TODO
 				ConnectionStatus::from(Active::from_disconnected(
 					disconnected,
@@ -239,9 +237,7 @@ impl PersistEntry {
 	) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Disconnected {
-				disconnected,
-			} => {
+			ConnectionStatus::Disconnected(disconnected) => {
 				ConnectionStatus::from(Limbo::from_disconnected(
 					disconnected,
 					occupied_indices,
@@ -261,9 +257,7 @@ impl PersistEntry {
 	{
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Limbo {
-				limbo,
-			} => {
+			ConnectionStatus::Limbo(limbo) => {
 				// TODO
 				ConnectionStatus::from(Active::from_limbo(
 					limbo,
@@ -279,9 +273,9 @@ impl PersistEntry {
 	pub fn limbo_to_broken(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Limbo {
-				limbo,
-			} => ConnectionStatus::from(Broken::from(limbo)),
+			ConnectionStatus::Limbo(limbo) => {
+				ConnectionStatus::from(Broken::from(limbo))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -290,9 +284,9 @@ impl PersistEntry {
 	pub fn limbo_to_disconnected(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
-			ConnectionStatus::Limbo {
-				limbo,
-			} => ConnectionStatus::from(Disconnected::from(limbo)),
+			ConnectionStatus::Limbo(limbo) => {
+				ConnectionStatus::from(Disconnected::from(limbo))
+			},
 			other => other,
 		};
 		self.inner.replace(new_inner);
@@ -303,90 +297,70 @@ impl PersistEntry {
 impl PersistEntry {
 	pub fn get_active(&self) -> Option<&Active> {
 		match self.as_inner() {
-			ConnectionStatus::Active {
-				active,
-			} => Some(active),
+			ConnectionStatus::Active(active) => Some(active),
 			_ => None,
 		}
 	}
 
 	pub fn get_active_mut(&mut self) -> Option<&mut Active> {
 		match self.as_inner_mut() {
-			ConnectionStatus::Active {
-				active,
-			} => Some(active),
+			ConnectionStatus::Active(active) => Some(active),
 			_ => None,
 		}
 	}
 
 	pub fn get_broken(&self) -> Option<&Broken> {
 		match self.as_inner() {
-			ConnectionStatus::Broken {
-				broken,
-			} => Some(broken),
+			ConnectionStatus::Broken(broken) => Some(broken),
 			_ => None,
 		}
 	}
 
 	pub fn get_broken_mut(&mut self) -> Option<&mut Broken> {
 		match self.as_inner_mut() {
-			ConnectionStatus::Broken {
-				broken,
-			} => Some(broken),
+			ConnectionStatus::Broken(broken) => Some(broken),
 			_ => None,
 		}
 	}
 
 	pub fn get_disconnected(&self) -> Option<&Disconnected> {
 		match self.as_inner() {
-			ConnectionStatus::Disconnected {
-				disconnected,
-			} => Some(disconnected),
+			ConnectionStatus::Disconnected(disconnected) => Some(disconnected),
 			_ => None,
 		}
 	}
 
 	pub fn get_disconnected_mut(&mut self) -> Option<&mut Disconnected> {
 		match self.as_inner_mut() {
-			ConnectionStatus::Disconnected {
-				disconnected,
-			} => Some(disconnected),
+			ConnectionStatus::Disconnected(disconnected) => Some(disconnected),
 			_ => None,
 		}
 	}
 
 	pub fn get_invalid(&self) -> Option<&Invalid> {
 		match self.as_inner() {
-			ConnectionStatus::Invalid {
-				invalid,
-			} => Some(invalid),
+			ConnectionStatus::Invalid(invalid) => Some(invalid),
 			_ => None,
 		}
 	}
 
 	pub fn get_invalid_mut(&mut self) -> Option<&mut Invalid> {
 		match self.as_inner_mut() {
-			ConnectionStatus::Invalid {
-				invalid,
-			} => Some(invalid),
+			ConnectionStatus::Invalid(invalid) => Some(invalid),
 			_ => None,
 		}
 	}
 
 	pub fn get_limbo(&self) -> Option<&Limbo> {
 		match self.as_inner() {
-			ConnectionStatus::Limbo {
-				limbo,
-			} => Some(limbo),
+			ConnectionStatus::Limbo(limbo) => Some(limbo),
 			_ => None,
 		}
 	}
 
 	pub fn get_limbo_mut(&mut self) -> Option<&mut Limbo> {
 		match self.as_inner_mut() {
-			ConnectionStatus::Limbo {
-				limbo,
-			} => Some(limbo),
+			ConnectionStatus::Limbo(limbo) => Some(limbo),
 			_ => None,
 		}
 	}
@@ -399,21 +373,13 @@ impl PersistEntry {
 	/// Get the name, retuning [`None`] if it is [`Invalid`].
 	pub fn try_get_name(&self) -> Option<Cow<'_, str>> {
 		match self.as_inner() {
-			ConnectionStatus::Active {
-				active,
-			} => Some(active.get_name()),
-			ConnectionStatus::Broken {
-				broken,
-			} => Some(broken.get_name()),
-			ConnectionStatus::Disconnected {
-				disconnected,
-			} => Some(disconnected.get_name()),
-			ConnectionStatus::Limbo {
-				limbo,
-			} => Some(limbo.get_name()),
-			ConnectionStatus::Invalid {
-				..
-			} => None,
+			ConnectionStatus::Active(active) => Some(active.get_name()),
+			ConnectionStatus::Broken(broken) => Some(broken.get_name()),
+			ConnectionStatus::Disconnected(disconnected) => {
+				Some(disconnected.get_name())
+			},
+			ConnectionStatus::Limbo(limbo) => Some(limbo.get_name()),
+			ConnectionStatus::Invalid(_) => None,
 		}
 	}
 }
@@ -425,23 +391,13 @@ impl PersistEntry {
 		name: String,
 	) {
 		match self.as_inner_mut() {
-			ConnectionStatus::Active {
-				active,
-			} => active.set_name(name),
-			ConnectionStatus::Broken {
-				broken,
-			} => broken.set_name(name),
-			ConnectionStatus::Disconnected {
-				disconnected,
-			} => {
+			ConnectionStatus::Active(active) => active.set_name(name),
+			ConnectionStatus::Broken(broken) => broken.set_name(name),
+			ConnectionStatus::Disconnected(disconnected) => {
 				disconnected.set_name(name);
 			},
-			ConnectionStatus::Limbo {
-				limbo,
-			} => limbo.set_name(name),
-			ConnectionStatus::Invalid {
-				..
-			} => {
+			ConnectionStatus::Limbo(limbo) => limbo.set_name(name),
+			ConnectionStatus::Invalid(_) => {
 				logger().log_warn(
 					"Attempted to change name of an invalid connection",
 				);
@@ -454,30 +410,19 @@ impl PersistEntry {
 		state: bool,
 	) {
 		match self.as_inner_mut() {
-			ConnectionStatus::Active {
-				active,
-			} => {
+			ConnectionStatus::Active(active) => {
 				active.set_currently_viewed(state);
 			},
 
 			// TODO: Technically, these two should be a logic error.
-			ConnectionStatus::Disconnected {
-				disconnected,
-			} => {
+			ConnectionStatus::Disconnected(disconnected) => {
 				disconnected.set_currently_viewed(state);
 			},
-			ConnectionStatus::Limbo {
-				limbo,
-			} => {
+			ConnectionStatus::Limbo(limbo) => {
 				limbo.set_currently_viewed(state);
 			},
 
-			ConnectionStatus::Broken {
-				..
-			}
-			| ConnectionStatus::Invalid {
-				..
-			} => {
+			ConnectionStatus::Broken(_) | ConnectionStatus::Invalid(_) => {
 				logger().log_warn(
 					"Attempted to change currently_viewed of an invalid connection",
 				);
@@ -487,26 +432,15 @@ impl PersistEntry {
 
 	pub fn request_calibration(&mut self) {
 		match self.as_inner_mut() {
-			ConnectionStatus::Active {
-				active,
-			} => active.set_calibrate(true),
+			ConnectionStatus::Active(active) => active.set_calibrate(true),
 
 			// TODO: Technically, these two should be a logic error.
-			ConnectionStatus::Disconnected {
-				disconnected,
-			} => {
+			ConnectionStatus::Disconnected(disconnected) => {
 				disconnected.set_calibrate(true);
 			},
-			ConnectionStatus::Limbo {
-				limbo,
-			} => limbo.set_calibrate(true),
+			ConnectionStatus::Limbo(limbo) => limbo.set_calibrate(true),
 
-			ConnectionStatus::Broken {
-				..
-			}
-			| ConnectionStatus::Invalid {
-				..
-			} => {
+			ConnectionStatus::Broken(_) | ConnectionStatus::Invalid(_) => {
 				logger().log_warn(
 					"Attempted to set calibrate of an invalid connection",
 				);
@@ -574,9 +508,7 @@ impl PersistEntry {
 		// todo!("First, check if main index is gone. Then update and log extra
 		// indices.");
 		match self.as_inner_mut() {
-			ConnectionStatus::Active {
-				active,
-			} => {
+			ConnectionStatus::Active(active) => {
 				// Check if it needs to go to limbo.
 				let occupied_indices: HashSet<_> =
 					points.iter().map(|point| &point.index).collect();
@@ -587,9 +519,7 @@ impl PersistEntry {
 					CameraStatus::Disconnected
 				})
 			},
-			ConnectionStatus::Disconnected {
-				..
-			} => {
+			ConnectionStatus::Disconnected(_) => {
 				let camera = Self::try_make_camera_from_points(points)?;
 				// Succesful reconnection.
 				let occupied_indices: HashSet<_> =
@@ -597,9 +527,7 @@ impl PersistEntry {
 				self.disconnected_to_active(camera, occupied_indices);
 				Some(CameraStatus::Active)
 			},
-			ConnectionStatus::Limbo {
-				..
-			} => {
+			ConnectionStatus::Limbo(_) => {
 				let camera = Self::try_make_camera_from_points(points)?;
 				// Succesful reconnection.
 				let occupied_indices: HashSet<_> =
@@ -607,12 +535,7 @@ impl PersistEntry {
 				self.limbo_to_active(camera, occupied_indices);
 				Some(CameraStatus::Active)
 			},
-			ConnectionStatus::Broken {
-				..
-			}
-			| ConnectionStatus::Invalid {
-				..
-			} => {
+			ConnectionStatus::Broken(_) | ConnectionStatus::Invalid(_) => {
 				// Do nothing.
 				None
 			},

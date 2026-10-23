@@ -61,11 +61,11 @@ pub trait IndexOccupier:
 ///
 /// Invalid is locked into that state.
 pub enum ConnectionStatus {
-	Active { active: Active },
-	Broken { broken: Broken },
-	Disconnected { disconnected: Disconnected },
-	Invalid { invalid: Invalid },
-	Limbo { limbo: Limbo },
+	Active(Active),
+	Broken(Broken),
+	Disconnected(Disconnected),
+	Invalid(Invalid),
+	Limbo(Limbo),
 }
 
 // Constructors.
@@ -79,16 +79,12 @@ impl ConnectionStatus {
 		T: CameraLike + 'static,
 	{
 		let active = Active::new(camera, occupied_indices, name);
-		Self::Active {
-			active,
-		}
+		Self::Active(active)
 	}
 
 	pub fn new_invalid(occupied_indices: OccupiedIndices) -> Self {
 		let invalid = Invalid::new(occupied_indices);
-		Self::Invalid {
-			invalid,
-		}
+		Self::Invalid(invalid)
 	}
 }
 
@@ -117,40 +113,30 @@ impl ConnectionStatus {
 
 impl From<Active> for ConnectionStatus {
 	fn from(active: Active) -> Self {
-		Self::Active {
-			active,
-		}
+		Self::Active(active)
 	}
 }
 
 impl From<Broken> for ConnectionStatus {
 	fn from(broken: Broken) -> Self {
-		Self::Broken {
-			broken,
-		}
+		Self::Broken(broken)
 	}
 }
 
 impl From<Disconnected> for ConnectionStatus {
 	fn from(disconnected: Disconnected) -> Self {
-		Self::Disconnected {
-			disconnected,
-		}
+		Self::Disconnected(disconnected)
 	}
 }
 
 impl From<Invalid> for ConnectionStatus {
 	fn from(invalid: Invalid) -> Self {
-		Self::Invalid {
-			invalid,
-		}
+		Self::Invalid(invalid)
 	}
 }
 
 impl From<Limbo> for ConnectionStatus {
 	fn from(limbo: Limbo) -> Self {
-		Self::Limbo {
-			limbo,
-		}
+		Self::Limbo(limbo)
 	}
 }
