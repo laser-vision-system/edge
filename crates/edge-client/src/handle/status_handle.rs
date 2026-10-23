@@ -8,6 +8,12 @@ use crate::interface::StatusRx;
 #[derive(Debug)]
 pub struct StatusHandle(StatusRx);
 
+impl StatusHandle {
+	pub(crate) fn new(recv: StatusRx) -> Self {
+		Self(recv)
+	}
+}
+
 impl Deref for StatusHandle {
 	type Target = StatusRx;
 

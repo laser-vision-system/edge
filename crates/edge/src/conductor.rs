@@ -23,16 +23,16 @@ use edge_cameras::persistence::{
 	polling::ConnectionDetail,
 };
 use edge_client::{
-	client::Client,
+	client::{
+		Client,
+		ClientResult,
+	},
 	error::EdgeClientError,
 	handle::{
 		conductor_client_handle::ConductorClientHandle,
 		status_handle::StatusHandle,
 	},
-	interface::{
-		ListenerRx,
-		StatusRx,
-	},
+	interface::ListenerRx,
 };
 use edge_core::logger::logger;
 use edge_vision::{
@@ -296,11 +296,16 @@ async fn main_loop(
 
 /// Call this function to begin the system.
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
-	let (status_rx, vision_rx, persistence_rx, client, client_thread) =
-		Client::new().await;
+	let ClientResult {
+		status_handle,
+		vision_client_handle,
+		persistence_client_handle,
+		conductor_client_handle,
+		client,
+	} = Client::new().await;
 	let conductor = Conductor::default();
 
-	let thread = spawn(client_thread.run());
+	let thread = spawn(client.run());
 
 	join!(
 		async move {
@@ -310,7 +315,7 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 				.expect("websocket thread panicked");
 		},
 		async move {
-			main_loop(client, conductor, status_rx)
+			main_loop(conductor_client_handle, conductor, status_handle)
 				.await
 				.expect("main thread panicked");
 		}

@@ -8,6 +8,12 @@ use crate::interface::VisionRx;
 #[derive(Debug)]
 pub struct VisionClientHandle(VisionRx);
 
+impl VisionClientHandle {
+	pub(crate) fn new(recv: VisionRx) -> Self {
+		Self(recv)
+	}
+}
+
 impl Deref for VisionClientHandle {
 	type Target = VisionRx;
 

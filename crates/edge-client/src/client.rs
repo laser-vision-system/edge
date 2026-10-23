@@ -101,6 +101,16 @@ pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
 pub const WS_KEEP_ALIVE: Duration = Duration::from_secs(6);
 type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
+/// Helper dataholder for the result of calling [`Client::new`].
+#[derive(Debug)]
+pub struct ClientResult {
+	pub status_handle: StatusHandle,
+	pub vision_client_handle: VisionClientHandle,
+	pub persistence_client_handle: PersistenceClientHandle,
+	pub conductor_client_handle: ConductorClientHandle,
+	pub client: Client,
+}
+
 /// The main websocket client_2 implementation.
 #[derive(Debug)]
 pub struct Client {
@@ -769,13 +779,7 @@ impl Client {
 }
 
 impl Client {
-	pub async fn new() -> (
-		StatusHandle,
-		VisionClientHandle,
-		PersistenceClientHandle,
-		ConductorClientHandle,
-		Self,
-	) {
+	pub async fn new() -> ClientResult {
 		let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (status_tx, status_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (conductor_status_tx, conductor_status_rx) =
@@ -788,17 +792,21 @@ impl Client {
 		let mut status_listeners = Vec::new();
 		status_listeners.insert(0, conductor_status_tx);
 		status_listeners.insert(1, persistence_status_tx);
-		(
-			StatusHandle(status_rx),
-			VisionClientHandle(vision_rx),
-			PersistenceClientHandle::new(
+
+		ClientResult {
+			status_handle: StatusHandle::new(status_rx),
+			vision_client_handle: VisionClientHandle::new(vision_rx),
+			persistence_client_handle: PersistenceClientHandle::new(
 				cmd_tx.clone(),
 				persistence_rx,
 				false,
 				persistence_status_rx,
 			),
-			ConductorClientHandle::new(cmd_tx, conductor_status_rx),
-			Client {
+			conductor_client_handle: ConductorClientHandle::new(
+				cmd_tx,
+				conductor_status_rx,
+			),
+			client: Client {
 				cmd_rx,
 				status_listeners,
 				status_tx,
@@ -808,7 +816,7 @@ impl Client {
 				listeners: Vec::new(),
 				url: None,
 			},
-		)
+		}
 	}
 
 	pub async fn run(mut self) -> EdgeClientResult<()> {
@@ -827,6 +835,5 @@ impl Client {
 
 			sleep(AUTO_CONNECT_DELAY).await;
 		}
-		Ok(())
 	}
 }
