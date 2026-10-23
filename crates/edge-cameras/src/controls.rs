@@ -89,6 +89,11 @@ impl ControlMap {
 		}
 	}
 
+	/// Serialise the control map.
+	///
+	/// # Panics
+	///
+	/// If [`serde_json`] could not parse the underlying [`BTreeMap`].
 	#[expect(clippy::expect_used, reason = "Low priority edge case")]
 	pub fn serialise(&self) -> String {
 		serde_json::to_string(&self.inner).expect(

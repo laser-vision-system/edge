@@ -4018,6 +4018,7 @@ dependencies = [
  "bytes",
  "image",
  "mozjpeg",
+ "num-rational",
  "serde",
  "thiserror 2.0.20",
 ]
@@ -4135,6 +4136,7 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-traits",
+ "serde",
 ]
 
 [[package]]

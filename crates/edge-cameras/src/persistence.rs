@@ -123,7 +123,6 @@ impl Persistence {
 
 // Setters.
 impl Persistence {
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	// TODO: Server should send a single request to change viewing state.
 	fn set_currently_viewed(
 		&mut self,
@@ -134,11 +133,10 @@ impl Persistence {
 			entry.set_currently_viewed(state);
 		} else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 		}
 	}
 
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn set_entry_name(
 		&mut self,
 		request: SetNameCamera,
@@ -147,7 +145,7 @@ impl Persistence {
 			entry.set_name(request.name);
 		} else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 		}
 	}
 
@@ -167,20 +165,19 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn set_configuration(
 		&mut self,
 		request: Configuration,
 	) {
 		let Some(entry) = self.get_mut(request.camera_id) else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 			return;
 		};
 		let Some(active) = entry.get_active_mut() else {
 			//"Not active"
 			let err = EdgeCamerasError::IncorrectConnectionStatus;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 			return;
 		};
 		match serde_json::from_str(&request.configuration) {
@@ -188,36 +185,35 @@ impl Persistence {
 				if let Err(why) = active.get_camera_mut().set_controls(map) {
 					// TODO: Error type for "Failed to apply request controls to
 					// the camera"
-					logger().lock().unwrap().log_error(&why);
+					logger().log_error(&why);
 				}
 			},
 			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
+				logger().log_error(&why);
 			},
 		}
 	}
 
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn get_configuration(
 		&mut self,
 		request: ViewCameraConfig,
 	) -> Option<Configuration> {
 		let Some(entry) = self.get_mut(request.camera_id) else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 			return None;
 		};
 		let Some(active) = entry.get_active_mut() else {
 			// TODO: Error type for "Not active"
 			let err = EdgeCamerasError::IncorrectConnectionStatus;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 			return None;
 		};
 		let controls = active.get_camera_mut().get_controls();
 		let important_controls = match controls {
 			Ok(controls) => controls.stripped(),
 			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
+				logger().log_error(&why);
 				return None;
 			},
 		};
@@ -232,7 +228,6 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn request_calibration(
 		&mut self,
 		request: Setpoint,
@@ -241,7 +236,7 @@ impl Persistence {
 			entry.request_calibration();
 		} else {
 			let err = EdgeCamerasError::UnknownCameraId;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 		}
 	}
 
@@ -267,6 +262,12 @@ impl Persistence {
 }
 
 impl Persistence {
+	/// Get the [`BatchItem`] or [`StatusChange`] from all active entries.
+	///
+	/// # Panics
+	///
+	/// If an active camera has somehow become invalid.
+	// TODO: Give invalid cameras names?
 	#[expect(clippy::expect_used, reason = "WIP development")]
 	pub fn poll_active_entries(
 		&mut self,

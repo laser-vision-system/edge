@@ -73,6 +73,11 @@ pub struct Cnn {
 }
 
 impl Cnn {
+	/// Create and load the CNN model.
+	///
+	/// # Errors
+	///
+	/// If the model could not be loaded correctly.
 	pub fn new() -> EdgeVisionResult<Self> {
 		let device = config::get_device();
 		let path = config::model_path();
@@ -113,7 +118,6 @@ impl Cnn {
 }
 
 impl VisionInterface for Cnn {
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	fn process(
 		&mut self,
 		batch: &mut [BatchItem],
@@ -122,7 +126,7 @@ impl VisionInterface for Cnn {
 		match self.predict(tensors) {
 			Ok(predictions) => apply_predictions(batch, predictions),
 			Err(why) => {
-				logger().lock().unwrap().log_error(&why);
+				logger().log_error(&why);
 				clear_predictions(batch);
 			},
 		}

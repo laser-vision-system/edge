@@ -1,6 +1,3 @@
-// TODO: Remove all unwraps and then this.
-#![expect(clippy::unwrap_used, reason = "WIP development")]
-
 use std::{
 	borrow::Cow,
 	collections::HashSet,
@@ -81,17 +78,14 @@ impl PersistEntry {
 			let name = camera.get_info().to_string();
 			let new =
 				ConnectionStatus::new_active(camera, occupied_indices, name);
-			logger()
-				.lock()
-				.unwrap()
-				.log_info("Camera successfully initialised");
+			logger().log_info("Camera successfully initialised");
 			let inner = Some(new);
 			Self {
 				inner,
 			}
 		} else {
 			let err = EdgeCamerasError::InvalidDeviceConnection;
-			logger().lock().unwrap().log_error(&err);
+			logger().log_error(&err);
 			let new = ConnectionStatus::new_invalid(occupied_indices);
 			let inner = Some(new);
 			Self {
@@ -113,7 +107,7 @@ impl PersistEntry {
 					return Some(camera);
 				},
 				// TODO: This might be better suited as a warn.
-				Err(why) => logger().lock().unwrap().log_error(&why),
+				Err(why) => logger().log_error(&why),
 			}
 		}
 		None
@@ -448,7 +442,7 @@ impl PersistEntry {
 			ConnectionStatus::Invalid {
 				..
 			} => {
-				logger().lock().unwrap().log_warn(
+				logger().log_warn(
 					"Attempted to change name of an invalid connection",
 				);
 			},
@@ -484,7 +478,7 @@ impl PersistEntry {
 			| ConnectionStatus::Invalid {
 				..
 			} => {
-				logger().lock().unwrap().log_warn(
+				logger().log_warn(
 					"Attempted to change currently_viewed of an invalid connection",
 				);
 			},
@@ -513,7 +507,7 @@ impl PersistEntry {
 			| ConnectionStatus::Invalid {
 				..
 			} => {
-				logger().lock().unwrap().log_warn(
+				logger().log_warn(
 					"Attempted to set calibrate of an invalid connection",
 				);
 			},
@@ -533,14 +527,14 @@ impl PersistEntry {
 
 		let maybeimage = active.get_image(camera_err_decrement).map_or_else(
 			|why| {
-				logger().lock().unwrap().log_error(&why);
+				logger().log_error(&why);
 				active.add_error(camera_err_increment);
 
 				if active.err_accumulation() < camera_err_threshold {
-					logger().lock().unwrap().log_warn("disconnetcted");
+					logger().log_warn("disconnetcted");
 					MaybeImage::WhyNo(WhyNo::Disconnected)
 				} else {
-					logger().lock().unwrap().log_warn("bokrne");
+					logger().log_warn("bokrne");
 					MaybeImage::WhyNo(WhyNo::Broken)
 				}
 			},
@@ -562,7 +556,7 @@ impl PersistEntry {
 
 		let err_acc = active.err_accumulation();
 		if err_acc > 0 {
-			logger().lock().unwrap().log_warn(&format!(
+			logger().log_warn(&format!(
 				"Camera at id `{ident}` with name '{name}' has an err accumulation of `{err_acc}`"
 			));
 		}

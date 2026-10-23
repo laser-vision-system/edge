@@ -210,7 +210,7 @@ impl VisionInterface for Diff {
 
 				data.deviation = Some(1.0 - relative_intensity);
 			} else {
-				logger().lock().unwrap().log_warn(
+				logger().log_warn(
 					"Could not calculate deviation as there is no setpoint!",
 				);
 			}

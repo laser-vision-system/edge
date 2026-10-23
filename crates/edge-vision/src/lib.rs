@@ -72,20 +72,26 @@ impl VisionGuard {
 		}
 	}
 
+	/// Swap to a different [`VisionTechnique`].
+	///
+	/// # Errors
+	///
+	/// If attempting to swap to the CNN model, which could not be loaded.
+	///
+	/// # Panics
+	///
+	/// This should never panic unless the code was modified in a way which did
+	/// not respect the internal swapping control.
 	#[expect(
 		clippy::expect_used,
 		reason = "Closely protected internal option type"
 	)]
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn swap(
 		&self,
 		swap_to: VisionTechnique,
 	) -> EdgeVisionResult<()> {
 		let inner = self.inner.lock().unwrap_or_else(|err| {
-			logger()
-				.lock()
-				.unwrap()
-				.log_warn("Vision mutex was poisoned");
+			logger().log_warn("Vision mutex was poisoned");
 			err.into_inner()
 		});
 		let mut vision = inner.borrow_mut();
@@ -95,11 +101,16 @@ impl VisionGuard {
 			.swap(swap_to)
 	}
 
+	/// Call a function on the internal [`VisionVariant`].
+	///
+	/// # Panics
+	///
+	/// This should never panic unless the code was modified in a way which did
+	/// not respect the internal swapping control.
 	#[expect(
 		clippy::expect_used,
 		reason = "Closely protected internal option type"
 	)]
-	#[expect(clippy::unwrap_used, reason = "Logger")]
 	pub fn interact<F, R>(
 		&self,
 		func: F,
@@ -108,10 +119,7 @@ impl VisionGuard {
 		F: FnOnce(&mut VisionVariant) -> R,
 	{
 		let inner = self.inner.lock().unwrap_or_else(|err| {
-			logger()
-				.lock()
-				.unwrap()
-				.log_warn("Vision mutex was poisoned");
+			logger().log_warn("Vision mutex was poisoned");
 			err.into_inner()
 		});
 		let mut vision = inner.borrow_mut();

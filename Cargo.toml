@@ -1,7 +1,7 @@
 cargo-features = ["profile-rustflags"]
 
 [profile.dev]
-rustflags = ["-C", "target-feature=+fp16,+fhm"]
+rustflags = ["-C", "target-cpu=native"]
 
 [workspace]
 resolver = "3"
@@ -85,7 +85,7 @@ implicit_return = "allow" # You are encouraged to omit `return`.
 inline_modules = "allow" # Currently complains about inline test modules.
 iter_over_hash_type = "allow" # We do not care about order.
 let_underscore_untyped = "allow" # Overlaps with `let_underscore_must_use`, little other value added.
-missing_docs_in_private_items = "warn" # TODO: Consider upgrading after all public documentation is done.
+missing_docs_in_private_items = "allow" # This includes private fields; it would be overkill.
 missing_inline_in_public_items = "allow" # TODO: Maybe upgrade in the future for performance.
 module_name_repetitions = "allow" # Doesn't seem to help, often forces dumb renaming.
 multiple_inherent_impl = "allow" # This is fine in a single file, but discouraged across different files.

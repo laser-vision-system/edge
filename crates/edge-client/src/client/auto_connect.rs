@@ -147,15 +147,15 @@ async fn get_websocket_url(
 					let url = response.url;
 					let new_url =
 						format!("ws://{}{}/edge_ws", url.host, url.port);
-					logger().lock().unwrap().log_info(&format!(
-						"Correct message response received from: {new_url}"
+					logger().log_info(&format!(
+						"Correct message response recived from: {new_url}"
 					));
 					return Ok(new_url);
 				}
 			},
 			#[cfg(debug_assertions)]
 			Ok(Err(why)) => {
-				logger().lock().unwrap().log_error(&why);
+				logger().log_error(&why);
 			},
 			// Ignore failures silently
 			_ => {},
@@ -171,10 +171,7 @@ pub async fn get_ws_stream() -> (
 ) {
 	let websocket_url = if let Ok(url) = env::var("SERVER_URL") {
 		if url.is_empty() {
-			logger()
-				.lock()
-				.unwrap()
-				.log_info("Connecting using auto connect");
+			logger().log_info("Connecting using auto connect");
 			let urls = identify_network();
 			match get_websocket_url(urls).await {
 				Ok(url) => url,
@@ -184,16 +181,13 @@ pub async fn get_ws_stream() -> (
 				}
 			}
 		} else {
-			logger().lock().unwrap().log_info(&format!(
+			logger().log_info(&format!(
 				"Connecting to provided server address: {url}"
 			));
 			format!("ws://{url}/edge_ws")
 		}
 	} else {
-		logger()
-			.lock()
-			.unwrap()
-			.log_info("Connecting using auto connect");
+		logger().log_info("Connecting using auto connect");
 		let urls = identify_network();
 		match get_websocket_url(urls).await {
 			Ok(url) => url,

@@ -52,6 +52,12 @@ pub struct FrameBuffer {
 
 impl FrameBuffer {
 	/// Decode this type into an image.
+	///
+	/// # Errors
+	///
+	/// If the frame is corrupted or the system is out of memory.
+	/// The out of memory case is not checked, so only the corruption errors is
+	/// reported.
 	pub fn try_decode(self) -> EdgeCoreResult<Image> {
 		let decoded_res = select_decode_format(self.inner)?;
 
@@ -90,6 +96,11 @@ impl Image {
 	}
 
 	#[expect(clippy::unwrap_used, reason = "WIP development")]
+	/// Encode the image buffer into jpeg.
+	///
+	/// # Panics
+	///
+	/// If the buffer could not be encoded.
 	pub fn encode(&self) -> Vec<u8> {
 		let mut buff = Cursor::new(Vec::new());
 		let mut enc = jpeg::JpegEncoder::new(&mut buff);

@@ -1,6 +1,3 @@
-// TODO: Remove all unwraps and then this.
-#![expect(clippy::unwrap_used, reason = "WIP development")]
-
 use std::{
 	collections::HashMap,
 	error,
@@ -28,13 +25,7 @@ use edge_cameras::persistence::{
 use edge_client::{
 	error::EdgeClientError,
 };
-use edge_core::{
-	logger::{
-		Logger,
-		logger,
-	},
-	settings::EnvVariables,
-};
+use edge_core::logger::logger;
 use edge_vision::{
 	vision,
 	vision_interface::VisionInterface as _,
@@ -82,12 +73,12 @@ impl Conductor {
 			);
 		}
 
-		logger().lock().unwrap().send_logs();
+		logger().send_logs();
 
 		if let Some(swap_to) = requested_vision_type
 			&& let Err(error) = vision().swap(swap_to)
 		{
-			logger().lock().unwrap().log_error(&error);
+			logger().log_error(&error);
 		}
 
 		// TODO: There should be something in between this call that does the
@@ -116,14 +107,14 @@ impl Conductor {
 			}
 		}
 
-		logger().lock().unwrap().send_logs();
+		logger().send_logs();
 
 		// Vision
 		vision().interact(|vision| {
 			vision.process(&mut batch_items);
 		});
 
-		logger().lock().unwrap().send_logs();
+		logger().send_logs();
 
 		// Send result
 		for item in &batch_items {
@@ -220,7 +211,7 @@ impl Conductor {
 				requested_vision_type.replace(processing_req.processing_type);
 			},
 			_ => {
-				logger().lock().unwrap().log_warn(
+				logger().log_warn(
 					"received request that is not currently supported",
 				);
 			},
