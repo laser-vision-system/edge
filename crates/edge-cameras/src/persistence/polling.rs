@@ -113,8 +113,8 @@ impl From<(Identifier, HashSet<AccessPoint>)> for DeviceConnection {
 }
 
 pub enum ConnectionDetail {
-	New { info: NewCameraInfo },
-	Update { status: CameraStatus },
+	New(NewCameraInfo),
+	Update(CameraStatus),
 }
 
 fn convert_to_intermediaries(devices: Vec<CameraInfo>) -> IntermediaryMap {
@@ -201,9 +201,7 @@ impl Persistence {
 					let id = connection.identifier.as_ref();
 					let name = active.get_name().to_string();
 					let info = NewCameraInfo::new(name, CameraStatus::Active);
-					let new = ConnectionDetail::New {
-						info,
-					};
+					let new = ConnectionDetail::New(info);
 					Some((*id, new))
 				},
 				None => None,
@@ -214,9 +212,7 @@ impl Persistence {
 					(before != after).then(|| {
 						let id = connection.identifier.as_ref();
 						let status = after;
-						let update = ConnectionDetail::Update {
-							status,
-						};
+						let update = ConnectionDetail::Update(status);
 						(*id, update)
 					})
 				},

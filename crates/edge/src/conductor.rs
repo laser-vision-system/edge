@@ -218,12 +218,8 @@ impl Conductor {
 
 		let new_cameras = results.extract_if(|_, value| {
 			match value {
-				ConnectionDetail::New {
-					..
-				} => true,
-				ConnectionDetail::Update {
-					..
-				} => false,
+				ConnectionDetail::New(_) => true,
+				ConnectionDetail::Update(_) => false,
 			}
 		});
 
@@ -231,21 +227,14 @@ impl Conductor {
 			.into_iter()
 			.filter_map(|(key, value)| {
 				match value {
-					ConnectionDetail::New {
-						info,
-					} => Some((key, info)),
-					ConnectionDetail::Update {
-						..
-					} => None,
+					ConnectionDetail::New(info) => Some((key, info)),
+					ConnectionDetail::Update(_) => None,
 				}
 			})
 			.collect();
 
 		for (camera_id, update) in results {
-			let ConnectionDetail::Update {
-				status,
-			} = update
-			else {
+			let ConnectionDetail::Update(status) = update else {
 				continue;
 			};
 			_ = client.update_camera_status(camera_id, status);
