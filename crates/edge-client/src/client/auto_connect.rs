@@ -7,31 +7,24 @@ use std::{
 	fmt,
 };
 
-use api::edge::{
-	InitialiseConnection,
-	ServerRequests,
-	Settings,
-};
-use edge_cameras::persistence::Persistence;
-use edge_core::{
-	logger::logger,
-	settings::AUTO_CONNECT_DELAY,
-};
+use api::edge::Settings;
+use edge_core::logger::logger;
 use pnet_datalink::interfaces;
 use reqwest::Client;
+use serde::de::DeserializeOwned;
 use tokio::{
+	net::TcpStream,
 	task::JoinSet,
-	time::interval,
 };
-use tokio_tungstenite::connect_async;
+use tokio_tungstenite::{
+	MaybeTlsStream,
+	WebSocketStream,
+	connect_async,
+};
 
-use crate::{
-	error::{
-		EdgeClientError,
-		EdgeClientResult,
-	},
-	persistent_edge_id::get_mac_address,
-	websocket::WebSocket,
+use crate::error::{
+	EdgeClientError,
+	EdgeClientResult,
 };
 
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
@@ -172,62 +165,8 @@ async fn get_websocket_url(
 	Err(EdgeClientError::AutoConnect)
 }
 
-pub async fn send_persistent_edge_id(mut websocket: WebSocket) -> WebSocket {
-	let request_enum =
-		ServerRequests::InitialiseConnection(InitialiseConnection {
-			edge_id: get_mac_address().unwrap(),
-		});
-	_ = websocket.send_text(request_enum).await;
-	websocket
-}
-
-pub async fn send_camera_list(
-	persistence: &mut Persistence,
-	mut websocket: WebSocket,
-) -> WebSocket {
-	_ = websocket.send_text(persistence.get_current_cameras()).await;
-	websocket
-}
-
-pub async fn assert_connection(
-	websocket: Option<WebSocket>,
-	settings: Option<Settings>,
-	persistence: &mut Persistence,
-) -> (WebSocket, Settings) {
-	// All good, normal operation.
-	if let (Some(socket), Some(settings)) = (websocket, settings) {
-		if socket.is_terminated() {
-			let (socket, settings) = loop_until_connection().await;
-			let socket = send_persistent_edge_id(socket).await;
-			(send_camera_list(persistence, socket).await, settings)
-		} else {
-			(socket, settings)
-		}
-	}
-	// First time calling.
-	else {
-		let (socket, settings) = loop_until_connection().await;
-		(send_persistent_edge_id(socket).await, settings)
-	}
-}
-
-async fn loop_until_connection() -> (WebSocket, Settings) {
-	let mut limit_interval = interval(AUTO_CONNECT_DELAY);
-	loop {
-		match try_connect_once().await {
-			Ok(yay) => {
-				logger().log_info("Successfully connected to server!");
-				return yay;
-			},
-			Err(err) => {
-				logger().log_error(&err);
-			},
-		}
-		limit_interval.tick().await;
-	}
-}
-
-async fn try_connect_once() -> EdgeClientResult<(WebSocket, Settings)> {
+pub async fn get_ws_stream()
+-> EdgeClientResult<(WebSocketStream<MaybeTlsStream<TcpStream>>, String)> {
 	let websocket_url = if let Ok(url) = env::var("SERVER_URL") {
 		if url.is_empty() {
 			logger().log_info("Connecting using auto connect");
@@ -245,15 +184,16 @@ async fn try_connect_once() -> EdgeClientResult<(WebSocket, Settings)> {
 		get_websocket_url(urls).await?
 	};
 
-	let (stream, _) =
+	let Ok((stream, _)) =
 		connect_async(websocket_url.clone()).await.map_err(|why| {
 			EdgeClientError::AutoConnectUrl {
 				reason: why.to_string(),
 			}
-		})?;
-	let return_websocket = WebSocket::new(stream);
-	let return_settings = get_default_settings(&websocket_url.clone()).await?;
-	Ok((return_websocket, return_settings))
+		})
+	else {
+		return Err(EdgeClientError::WebSocketConnection);
+	};
+	Ok((stream, websocket_url))
 }
 
 // TODO: Remove this once the server request is implemented.
@@ -261,35 +201,42 @@ async fn try_connect_once() -> EdgeClientResult<(WebSocket, Settings)> {
 	clippy::unused_async,
 	reason = "Async will be needed once this function is re-enabled"
 )]
-async fn get_default_settings(_url: &str) -> EdgeClientResult<Settings> {
+pub async fn get_default_settings(url: &str) -> EdgeClientResult<Settings> {
 	// TODO: Get the default settings from the server
 	// Build the settings struct from the received data.
 	// If the server fails to send correct settings, use Settings::default() as
 	// a fallback and report the issue to the server in as much detail as
 	// possible.
 
-	Ok(Settings::default())
+	let url = format!("http://{url}/default_config");
 
-	// let client = Client::new();
-	// let temp_settings = client
-	// 	.get(url)
-	// 	.send()
-	// 	.await
-	// 	.map_err(|_| EdgeClientError::ServerConnection)?;
-	// unpack(
-	// 	temp_settings
-	// 		.text()
-	// 		.await
-	// 		.map_err(|_| EdgeClientError::WebSocketUnpack)?
-	// 		.as_str(),
-	//)
+	let client = Client::new();
+	let temp_settings = client
+		.get(url)
+		.send()
+		.await
+		.map_err(|_| EdgeClientError::ServerConnection)?;
+	unpack(
+		temp_settings
+			.text()
+			.await
+			.map_err(|_| EdgeClientError::WebSocketUnpack)?
+			.as_str(),
+	)
+}
+
+pub fn unpack<T>(data: &str) -> EdgeClientResult<T>
+where
+	T: DeserializeOwned,
+{
+	let data_unchecked: serde_json::Result<T> = serde_json::from_str(data);
+	data_unchecked.map_err(|_| EdgeClientError::WebSocketUnpack)
 }
 
 #[cfg(test)]
 mod tests {
-	use edge_core::settings;
-
 	use super::*;
+	use crate::client;
 
 	#[test]
 	fn chop_end() {
@@ -304,7 +251,7 @@ mod tests {
 			.rev()
 			.collect::<Vec<_>>()
 			.join("");
-		please.push_str(settings::API);
+		please.push_str(client::API);
 
 		println!("{please}");
 	}

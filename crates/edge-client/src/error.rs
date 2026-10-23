@@ -27,4 +27,8 @@ pub enum EdgeClientError {
 	ReqwestError { reason: String },
 	#[error("Could not find mac address")]
 	MacAddress,
+	#[error("Websocket closed by server")]
+	WebsocketClosed,
+	#[error("message could not be sent, as the websocket is currently closed")]
+	WebsocketDown,
 }

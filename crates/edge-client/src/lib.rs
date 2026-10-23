@@ -15,7 +15,10 @@
 	)
 )]
 
-pub mod auto_connect;
+pub mod client;
+
+pub mod handle;
+
+pub mod interface;
+
 pub mod error;
-pub mod persistent_edge_id;
-pub mod websocket;

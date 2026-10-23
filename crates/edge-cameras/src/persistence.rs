@@ -19,12 +19,8 @@ use std::{
 use api::{
 	edge::{
 		NewCameraInfo,
-		RegisterCameras,
-		ServerRequests,
 		SetNameCamera,
 		Setpoint,
-		StartViewingCamera,
-		StopViewingCamera,
 	},
 	shared::{
 		CameraId,
@@ -155,22 +151,12 @@ impl Persistence {
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
 	)]
-	pub fn start_viewing_camera(
+	pub fn toggle_viewing_camera(
 		&mut self,
-		request: StartViewingCamera,
+		camera_id: CameraId,
+		start_viewing: bool,
 	) {
-		self.set_currently_viewed(request.camera_id, true);
-	}
-
-	#[expect(
-		clippy::needless_pass_by_value,
-		reason = "The request should not be used after this method call"
-	)]
-	pub fn stop_viewing_camera(
-		&mut self,
-		request: StopViewingCamera,
-	) {
-		self.set_currently_viewed(request.camera_id, false);
+		self.set_currently_viewed(camera_id, start_viewing);
 	}
 
 	#[expect(
@@ -252,7 +238,7 @@ impl Persistence {
 		}
 	}
 
-	pub fn get_current_cameras(&mut self) -> ServerRequests {
+	pub fn get_current_cameras(&mut self) -> HashMap<CameraId, NewCameraInfo> {
 		let camera_list: HashMap<CameraId, NewCameraInfo> = self
 			.inner
 			.iter()
@@ -269,9 +255,7 @@ impl Persistence {
 				(*camera_id, camera_status)
 			})
 			.collect();
-		ServerRequests::RegisterCameras(RegisterCameras {
-			cameras: camera_list,
-		})
+		camera_list
 	}
 }
 
