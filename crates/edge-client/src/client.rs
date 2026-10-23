@@ -58,6 +58,7 @@ use tokio_tungstenite::{
     WebSocketStream,
 };
 use regex::Regex;
+use tokio::time::sleep;
 use crate::{
 	client::{
         auto_connect::get_ws_stream,
@@ -816,6 +817,8 @@ impl Client {
 			self.main_loop(&mut websocket).await;
 
 			self.status_update(false);
+
+			sleep(AUTO_CONNECT_DELAY).await;
 		}
 		Ok(())
 	}
