@@ -99,13 +99,13 @@ type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 /// Helper dataholder for the result of calling [`Client::new`].
 #[derive(Debug)]
-pub struct ClientResult {
-	pub status_handle: StatusHandle,
-	pub vision_client_handle: VisionClientHandle,
-	pub persistence_client_handle: PersistenceClientHandle,
-	pub conductor_client_handle: ConductorClientHandle,
-	pub client: Client,
-}
+pub struct ClientResult(
+	pub StatusHandle,
+	pub VisionClientHandle,
+	pub PersistenceClientHandle,
+	pub ConductorClientHandle,
+	pub Client,
+);
 
 /// The main websocket `client_2` implementation.
 #[derive(Debug)]
@@ -750,20 +750,17 @@ impl Client {
 		status_listeners.insert(0, conductor_status_tx);
 		status_listeners.insert(1, persistence_status_tx);
 
-		ClientResult {
-			status_handle: StatusHandle::new(status_rx),
-			vision_client_handle: VisionClientHandle::new(vision_rx),
-			persistence_client_handle: PersistenceClientHandle::new(
+		ClientResult(
+			StatusHandle::new(status_rx),
+			VisionClientHandle::new(vision_rx),
+			PersistenceClientHandle::new(
 				cmd_tx.clone(),
 				persistence_rx,
 				false,
 				persistence_status_rx,
 			),
-			conductor_client_handle: ConductorClientHandle::new(
-				cmd_tx,
-				conductor_status_rx,
-			),
-			client: Client {
+			ConductorClientHandle::new(cmd_tx, conductor_status_rx),
+			Client {
 				cmd_rx,
 				status_listeners,
 				status_tx,
@@ -773,7 +770,7 @@ impl Client {
 				listeners: Vec::new(),
 				url: None,
 			},
-		}
+		)
 	}
 
 	pub async fn run(mut self) -> EdgeClientResult<()> {
