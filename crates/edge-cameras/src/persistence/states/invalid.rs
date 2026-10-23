@@ -1,3 +1,6 @@
+//! A type for a device that occupies indices but does not offer camera
+//! capabilities.
+
 use api::shared::CameraStatus;
 
 use super::IndexOccupier;
@@ -13,10 +16,12 @@ use crate::persistence::OccupiedIndices;
 /// It cannot change state to anything.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Invalid {
+	/// The indices that this device occupies.
 	pub occupied_indices: OccupiedIndices,
 }
 
 impl Invalid {
+	/// Create a new [`Invalid`] instance.
 	pub fn new(occupied_indices: OccupiedIndices) -> Self {
 		Self {
 			occupied_indices,

@@ -1,3 +1,5 @@
+//! The many different states that a device may present as.
+
 pub mod active;
 pub mod broken;
 pub mod disconnected;
@@ -45,31 +47,39 @@ pub trait IndexOccupier:
 
 /// The current status of a known connection.
 ///
+/// New connections must become either [`Active`] or [`Invalid`].
+///
 /// Acceptable switches are:
-/// - Active -> Broken
-/// - Active -> Disconnected
-/// - Active -> Limbo
+/// - [`Active`] -> [`Broken`]
+/// - [`Active`] -> [`Disconnected`]
+/// - [`Active`] -> [`Limbo`]
 ///
-/// - Broken -> Disconnected
+/// - [`Broken`] -> [`Disconnected`]
 ///
-/// - Disconnected -> Active
-/// - Disconnected -> Limbo
+/// - [`Disconnected`] -> [`Active`]
+/// - [`Disconnected`] -> [`Limbo`]
 ///
-/// - Limbo -> Active
-/// - Limbo -> Broken
-/// - Limbo -> Disconnected
+/// - [`Limbo`] -> [`Active`]
+/// - [`Limbo`] -> [`Broken`]
+/// - [`Limbo`] -> [`Disconnected`]
 ///
-/// Invalid is locked into that state.
+/// [`Invalid`] is locked into that state.
 pub enum ConnectionStatus {
+	/// A connected and functioning camera device.
 	Active(Active),
+	/// A connected and non-functional camera device.
 	Broken(Broken),
+	/// A camera that is not connected.
 	Disconnected(Disconnected),
+	/// A device that occupies indices but does not offer camera capabilities.
 	Invalid(Invalid),
+	/// A camera that has reconnected but is non-functional.
 	Limbo(Limbo),
 }
 
 // Constructors.
 impl ConnectionStatus {
+	/// Create a new instance of [`Active`].
 	pub fn new_active<T>(
 		camera: T,
 		occupied_indices: OccupiedIndices,
@@ -82,6 +92,7 @@ impl ConnectionStatus {
 		Self::Active(active)
 	}
 
+	/// Create a new instance of [`Invalid`].
 	pub fn new_invalid(occupied_indices: OccupiedIndices) -> Self {
 		let invalid = Invalid::new(occupied_indices);
 		Self::Invalid(invalid)

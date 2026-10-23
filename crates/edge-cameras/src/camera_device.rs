@@ -1,3 +1,7 @@
+//! A physical camera device, as made available by [`nokhwa`].
+//!
+//! Also provides [`CameraLike`] to abstract implemention details away.
+
 #[cfg(test)]
 #[path = "camera_device_tests.rs"]
 mod tests;
@@ -40,9 +44,15 @@ use crate::{
 	},
 };
 
+/// An abstraction over the functionalities that a camera would provide.
+///
+/// This is used to allow for testing fixtures to be used in place of real
+/// cameras for unit tests.
 pub trait CameraLike {
+	/// Get the [`CameraInfo`] struct.
 	fn get_info(&self) -> &CameraInfo;
 
+	/// Get the [`CameraIndex`] enum.
 	fn get_index(&self) -> &CameraIndex;
 
 	/// Request an image of the current camera frame.
@@ -93,6 +103,8 @@ pub trait CameraLike {
 }
 
 /// An abstraction over the nokhwa camera objects.
+///
+/// Prefer using [`CameraLike`] when defining type bounds.
 #[must_use]
 pub struct CameraDevice {
 	inner: StreamCamera,

@@ -1,3 +1,7 @@
+//! A device entry in the [`Persistence`] map.
+//!
+//! [`Persistence`]: super::Persistence
+
 use std::{
 	borrow::Cow,
 	collections::HashSet,
@@ -35,14 +39,20 @@ use crate::{
 	identifier::Identifier,
 };
 
+/// The reason why an [`Image`] couldn't be retrieved from a camera.
 #[derive(Clone, Debug)]
 pub enum WhyNo {
+	/// No [`Image`] because the camera is broken.
 	Broken,
+	/// No [`Image`] because the camera is disconnected.
 	Disconnected,
 }
 
+/// The result from trying to retrieve an [`Image`] from a camera.
 pub enum MaybeImage {
+	/// An [`Image`] was successfully retrieved.
 	Image(Image),
+	/// No [`Image`] could be retireved.
 	WhyNo(WhyNo),
 }
 
@@ -69,6 +79,7 @@ pub struct PersistEntry {
 
 /// Constructors.
 impl PersistEntry {
+	/// Create a new [`PersistEntry`] instance.
 	pub fn new(points: &HashSet<AccessPoint>) -> Self {
 		let occupied_indices: HashSet<CameraIndex> =
 			points.iter().map(|point| point.index.clone()).collect();
@@ -116,22 +127,37 @@ impl PersistEntry {
 
 /// Variant checkers.
 impl PersistEntry {
+	/// Check if the current status is [`Active`].
+	///
+	/// [`Active`]: CameraStatus::Active
 	pub fn is_active(&self) -> bool {
 		self.get_status() == CameraStatus::Active
 	}
 
+	/// Check if the current status is [`Broken`].
+	///
+	/// [`Broken`]: CameraStatus::Broken
 	pub fn is_broken(&self) -> bool {
 		self.get_status() == CameraStatus::Broken
 	}
 
+	/// Check if the current status is [`Disconnected`].
+	///
+	/// [`Disconnected`]: CameraStatus::Disconnected
 	pub fn is_disconnected(&self) -> bool {
 		self.get_status() == CameraStatus::Disconnected
 	}
 
+	/// Check if the current status is [`Invalid`].
+	///
+	/// [`Invalid`]: CameraStatus::Invalid
 	pub fn is_invalid(&self) -> bool {
 		self.get_status() == CameraStatus::Invalid
 	}
 
+	/// Check if the current status is [`Limbo`].
+	///
+	/// [`Limbo`]: CameraStatus::Limbo
 	pub fn is_limbo(&self) -> bool {
 		self.get_status() == CameraStatus::Limbo
 	}
@@ -165,6 +191,7 @@ impl PersistEntry {
 
 /// Switching operations.
 impl PersistEntry {
+	/// Change from [`Active`] to [`Broken`].
 	pub fn active_to_broken(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
@@ -176,6 +203,7 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
+	/// Change from [`Active`] to [`Disconnected`].
 	pub fn active_to_disconnected(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
@@ -187,6 +215,7 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
+	/// Change from [`Active`] to [`Limbo`].
 	pub fn active_to_limbo(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
@@ -198,6 +227,7 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
+	/// Change from [`Broken`] to [`Disconnected`].
 	pub fn broken_to_disconnected(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
@@ -209,6 +239,7 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
+	/// Change from [`Disconnected`] to [`Active`].
 	pub fn disconnected_to_active<T>(
 		&mut self,
 		camera: T,
@@ -231,6 +262,7 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
+	/// Change from [`Disconnected`] to [`Limbo`].
 	pub fn disconnected_to_limbo(
 		&mut self,
 		occupied_indices: OccupiedIndices,
@@ -248,6 +280,7 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
+	/// Change from [`Limbo`] to [`Active`].
 	pub fn limbo_to_active<T>(
 		&mut self,
 		camera: T,
@@ -270,6 +303,7 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
+	/// Change from [`Limbo`] to [`Broken`].
 	pub fn limbo_to_broken(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
@@ -281,6 +315,7 @@ impl PersistEntry {
 		self.inner.replace(new_inner);
 	}
 
+	/// Change from [`Limbo`] to [`Disconnected`].
 	pub fn limbo_to_disconnected(&mut self) {
 		let inner = self.take_inner();
 		let new_inner = match inner {
@@ -295,6 +330,7 @@ impl PersistEntry {
 
 /// Accessors.
 impl PersistEntry {
+	/// Try to access this entry as [`Active`].
 	pub fn get_active(&self) -> Option<&Active> {
 		match self.as_inner() {
 			ConnectionStatus::Active(active) => Some(active),
@@ -302,6 +338,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Try to mutably access this entry as [`Active`].
 	pub fn get_active_mut(&mut self) -> Option<&mut Active> {
 		match self.as_inner_mut() {
 			ConnectionStatus::Active(active) => Some(active),
@@ -309,6 +346,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Try to access this entry as [`Broken`].
 	pub fn get_broken(&self) -> Option<&Broken> {
 		match self.as_inner() {
 			ConnectionStatus::Broken(broken) => Some(broken),
@@ -316,6 +354,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Try to mutably access this entry as [`Broken`].
 	pub fn get_broken_mut(&mut self) -> Option<&mut Broken> {
 		match self.as_inner_mut() {
 			ConnectionStatus::Broken(broken) => Some(broken),
@@ -323,6 +362,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Try to access this entry as [`Disconnected`].
 	pub fn get_disconnected(&self) -> Option<&Disconnected> {
 		match self.as_inner() {
 			ConnectionStatus::Disconnected(disconnected) => Some(disconnected),
@@ -330,6 +370,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Try to mutably access this entry as [`Disconnected`].
 	pub fn get_disconnected_mut(&mut self) -> Option<&mut Disconnected> {
 		match self.as_inner_mut() {
 			ConnectionStatus::Disconnected(disconnected) => Some(disconnected),
@@ -337,6 +378,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Try to access this entry as [`Invalid`].
 	pub fn get_invalid(&self) -> Option<&Invalid> {
 		match self.as_inner() {
 			ConnectionStatus::Invalid(invalid) => Some(invalid),
@@ -344,6 +386,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Try to mutably access this entry as [`Invalid`].
 	pub fn get_invalid_mut(&mut self) -> Option<&mut Invalid> {
 		match self.as_inner_mut() {
 			ConnectionStatus::Invalid(invalid) => Some(invalid),
@@ -351,6 +394,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Try to access this entry as [`Limbo`].
 	pub fn get_limbo(&self) -> Option<&Limbo> {
 		match self.as_inner() {
 			ConnectionStatus::Limbo(limbo) => Some(limbo),
@@ -358,6 +402,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Try to mutably access this entry as [`Limbo`].
 	pub fn get_limbo_mut(&mut self) -> Option<&mut Limbo> {
 		match self.as_inner_mut() {
 			ConnectionStatus::Limbo(limbo) => Some(limbo),
@@ -386,6 +431,7 @@ impl PersistEntry {
 
 /// Setters.
 impl PersistEntry {
+	/// Change the name for this entry.
 	pub fn set_name(
 		&mut self,
 		name: String,
@@ -405,6 +451,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Change whether this entry is current being viewed.
 	pub fn set_currently_viewed(
 		&mut self,
 		state: bool,
@@ -430,6 +477,7 @@ impl PersistEntry {
 		}
 	}
 
+	/// Ask for this entry to calibrate the setpoint when next processed.
 	pub fn request_calibration(&mut self) {
 		match self.as_inner_mut() {
 			ConnectionStatus::Active(active) => active.set_calibrate(true),
@@ -451,6 +499,10 @@ impl PersistEntry {
 
 /// Operations.
 impl PersistEntry {
+	/// Attempt to retrieve an image from this entry.
+	///
+	/// Will return [`None`] if the current [`ConnectionStatus`] is not
+	/// [`Active`].
 	pub fn try_get_image(
 		&mut self,
 		camera_err_increment: u16,
@@ -501,6 +553,8 @@ impl PersistEntry {
 		Some(batch)
 	}
 
+	/// Compare this entry to the current access points, updating the state as
+	/// required.
 	pub fn update(
 		&mut self,
 		points: &HashSet<AccessPoint>,

@@ -1,3 +1,5 @@
+//! A type for a connected and functioning camera device.
+
 use std::{
 	borrow::Cow,
 	ops::{
@@ -37,25 +39,29 @@ use crate::{
 ///
 /// It can be created from:
 /// - A new connection
-/// - Disconnected
-/// - Limbo
+/// - [`Disconnected`]
+/// - [`Limbo`]
 ///
 /// It can change state to:
-/// - Broken
-/// - Disconnected
-/// - Limbo
+/// - [`Broken`](super::Broken)
+/// - [`Disconnected`]
+/// - [`Limbo`]
 pub struct Active {
+	/// The indices that this device occupies.
 	pub occupied_indices: OccupiedIndices,
+	/// Persistent data for this device.
 	pub data: PerpetualInfo,
-	/// A user configurable name for this camera.
+	/// A user configurable name for this device.
 	///
 	/// It is not required to be unique, but is preferrable.
 	pub name: String,
+	/// The camera device that this type represents.
 	pub camera: Box<dyn CameraLike>,
 }
 
 // Constructors.
 impl Active {
+	/// Create a new [`Active`] instance.
 	pub fn new<T>(
 		camera: T,
 		occupied_indices: OccupiedIndices,
@@ -72,6 +78,7 @@ impl Active {
 		}
 	}
 
+	/// Build an [`Active`] instance from a [`Disconnected`] one.
 	pub fn from_disconnected<T>(
 		disconnected: Disconnected,
 		camera: T,
@@ -88,6 +95,7 @@ impl Active {
 		}
 	}
 
+	/// Build an [`Active`] instance from a [`Limbo`] one.
 	pub fn from_limbo<T>(
 		limbo: Limbo,
 		camera: T,
@@ -158,6 +166,7 @@ impl Active {
 		Ok(image)
 	}
 
+	/// Build a [`BatchItem`] using this instance.
 	pub fn make_batch_item(
 		&mut self,
 		image: Image,

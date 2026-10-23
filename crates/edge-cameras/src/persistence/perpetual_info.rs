@@ -1,3 +1,5 @@
+//! Data attached to a valid device that must be retained through state changes.
+
 use edge_vision::{
 	vision,
 	vision_interface::VisionInterface as _,
@@ -27,10 +29,12 @@ pub struct PerpetualInfo {
 }
 
 impl PerpetualInfo {
+	/// Query if this device is currently being viewed.
 	pub fn get_currently_viewed(&self) -> bool {
 		self.currently_viewed
 	}
 
+	/// Mark if this device should be viewed.
 	pub fn set_currently_viewed(
 		&mut self,
 		state: bool,
@@ -67,10 +71,12 @@ impl PerpetualInfo {
 		}
 	}
 
+	/// Query if this device should be calibrated.
 	pub fn get_calibrate(&self) -> bool {
 		self.calibrate
 	}
 
+	/// Mark if this device should be calibrated.
 	pub fn set_calibrate(
 		&mut self,
 		state: bool,
@@ -78,12 +84,15 @@ impl PerpetualInfo {
 		self.calibrate = state;
 	}
 
+	/// Check if the [`VisionState`] matches the current variant, updating if
+	/// not.
 	pub fn refresh_vision_state(&mut self) {
 		if !self.vision_state.is_valid() {
 			self.vision_state = vision().interact(|vision| vision.new_state());
 		}
 	}
 
+	/// Return a mutable reference to the [`VisionState`].
 	pub fn get_vision_state(&mut self) -> &mut VisionState {
 		&mut self.vision_state
 	}

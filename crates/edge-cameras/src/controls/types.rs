@@ -1,23 +1,9 @@
-//! Low level and higher level types used for camera control values.
+//! Low level types used for camera control values.
 
 use nokhwa::utils::ControlValueSetter;
 use serde::{
 	Deserialize,
 	Serialize,
-};
-
-#[expect(unused_imports, reason = "Needed for docstring")]
-use super::{
-	descriptions::{
-		KeyValuePairControl,
-		PointControl,
-		RGBControl,
-	},
-	values::{
-		ConValueKeyValue,
-		ConValuePoint,
-		ConValueRGB,
-	},
 };
 
 // TODO: Use COW for String and Bytes.
@@ -36,6 +22,9 @@ type _ConTypeRGB = f64;
 
 /// Represents a key and value use by [`ConValueKeyValue`] and by extention,
 /// [`KeyValuePairControl`].
+///
+/// [`ConValueKeyValue`]: super::values::ConValueKeyValue
+/// [`KeyValuePairControl`]: super::descriptions::KeyValuePairControl
 #[derive(
 	Clone,
 	Copy,
@@ -52,10 +41,12 @@ type _ConTypeRGB = f64;
 pub struct ConTypeKeyValue(_ConTypeKeyValue, _ConTypeKeyValue);
 
 impl ConTypeKeyValue {
+	/// Get the key field.
 	pub fn key(&self) -> _ConTypeKeyValue {
 		self.0
 	}
 
+	/// Get the value field.
 	pub fn value(&self) -> _ConTypeKeyValue {
 		self.1
 	}
@@ -81,16 +72,21 @@ impl From<ConTypeKeyValue> for ControlValueSetter {
 
 /// Represents a point value use by [`ConValuePoint`] and by extention,
 /// [`PointControl`].
+///
+/// [`ConValuePoint`]: super::values::ConValuePoint
+/// [`PointControl`]: super::descriptions::PointControl
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
 pub struct ConTypePoint(_ConTypePoint, _ConTypePoint);
 
 impl ConTypePoint {
+	/// Get the first value of this point.
 	pub fn x_value(&self) -> _ConTypePoint {
 		self.0
 	}
 
+	/// Get the second value of this point.
 	pub fn y_value(&self) -> _ConTypePoint {
 		self.1
 	}
@@ -116,20 +112,26 @@ impl From<ConTypePoint> for ControlValueSetter {
 
 /// Represents an RGB value use by [`ConValueRGB`] and by extention,
 /// [`RGBControl`].
+///
+/// [`ConValueRGB`]: super::values::ConValueRGB
+/// [`RGBControl`]: super::descriptions::RGBControl
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
 pub struct ConTypeRGB(_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
 
 impl ConTypeRGB {
+	/// Get the red channel.
 	pub fn red(&self) -> _ConTypeRGB {
 		self.0
 	}
 
+	/// Get the green channel.
 	pub fn green(&self) -> _ConTypeRGB {
 		self.1
 	}
 
+	/// Get the blue channel.
 	pub fn blue(&self) -> _ConTypeRGB {
 		self.2
 	}

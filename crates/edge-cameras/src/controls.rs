@@ -5,10 +5,11 @@
 //!
 //! - The output needs to be stored in a collection of sorts.
 //!
-//! - The order of the collection does not matter.
+//! - The order of the collection does not matter; however, it is useful for
+//!   other systems.
 //!
 //! - Each control will be unique to a [`KnownCameraControl`] (ID), condusive to
-//!   a `HashMap` or Set.
+//!   a [`HashMap`]/[`BTreeMap`], or [`HashSet`].
 //!
 //! - Every [`CamControl`] ([`ControlValueDescription`]) maps non-commutatively
 //!   to a [`ControlValue`] ([`ControlValueSetter`]), but cannot be determined
@@ -24,6 +25,12 @@
 //! - The only important mapping that needs to be sent back to [`nokhwa`] is
 //!   [`ControlValue`] ([`ControlValueSetter`]).
 //!
+//! [`HashMap`]: std::collections::HashMap
+//! [`HashSet`]: std::collections::HashSet
+//! [`ControlValueDescription`]: nokhwa::utils::ControlValueDescription
+//! [`ControlValueSetter`]: nokhwa::utils::ControlValueSetter
+//! [`ControlValue`]: self::traits::ControlValue
+//!
 //! ## TODO: Oh god fix the naming of the types.
 
 use std::{
@@ -35,8 +42,6 @@ use std::{
 	},
 };
 
-#[expect(unused_imports, reason = "Needed for module docstring")]
-use nokhwa::utils::ControlValueSetter;
 use nokhwa::utils::{
 	CameraControl,
 	KnownCameraControl,
@@ -55,6 +60,8 @@ use serde::{
 
 type MapType = BTreeMap<KnownCameraControl, CamControl>;
 
+/// Every control descriptions that a camera possesses, mapped by its control
+/// ID.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct ControlMap {
@@ -62,11 +69,22 @@ pub struct ControlMap {
 }
 
 impl ControlMap {
+	/// Consume this type to produce the inner map type.
 	#[must_use]
 	pub fn into_inner(self) -> MapType {
 		self.inner
 	}
 
+	/// Consume this type to produce one with only certain control IDs.
+	///
+	/// The list of IDs that are retained:
+	///
+	/// - [`KnownCameraControl::Brightness`]
+	/// - [`KnownCameraControl::Contrast`]
+	/// - [`KnownCameraControl::Saturation`]
+	/// - [`KnownCameraControl::Hue`]
+	/// - [`KnownCameraControl::Gain`]
+	/// - [`KnownCameraControl::Gamma`]
 	#[must_use]
 	pub fn to_stripped(self) -> Self {
 		let inner = self

@@ -1,3 +1,5 @@
+//! The combination of information to represent a single camera control.
+
 mod boolean_control;
 mod bytes_control;
 mod enum_control;
@@ -65,11 +67,11 @@ use super::{
 // possible: Vec<value>
 // !!!default: (value, value)!!! Not anymore, see [`KeyValue`].
 
-// TODO: The inner types could be composed.
-// Control Value should be read-only and internally managed.
 /// Represents one type of camera control.
 ///
 /// Maps to [`ControlValueDescription`].
+// TODO: The inner types could be composed.
+// Control Value should be read-only and internally managed.
 #[derive(
 	Clone,
 	Debug,
@@ -83,19 +85,32 @@ use super::{
 	Deserialize,
 )]
 pub enum CamControl {
+	/// For when a camera reports a control but none is provided.
 	#[default]
 	None, // None(NoneControl),
+	/// Represents [`IntegerControl`].
 	Integer(IntegerControl),
+	/// Represents [`IntegerRangeControl`].
 	IntegerRange(IntegerRangeControl),
+	/// Represents [`FloatControl`].
 	Float(FloatControl),
+	/// Represents [`FloatRangeControl`].
 	FloatRange(FloatRangeControl),
+	/// Represents [`BooleanControl`].
 	Boolean(BooleanControl),
+	/// Represents [`StringControl`].
 	String(StringControl),
+	/// Represents [`BytesControl`].
 	Bytes(BytesControl),
+	/// Represents [`KeyValuePairControl`].
 	KeyValuePair(KeyValuePairControl),
+	/// Represents [`PointControl`].
 	Point(PointControl),
+	/// Represents [`EnumControl`].
 	Enum(EnumControl),
+	/// Represents [`RGBControl`].
 	RGB(RGBControl),
+	/// Represents [`MenuControl`].
 	Menu(MenuControl),
 }
 

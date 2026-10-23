@@ -1,4 +1,35 @@
 //! Polling logic for the [`Persistence`] struct.
+//!
+//! This is a separate file to avoid bloating the `persistence.rs` file.
+//!
+//! Potential inputs:
+//! - Camera device.
+//! - Camera metadata device.
+//! - Invalid device.
+//!
+//! Potential variants:
+//! - Unfaimilar
+//! - Familiar, invalid
+//! - Familiar, valid: broken
+//! - Familiar, valid: disconnected
+//! - Familiar, valid: active
+//!
+//! If this is an unfamiliar device:
+//! - Try initialise it.
+//! - If successful, add it as an initialised entry.
+//! - If unsuccessful, add it as an invalid entry.
+//!
+//! If this is a familiar device and invalid:
+//! - Ignore it.
+//!
+//! If this is a familiar device and broken:
+//! - Ignore it.
+//!
+//! If this is a familiar device and active:
+//! - Make sure all indexes are accounted for.
+//!
+//! If this is a familiar device and disconnected:
+//! - Reconnect it.
 
 use std::{
 	collections::{
@@ -32,40 +63,13 @@ use crate::{
 	identifier::Identifier,
 };
 
-// Potential inputs:
-// - Camera device.
-// - Camera metadata device.
-// - Invalid device.
-
-// Potential variants:
-// - Unfaimilar
-// - Familiar, invalid
-// - Familiar, valid: broken
-// - Familiar, valid: disconnected
-// - Familiar, valid: active
-
-// If this is an unfamiliar device:
-// - Try initialise it.
-// - If successful, add it as an initialised entry.
-// - If unsuccessful, add it as an invalid entry.
-
-// If this is a familiar device and invalid:
-// - Ignore it.
-
-// If this is a familiar device and broken:
-// - Ignore it.
-
-// If this is a familiar device and active:
-// - Make sure all indexes are accounted for.
-
-// If this is a familiar device and disconnected:
-// - Reconnect it.
-
+/// Representative data for a device index.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct AccessPoint {
 	/// Use the full [`nokhwa`] index type so that any error from an incorrect
 	/// index type are handled when creating the camera.
 	pub index: CameraIndex,
+	/// Whether v4l2 reports this index as belonging to a metadata device.
 	pub is_metadata: bool,
 }
 
@@ -84,6 +88,8 @@ impl fmt::Display for AccessPoint {
 
 type IntermediaryMap = HashMap<Identifier, HashSet<AccessPoint>>;
 
+/// Intermediary type to map a number of [`AccessPoint`]s to a single
+/// [`Identifier`].
 #[derive(Clone, Debug)]
 pub struct DeviceConnection {
 	identifier: Identifier,
@@ -112,8 +118,11 @@ impl From<(Identifier, HashSet<AccessPoint>)> for DeviceConnection {
 	}
 }
 
+/// Details about a change to the current [`Persistence`] map.
 pub enum ConnectionDetail {
+	/// A new device connection.
 	New(NewCameraInfo),
+	/// An update to an existing device connection.
 	Update(CameraStatus),
 }
 

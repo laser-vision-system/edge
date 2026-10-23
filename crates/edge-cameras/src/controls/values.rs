@@ -1,4 +1,16 @@
 //! Types that map to [`nokhwa`]'s [`ControlValueSetter`].
+//!
+//! ==================== READ HERE FIRST ====================.
+//!
+//! This may seem like a needless middle layer between the
+//! control types and the control descriptions, but it
+//! provides an easy mapping to and from
+//! `ControlValueSetter`.
+//! Additionally, the lower-level type defines make it easy
+//! to synchronise the types between this and higher-level
+//! components.
+//!
+//! ==================== ^^^^^^^^^^^^^^^ ====================.
 
 // TODO: Implement `Borrow` on everything.
 
@@ -24,21 +36,7 @@ use super::{
 	},
 };
 
-// ==================== READ HERE FIRST ====================
-//
-// This may seem like a needless middle layer between the
-// control types and the control descriptions, but it
-// provides an easy mapping to and from
-// `ControlValueSetter`.
-// Additionally, the lower-level type defines make it easy
-// to synchronise the types between this and higher-level
-// components.
-//
-// ==================== ^^^^^^^^^^^^^^^ ====================
-
-// pub struct ControlValueNone;
-
-/// A control that has a value of the type [`ControlTypeInteger`].
+/// A control for integer values.
 ///
 /// Maps to [`ControlValueSetter::Integer`].
 #[derive(
@@ -80,9 +78,10 @@ impl From<ConValueInteger> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueInteger`]'s internal type via [`ControlValue`].
 pub type ConValueIntegerType = <ConValueInteger as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeFloat`].
+/// A control for floating-point values.
 ///
 /// Maps to [`ControlValueSetter::Float`].
 #[derive(
@@ -114,9 +113,10 @@ impl From<ConValueFloat> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueFloat`]'s internal type via [`ControlValue`].
 pub type ConValueFloatType = <ConValueFloat as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeBool`].
+/// A control for boolean values.
 ///
 /// Maps to [`ControlValueSetter::Boolean`].
 #[derive(
@@ -158,9 +158,10 @@ impl From<ConValueBoolean> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueBoolean`]'s internal type via [`ControlValue`].
 pub type ConValueBooleanType = <ConValueBoolean as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeString`].
+/// A control for string values.
 ///
 /// Maps to [`ControlValueSetter::String`].
 #[derive(
@@ -201,9 +202,10 @@ impl From<ConValueString> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueString`]'s internal type via [`ControlValue`].
 pub type ConValueStringType = <ConValueString as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeBytes`].
+/// A control for byte vector values.
 ///
 /// Maps to [`ControlValueSetter::Bytes`].
 #[derive(
@@ -244,9 +246,10 @@ impl From<ConValueBytes> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueBytes`]'s internal type via [`ControlValue`].
 pub type ConValueBytesType = <ConValueBytes as ControlValue>::ConType;
 
-/// A control that has a value of the type [`KeyValue`].
+/// A control for key-value values.
 ///
 /// Maps to [`ControlValueSetter::KeyValue`].
 #[derive(
@@ -288,9 +291,10 @@ impl From<ConValueKeyValue> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueKeyValue`]'s internal type via [`ControlValue`].
 pub type ConValueKeyValueType = <ConValueKeyValue as ControlValue>::ConType;
 
-/// A control that has a value of the type [`Point`].
+/// A control for point values.
 ///
 /// Maps to [`ControlValueSetter::Point`].
 #[derive(
@@ -322,9 +326,10 @@ impl From<ConValuePoint> for ControlValueSetter {
 	}
 }
 
+/// [`ConValuePoint`]'s internal type via [`ControlValue`].
 pub type ConValuePointType = <ConValuePoint as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeEnum`].
+/// A control for enum values.
 ///
 /// Maps to [`ControlValueSetter::EnumValue`].
 #[derive(
@@ -366,9 +371,10 @@ impl From<ConValueEnum> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueEnum`]'s internal type via [`ControlValue`].
 pub type ConValueEnumType = <ConValueEnum as ControlValue>::ConType;
 
-/// A control that has a value of the type [`RGB`].
+/// A control for RGB values.
 ///
 /// Maps to [`ControlValueSetter::RGB`].
 #[derive(
@@ -400,8 +406,12 @@ impl From<ConValueRGB> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueRGB`]'s internal type via [`ControlValue`].
 pub type ConValueRGBType = <ConValueRGB as ControlValue>::ConType;
 
+/// A control for menu values.
+///
+/// Maps to [`ControlValueSetter::Menu`].
 #[derive(
 	Clone,
 	Copy,
@@ -441,4 +451,5 @@ impl From<ConValueMenu> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueMenu`]'s internal type via [`ControlValue`].
 pub type ConValueMenuType = <ConValueMenu as ControlValue>::ConType;

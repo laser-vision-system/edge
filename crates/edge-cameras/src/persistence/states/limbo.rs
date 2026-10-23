@@ -1,3 +1,5 @@
+//! A type for a camera that has reconnected but is non-functional.
+
 use std::{
 	borrow::Cow,
 	ops::{
@@ -25,16 +27,18 @@ use crate::persistence::{
 /// until either it reconnects, or is moved to broken.
 ///
 /// It can be created from:
-/// - Active
-/// - Disconnected
+/// - [`Active`]
+/// - [`Disconnected`]
 ///
 /// It can change state to:
-/// - Active
-/// - Broken
-/// - Disconnected
+/// - [`Active`]
+/// - [`Broken`](super::Broken)
+/// - [`Disconnected`]
 #[derive(Clone, Debug, Default)]
 pub struct Limbo {
+	/// The indices that this device occupies.
 	pub occupied_indices: OccupiedIndices,
+	/// Persistent data for this device.
 	pub data: PerpetualInfo,
 	/// A user configurable name for this camera.
 	///
@@ -44,6 +48,7 @@ pub struct Limbo {
 
 // Constructors.
 impl Limbo {
+	/// Build a [`Limbo`] instance from a [`Disconnected`] one.
 	pub fn from_disconnected(
 		disconnected: Disconnected,
 		occupied_indices: OccupiedIndices,
