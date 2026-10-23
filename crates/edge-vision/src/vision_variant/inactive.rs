@@ -28,10 +28,7 @@ impl VisionInterface for Inactive {
 	}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::Inactive {
-			handle: self.session.downgrade(),
-			data: ExternalData,
-		}
+		VisionState::Inactive(self.session.downgrade(), ExternalData)
 	}
 }
 

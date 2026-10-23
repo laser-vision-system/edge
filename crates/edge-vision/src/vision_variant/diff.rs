@@ -164,10 +164,7 @@ impl VisionInterface for Diff {
 		batch: &mut [BatchItem],
 	) {
 		for item in batch {
-			let VisionState::Diff {
-				data, ..
-			} = item.state
-			else {
+			let VisionState::Diff(_, data) = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
@@ -218,10 +215,7 @@ impl VisionInterface for Diff {
 	}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::Diff {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
+		VisionState::Diff(self.session.downgrade(), ExternalData::default())
 	}
 }
 

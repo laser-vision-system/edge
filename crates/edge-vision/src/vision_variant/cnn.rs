@@ -133,10 +133,7 @@ impl VisionInterface for Cnn {
 	}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::Cnn {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
+		VisionState::Cnn(self.session.downgrade(), ExternalData::default())
 	}
 }
 
@@ -169,10 +166,7 @@ fn apply_predictions(
 	);
 
 	for (item, intensity) in batch.iter_mut().zip(predictions) {
-		if let VisionState::Cnn {
-			data, ..
-		} = item.state
-		{
+		if let VisionState::Cnn(_, data) = item.state {
 			if item.calibrate {
 				data.setpoint = Some(intensity);
 			}
@@ -187,10 +181,7 @@ fn apply_predictions(
 
 fn clear_predictions(batch: &mut [BatchItem]) {
 	for item in batch.iter_mut() {
-		if let VisionState::Cnn {
-			data, ..
-		} = item.state
-		{
+		if let VisionState::Cnn(_, data) = item.state {
 			data.intensity = None;
 			data.deviation = None;
 		}
@@ -231,10 +222,7 @@ mod tests {
 	}
 
 	fn cnn_state(data: ExternalData) -> VisionState {
-		VisionState::Cnn {
-			handle: SessionToken::new().downgrade(),
-			data,
-		}
+		VisionState::Cnn(SessionToken::new().downgrade(), data)
 	}
 
 	#[test]
@@ -265,9 +253,7 @@ mod tests {
 		apply_predictions(&mut batch, vec![12.5]);
 
 		match &batch[0].state {
-			VisionState::Cnn {
-				data, ..
-			} => {
+			VisionState::Cnn(_, data) => {
 				assert_eq!(data.setpoint, Some(12.5));
 				assert_eq!(data.intensity, Some(12.5));
 				assert_eq!(data.deviation, Some(1.0));
@@ -294,9 +280,7 @@ mod tests {
 		apply_predictions(&mut batch, vec![4.0]);
 
 		match &batch[0].state {
-			VisionState::Cnn {
-				data, ..
-			} => {
+			VisionState::Cnn(_, data) => {
 				assert_eq!(data.setpoint, Some(10.0));
 				assert_eq!(data.intensity, Some(4.0));
 				assert_eq!(data.deviation, Some(0.4));
@@ -323,9 +307,7 @@ mod tests {
 		clear_predictions(&mut batch);
 
 		match &batch[0].state {
-			VisionState::Cnn {
-				data, ..
-			} => {
+			VisionState::Cnn(_, data) => {
 				assert_eq!(data.setpoint, Some(9.0));
 				assert_eq!(data.intensity, None);
 				assert_eq!(data.deviation, None);
@@ -349,9 +331,7 @@ mod tests {
 		cnn.process(&mut batch);
 
 		match &batch[0].state {
-			VisionState::Cnn {
-				data, ..
-			} => {
+			VisionState::Cnn(_, data) => {
 				assert!(data.setpoint.is_some());
 				assert!(data.intensity.is_some());
 				assert!(data.deviation.is_some());

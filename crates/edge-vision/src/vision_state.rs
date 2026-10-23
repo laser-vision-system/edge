@@ -15,22 +15,10 @@ use crate::{
 /// External state for the vision processor variants.
 #[derive(Clone, Debug)]
 pub enum VisionState {
-	Inactive {
-		handle: SessionHandle,
-		data: inactive::ExternalData,
-	},
-	AvgLightness {
-		handle: SessionHandle,
-		data: avg_lightness::ExternalData,
-	},
-	Cnn {
-		handle: SessionHandle,
-		data: cnn::ExternalData,
-	},
-	Diff {
-		handle: SessionHandle,
-		data: diff::ExternalData,
-	},
+	Inactive(SessionHandle, inactive::ExternalData),
+	AvgLightness(SessionHandle, avg_lightness::ExternalData),
+	Cnn(SessionHandle, cnn::ExternalData),
+	Diff(SessionHandle, diff::ExternalData),
 }
 
 impl VisionState {
@@ -38,35 +26,19 @@ impl VisionState {
 	/// active.
 	pub fn is_valid(&self) -> bool {
 		match self {
-			Self::Inactive {
-				handle, ..
-			}
-			| Self::AvgLightness {
-				handle, ..
-			}
-			| Self::Cnn {
-				handle, ..
-			}
-			| Self::Diff {
-				handle, ..
-			} => handle.is_valid(),
+			Self::Inactive(handle, _)
+			| Self::AvgLightness(handle, _)
+			| Self::Cnn(handle, _)
+			| Self::Diff(handle, _) => handle.is_valid(),
 		}
 	}
 
 	pub fn get_deviation(&self) -> Option<f32> {
 		match self {
-			Self::Inactive {
-				..
-			} => None,
-			Self::AvgLightness {
-				data, ..
-			} => data.deviation,
-			Self::Cnn {
-				data, ..
-			} => data.deviation,
-			Self::Diff {
-				data, ..
-			} => data.deviation,
+			Self::Inactive(..) => None,
+			Self::AvgLightness(_, data) => data.deviation,
+			Self::Cnn(_, data) => data.deviation,
+			Self::Diff(_, data) => data.deviation,
 		}
 	}
 }
@@ -83,18 +55,10 @@ impl fmt::Display for VisionState {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		match self {
-			Self::Inactive {
-				data, ..
-			} => data.fmt(f),
-			Self::AvgLightness {
-				data, ..
-			} => data.fmt(f),
-			Self::Cnn {
-				data, ..
-			} => data.fmt(f),
-			Self::Diff {
-				data, ..
-			} => data.fmt(f),
+			Self::Inactive(_, data) => data.fmt(f),
+			Self::AvgLightness(_, data) => data.fmt(f),
+			Self::Cnn(_, data) => data.fmt(f),
+			Self::Diff(_, data) => data.fmt(f),
 		}
 	}
 }

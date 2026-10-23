@@ -55,10 +55,7 @@ impl VisionInterface for AvgLightness {
 		batch: &mut [BatchItem],
 	) {
 		for item in batch {
-			let VisionState::AvgLightness {
-				data, ..
-			} = item.state
-			else {
+			let VisionState::AvgLightness(_, data) = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
@@ -82,10 +79,10 @@ impl VisionInterface for AvgLightness {
 	}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::AvgLightness {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
+		VisionState::AvgLightness(
+			self.session.downgrade(),
+			ExternalData::default(),
+		)
 	}
 }
 
