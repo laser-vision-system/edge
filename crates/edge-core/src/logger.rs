@@ -44,10 +44,12 @@ use crate::settings;
 
 static LOGGER: OnceLock<LoggerGuard> = OnceLock::new();
 
+/// Get exclusive access to the [`LoggerGuard`].
 pub fn logger() -> &'static LoggerGuard {
 	LOGGER.get_or_init(LoggerGuard::new)
 }
 
+/// A thread-safe protection over the `Logger` type.
 pub struct LoggerGuard {
 	inner: Mutex<RefCell<Logger>>,
 }
@@ -59,6 +61,7 @@ impl LoggerGuard {
 		}
 	}
 
+	/// Basic information useful for debugging.
 	pub fn log_info(
 		&self,
 		message: &str,
@@ -75,6 +78,7 @@ impl LoggerGuard {
 		logger.log_info(message);
 	}
 
+	/// A non-error that still may need attention.
 	pub fn log_warn(
 		&self,
 		message: &str,
@@ -91,6 +95,7 @@ impl LoggerGuard {
 		logger.log_warn(message);
 	}
 
+	/// An error that the system encountered.
 	pub fn log_error<T>(
 		&self,
 		error: &T,
@@ -109,6 +114,7 @@ impl LoggerGuard {
 		logger.log_error(error);
 	}
 
+	/// Flush all logs to the server.
 	pub fn send_logs(&self) {
 		let guard = match self.inner.lock() {
 			Ok(cell) => cell,

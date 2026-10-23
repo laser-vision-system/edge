@@ -16,8 +16,11 @@ use std::{
 /// High number increases latency and memory usage.
 pub const CAMERA_BUFFER_COUNT: u32 = 1;
 
+/// The image width that is expected by the vision techniques.
 pub const IMAGE_WIDTH: u32 = 640;
+/// The image height that is expected by the vision techniques.
 pub const IMAGE_HEIGHT: u32 = 480;
+/// The total number of pixels in the image.
 pub const IMAGE_PIXELS: usize = (IMAGE_WIDTH * IMAGE_HEIGHT) as usize;
 
 use std::env;

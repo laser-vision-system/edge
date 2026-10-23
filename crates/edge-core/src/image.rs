@@ -1,3 +1,9 @@
+//! Shared types for ingesting [`nokhwa`] image buffers and encoding.
+//!
+//! [`FrameBuffer`] wraps the [`Buffer`] type that [`nokhwa`] returns.
+//! When decoded, it is converted into an [`Image`] type, that wraps an
+//! [`ImageBuffer`](image::ImageBuffer).
+
 use std::{
 	borrow::Cow,
 	io::Cursor,
@@ -43,6 +49,12 @@ use crate::{
 	},
 };
 
+/// The raw buffer of data returned from a camera device.
+///
+/// This hides away [`nokhwa`]'s [`Buffer`] type.
+///
+/// The contained data is encoded and must be decoded with
+/// [`FrameBuffer::try_decode`].
 #[derive(Clone, Debug)]
 pub struct FrameBuffer {
 	inner: Buffer,
@@ -56,6 +68,7 @@ impl FrameBuffer {
 	/// If the frame is corrupted or the system is out of memory.
 	/// The out of memory case is not checked, so only the corruption errors is
 	/// reported.
+	// IDEA: Maybe make this operation directly on the Image type?
 	pub fn try_decode(self) -> EdgeCoreResult<Image> {
 		let decoded_res = select_decode_format(self.inner)?;
 
@@ -81,12 +94,14 @@ impl From<Buffer> for FrameBuffer {
 	}
 }
 
+/// Thin wrapper over an image buffer type provided by [`image`].
 #[derive(Clone, Debug)]
 pub struct Image {
 	inner: RgbImage,
 }
 
 impl Image {
+	/// Provide a [`Cow`] of this type.
 	pub fn lazy_clone(&self) -> Cow<'_, Self> {
 		Cow::Borrowed(self)
 	}
