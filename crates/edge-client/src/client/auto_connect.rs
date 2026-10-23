@@ -233,7 +233,8 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::client;
+
+	pub const API: &str = "/edge_ws";
 
 	#[test]
 	fn chop_end() {
@@ -248,7 +249,7 @@ mod tests {
 			.rev()
 			.collect::<Vec<_>>()
 			.join("");
-		please.push_str(client::API);
+		please.push_str(API);
 
 		println!("{please}");
 	}
