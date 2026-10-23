@@ -1,3 +1,5 @@
+//! Entrypoint for the Edge system.
+
 use std::error;
 
 #[tokio::main]

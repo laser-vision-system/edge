@@ -13,6 +13,7 @@ pub type EdgeResult<T> = std::result::Result<T, EdgeError>;
 /// Any errors from underlying crates should be translated to this immediately.
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum EdgeError {
+	/// An error for when a specific type does not yet exist.
 	#[error("{0}")]
 	General(String),
 }
