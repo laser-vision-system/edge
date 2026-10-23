@@ -163,8 +163,9 @@ impl Client {
 		let mut interval = interval(AUTO_CONNECT_DELAY);
 		loop {
 			interval.tick().await;
-			if let (Ok(stream), url) = get_ws_stream().await {
-				return (stream, url);
+			match get_ws_stream().await {
+				Ok(stream) => return stream,
+				Err(why) => logger().log_error(&why),
 			}
 		}
 	}

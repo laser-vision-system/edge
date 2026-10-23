@@ -165,21 +165,13 @@ async fn get_websocket_url(
 	Err(EdgeClientError::AutoConnect)
 }
 
-pub async fn get_ws_stream() -> (
-	EdgeClientResult<WebSocketStream<MaybeTlsStream<TcpStream>>>,
-	String,
-) {
+pub async fn get_ws_stream()
+-> EdgeClientResult<(WebSocketStream<MaybeTlsStream<TcpStream>>, String)> {
 	let websocket_url = if let Ok(url) = env::var("SERVER_URL") {
 		if url.is_empty() {
 			logger().log_info("Connecting using auto connect");
 			let urls = identify_network();
-			match get_websocket_url(urls).await {
-				Ok(url) => url,
-
-				Err(err) => {
-					return (Err(err), String::new());
-				},
-			}
+			get_websocket_url(urls).await?
 		} else {
 			logger().log_info(&format!(
 				"Connecting to provided server address: {url}"
@@ -189,13 +181,7 @@ pub async fn get_ws_stream() -> (
 	} else {
 		logger().log_info("Connecting using auto connect");
 		let urls = identify_network();
-		match get_websocket_url(urls).await {
-			Ok(url) => url,
-
-			Err(err) => {
-				return (Err(err), String::new());
-			},
-		}
+		get_websocket_url(urls).await?
 	};
 
 	let Ok((stream, _)) =
@@ -205,9 +191,9 @@ pub async fn get_ws_stream() -> (
 			}
 		})
 	else {
-		return (Err(EdgeClientError::WebSocketConnection), String::new());
+		return Err(EdgeClientError::WebSocketConnection);
 	};
-	(Ok(stream), websocket_url)
+	Ok((stream, websocket_url))
 }
 
 // TODO: Remove this once the server request is implemented.
