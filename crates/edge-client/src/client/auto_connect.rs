@@ -177,7 +177,7 @@ pub async fn get_ws_stream() -> (
 				Ok(url) => url,
 
 				Err(err) => {
-					return (Err(err), "".to_string());
+					return (Err(err), String::new());
 				},
 			}
 		} else {
@@ -193,7 +193,7 @@ pub async fn get_ws_stream() -> (
 			Ok(url) => url,
 
 			Err(err) => {
-				return (Err(err), "".to_string());
+				return (Err(err), String::new());
 			},
 		}
 	};
@@ -205,7 +205,7 @@ pub async fn get_ws_stream() -> (
 			}
 		})
 	else {
-		return (Err(EdgeClientError::WebSocketConnection), "".to_string());
+		return (Err(EdgeClientError::WebSocketConnection), String::new());
 	};
 	(Ok(stream), websocket_url)
 }
@@ -239,15 +239,16 @@ pub async fn get_default_settings(url: &str) -> EdgeClientResult<Settings> {
 	)
 }
 
-pub fn unpack<T: DeserializeOwned>(data: &str) -> EdgeClientResult<T> {
+pub fn unpack<T>(data: &str) -> EdgeClientResult<T>
+where
+	T: DeserializeOwned,
+{
 	let data_unchecked: serde_json::Result<T> = serde_json::from_str(data);
 	data_unchecked.map_err(|_| EdgeClientError::WebSocketUnpack)
 }
 
 #[cfg(test)]
 mod tests {
-	use edge_core::settings;
-
 	use super::*;
 	use crate::client;
 

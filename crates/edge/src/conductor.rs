@@ -6,11 +6,7 @@ use std::{
 use api::{
 	edge::{
 		EdgeRequests,
-		ImageAnalysis,
-		RegisterCameras,
-		ServerRequests,
 		Settings,
-		UpdateCameraStatus,
 	},
 	shared::{
 		CameraStatus,
@@ -103,13 +99,13 @@ impl Conductor {
 					_ = client.update_camera_status(
 						status_change.id,
 						CameraStatus::Disconnected,
-					)
+					);
 				},
 				WhyNo::Broken => {
 					_ = client.update_camera_status(
 						status_change.id,
 						CameraStatus::Broken,
-					)
+					);
 				},
 			}
 		}
@@ -298,8 +294,8 @@ async fn main_loop(
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let ClientResult {
 		status_handle,
-		vision_client_handle,
-		persistence_client_handle,
+		vision_client_handle: _,
+		persistence_client_handle: _,
 		conductor_client_handle,
 		client,
 	} = Client::new().await;

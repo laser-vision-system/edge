@@ -43,10 +43,7 @@ use regex::Regex;
 use serde::Serialize;
 use tokio::{
 	net::TcpStream,
-	sync::mpsc::{
-		UnboundedReceiver,
-		UnboundedSender,
-	},
+	sync::mpsc::UnboundedReceiver,
 	time::{
 		interval,
 		sleep,
@@ -86,11 +83,9 @@ use crate::{
 		ListenerRx,
 		ListenerTx,
 		PersistenceRequest,
-		PersistenceRx,
 		PersistenceTx,
 		StatusRx,
 		StatusTx,
-		VisionRx,
 		VisionTx,
 	},
 };
@@ -111,7 +106,7 @@ pub struct ClientResult {
 	pub client: Client,
 }
 
-/// The main websocket client_2 implementation.
+/// The main websocket `client_2` implementation.
 #[derive(Debug)]
 pub struct Client {
 	/// Channel for receiving instructions from other threads.
@@ -149,10 +144,10 @@ impl Client {
 	///
 	/// # Panics
 	/// This function will panic if given a value not it
-	/// protocol://*.*.*.*:****/edge_ws format, or if the internal regex is
+	/// `protocol://*.*.*.*:****/edge_ws format`, or if the internal regex is
 	/// invalid
 	fn convert_url(url: String) -> String {
-		let regex = Regex::new(r"^[A-z]+://([0-9.]+:[0-9]+)/edge_ws")
+		let regex = Regex::new("^[A-z]+://([0-9.]+:[0-9]+)/edge_ws")
 			.expect("invalid regex");
 
 		let captures = regex.captures(&url);
@@ -160,7 +155,7 @@ impl Client {
 		let capture =
 			captures.expect("Invalid url").get(1).expect("Invalid url");
 
-		capture.as_str().to_string()
+		capture.as_str().to_owned()
 	}
 
 	/// Loops until a websocket is successfully connected.
@@ -250,7 +245,7 @@ impl Client {
 		Ok(())
 	}
 
-	/// Forwards the SetProcessingType request to `vision_rx`
+	/// Forwards the `SetProcessingType` request to `vision_rx`
 	fn set_processing_type(
 		&mut self,
 		vision: VisionTechnique,
@@ -274,8 +269,7 @@ impl Client {
 			Entry::Occupied(_) => {},
 			Entry::Vacant(_) => {
 				logger().log_warn(&format!(
-					"Command received for invalid camera ID: {:?} ",
-					camera
+					"Command received for invalid camera ID: {camera:?} "
 				));
 			},
 		}
@@ -337,31 +331,17 @@ impl Client {
 		loop {
 			tokio::select! {
 				Some(cmd)  = self.cmd_rx.recv() => {
-					if let Err(e) = self.process_command(cmd, websocket).await {
-						match e {
-							EdgeClientError::WebsocketClosed => {
-								break
-							}
-
-							_ => {
-
-							}
-						}
-					}
+					if let Err(e) = self.process_command(cmd, websocket).await
+						&& let EdgeClientError::WebsocketClosed = e {
+									  break
+								  }
 				}
 
 				Some(Ok(msg)) = websocket.next() => {
-					if let Err(e) = self.process_ws(msg).await {
-						match e {
-							EdgeClientError::WebsocketClosed => {
-								break
-							}
-
-							_ => {
-
-							}
-						}
-					}
+					if let Err(e) = self.process_ws(msg).await
+						&& let EdgeClientError::WebsocketClosed = e {
+									  break
+								  }
 				}
 
 				_ = interval.tick() => {
@@ -376,7 +356,7 @@ impl Client {
 		websocket.send(Message::Close(None)).await.unwrap_or(());
 	}
 
-	/// Processes Commands send by the client_2 handle.
+	/// Processes Commands send by the `client_2` handle.
 	///
 	/// # Panics
 	/// This will panic if the return channels close before it returns,
@@ -491,7 +471,7 @@ impl Client {
 				frame,
 			} => {
 				self.send_image(websocket, camera_id, &mut frame.clone())
-					.await?
+					.await?;
 			},
 
 			Command::GetDefaultSettings {

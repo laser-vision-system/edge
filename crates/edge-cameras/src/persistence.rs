@@ -19,8 +19,6 @@ use std::{
 use api::{
 	edge::{
 		NewCameraInfo,
-		RegisterCameras,
-		ServerRequests,
 		SetNameCamera,
 		Setpoint,
 	},

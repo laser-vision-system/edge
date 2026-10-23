@@ -1,12 +1,5 @@
 //! Base client handle struct, defining methods for all other client handle
 //! structs to use.
-use api::shared::{
-	AlertType,
-	CameraId,
-	CameraStatus,
-	ConnId,
-	Deviation,
-};
 use tokio::sync::mpsc::{
 	UnboundedReceiver,
 	UnboundedSender,

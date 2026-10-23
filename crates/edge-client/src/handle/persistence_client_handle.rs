@@ -20,8 +20,6 @@ use crate::{
 		camera_client_handle::CameraClientHandle,
 	},
 	interface::{
-		CameraRequest,
-		CameraRx,
 		Command,
 		PersistenceRequest,
 		PersistenceRx,

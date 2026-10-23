@@ -69,7 +69,7 @@ impl ConductorClientHandle {
 	/// waiting to respond
 	///
 	/// # Depreciating
-	/// This is replaced by subscribe_new_camera on PersistenceClientHandle
+	/// This is replaced by `subscribe_new_camera` on `PersistenceClientHandle`
 	#[deprecated]
 	pub async fn subscribe_new_camera(
 		&mut self,
@@ -147,7 +147,7 @@ impl ConductorClientHandle {
 	/// This function will panic if the client thread is closed.
 	///
 	/// # Depreciating
-	/// This is replaced by register_cameras on PersistenceClientHandle
+	/// This is replaced by `register_cameras` on `PersistenceClientHandle`
 	#[deprecated]
 	pub fn register_cameras(
 		&mut self,
@@ -173,7 +173,7 @@ impl ConductorClientHandle {
 	/// This function will panic if the client thread is closed.
 	///
 	/// # Depreciating
-	/// This is replaced by update_camera_status on CameraClientHandle
+	/// This is replaced by `update_camera_status` on `CameraClientHandle`
 	#[deprecated]
 	pub fn update_camera_status(
 		&mut self,
@@ -196,7 +196,7 @@ impl ConductorClientHandle {
 	/// This function will panic if the client thread is closed.
 	///
 	/// # Depreciating
-	/// This is replaced by image_analysis on CameraClientHandle
+	/// This is replaced by `image_analysis` on `CameraClientHandle`
 	#[deprecated]
 	pub fn image_analysis(
 		&mut self,
@@ -219,7 +219,7 @@ impl ConductorClientHandle {
 	/// This function will panic if the client thread is closed.
 	///
 	/// # Depreciating
-	/// This is replaced by configuration on CameraClientHandle
+	/// This is replaced by configuration on `CameraClientHandle`
 	#[deprecated]
 	pub fn configuration(
 		&mut self,
@@ -269,7 +269,7 @@ impl ConductorClientHandle {
 	/// This function will panic if the client thread is closed.
 	///
 	/// # Depreciating
-	/// This is replaced by send_image on CameraClientHandle
+	/// This is replaced by `send_image` on `CameraClientHandle`
 	#[deprecated]
 	pub fn send_image(
 		&mut self,
@@ -292,7 +292,7 @@ impl ConductorClientHandle {
 	/// This function will panic if the client thread is closed.
 	///
 	/// # Depreciating
-	/// This is replaced by set_name_camera on CameraClientHandle
+	/// This is replaced by `set_name_camera` on `CameraClientHandle`
 	#[deprecated]
 	pub fn set_name_camera(
 		&mut self,
