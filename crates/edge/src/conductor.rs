@@ -32,8 +32,9 @@ use edge_vision::{
 };
 use tokio::time::interval;
 use edge_client::client::Client;
-use edge_client::handle::ClientHandle;
-use edge_client::interface::{ListenerRx, ListenerTx, PersistenceRx, StatusRx, VisionRx};
+use edge_client::handle::conductor_client_handle::ConductorClientHandle;
+use edge_client::handle::status_handle::StatusHandle;
+use edge_client::interface::{ListenerRx, StatusRx};
 use crate::error::EdgeError;
 
 /// # Conductor
@@ -46,11 +47,11 @@ pub struct Conductor {
 impl Conductor {
 	async fn loop_once(
 		&mut self,
-		client: &mut ClientHandle,
-		status_rx: StatusRx,
+		client: &mut ConductorClientHandle,
+		status_rx: StatusHandle,
 		mut listener: ListenerRx,
 		settings: Settings,
-	) -> Result<(StatusRx, ListenerRx, Settings), Box<dyn error::Error + Send + Sync>>
+	) -> Result<(StatusHandle, ListenerRx, Settings), Box<dyn error::Error + Send + Sync>>
 	{
 		let mut limit_interval = interval(settings.update_delay);
 		limit_interval.tick().await;
@@ -153,9 +154,9 @@ impl Conductor {
 
 	fn handle_reconnect(
 		&mut self,
-		client: &mut ClientHandle,
-		mut status_rx: StatusRx,
-	) -> StatusRx {
+		client: &mut ConductorClientHandle,
+		mut status_rx: StatusHandle,
+	) -> StatusHandle {
 		let mut is_updated = false;
 		while let Ok(status) = status_rx.try_recv() {
 			is_updated = status;
@@ -172,7 +173,7 @@ impl Conductor {
 	fn handle_request(
 		&mut self,
 		request: EdgeRequests,
-		client: &mut ClientHandle,
+		client: &mut ConductorClientHandle,
 		requested_vision_type: &mut Option<VisionTechnique>,
 	) {
 		match request {
@@ -220,7 +221,7 @@ impl Conductor {
 
 	async fn update_camera_device_connections(
 		&mut self,
-		client: &mut ClientHandle,
+		client: &mut ConductorClientHandle,
 	) {
 		let mut results = self.persistence.poll_for_new_cameras();
 
@@ -275,9 +276,9 @@ impl Default for Conductor {
 }
 
 async fn main_loop(
-	mut client: ClientHandle,
+	mut client: ConductorClientHandle,
 	mut conductor: Conductor,
-	mut status_rx: StatusRx,
+	mut status_rx: StatusHandle,
 ) -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let mut listener = client.subscribe_new_listener().await;
 	let mut settings = client.get_default_setting().await
@@ -293,20 +294,15 @@ async fn main_loop(
 
 /// Call this function to begin the system.
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
+	let (
+		status_rx,
+		vision_rx,
+		persistence_rx,
+		client,
+		client_thread
+	) =  Client::new().await;
 	let conductor = Conductor::default();
 
-	let env_variables = EnvVariables::initialise();
-	Logger::initialise_logger(env_variables.verbosity());
-
-	let handles =  Client::new().await;
-	let client = handles.3;
-	let status_rx = handles.0;
-
-	// TODO: Integrate these into the system during proper integration
-	//let vision_rx: VisionRx = handles.1;
-	//let persistence_rx: PersistenceRx = handles.2;
-
-	let client_thread = handles.4;
 	let thread = spawn(client_thread.run());
 
 	join!(
@@ -325,6 +321,4 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	);
 
 	Ok(())
-	
-
 }

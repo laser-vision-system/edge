@@ -16,7 +16,9 @@ pub type StatusTx = UnboundedSender<bool>;
 pub type VisionRx = UnboundedReceiver<VisionTechnique>;
 pub type VisionTx = UnboundedSender<VisionTechnique>;
 
+#[deprecated]
 pub type ListenerRx = UnboundedReceiver<EdgeRequests>;
+#[deprecated]
 pub type ListenerTx = UnboundedSender<EdgeRequests>;
 
 pub type PersistenceRx = UnboundedReceiver<PersistenceRequest>;
@@ -25,6 +27,7 @@ pub type PersistenceTx = UnboundedSender<PersistenceRequest>;
 pub type CameraRx = UnboundedReceiver<CameraRequest>;
 pub type CameraTx = UnboundedSender<CameraRequest>;
 
+#[derive(Debug)]
 pub enum Command {
     // Thread commands:
     SubscribeNewCamera {
@@ -33,6 +36,7 @@ pub enum Command {
             oneshot::Sender<CameraRx>,
     },
 
+    #[deprecated]
     SubscribeNewListener {
         res_tx:
             oneshot::Sender<ListenerRx>,
@@ -98,6 +102,7 @@ pub enum Command {
 }
 
 /// Requests sent to individual cameras by the client thread.
+#[derive(Debug)]
 pub enum CameraRequest {
     /// Sets the name of the camera.
     SetNameCamera(String),
@@ -118,6 +123,7 @@ pub enum CameraRequest {
 }
 
 /// Requests sent to the Persistence struct by the client thread.
+#[derive(Debug)]
 pub enum PersistenceRequest {
     /// Indicates a camera should be set to active, regardless of current
     /// structure.

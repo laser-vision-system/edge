@@ -18,6 +18,7 @@ use crate::handle::basic_client_handle::BasicClientHandle;
 use crate::interface::CameraRx;
 use crate::interface::CameraRequest;
 
+#[derive(Debug)]
 pub struct CameraClientHandle {
 	camera_id: CameraId,
 	request_receiver: CameraRx,
@@ -84,7 +85,10 @@ impl CameraClientHandle {
 		&mut self,
 		status: CameraStatus,
 	) -> EdgeClientResult<()> {
-		self.base.update_camera_status(self.camera_id, status)
+		self.base.send_ws_request(Command::UpdateCameraStatus {
+			camera_id: self.camera_id,
+			status
+		})
 	}
 
 	/// Sends the `ImageAnalysis` command to the server
@@ -99,7 +103,10 @@ impl CameraClientHandle {
 		&mut self,
 		deviation: Deviation,
 	) -> EdgeClientResult<()> {
-		self.base.image_analysis(self.camera_id, deviation)
+		self.base.send_ws_request(Command::ImageAnalysis {
+			camera_id: self.camera_id,
+			deviation,
+		})
 	}
 
 	/// Sends the `Configuration` command to the server
@@ -116,7 +123,11 @@ impl CameraClientHandle {
 		configuration: String,
 	) -> EdgeClientResult<()> {
 		self.base
-			.configuration(conn_id, self.camera_id, configuration)
+			.send_ws_request(Command::Configuration {
+				conn_id,
+				camera_id: self.camera_id,
+				configuration
+			})
 	}
 
 	/// Sends the `Alert` command to the server
@@ -135,13 +146,13 @@ impl CameraClientHandle {
 		alert_description: String,
 	) -> EdgeClientResult<()> {
 		self.base
-			.alert(
-				Some(self.camera_id),
+			.send_ws_request(Command::Alert {
+				camera_id: Some(self.camera_id),
 				alert_type,
 				alert_code,
 				alert_name,
 				alert_description,
-			)
+			})
 	}
 
 	/// Sends an image to the server
@@ -156,7 +167,10 @@ impl CameraClientHandle {
 		&mut self,
 		frame: Vec<u8>,
 	) -> EdgeClientResult<()> {
-		self.base.send_image(self.camera_id, frame)
+		self.base.send_ws_request(Command::SendImage {
+			camera_id: self.camera_id,
+			frame,
+		})
 	}
 
 	/// Sends the `SetNameCamera` command to the server
@@ -171,6 +185,9 @@ impl CameraClientHandle {
 		&mut self,
 		name: String,
 	) -> EdgeClientResult<()> {
-		self.base.set_name_camera(self.camera_id, name)
+		self.base.send_ws_request(Command::SetNameCamera {
+			camera_id: self.camera_id,
+			name,
+		})
 	}
 }

@@ -73,7 +73,10 @@ use crate::{
 		PersistenceRequest,
     },
 };
-use crate::handle::ClientHandle;
+use crate::handle::conductor_client_handle::ConductorClientHandle;
+use crate::handle::persistence_client_handle::PersistenceClientHandle;
+use crate::handle::status_handle::StatusHandle;
+use crate::handle::vision_client_handle::VisionClientHandle;
 use crate::interface::{CameraRx, CameraTx, ListenerRx, ListenerTx, PersistenceRx, PersistenceTx, StatusRx, StatusTx, VisionRx, VisionTx};
 
 pub const API: &str = "/edge_ws";
@@ -193,7 +196,7 @@ impl Client {
 		if result.is_err() {
 			return match result.err() {
 				None => {
-					logger().lock().unwrap().log_warn(
+					logger().log_warn(
 						"Could not send text through websocket for unknown reason",
 					);
 					Ok(())
@@ -205,7 +208,7 @@ impl Client {
 						},
 
 						err => {
-							logger().lock().unwrap().log_warn(
+							logger().log_warn(
 								format!(
 									"Could not send text through websocket due to: {err}"
 								)
@@ -243,7 +246,7 @@ impl Client {
 		match result {
 			Entry::Occupied(_) => {}
 			Entry::Vacant(_) => {
-				logger().lock().unwrap().log_warn(&format!(
+				logger().log_warn(&format!(
 					"Command received for invalid camera ID: {:?} ",
 					camera
 				));
@@ -313,13 +316,29 @@ impl Client {
 			tokio::select! {
 				Some(cmd)  = self.cmd_rx.recv() => {
 					if let Err(e) = self.process_command(cmd, websocket).await {
+						match e {
+							EdgeClientError::WebsocketClosed => {
+								break
+							}
 
+							_ => {
+
+							}
+						}
 					}
 				}
 
 				Some(Ok(msg)) = websocket.next() => {
 					if let Err(e) = self.process_ws(msg).await {
+						match e {
+							EdgeClientError::WebsocketClosed => {
+								break
+							}
 
+							_ => {
+
+							}
+						}
 					}
 				}
 
@@ -498,12 +517,15 @@ impl Client {
 		let data_unchecked: serde_json::error::Result<EdgeRequests> =
 			serde_json::from_str(msg);
 
-		let Ok(request) = data_unchecked else {
-			logger().lock().unwrap().log_warn(&format!(
-				"Could not deserialize websocket message due to: {:?}",
-				data_unchecked.err().unwrap().to_string()
-			));
-			return
+		let request: EdgeRequests = match data_unchecked {
+			Ok(data) => data,
+			Err(e) => {
+				logger().log_warn(&format!(
+					"Could not deserialize websocket message due to: {:?}",
+					e.to_string()
+				));
+				return
+			}
 		};
 
 		self.forward_request(request.clone());
@@ -739,26 +761,33 @@ impl Client {
 
 impl Client {
 	pub async fn new() -> (
-		StatusRx,
-		VisionRx,
-		PersistenceRx,
-		ClientHandle,
+		StatusHandle,
+		VisionClientHandle,
+		PersistenceClientHandle,
+		ConductorClientHandle,
 		Self
 	) {
 		let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (status_tx, status_rx) = tokio::sync::mpsc::unbounded_channel();
-		let (internal_status_tx, internal_status_rx) = tokio::sync::mpsc::unbounded_channel();
+		let (conductor_status_tx, conductor_status_rx) = tokio::sync::mpsc::unbounded_channel();
+		let (persistence_status_tx, persistence_status_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (vision_tx, vision_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (persistence_tx, persistence_rx) = tokio::sync::mpsc::unbounded_channel();
 		let mut status_listeners = Vec::new();
-		status_listeners.insert(0, internal_status_tx);
+		status_listeners.insert(0, conductor_status_tx);
+		status_listeners.insert(1, persistence_status_tx);
 		(
-			status_rx,
-			vision_rx,
-			persistence_rx,
-			ClientHandle::new(
+			StatusHandle(status_rx),
+			VisionClientHandle(vision_rx),
+			PersistenceClientHandle::new(
+				cmd_tx.clone(),
+				persistence_rx,
+				false,
+				persistence_status_rx
+			),
+			ConductorClientHandle::new(
 				cmd_tx,
-				internal_status_rx,
+				conductor_status_rx,
 			),
 			Client {
 				cmd_rx,
@@ -784,11 +813,7 @@ impl Client {
 
 			self.status_update(true);
 
-			logger().lock().unwrap().log_info("Websocket connected");
-
 			self.main_loop(&mut websocket).await;
-
-			logger().lock().unwrap().log_warn("Websocket disconnected");
 
 			self.status_update(false);
 		}

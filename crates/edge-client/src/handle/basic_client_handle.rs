@@ -25,6 +25,7 @@ use crate::{
 
 /// Base client handle, providing common methods and data for other client
 /// handlers to use.
+#[derive(Debug)]
 pub struct BasicClientHandle {
 	/// Transmission channel to the client thread.
 	cmd_tx: UnboundedSender<Command>,
@@ -102,112 +103,5 @@ impl BasicClientHandle {
 	pub async fn await_status_change(&mut self) -> bool {
 		self.status = self.internal_status_rx.recv().await.expect("status change channel closed");
 		self.status
-	}
-
-	/// Sends the `UpdateCameraStatus` command to the server.
-	///
-	/// # Errors:
-	/// Returns a `WebsocketDown` error if the websocket is down.
-	pub fn update_camera_status(
-		&mut self,
-		camera_id: CameraId,
-		status: CameraStatus,
-	) -> EdgeClientResult<()> {
-		self.send_ws_request(Command::UpdateCameraStatus {
-				camera_id,
-				status,
-			})
-	}
-
-	/// Sends the `ImageAnalysis` command to the server.
-	///
-	/// # Errors:
-	/// Returns a `WebsocketDown` error if the websocket is down.
-	pub fn image_analysis(
-		&mut self,
-		camera_id: CameraId,
-		deviation: Deviation,
-	) -> EdgeClientResult<()> {
-		self.send_ws_request(Command::ImageAnalysis {
-				camera_id,
-				deviation,
-			})
-	}
-
-	/// Sends the `Configuration` command to the server.
-	///
-	/// # Errors:
-	/// Returns a `WebsocketDown` error if the websocket is down.
-	pub fn configuration(
-		&mut self,
-		conn_id: ConnId,
-		camera_id: CameraId,
-		configuration: String,
-	) -> EdgeClientResult<()> {
-		self.send_ws_request(Command::Configuration {
-				conn_id,
-				camera_id,
-				configuration,
-			})
-	}
-
-	/// Sends the `ConfirmForgetCamera` command to the server.
-	///
-	/// # Errors:
-	/// Returns a `WebsocketDown` error if the websocket is down.
-	pub fn confirm_forget_camera(
-		&mut self,
-		conn_id: ConnId,
-		camera_id: CameraId,
-		confirm: bool,
-	) -> EdgeClientResult<()> {
-		self.send_ws_request(Command::ForgetCameraRequest {
-				conn_id,
-				camera_id,
-				confirm,
-			})
-	}
-
-	/// Sends the `Alert` command to the server.
-	///
-	/// # Errors:
-	/// Returns a `WebsocketDown` error if the websocket is down.
-	pub fn alert(
-		&mut self,
-		camera_id: Option<CameraId>,
-		alert_type: AlertType,
-		alert_code: u32,
-		alert_name: String,
-		alert_description: String,
-	) -> EdgeClientResult<()> {
-		self.send_ws_request(Command::Alert {
-				camera_id,
-				alert_type,
-				alert_code,
-				alert_name,
-				alert_description,
-			})
-	}
-
-	pub fn send_image(&mut self, camera_id: CameraId, frame: Vec<u8>) -> EdgeClientResult<()> {
-		self.send_ws_request( Command::SendImage {
-			camera_id,
-			frame,
-		})
-	}
-
-	/// Sends the `SetNameCamera` command to the server.
-	///
-	/// # Errors:
-	/// Returns a `WebsocketDown` error if the websocket is down.
-	pub fn set_name_camera(
-		&mut self,
-		camera_id: CameraId,
-		name: String,
-	) -> EdgeClientResult<()> {
-		self.send_ws_request(Command::SetNameCamera {
-				camera_id,
-				name,
-			})
 	}
 }
