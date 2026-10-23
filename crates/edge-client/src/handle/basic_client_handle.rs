@@ -1,5 +1,6 @@
 //! Base client handle struct, defining methods for all other client handle
 //! structs to use.
+
 use tokio::sync::mpsc::{
 	UnboundedReceiver,
 	UnboundedSender,
@@ -24,7 +25,7 @@ pub struct BasicClientHandle {
 	/// Last known status of the websocket.
 	status: bool,
 
-	/// Channel for receiving status updates
+	/// Channel for receiving status updates.
 	internal_status_rx: UnboundedReceiver<bool>,
 }
 
@@ -57,12 +58,14 @@ impl BasicClientHandle {
 	}
 
 	/// Sends a command to the client, on the condition that the websocket
-	/// connection is up
+	/// connection is up.
 	///
-	/// # Errors:
+	/// # Errors
+	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
-	/// # Panics:
+	/// # Panics
+	///
 	/// If the client thread is closed, panics.
 	#[expect(
 		clippy::expect_used,
@@ -89,7 +92,8 @@ impl BasicClientHandle {
 
 	/// Updates 'self.status' to the current state of the websocket.
 	///
-	/// # Errors:
+	/// # Errors
+	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	pub fn update_status(&mut self) -> EdgeClientResult<()> {
 		while let Ok(status) = self.internal_status_rx.try_recv() {
@@ -102,7 +106,7 @@ impl BasicClientHandle {
 		Err(EdgeClientError::WebsocketDown)
 	}
 
-	/// Sleeps until the status changes
+	/// Sleeps until the status changes.
 	#[expect(clippy::expect_used, reason = "WIP development")]
 	pub async fn await_status_change(&mut self) -> bool {
 		self.status = self

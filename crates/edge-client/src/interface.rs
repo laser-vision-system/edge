@@ -1,3 +1,5 @@
+//! Types for interacting with the client.
+
 #![expect(deprecated, reason = "Temporarily used for backwards compatibility")]
 
 use std::collections::HashMap;
@@ -38,6 +40,7 @@ pub(crate) type VisionRx = UnboundedReceiver<VisionTechnique>;
 pub(crate) type VisionTx = UnboundedSender<VisionTechnique>;
 
 #[deprecated]
+/// No clue, sorry.
 pub type ListenerRx = UnboundedReceiver<EdgeRequests>;
 #[deprecated]
 pub(crate) type ListenerTx = UnboundedSender<EdgeRequests>;
@@ -48,6 +51,9 @@ pub(crate) type PersistenceTx = UnboundedSender<PersistenceRequest>;
 pub(crate) type CameraRx = UnboundedReceiver<CameraRequest>;
 pub(crate) type CameraTx = UnboundedSender<CameraRequest>;
 
+/// Almost every single websocket request stuffed into a single type for some
+/// reason.
+#[expect(missing_docs, reason = "I'm not documenting all of this")]
 #[derive(Debug)]
 pub enum Command {
 	// Thread commands:

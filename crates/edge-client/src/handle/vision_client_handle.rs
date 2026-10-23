@@ -1,3 +1,5 @@
+//! A client handle provided to the vision processor.
+
 use std::ops::{
 	Deref,
 	DerefMut,
@@ -5,6 +7,7 @@ use std::ops::{
 
 use crate::interface::VisionRx;
 
+/// The handle give to the vision processor.
 #[derive(Debug)]
 pub struct VisionClientHandle(VisionRx);
 

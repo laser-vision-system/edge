@@ -1,3 +1,5 @@
+//! A handle given to the conductor to check the status.
+
 use std::ops::{
 	Deref,
 	DerefMut,
@@ -5,6 +7,7 @@ use std::ops::{
 
 use crate::interface::StatusRx;
 
+/// The handle that is used to check the current connection status.
 #[derive(Debug)]
 pub struct StatusHandle(StatusRx);
 

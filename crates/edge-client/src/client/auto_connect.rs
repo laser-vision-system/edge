@@ -1,3 +1,5 @@
+//! Automatically find and connect to the websocket on the local network.
+
 use std::{
 	collections::HashSet,
 	env,

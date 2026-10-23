@@ -95,11 +95,13 @@ use crate::{
 	},
 };
 
+/// How long between each attempt to autoconnect.
 pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
+/// The minimum time between each websocket heartbeat.
 pub const WS_KEEP_ALIVE: Duration = Duration::from_secs(6);
 type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
-/// Helper dataholder for the result of calling [`Client::new`].
+/// Helper dataholder for the result of calling [`Client::create`].
 #[derive(Debug)]
 pub struct ClientResult(
 	pub StatusHandle,
@@ -298,10 +300,10 @@ impl Client {
 
 	/// Listens for incoming commands and websocket requests.
 	///
-	/// Every interval, it checks if the websocket is closed,
-	/// sends a keepalive, and checks the status of listeners from other threads
+	/// Every interval, it checks if the websocket is closed, sends a keepalive,
+	/// and checks the status of listeners from other threads.
 	///
-	/// Exits when the websocket closes
+	/// Exits when the websocket closes.
 	async fn main_loop(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -338,6 +340,7 @@ impl Client {
 	/// Processes Commands send by the `client_2` handle.
 	///
 	/// # Panics
+	///
 	/// This will panic if the return channels close before it returns,
 	/// which should not happen unless the main thread panics.
 	#[expect(
@@ -569,7 +572,7 @@ impl Client {
 /// Methods for handling commands from the handle.
 impl Client {
 	/// Adds a new camera receiver to the internal camera list, and returns the
-	/// associated receiver
+	/// associated receiver.
 	fn subscribe_new_camera(
 		&mut self,
 		camera_id: CameraId,
@@ -579,25 +582,24 @@ impl Client {
 		rx
 	}
 
-	/// Adds a new listener to the internal list, returning the
-	/// associated receiver.
+	/// Adds a new listener to the internal list, returning the associated
+	/// receiver.
 	///
-	/// TO BE DEPRECIATED
+	/// TO BE DEPRECIATED.
 	fn subscribe_listener(&mut self) -> ListenerRx {
 		let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 		self.listeners.insert(0, tx);
 		rx
 	}
 
-	/// Creates a new status channel, returning the
-	/// associated receiver.
+	/// Creates a new status channel, returning the associated receiver.
 	fn get_new_status_channel(&mut self) -> StatusRx {
 		let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 		self.status_listeners.insert(0, tx);
 		rx
 	}
 
-	/// Sends the `RegisterCameras` command to the server
+	/// Sends the `RegisterCameras` command to the server.
 	async fn register_cameras(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -609,7 +611,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `UpdateCameraStatus` command to the server
+	/// Sends the `UpdateCameraStatus` command to the server.
 	async fn update_camera_status(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -624,7 +626,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `ImageAnalysis` command to the server
+	/// Sends the `ImageAnalysis` command to the server.
 	async fn image_analysis(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -638,7 +640,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `Configuration` command to the server
+	/// Sends the `Configuration` command to the server.
 	async fn configuration(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -654,7 +656,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `ForgetCameraRequest` command to the server
+	/// Sends the `ForgetCameraRequest` command to the server.
 	async fn forget_camera_request(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -671,7 +673,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `Alert` command to the server
+	/// Sends the `Alert` command to the server.
 	async fn alert(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -691,7 +693,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `SetNameCamera` command to the server
+	/// Sends the `SetNameCamera` command to the server.
 	async fn set_name_camera(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -705,10 +707,11 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `SendImage` command to the server
+	/// Sends the `SendImage` command to the server.
 	///
 	/// # Errors
-	/// Returns an error if the websocket was closed
+	///
+	/// Returns an error if the websocket was closed.
 	#[expect(clippy::big_endian_bytes, reason = "Sending to server")]
 	async fn send_image(
 		&mut self,
@@ -742,6 +745,7 @@ impl Client {
 }
 
 impl Client {
+	/// Create a new [`Client`] instance via the [`ClientResult`] struct.
 	pub fn create() -> ClientResult {
 		let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (status_tx, status_rx) = tokio::sync::mpsc::unbounded_channel();
@@ -779,6 +783,11 @@ impl Client {
 		)
 	}
 
+	/// Start the websocket thread.
+	///
+	/// # Errors
+	///
+	/// Never.
 	#[expect(
 		clippy::infinite_loop,
 		reason = "Thread should remain active until forced to close"

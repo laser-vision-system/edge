@@ -1,3 +1,5 @@
+//! A client handle provided to a camera.
+
 use api::shared::{
 	AlertType,
 	CameraId,
@@ -21,6 +23,7 @@ use crate::{
 	},
 };
 
+/// The handle given to the camera.
 #[derive(Debug)]
 pub struct CameraClientHandle {
 	camera_id: CameraId,
@@ -31,6 +34,7 @@ pub struct CameraClientHandle {
 /// Stripped down version of `ClientHandler`, with an internal `CameraId` and
 /// access to camera-related websocket commands.
 impl CameraClientHandle {
+	/// Create a new [`CameraClientHandle`] instance.
 	pub fn new(
 		camera_id: CameraId,
 		cmd_tx: UnboundedSender<Command>,
@@ -73,17 +77,19 @@ impl CameraClientHandle {
 		self.request_receiver.recv().await
 	}
 
+	/// Check the status of this handle.
 	pub fn status(&mut self) -> bool {
 		self.base.status()
 	}
 
-	/// Sends the `UpdateCameraStatus` command to the server
+	/// Sends the `UpdateCameraStatus` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed.
 	pub fn update_camera_status(
 		&mut self,
@@ -95,13 +101,14 @@ impl CameraClientHandle {
 		})
 	}
 
-	/// Sends the `ImageAnalysis` command to the server
+	/// Sends the `ImageAnalysis` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed.
 	pub fn image_analysis(
 		&mut self,
@@ -113,13 +120,14 @@ impl CameraClientHandle {
 		})
 	}
 
-	/// Sends the `Configuration` command to the server
+	/// Sends the `Configuration` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed.
 	pub fn configuration(
 		&mut self,
@@ -133,13 +141,14 @@ impl CameraClientHandle {
 		})
 	}
 
-	/// Sends the `Alert` command to the server
+	/// Sends the `Alert` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed.
 	pub fn alert(
 		&mut self,
@@ -157,13 +166,14 @@ impl CameraClientHandle {
 		})
 	}
 
-	/// Sends an image to the server
+	/// Sends an image to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed.
 	pub fn send_image(
 		&mut self,
@@ -175,13 +185,14 @@ impl CameraClientHandle {
 		})
 	}
 
-	/// Sends the `SetNameCamera` command to the server
+	/// Sends the `SetNameCamera` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed.
 	pub fn set_name_camera(
 		&mut self,

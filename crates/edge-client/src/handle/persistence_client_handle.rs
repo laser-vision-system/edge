@@ -1,3 +1,5 @@
+//! A client handle provided to the persistence type.
+
 // TODO: Remove expects and then remove this.
 #![expect(clippy::expect_used, reason = "WIP development")]
 
@@ -29,6 +31,7 @@ use crate::{
 	},
 };
 
+/// The handle that is given to the `Persistence` type.
 #[derive(Debug)]
 pub struct PersistenceClientHandle {
 	request_receiver: PersistenceRx,
@@ -36,6 +39,7 @@ pub struct PersistenceClientHandle {
 }
 
 impl PersistenceClientHandle {
+	/// Create a new [`PersistenceClientHandle`].
 	pub fn new(
 		cmd_tx: UnboundedSender<Command>,
 		request_receiver: PersistenceRx,
@@ -76,6 +80,7 @@ impl PersistenceClientHandle {
 		self.request_receiver.recv().await
 	}
 
+	/// Check the status of this handle.
 	pub fn status(&mut self) -> bool {
 		self.base.status()
 	}
@@ -85,8 +90,9 @@ impl PersistenceClientHandle {
 	/// These receivers can be dropped without issue.
 	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed, or closes while
-	/// waiting to respond
+	/// waiting to respond.
 	pub async fn subscribe_new_camera(
 		&mut self,
 		camera_id: CameraId,
@@ -120,7 +126,7 @@ impl PersistenceClientHandle {
 		)
 	}
 
-	/// Sends the `RegisterCameras` command to the server
+	/// Sends the `RegisterCameras` command to the server.
 	///
 	/// # Errors
 	///
