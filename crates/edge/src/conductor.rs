@@ -95,16 +95,16 @@ impl Conductor {
 			);
 
 		for status_change in status_changes {
-			match status_change.why {
+			match status_change.why() {
 				WhyNo::Disconnected => {
 					_ = client.update_camera_status(
-						status_change.id,
+						status_change.id(),
 						CameraStatus::Disconnected,
 					);
 				},
 				WhyNo::Broken => {
 					_ = client.update_camera_status(
-						status_change.id,
+						status_change.id(),
 						CameraStatus::Broken,
 					);
 				},

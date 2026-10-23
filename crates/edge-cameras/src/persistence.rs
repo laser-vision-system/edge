@@ -59,8 +59,8 @@ pub enum MaybeBatch<'a> {
 }
 
 pub struct StatusChange {
-	pub id: CameraId,
-	pub why: WhyNo,
+	id: CameraId,
+	why: WhyNo,
 }
 
 impl StatusChange {
@@ -72,6 +72,16 @@ impl StatusChange {
 			id,
 			why,
 		}
+	}
+
+	/// Get the [`CameraId`] of the camera which had it status changed.
+	pub fn id(&self) -> CameraId {
+		self.id
+	}
+
+	/// Get the reason for the status change.
+	pub fn why(&self) -> &WhyNo {
+		&self.why
 	}
 }
 
