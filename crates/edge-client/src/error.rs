@@ -30,5 +30,5 @@ pub enum EdgeClientError {
 	#[error("Websocket closed by server")]
 	WebsocketClosed,
 	#[error("message could not be sent, as the websocket is currently closed")]
-	WebsocketDown
+	WebsocketDown,
 }

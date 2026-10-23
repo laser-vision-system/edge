@@ -2,6 +2,7 @@ use std::{
 	collections::HashMap,
 	error,
 };
+
 use api::{
 	edge::{
 		EdgeRequests,
@@ -16,25 +17,34 @@ use api::{
 		VisionTechnique,
 	},
 };
-use tokio::{join, spawn};
 use edge_cameras::persistence::{
 	Persistence,
 	WhyNo,
 	polling::ConnectionDetail,
 };
 use edge_client::{
+	client::Client,
 	error::EdgeClientError,
+	handle::{
+		conductor_client_handle::ConductorClientHandle,
+		status_handle::StatusHandle,
+	},
+	interface::{
+		ListenerRx,
+		StatusRx,
+	},
 };
 use edge_core::logger::logger;
 use edge_vision::{
 	vision,
 	vision_interface::VisionInterface as _,
 };
-use tokio::time::interval;
-use edge_client::client::Client;
-use edge_client::handle::conductor_client_handle::ConductorClientHandle;
-use edge_client::handle::status_handle::StatusHandle;
-use edge_client::interface::{ListenerRx, StatusRx};
+use tokio::{
+	join,
+	spawn,
+	time::interval,
+};
+
 use crate::error::EdgeError;
 
 /// # Conductor
@@ -51,8 +61,10 @@ impl Conductor {
 		status_rx: StatusHandle,
 		mut listener: ListenerRx,
 		settings: Settings,
-	) -> Result<(StatusHandle, ListenerRx, Settings), Box<dyn error::Error + Send + Sync>>
-	{
+	) -> Result<
+		(StatusHandle, ListenerRx, Settings),
+		Box<dyn error::Error + Send + Sync>,
+	> {
 		let mut limit_interval = interval(settings.update_delay);
 		limit_interval.tick().await;
 
@@ -64,14 +76,8 @@ impl Conductor {
 		// Save the most recent vision swap request, instead of trying to swap
 		// more than once.
 		let mut requested_vision_type = None;
-		while let Ok(request) = listener
-			.try_recv()
-		{
-			self.handle_request(
-				request,
-				client,
-				&mut requested_vision_type,
-			);
+		while let Ok(request) = listener.try_recv() {
+			self.handle_request(request, client, &mut requested_vision_type);
 		}
 
 		logger().send_logs();
@@ -96,13 +102,13 @@ impl Conductor {
 				WhyNo::Disconnected => {
 					_ = client.update_camera_status(
 						status_change.id,
-						CameraStatus::Disconnected
+						CameraStatus::Disconnected,
 					)
 				},
 				WhyNo::Broken => {
 					_ = client.update_camera_status(
 						status_change.id,
-						CameraStatus::Broken
+						CameraStatus::Broken,
 					)
 				},
 			}
@@ -122,10 +128,7 @@ impl Conductor {
 			let deviation_maybe = item.state.get_deviation();
 			let cam_id = item.camera_id;
 			if let Some(deviation) = deviation_maybe {
-				let result = client.image_analysis(
-					cam_id,
-					deviation,
-				);
+				let result = client.image_analysis(cam_id, deviation);
 
 				_ = result.inspect_err(|_| {
 					EdgeError::from(EdgeClientError::ServerConnection).log();
@@ -134,10 +137,7 @@ impl Conductor {
 
 			if item.send_to_server {
 				let encoded = item.image.encode();
-				let result = client.send_image(
-					item.camera_id,
-					encoded,
-				);
+				let result = client.send_image(item.camera_id, encoded);
 				_ = result.inspect_err(|_| {
 					EdgeError::from(EdgeClientError::ServerConnection).log();
 				});
@@ -163,9 +163,8 @@ impl Conductor {
 		}
 
 		if is_updated {
-			let _ = client.register_cameras(
-				self.persistence.get_current_cameras()
-			);
+			let _ =
+				client.register_cameras(self.persistence.get_current_cameras());
 		}
 		status_rx
 	}
@@ -179,13 +178,13 @@ impl Conductor {
 		match request {
 			EdgeRequests::SetNameCamera(cam_name_req) => {
 				self.persistence.set_entry_name(cam_name_req.clone());
-				let _ = client.set_name_camera(cam_name_req.camera_id, cam_name_req.name);
-
+				let _ = client
+					.set_name_camera(cam_name_req.camera_id, cam_name_req.name);
 			},
 			EdgeRequests::ToggleViewingCamera(toggle_view_cam_req) => {
 				self.persistence.toggle_viewing_camera(
 					toggle_view_cam_req.camera_id,
-					toggle_view_cam_req.start_viewing
+					toggle_view_cam_req.start_viewing,
 				);
 			},
 			EdgeRequests::Configuration(set_config_req) => {
@@ -195,11 +194,10 @@ impl Conductor {
 				if let Some(configuration) =
 					self.persistence.get_configuration(view_config_req)
 					&& let Err(_) = client.configuration(
-					configuration.conn_id,
-					configuration.camera_id,
-					configuration.configuration,
-				)
-				{
+						configuration.conn_id,
+						configuration.camera_id,
+						configuration.configuration,
+					) {
 					// TODO: Error type for "Failed to send configuration
 					// request"
 					EdgeError::from(EdgeClientError::WebSocketConnection).log();
@@ -281,42 +279,40 @@ async fn main_loop(
 	mut status_rx: StatusHandle,
 ) -> Result<(), Box<dyn error::Error + Send + Sync>> {
 	let mut listener = client.subscribe_new_listener().await;
-	let mut settings = client.get_default_setting().await
+	let mut settings = client
+		.get_default_setting()
+		.await
 		.unwrap_or(Settings::default());
 	loop {
 		client.assert_connection().await;
-		let result = conductor.loop_once(&mut client, status_rx, listener, settings).await?;
+		let result = conductor
+			.loop_once(&mut client, status_rx, listener, settings)
+			.await?;
 		status_rx = result.0;
 		listener = result.1;
 		settings = result.2;
-	};
+	}
 }
 
 /// Call this function to begin the system.
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
-	let (
-		status_rx,
-		vision_rx,
-		persistence_rx,
-		client,
-		client_thread
-	) =  Client::new().await;
+	let (status_rx, vision_rx, persistence_rx, client, client_thread) =
+		Client::new().await;
 	let conductor = Conductor::default();
 
 	let thread = spawn(client_thread.run());
 
 	join!(
 		async move {
-			thread.await
-			.expect("Could not join websocket thread")
-			.expect("websocket thread panicked");
+			thread
+				.await
+				.expect("Could not join websocket thread")
+				.expect("websocket thread panicked");
 		},
 		async move {
-			main_loop(
-				client,
-				conductor,
-				status_rx,
-			).await.expect("main thread panicked");
+			main_loop(client, conductor, status_rx)
+				.await
+				.expect("main thread panicked");
 		}
 	);
 

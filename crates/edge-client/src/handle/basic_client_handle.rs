@@ -1,26 +1,24 @@
-//! Base client handle struct, defining methods for all other client handle structs to use.
-use api::{
-    shared::{
-        AlertType,
-        CameraId,
-        CameraStatus,
-        ConnId,
-        Deviation,
-    },
+//! Base client handle struct, defining methods for all other client handle
+//! structs to use.
+use api::shared::{
+	AlertType,
+	CameraId,
+	CameraStatus,
+	ConnId,
+	Deviation,
 };
-use tokio::sync::{
-    mpsc::{
-        UnboundedReceiver,
-        UnboundedSender,
-    },
+use tokio::sync::mpsc::{
+	UnboundedReceiver,
+	UnboundedSender,
+	error::SendError,
 };
-use tokio::sync::mpsc::error::SendError;
+
 use crate::{
-    error::{
-        EdgeClientError,
-        EdgeClientResult,
-    },
-    interface::Command,
+	error::{
+		EdgeClientError,
+		EdgeClientResult,
+	},
+	interface::Command,
 };
 
 /// Base client handle, providing common methods and data for other client
@@ -37,7 +35,8 @@ pub struct BasicClientHandle {
 	internal_status_rx: UnboundedReceiver<bool>,
 }
 
-// TODO: Move the camera request methods out of this class into the CameraClientHandle class.
+// TODO: Move the camera request methods out of this class into the
+// CameraClientHandle class.
 impl BasicClientHandle {
 	pub fn new(
 		cmd_tx: UnboundedSender<Command>,
@@ -52,7 +51,10 @@ impl BasicClientHandle {
 	}
 
 	/// Sends an arbitrary command to the client.
-	pub fn send(&mut self, cmd: Command) -> Result<(), SendError<Command>> {
+	pub fn send(
+		&mut self,
+		cmd: Command,
+	) -> Result<(), SendError<Command>> {
 		self.cmd_tx.send(cmd)
 	}
 
@@ -61,14 +63,18 @@ impl BasicClientHandle {
 		self.cmd_tx.clone()
 	}
 
-	/// Sends a command to the client, on the condition that the websocket connection is up
+	/// Sends a command to the client, on the condition that the websocket
+	/// connection is up
 	///
 	/// # Errors:
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics:
 	/// If the client thread is closed, panics.
-	pub fn send_ws_request(&mut self, cmd: Command) -> EdgeClientResult<()> {
+	pub fn send_ws_request(
+		&mut self,
+		cmd: Command,
+	) -> EdgeClientResult<()> {
 		self.update_status()?;
 
 		self.cmd_tx.send(cmd).expect("Client thread closed");
@@ -98,10 +104,13 @@ impl BasicClientHandle {
 		Err(EdgeClientError::WebsocketDown)
 	}
 
-
 	/// Sleeps until the status changes
 	pub async fn await_status_change(&mut self) -> bool {
-		self.status = self.internal_status_rx.recv().await.expect("status change channel closed");
+		self.status = self
+			.internal_status_rx
+			.recv()
+			.await
+			.expect("status change channel closed");
 		self.status
 	}
 }

@@ -17,9 +17,9 @@ use tokio::{
 	task::JoinSet,
 };
 use tokio_tungstenite::{
-	connect_async,
 	MaybeTlsStream,
 	WebSocketStream,
+	connect_async,
 };
 
 use crate::error::{
@@ -178,7 +178,7 @@ pub async fn get_ws_stream() -> (
 
 				Err(err) => {
 					return (Err(err), "".to_string());
-				}
+				},
 			}
 		} else {
 			logger().log_info(&format!(
@@ -194,7 +194,7 @@ pub async fn get_ws_stream() -> (
 
 			Err(err) => {
 				return (Err(err), "".to_string());
-			}
+			},
 		}
 	};
 
@@ -203,7 +203,8 @@ pub async fn get_ws_stream() -> (
 			EdgeClientError::AutoConnectUrl {
 				reason: why.to_string(),
 			}
-		}) else {
+		})
+	else {
 		return (Err(EdgeClientError::WebSocketConnection), "".to_string());
 	};
 	(Ok(stream), websocket_url)
@@ -246,8 +247,9 @@ pub fn unpack<T: DeserializeOwned>(data: &str) -> EdgeClientResult<T> {
 #[cfg(test)]
 mod tests {
 	use edge_core::settings;
-	use crate::client;
+
 	use super::*;
+	use crate::client;
 
 	#[test]
 	fn chop_end() {

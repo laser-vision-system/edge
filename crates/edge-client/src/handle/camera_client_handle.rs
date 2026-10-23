@@ -8,15 +8,18 @@ use api::shared::{
 use tokio::sync::mpsc::{
 	UnboundedReceiver,
 	UnboundedSender,
+	error::TryRecvError,
 };
-use tokio::sync::mpsc::error::TryRecvError;
+
 use crate::{
 	error::EdgeClientResult,
-	interface::Command,
+	handle::basic_client_handle::BasicClientHandle,
+	interface::{
+		CameraRequest,
+		CameraRx,
+		Command,
+	},
 };
-use crate::handle::basic_client_handle::BasicClientHandle;
-use crate::interface::CameraRx;
-use crate::interface::CameraRequest;
 
 #[derive(Debug)]
 pub struct CameraClientHandle {
@@ -51,16 +54,17 @@ impl CameraClientHandle {
 	///
 	/// This method returns the `Disconnected` error if the channel is
 	/// currently empty, and there are no outstanding senders or permits.
-	pub fn try_recv(&mut self) -> Result<CameraRequest, TryRecvError>{
+	pub fn try_recv(&mut self) -> Result<CameraRequest, TryRecvError> {
 		self.request_receiver.try_recv()
 	}
 
 	/// Receives the next value for this receiver.
 	///
-	/// This method returns `None` if the channel has been closed and there are no remaining messages
-	/// in the channel's buffer. This indicates that no further values can ever be received from
-	/// this Receiver. The channel is closed when all senders have been dropped,
-	/// or when close is called.
+	/// This method returns `None` if the channel has been closed and there are
+	/// no remaining messages in the channel's buffer. This indicates that
+	/// no further values can ever be received from this Receiver. The
+	/// channel is closed when all senders have been dropped, or when close
+	/// is called.
 	///
 	/// If there are no messages in the channel's buffer, but the
 	/// channel has not yet been closed, this method will sleep
@@ -87,7 +91,7 @@ impl CameraClientHandle {
 	) -> EdgeClientResult<()> {
 		self.base.send_ws_request(Command::UpdateCameraStatus {
 			camera_id: self.camera_id,
-			status
+			status,
 		})
 	}
 
@@ -122,12 +126,11 @@ impl CameraClientHandle {
 		conn_id: ConnId,
 		configuration: String,
 	) -> EdgeClientResult<()> {
-		self.base
-			.send_ws_request(Command::Configuration {
-				conn_id,
-				camera_id: self.camera_id,
-				configuration
-			})
+		self.base.send_ws_request(Command::Configuration {
+			conn_id,
+			camera_id: self.camera_id,
+			configuration,
+		})
 	}
 
 	/// Sends the `Alert` command to the server
@@ -145,14 +148,13 @@ impl CameraClientHandle {
 		alert_name: String,
 		alert_description: String,
 	) -> EdgeClientResult<()> {
-		self.base
-			.send_ws_request(Command::Alert {
-				camera_id: Some(self.camera_id),
-				alert_type,
-				alert_code,
-				alert_name,
-				alert_description,
-			})
+		self.base.send_ws_request(Command::Alert {
+			camera_id: Some(self.camera_id),
+			alert_type,
+			alert_code,
+			alert_name,
+			alert_description,
+		})
 	}
 
 	/// Sends an image to the server

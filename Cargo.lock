@@ -2235,7 +2235,6 @@ name = "edge-client"
 version = "0.219.1"
 dependencies = [
  "api",
- "edge-cameras",
  "edge-core",
  "futures-util",
  "pnet_datalink",

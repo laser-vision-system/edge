@@ -2,83 +2,98 @@
 mod auto_connect;
 mod persistent_edge_id;
 
-use std::collections::{
-    HashMap,
+use std::{
+	collections::{
+		HashMap,
+		hash_map::Entry,
+	},
+	time::Duration,
 };
-use std::collections::hash_map::Entry;
-use std::time::Duration;
+
 use api::{
-    edge::{
-        Alert,
-        EdgeRequests,
-        ImageAnalysis,
-        InitialiseConnection,
-        NewCameraInfo,
-        RegisterCameras,
-        ServerRequests,
-        SetNameCamera,
-        Settings,
-    },
-    shared::{
-        AlertType,
-        CameraId,
-        CameraStatus,
-        Configuration,
-        ConnId,
-        Deviation,
-        ForgetCameraRequest,
-        VisionTechnique,
-    },
+	edge::{
+		Alert,
+		EdgeRequests,
+		ImageAnalysis,
+		InitialiseConnection,
+		NewCameraInfo,
+		RegisterCameras,
+		ServerRequests,
+		SetNameCamera,
+		Settings,
+	},
+	shared::{
+		AlertType,
+		CameraId,
+		CameraStatus,
+		Configuration,
+		ConnId,
+		Deviation,
+		ForgetCameraRequest,
+		VisionTechnique,
+	},
 };
-use edge_core::{
-    logger::logger,
-};
+use edge_core::logger::logger;
 use futures_util::{
-    stream::FusedStream as _,
-    SinkExt as _,
-    StreamExt as _,
-};
-use serde::Serialize;
-use tokio::{
-    net::TcpStream,
-    sync::mpsc::{
-        UnboundedReceiver,
-        UnboundedSender,
-    },
-    time::interval,
-};
-use tokio_tungstenite::{
-    tungstenite::{
-        Bytes,
-        Error,
-        Message,
-        Utf8Bytes,
-    },
-    MaybeTlsStream,
-    WebSocketStream,
+	SinkExt as _,
+	StreamExt as _,
+	stream::FusedStream as _,
 };
 use regex::Regex;
-use tokio::time::sleep;
+use serde::Serialize;
+use tokio::{
+	net::TcpStream,
+	sync::mpsc::{
+		UnboundedReceiver,
+		UnboundedSender,
+	},
+	time::{
+		interval,
+		sleep,
+	},
+};
+use tokio_tungstenite::{
+	MaybeTlsStream,
+	WebSocketStream,
+	tungstenite::{
+		Bytes,
+		Error,
+		Message,
+		Utf8Bytes,
+	},
+};
+
 use crate::{
 	client::{
-        auto_connect::get_ws_stream,
-        persistent_edge_id::get_mac_address,
-    },
+		auto_connect::get_ws_stream,
+		persistent_edge_id::get_mac_address,
+	},
 	error::{
-        EdgeClientError,
-        EdgeClientResult,
-    },
+		EdgeClientError,
+		EdgeClientResult,
+	},
+	handle::{
+		conductor_client_handle::ConductorClientHandle,
+		persistence_client_handle::PersistenceClientHandle,
+		status_handle::StatusHandle,
+		vision_client_handle::VisionClientHandle,
+	},
 	interface::{
-        Command,
 		CameraRequest,
+		CameraRx,
+		CameraTx,
+		Command,
+		ListenerRx,
+		ListenerTx,
 		PersistenceRequest,
-    },
+		PersistenceRx,
+		PersistenceTx,
+		StatusRx,
+		StatusTx,
+		VisionRx,
+		VisionTx,
+	},
 };
-use crate::handle::conductor_client_handle::ConductorClientHandle;
-use crate::handle::persistence_client_handle::PersistenceClientHandle;
-use crate::handle::status_handle::StatusHandle;
-use crate::handle::vision_client_handle::VisionClientHandle;
-use crate::interface::{CameraRx, CameraTx, ListenerRx, ListenerTx, PersistenceRx, PersistenceTx, StatusRx, StatusTx, VisionRx, VisionTx};
 
 pub const API: &str = "/edge_ws";
 pub const PORT: &str = "8080";
@@ -103,8 +118,8 @@ pub struct Client {
 	/// this thread will panic.
 	vision_tx: VisionTx,
 
-	/// Dedicated transmitter for commands destined for the `Persistence` struct.
-	/// If this closes, this thread will panic
+	/// Dedicated transmitter for commands destined for the `Persistence`
+	/// struct. If this closes, this thread will panic
 	persistence_tx: PersistenceTx,
 
 	/// Dynamic list of camera command receivers with associated camera IDs.
@@ -123,19 +138,17 @@ impl Client {
 	/// Removes the protocol and endpoint from a url.
 	///
 	/// # Panics
-	/// This function will panic if given a value not it protocol://*.*.*.*:****/edge_ws format, or if
-	/// the internal regex is invalid
-	fn convert_url(
-		url: String,
-	) -> String {
-		let regex = Regex::new(r"^[A-z]+://([0-9.]+:[0-9]+)/edge_ws").expect("invalid regex");
+	/// This function will panic if given a value not it
+	/// protocol://*.*.*.*:****/edge_ws format, or if the internal regex is
+	/// invalid
+	fn convert_url(url: String) -> String {
+		let regex = Regex::new(r"^[A-z]+://([0-9.]+:[0-9]+)/edge_ws")
+			.expect("invalid regex");
 
 		let captures = regex.captures(&url);
 
-		let capture = captures
-			.expect("Invalid url")
-			.get(1)
-			.expect("Invalid url");
+		let capture =
+			captures.expect("Invalid url").get(1).expect("Invalid url");
 
 		capture.as_str().to_string()
 	}
@@ -151,9 +164,11 @@ impl Client {
 		}
 	}
 
-	/// Sends our MAC address to the server as a `ConnId` initializing the connection.
+	/// Sends our MAC address to the server as a `ConnId` initializing the
+	/// connection.
 	///
-	/// This should always be the first thing we do after connecting to a websocket.
+	/// This should always be the first thing we do after connecting to a
+	/// websocket.
 	///
 	/// # Panics
 	/// If we are unable to acquire our own MAC address, this panics.
@@ -181,9 +196,10 @@ impl Client {
 		T: Serialize,
 	{
 		let result = websocket
-			.send(Message::Text(Utf8Bytes::from(&serde_json::to_string(
-				&data,
-			).expect("Unable to serialize struct"))))
+			.send(Message::Text(Utf8Bytes::from(
+				&serde_json::to_string(&data)
+					.expect("Unable to serialize struct"),
+			)))
 			.await;
 
 		self.process_ws_err(result)
@@ -242,16 +258,16 @@ impl Client {
 		let result = self
 			.cameras
 			.entry(camera)
-			.and_modify(|entry| entry.send(request).unwrap_or(()) );
+			.and_modify(|entry| entry.send(request).unwrap_or(()));
 
 		match result {
-			Entry::Occupied(_) => {}
+			Entry::Occupied(_) => {},
 			Entry::Vacant(_) => {
 				logger().log_warn(&format!(
 					"Command received for invalid camera ID: {:?} ",
 					camera
 				));
-			}
+			},
 		}
 	}
 
@@ -273,11 +289,8 @@ impl Client {
 	) {
 		self.listeners
 			.iter()
-			.for_each(|listener|
-				listener.send(request.clone()).unwrap_or(())
-			);
+			.for_each(|listener| listener.send(request.clone()).unwrap_or(()));
 	}
-
 
 	/// Forwards the websockets status to relevant listeners.
 	fn status_update(
@@ -289,9 +302,7 @@ impl Client {
 		);
 		self.status_listeners
 			.iter()
-			.for_each(|listener|
-				listener.send(status).unwrap_or(())
-			);
+			.for_each(|listener| listener.send(status).unwrap_or(()));
 	}
 
 	/// Removes any closed listeners from storage.
@@ -468,7 +479,10 @@ impl Client {
 			Command::SendImage {
 				camera_id,
 				frame,
-			} => self.send_image(websocket, camera_id, &mut frame.clone()).await?,
+			} => {
+				self.send_image(websocket, camera_id, &mut frame.clone())
+					.await?
+			},
 
 			Command::GetDefaultSettings {
 				res_tx,
@@ -525,8 +539,8 @@ impl Client {
 					"Could not deserialize websocket message due to: {:?}",
 					e.to_string()
 				));
-				return
-			}
+				return;
+			},
 		};
 
 		self.forward_request(request.clone());
@@ -597,9 +611,7 @@ impl Client {
 	/// associated receiver.
 	///
 	/// TO BE DEPRECIATED
-	fn subscribe_listener(
-		&mut self
-	) -> ListenerRx {
+	fn subscribe_listener(&mut self) -> ListenerRx {
 		let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 		self.listeners.insert(0, tx);
 		rx
@@ -607,9 +619,7 @@ impl Client {
 
 	/// Creates a new status channel, returning the
 	/// associated receiver.
-	fn get_new_status_channel(
-		&mut self
-	) -> StatusRx {
+	fn get_new_status_channel(&mut self) -> StatusRx {
 		let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 		self.status_listeners.insert(0, tx);
 		rx
@@ -742,8 +752,7 @@ impl Client {
 	/// Gets the default settings from the server.
 	async fn get_default_settings(&mut self) -> EdgeClientResult<Settings> {
 		auto_connect::get_default_settings(
-			self
-				.url
+			self.url
 				.clone()
 				.expect("websocket URL not set while websocket connected")
 				.as_str(),
@@ -753,8 +762,7 @@ impl Client {
 
 	/// Returns the stored server url.
 	fn get_server_url(&mut self) -> String {
-		self
-			.url
+		self.url
 			.clone()
 			.expect("websocket URL not set while websocket connected")
 	}
@@ -766,14 +774,17 @@ impl Client {
 		VisionClientHandle,
 		PersistenceClientHandle,
 		ConductorClientHandle,
-		Self
+		Self,
 	) {
 		let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (status_tx, status_rx) = tokio::sync::mpsc::unbounded_channel();
-		let (conductor_status_tx, conductor_status_rx) = tokio::sync::mpsc::unbounded_channel();
-		let (persistence_status_tx, persistence_status_rx) = tokio::sync::mpsc::unbounded_channel();
+		let (conductor_status_tx, conductor_status_rx) =
+			tokio::sync::mpsc::unbounded_channel();
+		let (persistence_status_tx, persistence_status_rx) =
+			tokio::sync::mpsc::unbounded_channel();
 		let (vision_tx, vision_rx) = tokio::sync::mpsc::unbounded_channel();
-		let (persistence_tx, persistence_rx) = tokio::sync::mpsc::unbounded_channel();
+		let (persistence_tx, persistence_rx) =
+			tokio::sync::mpsc::unbounded_channel();
 		let mut status_listeners = Vec::new();
 		status_listeners.insert(0, conductor_status_tx);
 		status_listeners.insert(1, persistence_status_tx);
@@ -784,12 +795,9 @@ impl Client {
 				cmd_tx.clone(),
 				persistence_rx,
 				false,
-				persistence_status_rx
+				persistence_status_rx,
 			),
-			ConductorClientHandle::new(
-				cmd_tx,
-				conductor_status_rx,
-			),
+			ConductorClientHandle::new(cmd_tx, conductor_status_rx),
 			Client {
 				cmd_rx,
 				status_listeners,
@@ -802,7 +810,6 @@ impl Client {
 			},
 		)
 	}
-
 
 	pub async fn run(mut self) -> EdgeClientResult<()> {
 		loop {
