@@ -21,7 +21,6 @@ RUN cargo build --profile $BUILD_TARGET --bin edge
 ## CONTAINER
 FROM --platform=$BUILDPLATFORM debian:trixie AS runtime
 
-ARG BUILD_TARGET
 # Binary directory tells the docker file which directory the rust binary has been built to. passed during run
 ARG BINARY_DIR
 
