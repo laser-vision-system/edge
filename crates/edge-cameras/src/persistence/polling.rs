@@ -86,8 +86,8 @@ type IntermediaryMap = HashMap<Identifier, HashSet<AccessPoint>>;
 
 #[derive(Clone, Debug)]
 pub struct DeviceConnection {
-	pub identifier: Identifier,
-	pub points: HashSet<AccessPoint>,
+	identifier: Identifier,
+	points: HashSet<AccessPoint>,
 }
 
 impl fmt::Display for DeviceConnection {
