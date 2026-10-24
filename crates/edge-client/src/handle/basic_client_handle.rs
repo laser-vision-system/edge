@@ -64,6 +64,11 @@ impl BasicClientHandle {
 	///
 	/// # Panics:
 	/// If the client thread is closed, panics.
+	#[expect(
+		clippy::expect_used,
+		clippy::unwrap_in_result,
+		reason = "WIP development"
+	)]
 	pub fn send_ws_request(
 		&mut self,
 		cmd: Command,
@@ -98,6 +103,7 @@ impl BasicClientHandle {
 	}
 
 	/// Sleeps until the status changes
+	#[expect(clippy::expect_used, reason = "WIP development")]
 	pub async fn await_status_change(&mut self) -> bool {
 		self.status = self
 			.internal_status_rx

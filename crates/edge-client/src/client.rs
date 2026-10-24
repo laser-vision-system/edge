@@ -1,5 +1,7 @@
 //! Defines the behavior of the websocket thread.
 
+// TODO: Remove expects and then remove this.
+#![expect(clippy::expect_used, reason = "WIP development")]
 #![expect(deprecated, reason = "Temporarily used for backwards compatibility")]
 
 mod auto_connect;
@@ -338,6 +340,10 @@ impl Client {
 	/// # Panics
 	/// This will panic if the return channels close before it returns,
 	/// which should not happen unless the main thread panics.
+	#[expect(
+		clippy::too_many_lines,
+		reason = "Command enum has a lot of variants"
+	)]
 	async fn process_command(
 		&mut self,
 		command: Command,
@@ -704,6 +710,7 @@ impl Client {
 	///
 	/// # Errors
 	/// Returns an error if the websocket was closed
+	#[expect(clippy::big_endian_bytes, reason = "Sending to server")]
 	async fn send_image(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -773,6 +780,10 @@ impl Client {
 		)
 	}
 
+	#[expect(
+		clippy::infinite_loop,
+		reason = "Thread should remain active until forced to close"
+	)]
 	pub async fn run(mut self) -> EdgeClientResult<()> {
 		loop {
 			let (mut websocket, url) = self.connect_ws().await;

@@ -1,6 +1,3 @@
-// TODO: Remove all unwraps and then this.
-#![expect(clippy::unwrap_used, reason = "WIP development")]
-
 use std::{
 	collections::HashSet,
 	env,
@@ -193,11 +190,7 @@ pub async fn get_ws_stream()
 	Ok((stream, websocket_url))
 }
 
-// TODO: Remove this once the server request is implemented.
-#[expect(
-	clippy::unused_async,
-	reason = "Async will be needed once this function is re-enabled"
-)]
+#[expect(clippy::map_err_ignore, reason = "WIP development")]
 pub async fn get_default_settings(url: &str) -> EdgeClientResult<Settings> {
 	// TODO: Get the default settings from the server
 	// Build the settings struct from the received data.
@@ -222,6 +215,7 @@ pub async fn get_default_settings(url: &str) -> EdgeClientResult<Settings> {
 	)
 }
 
+#[expect(clippy::map_err_ignore, reason = "WIP development")]
 pub fn unpack<T>(data: &str) -> EdgeClientResult<T>
 where
 	T: DeserializeOwned,

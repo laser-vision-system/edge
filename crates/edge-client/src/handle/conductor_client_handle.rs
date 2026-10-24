@@ -1,3 +1,5 @@
+// TODO: Remove expects and then remove this.
+#![expect(clippy::expect_used, reason = "WIP development")]
 #![expect(deprecated, reason = "Temporarily used for backwards compatibility")]
 
 use std::collections::HashMap;

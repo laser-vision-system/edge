@@ -157,10 +157,6 @@ impl Persistence {
 		}
 	}
 
-	#[expect(
-		clippy::needless_pass_by_value,
-		reason = "The request should not be used after this method call"
-	)]
 	pub fn toggle_viewing_camera(
 		&mut self,
 		camera_id: CameraId,

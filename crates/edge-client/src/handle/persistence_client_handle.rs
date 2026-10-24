@@ -1,3 +1,6 @@
+// TODO: Remove expects and then remove this.
+#![expect(clippy::expect_used, reason = "WIP development")]
+
 use std::collections::HashMap;
 
 use api::{

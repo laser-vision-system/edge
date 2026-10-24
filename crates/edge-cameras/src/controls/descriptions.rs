@@ -1,5 +1,3 @@
-#![expect(clippy::expect_used, reason = "Low priority edge cases")]
-
 mod boolean_control;
 mod bytes_control;
 mod enum_control;
