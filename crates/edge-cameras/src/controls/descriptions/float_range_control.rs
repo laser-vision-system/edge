@@ -98,11 +98,6 @@ impl ControlDefault for FloatRangeControl {
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
 	}
-
-	fn reset_to_default(&mut self) {
-		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid");
-	}
 }
 
 impl ControlStep for FloatRangeControl {
@@ -119,8 +114,7 @@ impl ControlStep for FloatRangeControl {
 		value: Self::StepType,
 	) -> bool {
 		(value - self.get_default()).abs() % self.get_step() == 0.0
-			|| (value - self.get_value().get_value()).abs()
-				% self.get_step()
+			|| (value - self.get_value().get_value()).abs() % self.get_step()
 				== 0.0
 	}
 }

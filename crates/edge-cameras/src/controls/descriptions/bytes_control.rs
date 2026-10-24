@@ -73,9 +73,4 @@ impl ControlDefault for BytesControl {
 	fn get_default(&self) -> Self::DefaultType {
 		self.default.clone()
 	}
-
-	fn reset_to_default(&mut self) {
-		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid");
-	}
 }

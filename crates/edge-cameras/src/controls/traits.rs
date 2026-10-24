@@ -142,7 +142,14 @@ pub trait ControlDefault: ControlDescription {
 	type DefaultType: ValidDefaultValue;
 
 	fn get_default(&self) -> Self::DefaultType;
-	fn reset_to_default(&mut self);
+	fn reset_to_default(&mut self)
+	where
+		<Self as ControlDescription>::ValueType:
+			From<<Self as ControlDefault>::DefaultType>,
+	{
+		self.set_value(self.get_default().into())
+			.expect("default value should never be invalid");
+	}
 }
 
 /// A type that supports the `min` field.

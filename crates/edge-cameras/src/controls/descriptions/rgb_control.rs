@@ -88,11 +88,6 @@ impl ControlDefault for RGBControl {
 	fn get_default(&self) -> Self::DefaultType {
 		self.default
 	}
-
-	fn reset_to_default(&mut self) {
-		self.set_value(self.get_default().into())
-			.expect("default value should never be invalid");
-	}
 }
 
 impl ControlMax for RGBControl {
