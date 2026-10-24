@@ -10,10 +10,10 @@ pub type EdgeClientResult<T> = std::result::Result<T, EdgeClientError>;
 
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum EdgeClientError {
+	#[error("Fail connect: {0}")]
+	AutoConnect(String),
 	#[error("The server could not be reached when trying initial connection")]
-	AutoConnect,
-	#[error("Fail connect: {reason}")]
-	AutoConnectUrl { reason: String },
+	AutoConnectUrl,
 	#[error("The WebSocket connection could not be created")]
 	WebSocketConnection,
 	#[error("The server could not be reached")]
@@ -31,4 +31,6 @@ pub enum EdgeClientError {
 	WebsocketClosed,
 	#[error("message could not be sent, as the websocket is currently closed")]
 	WebsocketDown,
+	#[error("{0}")]
+	TungsteniteError(String),
 }

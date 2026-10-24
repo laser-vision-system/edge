@@ -221,42 +221,7 @@ impl Client {
 			)))
 			.await;
 
-		self.process_ws_err(result)
-	}
-
-	/// Converts `tungstenite::error` into an [`EdgeClientError`].
-	fn process_ws_err(
-		&mut self,
-		result: Result<(), Error>,
-	) -> EdgeClientResult<()> {
-		if result.is_err() {
-			return match result.err() {
-				None => {
-					logger().log_warn(
-						"Could not send text through websocket for unknown reason",
-					);
-					Ok(())
-				},
-				Some(err) => {
-					match err {
-						Error::ConnectionClosed | Error::AlreadyClosed => {
-							Err(EdgeClientError::WebsocketClosed)
-						},
-
-						err => {
-							logger().log_warn(
-								format!(
-									"Could not send text through websocket due to: {err}"
-								)
-								.as_str(),
-							);
-							Ok(())
-						},
-					}
-				},
-			};
-		}
-		Ok(())
+		process_ws_err(result)
 	}
 
 	/// Forwards the `SetProcessingType` request to `vision_rx`.
@@ -750,7 +715,7 @@ impl Client {
 		let mut msg = camera_id.to_be_bytes().to_vec();
 		msg.append(frame);
 		let result = websocket.send(Message::Binary(Bytes::from(msg))).await;
-		self.process_ws_err(result)
+		process_ws_err(result)
 	}
 
 	/// Gets the default settings from the server.
@@ -830,4 +795,16 @@ impl Client {
 			sleep(AUTO_CONNECT_DELAY).await;
 		}
 	}
+}
+
+/// Converts [`tungstenite::error::Error`] into an [`EdgeClientError`].
+fn process_ws_err(result: Result<(), Error>) -> EdgeClientResult<()> {
+	result.map_err(|why| {
+		match why {
+			Error::ConnectionClosed | Error::AlreadyClosed => {
+				EdgeClientError::WebsocketClosed
+			},
+			why => EdgeClientError::TungsteniteError(why.to_string()),
+		}
+	})
 }

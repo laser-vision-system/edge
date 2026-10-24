@@ -162,7 +162,7 @@ async fn get_websocket_url(
 		}
 	}
 
-	Err(EdgeClientError::AutoConnect)
+	Err(EdgeClientError::AutoConnectUrl)
 }
 
 pub async fn get_ws_stream()
@@ -184,12 +184,9 @@ pub async fn get_ws_stream()
 		get_websocket_url(urls).await?
 	};
 
-	let Ok((stream, _)) =
-		connect_async(websocket_url.clone()).await.map_err(|why| {
-			EdgeClientError::AutoConnectUrl {
-				reason: why.to_string(),
-			}
-		})
+	let Ok((stream, _)) = connect_async(websocket_url.clone())
+		.await
+		.map_err(|why| EdgeClientError::AutoConnect(why.to_string()))
 	else {
 		return Err(EdgeClientError::WebSocketConnection);
 	};
