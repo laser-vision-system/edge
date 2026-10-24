@@ -72,6 +72,8 @@ pedantic = { level = "deny", priority = -1 }
 must_use_candidate = "allow" # We don't need to be constantly alerted to this.
 missing_errors_doc = "deny" # Documentation should be thorough.
 missing_panics_doc = "deny" # Documentation should be thorough.
+deprecated_attributes_without_note = "warn" # Helpful, but not critical at the moment.
+deprecated_attributes_without_since = "allow" # We don't have stable releases yet.
 
 # ===== restriction group lints ======
 
