@@ -51,11 +51,11 @@ impl ControlDescription for StringControl {
 	type ConType = ConTypeString;
 	type ValueType = ConValueString;
 
-	fn get_id(&self) -> KnownCameraControl {
+	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(
+	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
 	) -> EdgeCamerasResult<()> {
@@ -63,7 +63,7 @@ impl ControlDescription for StringControl {
 		Ok(())
 	}
 
-	fn get_value(&self) -> Self::ValueType {
+	fn control_value(&self) -> Self::ValueType {
 		self.value.clone()
 	}
 }
@@ -71,12 +71,14 @@ impl ControlDescription for StringControl {
 impl ControlDefault for StringControl {
 	type DefaultType = Option<Self::ConType>;
 
-	fn get_default(&self) -> Self::DefaultType {
+	fn control_default(&self) -> Self::DefaultType {
 		self.default.clone()
 	}
 
 	fn reset_to_default(&mut self) {
-		self.set_value(self.get_default().unwrap_or_default().into())
-			.expect("default value should never be invalid");
+		self.try_set_control_value(
+			self.control_default().unwrap_or_default().into(),
+		)
+		.expect("default value should never be invalid");
 	}
 }

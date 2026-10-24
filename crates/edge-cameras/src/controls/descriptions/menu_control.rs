@@ -62,15 +62,15 @@ impl ControlDescription for MenuControl {
 	type ConType = ConTypeMenu;
 	type ValueType = ConValueMenu;
 
-	fn get_id(&self) -> KnownCameraControl {
+	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(
+	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
 	) -> EdgeCamerasResult<()> {
-		if self.valid(value.get_value()) {
+		if self.validate(value.get()) {
 			self.value = value;
 			Ok(())
 		} else {
@@ -78,7 +78,7 @@ impl ControlDescription for MenuControl {
 		}
 	}
 
-	fn get_value(&self) -> Self::ValueType {
+	fn control_value(&self) -> Self::ValueType {
 		self.value
 	}
 }
@@ -86,7 +86,7 @@ impl ControlDescription for MenuControl {
 impl ControlDefault for MenuControl {
 	type DefaultType = Self::ConType;
 
-	fn get_default(&self) -> Self::DefaultType {
+	fn control_default(&self) -> Self::DefaultType {
 		self.default
 	}
 }
@@ -94,11 +94,11 @@ impl ControlDefault for MenuControl {
 impl ControlItems for MenuControl {
 	type ItemType = Vec<MenuEntry>;
 
-	fn get_items(&self) -> Self::ItemType {
+	fn control_items(&self) -> Self::ItemType {
 		self.items.clone()
 	}
 
-	fn valid(
+	fn validate(
 		&self,
 		value: Self::ConType,
 	) -> bool {

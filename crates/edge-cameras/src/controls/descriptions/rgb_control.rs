@@ -61,15 +61,15 @@ impl ControlDescription for RGBControl {
 	type ConType = ConTypeRGB;
 	type ValueType = ConValueRGB;
 
-	fn get_id(&self) -> KnownCameraControl {
+	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(
+	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
 	) -> EdgeCamerasResult<()> {
-		if self.valid(value.get_value()) {
+		if self.validate(value.get()) {
 			self.value = value;
 			Ok(())
 		} else {
@@ -77,7 +77,7 @@ impl ControlDescription for RGBControl {
 		}
 	}
 
-	fn get_value(&self) -> Self::ValueType {
+	fn control_value(&self) -> Self::ValueType {
 		self.value
 	}
 }
@@ -85,7 +85,7 @@ impl ControlDescription for RGBControl {
 impl ControlDefault for RGBControl {
 	type DefaultType = Self::ConType;
 
-	fn get_default(&self) -> Self::DefaultType {
+	fn control_default(&self) -> Self::DefaultType {
 		self.default
 	}
 }
@@ -93,7 +93,7 @@ impl ControlDefault for RGBControl {
 impl ControlMax for RGBControl {
 	type MaxType = Self::ConType;
 
-	fn get_max(&self) -> Self::MaxType {
+	fn control_max(&self) -> Self::MaxType {
 		self.max
 	}
 }

@@ -65,11 +65,11 @@ impl From<ConTypeInt> for ConValueInteger {
 impl ControlValue for ConValueInteger {
 	type ConType = ConTypeInt;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {
@@ -102,11 +102,11 @@ impl From<ConTypeFloat> for ConValueFloat {
 impl ControlValue for ConValueFloat {
 	type ConType = ConTypeFloat;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {
@@ -149,11 +149,11 @@ impl From<ConTypeBool> for ConValueBoolean {
 impl ControlValue for ConValueBoolean {
 	type ConType = ConTypeBool;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {
@@ -195,11 +195,11 @@ impl From<ConTypeString> for ConValueString {
 impl ControlValue for ConValueString {
 	type ConType = ConTypeString;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0.clone()
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {
@@ -241,11 +241,11 @@ impl From<ConTypeBytes> for ConValueBytes {
 impl ControlValue for ConValueBytes {
 	type ConType = ConTypeBytes;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0.clone()
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {
@@ -288,11 +288,11 @@ impl From<ConTypeKeyValue> for ConValueKeyValue {
 impl ControlValue for ConValueKeyValue {
 	type ConType = ConTypeKeyValue;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {
@@ -325,11 +325,11 @@ impl From<ConTypePoint> for ConValuePoint {
 impl ControlValue for ConValuePoint {
 	type ConType = ConTypePoint;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {
@@ -372,11 +372,11 @@ impl From<ConTypeEnum> for ConValueEnum {
 impl ControlValue for ConValueEnum {
 	type ConType = ConTypeEnum;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {
@@ -409,11 +409,11 @@ impl From<ConTypeRGB> for ConValueRGB {
 impl ControlValue for ConValueRGB {
 	type ConType = ConTypeRGB;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {
@@ -453,11 +453,11 @@ impl From<ConTypeMenu> for ConValueMenu {
 impl ControlValue for ConValueMenu {
 	type ConType = ConTypeMenu;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	) {

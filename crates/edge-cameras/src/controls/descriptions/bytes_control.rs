@@ -50,11 +50,11 @@ impl ControlDescription for BytesControl {
 	type ConType = ConTypeBytes;
 	type ValueType = ConValueBytes;
 
-	fn get_id(&self) -> KnownCameraControl {
+	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(
+	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
 	) -> EdgeCamerasResult<()> {
@@ -62,7 +62,7 @@ impl ControlDescription for BytesControl {
 		Ok(())
 	}
 
-	fn get_value(&self) -> Self::ValueType {
+	fn control_value(&self) -> Self::ValueType {
 		self.value.clone()
 	}
 }
@@ -70,7 +70,7 @@ impl ControlDescription for BytesControl {
 impl ControlDefault for BytesControl {
 	type DefaultType = Self::ConType;
 
-	fn get_default(&self) -> Self::DefaultType {
+	fn control_default(&self) -> Self::DefaultType {
 		self.default.clone()
 	}
 }

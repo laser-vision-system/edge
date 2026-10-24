@@ -68,7 +68,7 @@ impl ControlMap {
 	}
 
 	#[must_use]
-	pub fn stripped(self) -> Self {
+	pub fn to_stripped(self) -> Self {
 		let inner = self
 			.inner
 			.into_iter()

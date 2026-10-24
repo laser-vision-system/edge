@@ -108,9 +108,9 @@ impl ValidItemValue for Vec<MenuEntry> {
 pub trait ControlValue {
 	type ConType: ValidControlValue;
 
-	fn get_value(&self) -> Self::ConType;
+	fn get(&self) -> Self::ConType;
 	// TODO: Maybe make this hidden outside of the control description.
-	fn set_value(
+	fn set(
 		&mut self,
 		value: Self::ConType,
 	);
@@ -121,17 +121,17 @@ pub trait ControlDescription {
 	type ValueType;
 	type ConType: ValidControlValue;
 
-	fn get_id(&self) -> KnownCameraControl;
+	fn control_id(&self) -> KnownCameraControl;
 	/// Try to set the value for this control description.
 	///
 	/// # Errors
 	///
 	/// If the control is invalid, given the controls other requirements.
-	fn set_value(
+	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
 	) -> EdgeCamerasResult<()>;
-	fn get_value(&self) -> Self::ValueType;
+	fn control_value(&self) -> Self::ValueType;
 }
 
 /// A type that supports the `default` field.
@@ -141,13 +141,14 @@ pub trait ControlDefault: ControlDescription {
 	// type DefaultType = Self::ValueType;
 	type DefaultType: ValidDefaultValue;
 
-	fn get_default(&self) -> Self::DefaultType;
+	fn control_default(&self) -> Self::DefaultType;
+	// TODO: Mark this as fallible.
 	fn reset_to_default(&mut self)
 	where
 		<Self as ControlDescription>::ValueType:
 			From<<Self as ControlDefault>::DefaultType>,
 	{
-		self.set_value(self.get_default().into())
+		self.try_set_control_value(self.control_default().into())
 			.expect("default value should never be invalid");
 	}
 }
@@ -159,13 +160,13 @@ pub trait ControlMin: ControlDescription {
 	// type MinType = Self::ValueType;
 	type MinType: ValidControlValue;
 
-	fn get_min(&self) -> Self::MinType;
+	fn control_min(&self) -> Self::MinType;
 
-	fn valid(
+	fn validate(
 		&self,
 		value: Self::MinType,
 	) -> bool {
-		value >= self.get_min()
+		value >= self.control_min()
 	}
 }
 
@@ -176,13 +177,13 @@ pub trait ControlMax: ControlDescription {
 	// type MaxType = Self::ValueType;
 	type MaxType: ValidControlValue;
 
-	fn get_max(&self) -> Self::MaxType;
+	fn control_max(&self) -> Self::MaxType;
 
-	fn valid(
+	fn validate(
 		&self,
 		value: Self::MaxType,
 	) -> bool {
-		value <= self.get_max()
+		value <= self.control_max()
 	}
 }
 
@@ -193,9 +194,9 @@ pub trait ControlStep: ControlDescription {
 	// type StepType = Self::ValueType;
 	type StepType: ValidControlValue;
 
-	fn get_step(&self) -> Self::StepType;
+	fn control_step(&self) -> Self::StepType;
 	// TODO: Default implementation.
-	fn valid(
+	fn validate(
 		&self,
 		value: Self::StepType,
 	) -> bool;
@@ -208,9 +209,9 @@ pub trait ControlPossible: ControlDescription {
 	// type PossibleType = Self::ValueType;
 	type PossibleType: ValidPossibleValue;
 
-	fn get_possible(&self) -> Self::PossibleType;
+	fn control_possible(&self) -> Self::PossibleType;
 	// TODO: Default implementation.
-	fn valid(
+	fn validate(
 		&self,
 		value: &Self::ConType,
 	) -> bool;
@@ -220,8 +221,8 @@ pub trait ControlPossible: ControlDescription {
 pub trait ControlItems: ControlDescription {
 	type ItemType: ValidItemValue;
 
-	fn get_items(&self) -> Self::ItemType;
-	fn valid(
+	fn control_items(&self) -> Self::ItemType;
+	fn validate(
 		&self,
 		value: Self::ConType,
 	) -> bool;

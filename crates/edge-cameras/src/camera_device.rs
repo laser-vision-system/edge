@@ -287,7 +287,7 @@ impl CameraLike for CameraDevice {
 				return Err(EdgeCamerasError::SetControlType(id));
 			};
 			// TODO: Handle error. Maybe try make this operation atomic?
-			self.set_value(id, control.get_value().into())
+			self.set_value(id, control.control_value().into())
 		})
 	}
 

@@ -59,15 +59,15 @@ impl ControlDescription for FloatControl {
 	type ConType = ConTypeFloat;
 	type ValueType = ConValueFloat;
 
-	fn get_id(&self) -> KnownCameraControl {
+	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(
+	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
 	) -> EdgeCamerasResult<()> {
-		if self.valid(value.get_value()) {
+		if self.validate(value.get()) {
 			self.value = value;
 			Ok(())
 		} else {
@@ -75,7 +75,7 @@ impl ControlDescription for FloatControl {
 		}
 	}
 
-	fn get_value(&self) -> Self::ValueType {
+	fn control_value(&self) -> Self::ValueType {
 		self.value
 	}
 }
@@ -83,7 +83,7 @@ impl ControlDescription for FloatControl {
 impl ControlDefault for FloatControl {
 	type DefaultType = Self::ConType;
 
-	fn get_default(&self) -> Self::DefaultType {
+	fn control_default(&self) -> Self::DefaultType {
 		self.default
 	}
 }
@@ -93,16 +93,16 @@ impl ControlStep for FloatControl {
 	// compared.
 	type StepType = Self::ConType;
 
-	fn get_step(&self) -> Self::StepType {
+	fn control_step(&self) -> Self::StepType {
 		self.step
 	}
 
-	fn valid(
+	fn validate(
 		&self,
 		value: Self::StepType,
 	) -> bool {
-		(value - self.get_default()).abs() % self.get_step() == 0.0
-			|| (value - self.get_value().get_value()).abs() % self.get_step()
+		(value - self.control_default()).abs() % self.control_step() == 0.0
+			|| (value - self.control_value().get()).abs() % self.control_step()
 				== 0.0
 	}
 }

@@ -274,7 +274,7 @@ macro_rules! impl_identifiable {
 			) where
 				H: std::hash::Hasher,
 			{
-				self.get_id().hash(state);
+				self.control_id().hash(state);
 			}
 		}
 
@@ -283,7 +283,7 @@ macro_rules! impl_identifiable {
 				&self,
 				other: &Self,
 			) -> bool {
-				self.get_id() == other.get_id()
+				self.control_id() == other.control_id()
 			}
 		}
 
@@ -304,7 +304,7 @@ macro_rules! impl_identifiable {
 				&self,
 				other: &Self,
 			) -> std::cmp::Ordering {
-				self.get_id().cmp(&other.get_id())
+				self.control_id().cmp(&other.control_id())
 			}
 		}
 	};

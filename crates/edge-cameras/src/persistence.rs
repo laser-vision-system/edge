@@ -209,7 +209,7 @@ impl Persistence {
 		};
 		let controls = active.get_camera_mut().get_controls();
 		let important_controls = match controls {
-			Ok(controls) => controls.stripped(),
+			Ok(controls) => controls.to_stripped(),
 			Err(why) => {
 				logger().log_error(&why);
 				return None;

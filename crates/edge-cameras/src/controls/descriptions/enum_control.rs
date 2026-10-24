@@ -55,11 +55,11 @@ impl ControlDescription for EnumControl {
 	type ConType = ConTypeEnum;
 	type ValueType = ConValueEnum;
 
-	fn get_id(&self) -> KnownCameraControl {
+	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(
+	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
 	) -> EdgeCamerasResult<()> {
@@ -67,7 +67,7 @@ impl ControlDescription for EnumControl {
 		Ok(())
 	}
 
-	fn get_value(&self) -> Self::ValueType {
+	fn control_value(&self) -> Self::ValueType {
 		self.value
 	}
 }
@@ -75,7 +75,7 @@ impl ControlDescription for EnumControl {
 impl ControlDefault for EnumControl {
 	type DefaultType = Self::ConType;
 
-	fn get_default(&self) -> Self::DefaultType {
+	fn control_default(&self) -> Self::DefaultType {
 		self.default
 	}
 }
@@ -83,11 +83,11 @@ impl ControlDefault for EnumControl {
 impl ControlPossible for EnumControl {
 	type PossibleType = Vec<Self::ConType>;
 
-	fn get_possible(&self) -> Self::PossibleType {
+	fn control_possible(&self) -> Self::PossibleType {
 		self.possible.clone()
 	}
 
-	fn valid(
+	fn validate(
 		&self,
 		value: &Self::ConType,
 	) -> bool {

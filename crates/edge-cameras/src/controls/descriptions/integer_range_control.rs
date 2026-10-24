@@ -68,17 +68,17 @@ impl ControlDescription for IntegerRangeControl {
 	type ConType = ConTypeInt;
 	type ValueType = ConValueInteger;
 
-	fn get_id(&self) -> KnownCameraControl {
+	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
 	}
 
-	fn set_value(
+	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
 	) -> EdgeCamerasResult<()> {
-		if ControlMin::valid(self, value.get_value())
-			&& ControlMax::valid(self, value.get_value())
-			&& ControlStep::valid(self, value.get_value())
+		if ControlMin::validate(self, value.get())
+			&& ControlMax::validate(self, value.get())
+			&& ControlStep::validate(self, value.get())
 		{
 			self.value = value;
 			Ok(())
@@ -87,7 +87,7 @@ impl ControlDescription for IntegerRangeControl {
 		}
 	}
 
-	fn get_value(&self) -> Self::ValueType {
+	fn control_value(&self) -> Self::ValueType {
 		self.value
 	}
 }
@@ -95,7 +95,7 @@ impl ControlDescription for IntegerRangeControl {
 impl ControlDefault for IntegerRangeControl {
 	type DefaultType = Self::ConType;
 
-	fn get_default(&self) -> Self::DefaultType {
+	fn control_default(&self) -> Self::DefaultType {
 		self.default
 	}
 }
@@ -105,16 +105,16 @@ impl ControlStep for IntegerRangeControl {
 	// compared.
 	type StepType = Self::ConType;
 
-	fn get_step(&self) -> Self::StepType {
+	fn control_step(&self) -> Self::StepType {
 		self.step
 	}
 
-	fn valid(
+	fn validate(
 		&self,
 		value: Self::StepType,
 	) -> bool {
-		(value - self.get_default()).abs() % self.get_step() == 0
-			|| (value - self.get_value().get_value()).abs() % self.get_step()
+		(value - self.control_default()).abs() % self.control_step() == 0
+			|| (value - self.control_value().get()).abs() % self.control_step()
 				== 0
 	}
 }
@@ -122,7 +122,7 @@ impl ControlStep for IntegerRangeControl {
 impl ControlMin for IntegerRangeControl {
 	type MinType = Self::ConType;
 
-	fn get_min(&self) -> Self::MinType {
+	fn control_min(&self) -> Self::MinType {
 		self.min
 	}
 }
@@ -130,7 +130,7 @@ impl ControlMin for IntegerRangeControl {
 impl ControlMax for IntegerRangeControl {
 	type MaxType = Self::ConType;
 
-	fn get_max(&self) -> Self::MaxType {
+	fn control_max(&self) -> Self::MaxType {
 		self.max
 	}
 }
