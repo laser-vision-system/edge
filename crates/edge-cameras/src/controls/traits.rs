@@ -109,11 +109,7 @@ pub trait ControlValue {
 	type ConType: ValidControlValue;
 
 	fn get(&self) -> Self::ConType;
-	// TODO: Maybe make this hidden outside of the control description.
-	fn set(
-		&mut self,
-		value: Self::ConType,
-	);
+	fn get_mut(&mut self) -> &mut Self::ConType;
 }
 
 /// A type that wraps a [`ControlValue`] with other control fields.
