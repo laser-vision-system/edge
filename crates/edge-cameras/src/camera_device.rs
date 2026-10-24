@@ -35,13 +35,8 @@ use crate::{
 		traits::ControlDescription as _,
 	},
 	error::{
-		CannotGetControls,
 		EdgeCamerasError,
 		EdgeCamerasResult,
-		FrameRead,
-		NokhwaInitialisation,
-		SetControl,
-		StreamOpen,
 	},
 };
 
@@ -118,7 +113,7 @@ impl CameraDevice {
 				.map_err(|why| {
 				EdgeCamerasError::NokhwaInitialisation {
 					index: index_str,
-					inner: NokhwaInitialisation::from(why),
+					source: why,
 				}
 			})?;
 
@@ -165,7 +160,7 @@ impl CameraDevice {
 	pub fn open(mut self) -> EdgeCamerasResult<Self> {
 		self.inner
 			.open()
-			.map_err(|why| EdgeCamerasError::from(StreamOpen::from(why)))?;
+			.map_err(|why| EdgeCamerasError::StreamOpen(why))?;
 		Ok(self)
 	}
 
@@ -205,7 +200,7 @@ impl CameraDevice {
 			EdgeCamerasError::SetControl {
 				id,
 				value: value_string,
-				inner: SetControl::from(why),
+				source: why,
 			}
 		})
 	}
@@ -225,7 +220,7 @@ impl CameraLike for CameraDevice {
 			.inner
 			.frame()
 			// Could error if the stream hasn't been opened.
-			.map_err(|why| EdgeCamerasError::from(FrameRead::from(why)))?;
+			.map_err(|why| EdgeCamerasError::FrameRead(why))?;
 
 		Ok(FrameBuffer::from(frame))
 	}
@@ -236,9 +231,7 @@ impl CameraLike for CameraDevice {
 	) -> EdgeCamerasResult<Vec<KnownCameraControl>> {
 		self.inner
 			.controls()
-			.map_err(|why| {
-				EdgeCamerasError::from(CannotGetControls::from(why))
-			})?
+			.map_err(|why| EdgeCamerasError::CannotGetControls(why))?
 			.iter()
 			.map(CameraControl::control)
 			.map(Ok)
@@ -249,7 +242,7 @@ impl CameraLike for CameraDevice {
 	fn get_controls(&self) -> EdgeCamerasResult<ControlMap> {
 		self.inner
 			.controls()
-			.map_err(|why| EdgeCamerasError::from(CannotGetControls::from(why)))
+			.map_err(|why| EdgeCamerasError::CannotGetControls(why))
 			.map(ControlMap::from)
 	}
 
@@ -260,9 +253,7 @@ impl CameraLike for CameraDevice {
 	) -> EdgeCamerasResult<CamControl> {
 		self.inner
 			.controls()
-			.map_err(|why| {
-				EdgeCamerasError::from(CannotGetControls::from(why))
-			})?
+			.map_err(|why| EdgeCamerasError::CannotGetControls(why))?
 			.into_iter()
 			.find(|con| con.control() == id)
 			.ok_or(EdgeCamerasError::GetControl(id))

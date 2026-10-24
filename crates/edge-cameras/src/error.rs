@@ -25,33 +25,35 @@ pub enum EdgeCamerasError {
 	// ===== CameraDevice Errors =====
 
 	// TODO: This variant is not used, find a place for it or remove.
-	#[error(transparent)]
-	NokhwaBackend(#[from] NokhwaBackend),
+	#[error("{0}")]
+	NokhwaBackend(#[source] NokhwaError),
 	#[error(
-		"The nokhwa camera could not be initialised at index `{index}`: '{inner}'"
+		"The nokhwa camera could not be initialised at index `{index}`: '{source}'"
 	)]
 	NokhwaInitialisation {
 		index: String,
-		inner: NokhwaInitialisation,
+		#[source]
+		source: NokhwaError,
 	},
 	#[error("We do not currently have support for the '{cam_type}' type")]
 	UnsupportedCameraType { cam_type: String },
-	#[error(transparent)]
-	StreamOpen(#[from] StreamOpen),
-	#[error(transparent)]
-	FrameRead(#[from] FrameRead),
-	#[error("Failed to set control {id} to {value}: {inner}")]
+	#[error("{0}")]
+	StreamOpen(#[source] NokhwaError),
+	#[error("{0}")]
+	FrameRead(#[source] NokhwaError),
+	#[error("Failed to set control {id} to {value}: {source}")]
 	SetControl {
 		id: KnownCameraControl,
 		value: String,
-		inner: SetControl,
+		#[source]
+		source: NokhwaError,
 	},
 	#[error("Attempting to set a control of an unsupported type: {0}")]
 	SetControlType(KnownCameraControl),
 	#[error("Attempted to access a camera that does not exist")]
 	CameraNotPresent,
-	#[error(transparent)]
-	CannotGetControls(#[from] CannotGetControls),
+	#[error("{0}")]
+	CannotGetControls(#[source] NokhwaError),
 	#[error("Unable to get control of type '{0}'")]
 	GetControl(KnownCameraControl),
 	#[error("Attempting to get a control of an unsupported type: {0}")]
@@ -69,27 +71,3 @@ pub enum EdgeCamerasError {
 	#[error("The connection status was not correct for this request")]
 	IncorrectConnectionStatus,
 }
-
-#[derive(Clone, Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct NokhwaBackend(#[from] NokhwaError);
-
-#[derive(Clone, Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct NokhwaInitialisation(#[from] NokhwaError);
-
-#[derive(Clone, Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct StreamOpen(#[from] NokhwaError);
-
-#[derive(Clone, Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct FrameRead(#[from] NokhwaError);
-
-#[derive(Clone, Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct SetControl(#[from] NokhwaError);
-
-#[derive(Clone, Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct CannotGetControls(#[from] NokhwaError);
