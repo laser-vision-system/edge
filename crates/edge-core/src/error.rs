@@ -27,25 +27,13 @@ pub enum EdgeCoreError {
 		"Could not parse {name} environment variable to the expected type: {why}"
 	)]
 	EnvVarParse { name: String, why: String },
-	#[error(transparent)]
-	SelectDecodeFormat(#[from] SelectDecodeFormat),
-	#[error("The frame could not be decoded because it is invalid")]
-	FrameDecodeCorruption(#[from] FrameDecodeCorruption),
+	#[error("{0}")]
+	SelectDecodeFormat(#[source] NokhwaError),
+	#[error("The frame could not be decoded because it is invalid: {0}")]
+	FrameDecodeCorruption(#[source] NokhwaError),
 	// TODO: This variant is not used, find a place for it or remove.
 	#[error(
-		"The frame could not be decoded because not more memory could be allocated"
+		"The frame could not be decoded because not more memory could be allocated: {0}"
 	)]
-	FrameDecodeOutOfMemory(#[from] FrameDecodeOutOfMemory),
+	FrameDecodeOutOfMemory(#[source] NokhwaError),
 }
-
-#[derive(Clone, Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct SelectDecodeFormat(#[from] NokhwaError);
-
-#[derive(Clone, Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct FrameDecodeCorruption(#[from] NokhwaError);
-
-#[derive(Clone, Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct FrameDecodeOutOfMemory(#[from] NokhwaError);

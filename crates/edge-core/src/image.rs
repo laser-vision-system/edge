@@ -36,8 +36,6 @@ use crate::{
 	error::{
 		EdgeCoreError,
 		EdgeCoreResult,
-		FrameDecodeCorruption,
-		SelectDecodeFormat,
 	},
 	settings::{
 		IMAGE_HEIGHT,
@@ -66,9 +64,7 @@ impl FrameBuffer {
 			// We just assume it is always corruption for now.
 			// TODO: Figure out the why.
 			// If it is because of memory, maybe try unwind and restart.
-			.map_err(|why| {
-				EdgeCoreError::from(FrameDecodeCorruption::from(why))
-			})?;
+			.map_err(|why| EdgeCoreError::FrameDecodeCorruption(why))?;
 
 		let frame = DynamicImage::ImageRgb8(img_buffer);
 		let cropped = frame.crop_imm(0, 0, frame.width(), frame.height());
@@ -136,43 +132,33 @@ fn select_decode_format(buf: Buffer) -> EdgeCoreResult<RgbConversion> {
 	match buf.source_frame_format() {
 		FrameFormat::MJPEG => {
 			Ok(Frame::<Mjpeg>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
 				.into_rgb())
 		},
 		FrameFormat::YUYV => {
 			Ok(Frame::<Yuyv>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
 				.into_rgb())
 		},
 		FrameFormat::NV12 => {
 			Ok(Frame::<Nv12>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
 				.into_rgb())
 		},
 		FrameFormat::RAWRGB => {
 			Ok(Frame::<RawRgb>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
 				.into_rgb())
 		},
 		FrameFormat::RAWBGR => {
 			Ok(Frame::<RawBgr>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(|why| EdgeCoreError::SelectDecodeFormat(why))?
 				.into_rgb())
 		},
 		// TODO: Support this type of input
 		FrameFormat::GRAY => {
 			let nok_err = NokhwaError::general("GRAY/Luma cameras not support");
-			let err = EdgeCoreError::from(SelectDecodeFormat::from(nok_err));
+			let err = EdgeCoreError::SelectDecodeFormat(nok_err);
 			Err(err)
 		},
 	}
