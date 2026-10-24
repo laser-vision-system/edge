@@ -193,8 +193,6 @@ impl Persistence {
 				ValType::new(&connection.points)
 			});
 
-		// Self::on_all_entries(entry, &connection.points);
-
 		if new {
 			match entry.get_active() {
 				Some(active) => {
@@ -220,49 +218,4 @@ impl Persistence {
 			}
 		}
 	}
-
-	// fn on_all_entries(entry: &mut PersistEntry, points:
-	// &HashSet<AccessPoint>)
-	//-> Option<(CameraId, NewCameraInfo)>
-	//{
-	// 	let device = entry.try_register_device(index, is_metadata)?;
-	//
-	// 	let hashed_id = identifier.as_ref().to_owned();
-	// 	Some((hashed_id, device))
-	//}
-
-	// Attempt to add a device to this instance.
-	//
-	// Returns [`None`] if:
-	//
-	// - The index is already registered
-	// - This is a metadata device
-	// - The camera failed to intialise
-	// pub fn try_register_device(
-	// 	&mut self,
-	// 	index: CameraIndex,
-	// 	is_metadata: bool,
-	//) -> Option<NewCameraInfo> {
-	// 	if self.try_insert_index(index) {
-	// 		return None;
-	// 	}
-	//
-	// 	// Stop now if this is a metadata device.
-	// 	if is_metadata {
-	// 		logger().log_warn(&format!(
-	// 			"This index ({}) represents a metadata device",
-	// 			index
-	// 		));
-	// 		return None;
-	// 	}
-	//
-	// 	if !self.initialise_camera(index) {
-	// 		return None;
-	// 	}
-	//
-	// 	let name = self.get_name().to_owned().to_string();
-	// 	let status = self.status();
-	// 	let device = NewCameraInfo::new(name, status);
-	// 	Some(device)
-	//}
 }

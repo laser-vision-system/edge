@@ -50,8 +50,6 @@ pub enum EdgeCamerasError {
 	},
 	#[error("Attempting to set a control of an unsupported type: {0}")]
 	SetControlType(KnownCameraControl),
-	#[error("Attempted to access a camera that does not exist")]
-	CameraNotPresent,
 	#[error("{0}")]
 	CannotGetControls(#[source] NokhwaError),
 	#[error("Unable to get control of type '{0}'")]
