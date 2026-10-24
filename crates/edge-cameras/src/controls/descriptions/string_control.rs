@@ -75,6 +75,10 @@ impl ControlDefault for StringControl {
 		self.default.clone()
 	}
 
+	#[expect(
+		clippy::expect_used,
+		reason = "Default value should never be invalid"
+	)]
 	fn reset_to_default(&mut self) {
 		self.try_set_control_value(
 			self.control_default().unwrap_or_default().into(),

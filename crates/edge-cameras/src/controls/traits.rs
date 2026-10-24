@@ -138,6 +138,11 @@ pub trait ControlDefault: ControlDescription {
 	type DefaultType: ValidDefaultValue;
 
 	fn control_default(&self) -> Self::DefaultType;
+
+	#[expect(
+		clippy::expect_used,
+		reason = "Default value should never be invalid"
+	)]
 	// TODO: Mark this as fallible.
 	fn reset_to_default(&mut self)
 	where
