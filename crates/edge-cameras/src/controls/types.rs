@@ -52,11 +52,11 @@ type _ConTypeRGB = f64;
 pub struct ConTypeKeyValue(_ConTypeKeyValue, _ConTypeKeyValue);
 
 impl ConTypeKeyValue {
-	pub fn get_key(&self) -> _ConTypeKeyValue {
+	pub fn key(&self) -> _ConTypeKeyValue {
 		self.0
 	}
 
-	pub fn get_value(&self) -> _ConTypeKeyValue {
+	pub fn value(&self) -> _ConTypeKeyValue {
 		self.1
 	}
 }
@@ -75,7 +75,7 @@ impl From<ConTypeKeyValue> for (_ConTypeKeyValue, _ConTypeKeyValue) {
 
 impl From<ConTypeKeyValue> for ControlValueSetter {
 	fn from(value: ConTypeKeyValue) -> Self {
-		ControlValueSetter::KeyValue(value.get_key(), value.get_value())
+		ControlValueSetter::KeyValue(value.key(), value.value())
 	}
 }
 
@@ -87,11 +87,11 @@ impl From<ConTypeKeyValue> for ControlValueSetter {
 pub struct ConTypePoint(_ConTypePoint, _ConTypePoint);
 
 impl ConTypePoint {
-	pub fn get_x(&self) -> _ConTypePoint {
+	pub fn x_value(&self) -> _ConTypePoint {
 		self.0
 	}
 
-	pub fn get_y(&self) -> _ConTypePoint {
+	pub fn y_value(&self) -> _ConTypePoint {
 		self.1
 	}
 }
@@ -110,7 +110,7 @@ impl From<ConTypePoint> for (_ConTypePoint, _ConTypePoint) {
 
 impl From<ConTypePoint> for ControlValueSetter {
 	fn from(value: ConTypePoint) -> Self {
-		ControlValueSetter::Point(value.get_x(), value.get_y())
+		ControlValueSetter::Point(value.x_value(), value.y_value())
 	}
 }
 
@@ -122,15 +122,15 @@ impl From<ConTypePoint> for ControlValueSetter {
 pub struct ConTypeRGB(_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
 
 impl ConTypeRGB {
-	pub fn get_r(&self) -> _ConTypeRGB {
+	pub fn red(&self) -> _ConTypeRGB {
 		self.0
 	}
 
-	pub fn get_g(&self) -> _ConTypeRGB {
+	pub fn green(&self) -> _ConTypeRGB {
 		self.1
 	}
 
-	pub fn get_b(&self) -> _ConTypeRGB {
+	pub fn blue(&self) -> _ConTypeRGB {
 		self.2
 	}
 }
@@ -149,6 +149,6 @@ impl From<ConTypeRGB> for (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB) {
 
 impl From<ConTypeRGB> for ControlValueSetter {
 	fn from(value: ConTypeRGB) -> Self {
-		ControlValueSetter::RGB(value.get_r(), value.get_g(), value.get_b())
+		ControlValueSetter::RGB(value.red(), value.green(), value.blue())
 	}
 }
