@@ -76,11 +76,7 @@ impl ConductorClientHandle {
 	///
 	/// This function will panic if the client thread is closed, or closes while
 	/// waiting to respond.
-	///
-	/// # Depreciating
-	///
-	/// This is replaced by `subscribe_new_camera` on `PersistenceClientHandle`.
-	#[deprecated]
+	#[deprecated = "This is replaced by `subscribe_new_camera` on `PersistenceClientHandle`"]
 	pub async fn subscribe_new_camera(
 		&mut self,
 		camera_id: CameraId,
@@ -124,11 +120,7 @@ impl ConductorClientHandle {
 	///
 	/// This function will panic if the client thread is closed, or closes while
 	/// waiting to respond.
-	///
-	/// # Depreciating
-	///
-	/// This function should not be used.
-	#[deprecated]
+	#[deprecated = "Function should not be used"]
 	pub async fn subscribe_new_listener(&mut self) -> ListenerRx {
 		let (res_tx, res_rx) = oneshot::channel();
 
@@ -158,11 +150,7 @@ impl ConductorClientHandle {
 	/// # Panics
 	///
 	/// This function will panic if the client thread is closed.
-	///
-	/// # Depreciating
-	///
-	/// This is replaced by `register_cameras` on `PersistenceClientHandle`.
-	#[deprecated]
+	#[deprecated = "This is replaced by `register_cameras` on `PersistenceClientHandle`"]
 	pub fn register_cameras(
 		&mut self,
 		cameras: HashMap<CameraId, NewCameraInfo>,
@@ -186,11 +174,7 @@ impl ConductorClientHandle {
 	/// # Panics
 	///
 	/// This function will panic if the client thread is closed.
-	///
-	/// # Depreciating
-	///
-	/// This is replaced by `update_camera_status` on `CameraClientHandle`.
-	#[deprecated]
+	#[deprecated = "This is replaced by `update_camera_status` on `CameraClientHandle`"]
 	pub fn update_camera_status(
 		&mut self,
 		camera_id: CameraId,
@@ -211,11 +195,7 @@ impl ConductorClientHandle {
 	/// # Panics
 	///
 	/// This function will panic if the client thread is closed.
-	///
-	/// # Depreciating
-	///
-	/// This is replaced by `image_analysis` on `CameraClientHandle`.
-	#[deprecated]
+	#[deprecated = "This is replaced by `image_analysis` on `CameraClientHandle`"]
 	pub fn image_analysis(
 		&mut self,
 		camera_id: CameraId,
@@ -236,11 +216,7 @@ impl ConductorClientHandle {
 	/// # Panics
 	///
 	/// This function will panic if the client thread is closed.
-	///
-	/// # Depreciating
-	///
-	/// This is replaced by configuration on `CameraClientHandle`.
-	#[deprecated]
+	#[deprecated = "This is replaced by configuration on `CameraClientHandle`"]
 	pub fn configuration(
 		&mut self,
 		conn_id: ConnId,
@@ -289,11 +265,7 @@ impl ConductorClientHandle {
 	/// # Panics
 	///
 	/// This function will panic if the client thread is closed.
-	///
-	/// # Depreciating
-	///
-	/// This is replaced by `send_image` on `CameraClientHandle`.
-	#[deprecated]
+	#[deprecated = "This is replaced by `send_image` on `CameraClientHandle`"]
 	pub fn send_image(
 		&mut self,
 		camera_id: CameraId,
@@ -314,11 +286,7 @@ impl ConductorClientHandle {
 	/// # Panics
 	///
 	/// This function will panic if the client thread is closed.
-	///
-	/// # Depreciating
-	///
-	/// This is replaced by `set_name_camera` on [`CameraClientHandle`].
-	#[deprecated]
+	#[deprecated = "This is replaced by `set_name_camera` on `CameraClientHandle`"]
 	pub fn set_name_camera(
 		&mut self,
 		camera_id: CameraId,
