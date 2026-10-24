@@ -52,11 +52,9 @@ use self::{
 	vision_variant::VisionVariant,
 };
 
-pub type VisionRef = &'static VisionGuard;
-
 static VISION: OnceLock<VisionGuard> = OnceLock::new();
 
-pub fn vision() -> VisionRef {
+pub fn vision() -> &'static VisionGuard {
 	VISION.get_or_init(VisionGuard::new)
 }
 

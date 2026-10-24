@@ -42,12 +42,9 @@ use serde::{
 
 use crate::settings;
 
-// Declare a type alias for easy imports
-pub type LoggerRef = &'static LoggerGuard;
-
 static LOGGER: OnceLock<LoggerGuard> = OnceLock::new();
 
-pub fn logger() -> LoggerRef {
+pub fn logger() -> &'static LoggerGuard {
 	LOGGER.get_or_init(LoggerGuard::new)
 }
 
