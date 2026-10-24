@@ -1,3 +1,9 @@
+//! Shared types for ingesting [`nokhwa`] image buffers and encoding.
+//!
+//! [`FrameBuffer`] wraps the [`Buffer`] type that [`nokhwa`] returns.
+//! When decoded, it is converted into an [`Image`] type, that wraps an
+//! [`ImageBuffer`](image::ImageBuffer).
+
 use std::{
 	borrow::Cow,
 	io::Cursor,
@@ -36,8 +42,6 @@ use crate::{
 	error::{
 		EdgeCoreError,
 		EdgeCoreResult,
-		FrameDecodeCorruption,
-		SelectDecodeFormat,
 	},
 	settings::{
 		IMAGE_HEIGHT,
@@ -45,6 +49,12 @@ use crate::{
 	},
 };
 
+/// The raw buffer of data returned from a camera device.
+///
+/// This hides away [`nokhwa`]'s [`Buffer`] type.
+///
+/// The contained data is encoded and must be decoded with
+/// [`FrameBuffer::try_decode`].
 #[derive(Clone, Debug)]
 pub struct FrameBuffer {
 	inner: Buffer,
@@ -58,6 +68,7 @@ impl FrameBuffer {
 	/// If the frame is corrupted or the system is out of memory.
 	/// The out of memory case is not checked, so only the corruption errors is
 	/// reported.
+	// IDEA: Maybe make this operation directly on the Image type?
 	pub fn try_decode(self) -> EdgeCoreResult<Image> {
 		let decoded_res = select_decode_format(self.inner)?;
 
@@ -66,9 +77,7 @@ impl FrameBuffer {
 			// We just assume it is always corruption for now.
 			// TODO: Figure out the why.
 			// If it is because of memory, maybe try unwind and restart.
-			.map_err(|why| {
-				EdgeCoreError::from(FrameDecodeCorruption::from(why))
-			})?;
+			.map_err(EdgeCoreError::FrameDecodeCorruption)?;
 
 		let frame = DynamicImage::ImageRgb8(img_buffer);
 		let cropped = frame.crop_imm(0, 0, frame.width(), frame.height());
@@ -85,12 +94,14 @@ impl From<Buffer> for FrameBuffer {
 	}
 }
 
+/// Thin wrapper over an image buffer type provided by [`image`].
 #[derive(Clone, Debug)]
 pub struct Image {
 	inner: RgbImage,
 }
 
 impl Image {
+	/// Provide a [`Cow`] of this type.
 	pub fn lazy_clone(&self) -> Cow<'_, Self> {
 		Cow::Borrowed(self)
 	}
@@ -136,43 +147,33 @@ fn select_decode_format(buf: Buffer) -> EdgeCoreResult<RgbConversion> {
 	match buf.source_frame_format() {
 		FrameFormat::MJPEG => {
 			Ok(Frame::<Mjpeg>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		FrameFormat::YUYV => {
 			Ok(Frame::<Yuyv>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		FrameFormat::NV12 => {
 			Ok(Frame::<Nv12>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		FrameFormat::RAWRGB => {
 			Ok(Frame::<RawRgb>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		FrameFormat::RAWBGR => {
 			Ok(Frame::<RawBgr>::try_new(buf)
-				.map_err(|why| {
-					EdgeCoreError::from(SelectDecodeFormat::from(why))
-				})?
+				.map_err(EdgeCoreError::SelectDecodeFormat)?
 				.into_rgb())
 		},
 		// TODO: Support this type of input
 		FrameFormat::GRAY => {
 			let nok_err = NokhwaError::general("GRAY/Luma cameras not support");
-			let err = EdgeCoreError::from(SelectDecodeFormat::from(nok_err));
+			let err = EdgeCoreError::SelectDecodeFormat(nok_err);
 			Err(err)
 		},
 	}

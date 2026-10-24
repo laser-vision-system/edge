@@ -1,3 +1,6 @@
+//! Functionality to retain persistent information about connected camera (or
+//! other) devices.
+
 pub mod perpetual_info;
 pub mod persist_entry;
 pub mod polling;
@@ -45,6 +48,7 @@ use crate::{
 	identifier::Identifier,
 };
 
+/// The type used by the error accumulation.
 pub type ErrAccType = u16;
 
 // Internal mapping types.
@@ -53,14 +57,18 @@ type ValType = PersistEntry;
 type MapType = HashMap<KeyType, ValType>;
 type OccupiedIndices = HashSet<CameraIndex>;
 
+/// The result from trying to retrieve a [`BatchItem`] from a camera.
 pub enum MaybeBatch<'a> {
+	/// A [`BatchItem`] was successfully retrieved.
 	Batch(BatchItem<'a>),
+	/// No [`BatchItem`] could be retireved.
 	WhyNo(WhyNo),
 }
 
+/// Details about a camera's status change.
 pub struct StatusChange {
-	pub id: CameraId,
-	pub why: WhyNo,
+	id: CameraId,
+	why: WhyNo,
 }
 
 impl StatusChange {
@@ -72,6 +80,16 @@ impl StatusChange {
 			id,
 			why,
 		}
+	}
+
+	/// Get the [`CameraId`] of the camera which had it status changed.
+	pub fn id(&self) -> CameraId {
+		self.id
+	}
+
+	/// Get the reason for the status change.
+	pub fn why(&self) -> &WhyNo {
+		&self.why
 	}
 }
 
@@ -104,6 +122,7 @@ impl Persistence {
 			.collect()
 	}
 
+	/// Try to access a [`PersistEntry`] by a [`CameraId`].
 	pub fn get(
 		&self,
 		ident: CameraId,
@@ -111,6 +130,7 @@ impl Persistence {
 		self.inner.get(&ident)
 	}
 
+	/// Try to mutably access a [`PersistEntry`] by a [`CameraId`].
 	pub fn get_mut(
 		&mut self,
 		ident: CameraId,
@@ -135,6 +155,7 @@ impl Persistence {
 		}
 	}
 
+	/// Update the name for a [`PersistEntry`] by a [`CameraId`].
 	pub fn set_entry_name(
 		&mut self,
 		request: SetNameCamera,
@@ -147,10 +168,8 @@ impl Persistence {
 		}
 	}
 
-	#[expect(
-		clippy::needless_pass_by_value,
-		reason = "The request should not be used after this method call"
-	)]
+	/// Change the "currently viewing" state for a [`PersistEntry`] by a
+	/// [`CameraId`].
 	pub fn toggle_viewing_camera(
 		&mut self,
 		camera_id: CameraId,
@@ -159,6 +178,7 @@ impl Persistence {
 		self.set_currently_viewed(camera_id, start_viewing);
 	}
 
+	/// Apply a configuration for a [`PersistEntry`] by a [`CameraId`].
 	#[expect(
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
@@ -192,6 +212,7 @@ impl Persistence {
 		}
 	}
 
+	/// Request a configuration for a [`PersistEntry`] by a [`CameraId`].
 	pub fn get_configuration(
 		&mut self,
 		request: ViewCameraConfig,
@@ -209,7 +230,7 @@ impl Persistence {
 		};
 		let controls = active.get_camera_mut().get_controls();
 		let important_controls = match controls {
-			Ok(controls) => controls.stripped(),
+			Ok(controls) => controls.to_stripped(),
 			Err(why) => {
 				logger().log_error(&why);
 				return None;
@@ -222,6 +243,8 @@ impl Persistence {
 		Some(configuration)
 	}
 
+	/// Request that the setpoint be calibrated for a [`PersistEntry`] by a
+	/// [`CameraId`].
 	#[expect(
 		clippy::needless_pass_by_value,
 		reason = "The request should not be used after this method call"
@@ -238,6 +261,7 @@ impl Persistence {
 		}
 	}
 
+	/// Get the details about all currently known devices.
 	pub fn get_current_cameras(&mut self) -> HashMap<CameraId, NewCameraInfo> {
 		let camera_list: HashMap<CameraId, NewCameraInfo> = self
 			.inner

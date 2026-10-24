@@ -1,4 +1,16 @@
 //! Types that map to [`nokhwa`]'s [`ControlValueSetter`].
+//!
+//! ==================== READ HERE FIRST ====================.
+//!
+//! This may seem like a needless middle layer between the
+//! control types and the control descriptions, but it
+//! provides an easy mapping to and from
+//! `ControlValueSetter`.
+//! Additionally, the lower-level type defines make it easy
+//! to synchronise the types between this and higher-level
+//! components.
+//!
+//! ==================== ^^^^^^^^^^^^^^^ ====================.
 
 // TODO: Implement `Borrow` on everything.
 
@@ -24,21 +36,7 @@ use super::{
 	},
 };
 
-// ==================== READ HERE FIRST ====================
-//
-// This may seem like a needless middle layer between the
-// control types and the control descriptions, but it
-// provides an easy mapping to and from
-// `ControlValueSetter`.
-// Additionally, the lower-level type defines make it easy
-// to synchronise the types between this and higher-level
-// components.
-//
-// ==================== ^^^^^^^^^^^^^^^ ====================
-
-// pub struct ControlValueNone;
-
-/// A control that has a value of the type [`ControlTypeInteger`].
+/// A control for integer values.
 ///
 /// Maps to [`ControlValueSetter::Integer`].
 #[derive(
@@ -65,15 +63,12 @@ impl From<ConTypeInt> for ConValueInteger {
 impl ControlValue for ConValueInteger {
 	type ConType = ConTypeInt;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -83,9 +78,10 @@ impl From<ConValueInteger> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueInteger`]'s internal type via [`ControlValue`].
 pub type ConValueIntegerType = <ConValueInteger as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeFloat`].
+/// A control for floating-point values.
 ///
 /// Maps to [`ControlValueSetter::Float`].
 #[derive(
@@ -102,15 +98,12 @@ impl From<ConTypeFloat> for ConValueFloat {
 impl ControlValue for ConValueFloat {
 	type ConType = ConTypeFloat;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -120,9 +113,10 @@ impl From<ConValueFloat> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueFloat`]'s internal type via [`ControlValue`].
 pub type ConValueFloatType = <ConValueFloat as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeBool`].
+/// A control for boolean values.
 ///
 /// Maps to [`ControlValueSetter::Boolean`].
 #[derive(
@@ -149,15 +143,12 @@ impl From<ConTypeBool> for ConValueBoolean {
 impl ControlValue for ConValueBoolean {
 	type ConType = ConTypeBool;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -167,9 +158,10 @@ impl From<ConValueBoolean> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueBoolean`]'s internal type via [`ControlValue`].
 pub type ConValueBooleanType = <ConValueBoolean as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeString`].
+/// A control for string values.
 ///
 /// Maps to [`ControlValueSetter::String`].
 #[derive(
@@ -195,15 +187,12 @@ impl From<ConTypeString> for ConValueString {
 impl ControlValue for ConValueString {
 	type ConType = ConTypeString;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0.clone()
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -213,9 +202,10 @@ impl From<ConValueString> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueString`]'s internal type via [`ControlValue`].
 pub type ConValueStringType = <ConValueString as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeBytes`].
+/// A control for byte vector values.
 ///
 /// Maps to [`ControlValueSetter::Bytes`].
 #[derive(
@@ -241,15 +231,12 @@ impl From<ConTypeBytes> for ConValueBytes {
 impl ControlValue for ConValueBytes {
 	type ConType = ConTypeBytes;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0.clone()
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -259,9 +246,10 @@ impl From<ConValueBytes> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueBytes`]'s internal type via [`ControlValue`].
 pub type ConValueBytesType = <ConValueBytes as ControlValue>::ConType;
 
-/// A control that has a value of the type [`KeyValue`].
+/// A control for key-value values.
 ///
 /// Maps to [`ControlValueSetter::KeyValue`].
 #[derive(
@@ -288,15 +276,12 @@ impl From<ConTypeKeyValue> for ConValueKeyValue {
 impl ControlValue for ConValueKeyValue {
 	type ConType = ConTypeKeyValue;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -306,9 +291,10 @@ impl From<ConValueKeyValue> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueKeyValue`]'s internal type via [`ControlValue`].
 pub type ConValueKeyValueType = <ConValueKeyValue as ControlValue>::ConType;
 
-/// A control that has a value of the type [`Point`].
+/// A control for point values.
 ///
 /// Maps to [`ControlValueSetter::Point`].
 #[derive(
@@ -325,15 +311,12 @@ impl From<ConTypePoint> for ConValuePoint {
 impl ControlValue for ConValuePoint {
 	type ConType = ConTypePoint;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -343,9 +326,10 @@ impl From<ConValuePoint> for ControlValueSetter {
 	}
 }
 
+/// [`ConValuePoint`]'s internal type via [`ControlValue`].
 pub type ConValuePointType = <ConValuePoint as ControlValue>::ConType;
 
-/// A control that has a value of the type [`ControlTypeEnum`].
+/// A control for enum values.
 ///
 /// Maps to [`ControlValueSetter::EnumValue`].
 #[derive(
@@ -372,15 +356,12 @@ impl From<ConTypeEnum> for ConValueEnum {
 impl ControlValue for ConValueEnum {
 	type ConType = ConTypeEnum;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -390,9 +371,10 @@ impl From<ConValueEnum> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueEnum`]'s internal type via [`ControlValue`].
 pub type ConValueEnumType = <ConValueEnum as ControlValue>::ConType;
 
-/// A control that has a value of the type [`RGB`].
+/// A control for RGB values.
 ///
 /// Maps to [`ControlValueSetter::RGB`].
 #[derive(
@@ -409,15 +391,12 @@ impl From<ConTypeRGB> for ConValueRGB {
 impl ControlValue for ConValueRGB {
 	type ConType = ConTypeRGB;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -427,8 +406,12 @@ impl From<ConValueRGB> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueRGB`]'s internal type via [`ControlValue`].
 pub type ConValueRGBType = <ConValueRGB as ControlValue>::ConType;
 
+/// A control for menu values.
+///
+/// Maps to [`ControlValueSetter::Menu`].
 #[derive(
 	Clone,
 	Copy,
@@ -453,15 +436,12 @@ impl From<ConTypeMenu> for ConValueMenu {
 impl ControlValue for ConValueMenu {
 	type ConType = ConTypeMenu;
 
-	fn get_value(&self) -> Self::ConType {
+	fn get(&self) -> Self::ConType {
 		self.0
 	}
 
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	) {
-		self.0 = value;
+	fn get_mut(&mut self) -> &mut Self::ConType {
+		&mut self.0
 	}
 }
 
@@ -471,4 +451,5 @@ impl From<ConValueMenu> for ControlValueSetter {
 	}
 }
 
+/// [`ConValueMenu`]'s internal type via [`ControlValue`].
 pub type ConValueMenuType = <ConValueMenu as ControlValue>::ConType;

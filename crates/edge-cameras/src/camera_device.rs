@@ -1,3 +1,7 @@
+//! A physical camera device, as made available by [`nokhwa`].
+//!
+//! Also provides [`CameraLike`] to abstract implemention details away.
+
 #[cfg(test)]
 #[path = "camera_device_tests.rs"]
 mod tests;
@@ -35,19 +39,20 @@ use crate::{
 		traits::ControlDescription as _,
 	},
 	error::{
-		CannotGetControls,
 		EdgeCamerasError,
 		EdgeCamerasResult,
-		FrameRead,
-		NokhwaInitialisation,
-		SetControl,
-		StreamOpen,
 	},
 };
 
+/// An abstraction over the functionalities that a camera would provide.
+///
+/// This is used to allow for testing fixtures to be used in place of real
+/// cameras for unit tests.
 pub trait CameraLike {
+	/// Get the [`CameraInfo`] struct.
 	fn get_info(&self) -> &CameraInfo;
 
+	/// Get the [`CameraIndex`] enum.
 	fn get_index(&self) -> &CameraIndex;
 
 	/// Request an image of the current camera frame.
@@ -98,6 +103,8 @@ pub trait CameraLike {
 }
 
 /// An abstraction over the nokhwa camera objects.
+///
+/// Prefer using [`CameraLike`] when defining type bounds.
 #[must_use]
 pub struct CameraDevice {
 	inner: StreamCamera,
@@ -118,7 +125,7 @@ impl CameraDevice {
 				.map_err(|why| {
 				EdgeCamerasError::NokhwaInitialisation {
 					index: index_str,
-					inner: NokhwaInitialisation::from(why),
+					source: why,
 				}
 			})?;
 
@@ -163,9 +170,7 @@ impl CameraDevice {
 	///
 	/// If nokhwa could not open the camera.
 	pub fn open(mut self) -> EdgeCamerasResult<Self> {
-		self.inner
-			.open()
-			.map_err(|why| EdgeCamerasError::from(StreamOpen::from(why)))?;
+		self.inner.open().map_err(EdgeCamerasError::StreamOpen)?;
 		Ok(self)
 	}
 
@@ -205,7 +210,7 @@ impl CameraDevice {
 			EdgeCamerasError::SetControl {
 				id,
 				value: value_string,
-				inner: SetControl::from(why),
+				source: why,
 			}
 		})
 	}
@@ -225,7 +230,7 @@ impl CameraLike for CameraDevice {
 			.inner
 			.frame()
 			// Could error if the stream hasn't been opened.
-			.map_err(|why| EdgeCamerasError::from(FrameRead::from(why)))?;
+			.map_err(EdgeCamerasError::FrameRead)?;
 
 		Ok(FrameBuffer::from(frame))
 	}
@@ -236,9 +241,7 @@ impl CameraLike for CameraDevice {
 	) -> EdgeCamerasResult<Vec<KnownCameraControl>> {
 		self.inner
 			.controls()
-			.map_err(|why| {
-				EdgeCamerasError::from(CannotGetControls::from(why))
-			})?
+			.map_err(EdgeCamerasError::CannotGetControls)?
 			.iter()
 			.map(CameraControl::control)
 			.map(Ok)
@@ -249,7 +252,7 @@ impl CameraLike for CameraDevice {
 	fn get_controls(&self) -> EdgeCamerasResult<ControlMap> {
 		self.inner
 			.controls()
-			.map_err(|why| EdgeCamerasError::from(CannotGetControls::from(why)))
+			.map_err(EdgeCamerasError::CannotGetControls)
 			.map(ControlMap::from)
 	}
 
@@ -260,9 +263,7 @@ impl CameraLike for CameraDevice {
 	) -> EdgeCamerasResult<CamControl> {
 		self.inner
 			.controls()
-			.map_err(|why| {
-				EdgeCamerasError::from(CannotGetControls::from(why))
-			})?
+			.map_err(EdgeCamerasError::CannotGetControls)?
 			.into_iter()
 			.find(|con| con.control() == id)
 			.ok_or(EdgeCamerasError::GetControl(id))
@@ -287,7 +288,7 @@ impl CameraLike for CameraDevice {
 				return Err(EdgeCamerasError::SetControlType(id));
 			};
 			// TODO: Handle error. Maybe try make this operation atomic?
-			self.set_value(id, control.get_value().into())
+			self.set_value(id, control.control_value().into())
 		})
 	}
 

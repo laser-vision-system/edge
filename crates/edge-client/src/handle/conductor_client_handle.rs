@@ -1,3 +1,7 @@
+//! A client handle provided to the conductor.
+
+// TODO: Remove expects and then remove this.
+#![expect(clippy::expect_used, reason = "WIP development")]
 #![expect(deprecated, reason = "Temporarily used for backwards compatibility")]
 
 use std::collections::HashMap;
@@ -45,6 +49,8 @@ pub struct ConductorClientHandle {
 // TODO: Remove all the camera command methods here, once the proper integration
 // has been done.
 impl ConductorClientHandle {
+	/// Create a new [`ConductorClientHandle`] instance.
+	///
 	/// Starts a websocket client on a separate thread.
 	/// Returns itself, for communications with the thread,
 	/// as well as a receiver which sends true when the websocket comes online,
@@ -67,12 +73,10 @@ impl ConductorClientHandle {
 	/// These receivers can be dropped without issue.
 	///
 	/// # Panics
-	/// This function will panic if the client thread is closed, or closes while
-	/// waiting to respond
 	///
-	/// # Depreciating
-	/// This is replaced by `subscribe_new_camera` on `PersistenceClientHandle`
-	#[deprecated]
+	/// This function will panic if the client thread is closed, or closes while
+	/// waiting to respond.
+	#[deprecated = "This is replaced by `subscribe_new_camera` on `PersistenceClientHandle`"]
 	pub async fn subscribe_new_camera(
 		&mut self,
 		camera_id: CameraId,
@@ -113,12 +117,10 @@ impl ConductorClientHandle {
 	/// These receivers can be dropped without issue.
 	///
 	/// # Panics
-	/// This function will panic if the client thread is closed, or closes while
-	/// waiting to respond
 	///
-	/// # Depreciating
-	/// This function should not be used.
-	#[deprecated]
+	/// This function will panic if the client thread is closed, or closes while
+	/// waiting to respond.
+	#[deprecated = "Function should not be used"]
 	pub async fn subscribe_new_listener(&mut self) -> ListenerRx {
 		let (res_tx, res_rx) = oneshot::channel();
 
@@ -131,7 +133,7 @@ impl ConductorClientHandle {
 		res_rx.await.expect("Return handle dropped")
 	}
 
-	/// Sleeps until the websocket is up
+	/// Sleeps until the websocket is up.
 	pub async fn assert_connection(&mut self) {
 		if self.status() {
 			return;
@@ -139,18 +141,16 @@ impl ConductorClientHandle {
 		while !self.base.await_status_change().await {}
 	}
 
-	/// Sends the `RegisterCameras` command to the server
+	/// Sends the `RegisterCameras` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
-	/// This function will panic if the client thread is closed.
 	///
-	/// # Depreciating
-	/// This is replaced by `register_cameras` on `PersistenceClientHandle`
-	#[deprecated]
+	/// This function will panic if the client thread is closed.
+	#[deprecated = "This is replaced by `register_cameras` on `PersistenceClientHandle`"]
 	pub fn register_cameras(
 		&mut self,
 		cameras: HashMap<CameraId, NewCameraInfo>,
@@ -165,18 +165,16 @@ impl ConductorClientHandle {
 		self.base.status()
 	}
 
-	/// Sends the `UpdateCameraStatus` command to the server
+	/// Sends the `UpdateCameraStatus` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
-	/// This function will panic if the client thread is closed.
 	///
-	/// # Depreciating
-	/// This is replaced by `update_camera_status` on `CameraClientHandle`
-	#[deprecated]
+	/// This function will panic if the client thread is closed.
+	#[deprecated = "This is replaced by `update_camera_status` on `CameraClientHandle`"]
 	pub fn update_camera_status(
 		&mut self,
 		camera_id: CameraId,
@@ -188,18 +186,16 @@ impl ConductorClientHandle {
 		})
 	}
 
-	/// Sends the `ImageAnalysis` command to the server
+	/// Sends the `ImageAnalysis` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
-	/// This function will panic if the client thread is closed.
 	///
-	/// # Depreciating
-	/// This is replaced by `image_analysis` on `CameraClientHandle`
-	#[deprecated]
+	/// This function will panic if the client thread is closed.
+	#[deprecated = "This is replaced by `image_analysis` on `CameraClientHandle`"]
 	pub fn image_analysis(
 		&mut self,
 		camera_id: CameraId,
@@ -211,18 +207,16 @@ impl ConductorClientHandle {
 		})
 	}
 
-	/// Sends the `Configuration` command to the server
+	/// Sends the `Configuration` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
-	/// This function will panic if the client thread is closed.
 	///
-	/// # Depreciating
-	/// This is replaced by configuration on `CameraClientHandle`
-	#[deprecated]
+	/// This function will panic if the client thread is closed.
+	#[deprecated = "This is replaced by configuration on `CameraClientHandle`"]
 	pub fn configuration(
 		&mut self,
 		conn_id: ConnId,
@@ -236,13 +230,14 @@ impl ConductorClientHandle {
 		})
 	}
 
-	/// Sends the `Alert` command to the server
+	/// Sends the `Alert` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed.
 	pub fn alert(
 		&mut self,
@@ -261,18 +256,16 @@ impl ConductorClientHandle {
 		})
 	}
 
-	/// Sends an image to the server
+	/// Sends an image to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
-	/// This function will panic if the client thread is closed.
 	///
-	/// # Depreciating
-	/// This is replaced by `send_image` on `CameraClientHandle`
-	#[deprecated]
+	/// This function will panic if the client thread is closed.
+	#[deprecated = "This is replaced by `send_image` on `CameraClientHandle`"]
 	pub fn send_image(
 		&mut self,
 		camera_id: CameraId,
@@ -284,18 +277,16 @@ impl ConductorClientHandle {
 		})
 	}
 
-	/// Sends the `SetNameCamera` command to the server
+	/// Sends the `SetNameCamera` command to the server.
 	///
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
 	///
 	/// # Panics
-	/// This function will panic if the client thread is closed.
 	///
-	/// # Depreciating
-	/// This is replaced by `set_name_camera` on `CameraClientHandle`
-	#[deprecated]
+	/// This function will panic if the client thread is closed.
+	#[deprecated = "This is replaced by `set_name_camera` on `CameraClientHandle`"]
 	pub fn set_name_camera(
 		&mut self,
 		camera_id: CameraId,
@@ -309,9 +300,14 @@ impl ConductorClientHandle {
 
 	/// Gets the default settings from the server.
 	///
+	/// # Errors
+	///
+	/// No clue, sorry.
+	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed, or closes while
-	/// waiting to respond
+	/// waiting to respond.
 	pub async fn get_default_setting(&mut self) -> EdgeClientResult<Settings> {
 		let (res_tx, res_rx) = oneshot::channel();
 
@@ -327,8 +323,9 @@ impl ConductorClientHandle {
 	/// Gets the url currently being used for the websocket.
 	///
 	/// # Panics
+	///
 	/// This function will panic if the client thread is closed, or closes while
-	/// waiting to respond
+	/// waiting to respond.
 	pub async fn get_server_url(&mut self) -> String {
 		let (res_tx, res_rx) = oneshot::channel();
 

@@ -219,11 +219,15 @@ impl Ord for Identifier {
 	}
 }
 
+/// Expose some test-only functionality for other modules to use.
 #[cfg(test)]
 pub mod common {
 	use super::IdentMetaInfo;
 
 	impl IdentMetaInfo {
+		/// Create a new [`IdentMetaInfo`] instance directly.
+		///
+		/// For testing only.
 		pub fn new(
 			name: impl Into<String>,
 			description: impl Into<String>,

@@ -1,3 +1,5 @@
+//! The absense of any vision processing.
+
 use std::fmt;
 
 use crate::{
@@ -7,12 +9,16 @@ use crate::{
 	vision_state::VisionState,
 };
 
+/// A [`VisionVariant`] that does nothing.
+///
+/// [`VisionVariant`]: super::VisionVariant
 #[derive(Clone, Default)]
 pub struct Inactive {
 	session: SessionToken,
 }
 
 impl Inactive {
+	/// Create a new [`Inactive`] instance.
 	pub fn new() -> Self {
 		Self {
 			session: SessionToken::new(),
@@ -28,10 +34,7 @@ impl VisionInterface for Inactive {
 	}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::Inactive {
-			handle: self.session.downgrade(),
-			data: ExternalData,
-		}
+		VisionState::Inactive(self.session.downgrade(), ExternalData)
 	}
 }
 

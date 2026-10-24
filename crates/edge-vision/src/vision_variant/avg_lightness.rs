@@ -1,3 +1,5 @@
+//! Unintelligent average pixel lightness.
+
 use std::fmt;
 
 use image::RgbImage;
@@ -9,14 +11,46 @@ use crate::{
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
+	write_optional,
 };
 
+/// Closely associated data used by external holders.
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+pub struct ExternalData {
+	/// The intensity value used for deviation measurement.
+	pub setpoint: Option<f32>,
+	/// The current avg lightness value.
+	pub intensity: Option<f32>,
+	/// The calculated deviation value, if the setpoint exists.
+	pub deviation: Option<f32>,
+}
+
+impl fmt::Display for ExternalData {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		f.write_str("ExternalData for AvgLightness { setpoint: ")?;
+		write_optional(f, self.setpoint)?;
+		f.write_str(", intensity: ")?;
+		write_optional(f, self.intensity)?;
+		f.write_str(", deviation: ")?;
+		write_optional(f, self.deviation)?;
+		f.write_str(" }")
+	}
+}
+
+/// A [`VisionVariant`] that calculates intensity with the average pixel
+/// lightness.
+///
+/// [`VisionVariant`]: super::VisionVariant
 #[derive(Clone, Default)]
 pub struct AvgLightness {
 	session: SessionToken,
 }
 
 impl AvgLightness {
+	/// Create a new [`AvgLightness`] instance.
 	pub fn new() -> Self {
 		Self {
 			session: SessionToken::new(),
@@ -55,10 +89,7 @@ impl VisionInterface for AvgLightness {
 		batch: &mut [BatchItem],
 	) {
 		for item in batch {
-			let VisionState::AvgLightness {
-				data, ..
-			} = item.state
-			else {
+			let VisionState::AvgLightness(_, data) = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
@@ -82,10 +113,10 @@ impl VisionInterface for AvgLightness {
 	}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::AvgLightness {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
+		VisionState::AvgLightness(
+			self.session.downgrade(),
+			ExternalData::default(),
+		)
 	}
 }
 
@@ -104,22 +135,5 @@ impl fmt::Display for AvgLightness {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		write!(f, "AvgLightness")
-	}
-}
-
-/// Closely associated data used by external holders.
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ExternalData {
-	pub setpoint: Option<f32>,
-	pub intensity: Option<f32>,
-	pub deviation: Option<f32>,
-}
-
-impl fmt::Display for ExternalData {
-	fn fmt(
-		&self,
-		f: &mut fmt::Formatter<'_>,
-	) -> fmt::Result {
-		write!(f, "ExternalData for AvgLightness: {:?}", self.setpoint)
 	}
 }

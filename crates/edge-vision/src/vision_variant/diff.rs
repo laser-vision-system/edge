@@ -1,3 +1,5 @@
+//! Image metric comparison.
+
 // TODO: Remove all unwraps and then this.
 #![expect(clippy::unwrap_used, reason = "WIP development")]
 
@@ -20,7 +22,40 @@ use crate::{
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
+	write_optional,
 };
+
+/// Closely associated data used by external holders.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ExternalData {
+	/// The image data used as the setpoint.
+	pub image: Option<GrayImage>,
+	/// The peak brightness metric.
+	pub peak: Option<f32>,
+	/// The average brightness metric.
+	pub mean: Option<f32>,
+	/// The standard deviation metric.
+	pub std_dev: Option<f32>,
+	/// The calculated deviation value, if the setpoint exists.
+	pub deviation: Option<f32>,
+}
+
+impl fmt::Display for ExternalData {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		f.write_str("ExternalData for Diff { peak: ")?;
+		write_optional(f, self.peak)?;
+		f.write_str(", mean: ")?;
+		write_optional(f, self.mean)?;
+		f.write_str(", std_dev: ")?;
+		write_optional(f, self.std_dev)?;
+		f.write_str(", deviation: ")?;
+		write_optional(f, self.deviation)?;
+		f.write_str(" }")
+	}
+}
 
 struct DiffModel {
 	intercept: f32,
@@ -79,6 +114,10 @@ impl Default for DiffModel {
 	}
 }
 
+/// A [`VisionVariant`] that uses image metric comparison to estimate deviation
+/// directly.
+///
+/// [`VisionVariant`]: super::VisionVariant
 #[derive(Default)]
 pub struct Diff {
 	session: SessionToken,
@@ -86,6 +125,7 @@ pub struct Diff {
 }
 
 impl Diff {
+	/// Create a new [`Diff`] instance.
 	pub fn new() -> Self {
 		Self {
 			session: SessionToken::new(),
@@ -164,10 +204,7 @@ impl VisionInterface for Diff {
 		batch: &mut [BatchItem],
 	) {
 		for item in batch {
-			let VisionState::Diff {
-				data, ..
-			} = item.state
-			else {
+			let VisionState::Diff(_, data) = item.state else {
 				// TODO: This should raise an error.
 				continue;
 			};
@@ -218,10 +255,7 @@ impl VisionInterface for Diff {
 	}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::Diff {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
+		VisionState::Diff(self.session.downgrade(), ExternalData::default())
 	}
 }
 
@@ -240,28 +274,5 @@ impl fmt::Display for Diff {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		write!(f, "Diff")
-	}
-}
-
-/// Closely associated data used by external holders.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct ExternalData {
-	pub image: Option<GrayImage>,
-	pub peak: Option<f32>,
-	pub mean: Option<f32>,
-	pub std_dev: Option<f32>,
-	pub deviation: Option<f32>,
-}
-
-impl fmt::Display for ExternalData {
-	fn fmt(
-		&self,
-		f: &mut fmt::Formatter<'_>,
-	) -> fmt::Result {
-		write!(
-			f,
-			"ExternalData for Diff\n - peak: {:?}\n - mean: {:?}\n - std_dev: {:?}",
-			self.peak, self.mean, self.std_dev
-		)
 	}
 }

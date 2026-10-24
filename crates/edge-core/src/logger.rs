@@ -42,15 +42,14 @@ use serde::{
 
 use crate::settings;
 
-// Declare a type alias for easy imports
-pub type LoggerRef = &'static LoggerGuard;
-
 static LOGGER: OnceLock<LoggerGuard> = OnceLock::new();
 
-pub fn logger() -> LoggerRef {
+/// Get exclusive access to the [`LoggerGuard`].
+pub fn logger() -> &'static LoggerGuard {
 	LOGGER.get_or_init(LoggerGuard::new)
 }
 
+/// A thread-safe protection over the `Logger` type.
 pub struct LoggerGuard {
 	inner: Mutex<RefCell<Logger>>,
 }
@@ -62,6 +61,7 @@ impl LoggerGuard {
 		}
 	}
 
+	/// Basic information useful for debugging.
 	pub fn log_info(
 		&self,
 		message: &str,
@@ -78,6 +78,7 @@ impl LoggerGuard {
 		logger.log_info(message);
 	}
 
+	/// A non-error that still may need attention.
 	pub fn log_warn(
 		&self,
 		message: &str,
@@ -94,6 +95,7 @@ impl LoggerGuard {
 		logger.log_warn(message);
 	}
 
+	/// An error that the system encountered.
 	pub fn log_error<T>(
 		&self,
 		error: &T,
@@ -112,6 +114,7 @@ impl LoggerGuard {
 		logger.log_error(error);
 	}
 
+	/// Flush all logs to the server.
 	pub fn send_logs(&self) {
 		let guard = match self.inner.lock() {
 			Ok(cell) => cell,
@@ -150,7 +153,7 @@ enum LogLevel {
 ///
 /// Any other inputs including non-numeric strings will default to level 1
 /// (error logs only).
-pub struct Logger {
+struct Logger {
 	logs: Vec<String>,
 	counter: LogCounter,
 	verbosity: u8,
@@ -189,7 +192,7 @@ impl Logger {
 		}
 	}
 
-	pub fn log_info(
+	fn log_info(
 		&mut self,
 		message: &str,
 	) {
@@ -210,7 +213,7 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_warn(
+	fn log_warn(
 		&mut self,
 		message: &str,
 	) {
@@ -232,7 +235,7 @@ impl Logger {
 	}
 
 	// HACK: Temporary workaround while restructuring the project.
-	pub fn log_error<T>(
+	fn log_error<T>(
 		&mut self,
 		error: &T,
 	) where
@@ -255,7 +258,7 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn send_logs(&mut self) {
+	fn send_logs(&mut self) {
 		let _logs = mem::take(&mut self.logs);
 
 		// for log in logs {

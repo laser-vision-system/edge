@@ -44,8 +44,6 @@ use tokio::{
 	try_join,
 };
 
-use crate::error::EdgeError;
-
 /// # Conductor
 ///
 /// The main execution context.
@@ -97,16 +95,16 @@ impl Conductor {
 			);
 
 		for status_change in status_changes {
-			match status_change.why {
+			match status_change.why() {
 				WhyNo::Disconnected => {
 					_ = client.update_camera_status(
-						status_change.id,
+						status_change.id(),
 						CameraStatus::Disconnected,
 					);
 				},
 				WhyNo::Broken => {
 					_ = client.update_camera_status(
-						status_change.id,
+						status_change.id(),
 						CameraStatus::Broken,
 					);
 				},
@@ -126,20 +124,17 @@ impl Conductor {
 		for item in &batch_items {
 			let deviation_maybe = item.state.get_deviation();
 			let cam_id = item.camera_id;
-			if let Some(deviation) = deviation_maybe {
-				let result = client.image_analysis(cam_id, deviation);
-
-				_ = result.inspect_err(|_| {
-					EdgeError::from(EdgeClientError::ServerConnection).log();
-				});
+			if let Some(deviation) = deviation_maybe
+				&& let Err(why) = client.image_analysis(cam_id, deviation)
+			{
+				logger().log_error(&why);
 			}
 
 			if item.send_to_server {
 				let encoded = item.image.encode();
-				let result = client.send_image(item.camera_id, encoded);
-				_ = result.inspect_err(|_| {
-					EdgeError::from(EdgeClientError::ServerConnection).log();
-				});
+				if let Err(why) = client.send_image(item.camera_id, encoded) {
+					logger().log_error(&why);
+				}
 			}
 		}
 
@@ -191,14 +186,14 @@ impl Conductor {
 			EdgeRequests::ViewCameraConfig(view_config_req) => {
 				if let Some(configuration) =
 					self.persistence.get_configuration(view_config_req)
-					&& let Err(_) = client.configuration(
+					&& let Err(why) = client.configuration(
 						configuration.conn_id,
 						configuration.camera_id,
 						configuration.configuration,
 					) {
 					// TODO: Error type for "Failed to send configuration
 					// request"
-					EdgeError::from(EdgeClientError::WebSocketConnection).log();
+					logger().log_error(&why);
 				}
 			},
 			EdgeRequests::Setpoint(calibration_req) => {
@@ -223,12 +218,8 @@ impl Conductor {
 
 		let new_cameras = results.extract_if(|_, value| {
 			match value {
-				ConnectionDetail::New {
-					..
-				} => true,
-				ConnectionDetail::Update {
-					..
-				} => false,
+				ConnectionDetail::New(_) => true,
+				ConnectionDetail::Update(_) => false,
 			}
 		});
 
@@ -236,21 +227,14 @@ impl Conductor {
 			.into_iter()
 			.filter_map(|(key, value)| {
 				match value {
-					ConnectionDetail::New {
-						info,
-					} => Some((key, info)),
-					ConnectionDetail::Update {
-						..
-					} => None,
+					ConnectionDetail::New(info) => Some((key, info)),
+					ConnectionDetail::Update(_) => None,
 				}
 			})
 			.collect();
 
 		for (camera_id, update) in results {
-			let ConnectionDetail::Update {
-				status,
-			} = update
-			else {
+			let ConnectionDetail::Update(status) = update else {
 				continue;
 			};
 			_ = client.update_camera_status(camera_id, status);
@@ -308,12 +292,8 @@ async fn flatten<T>(
 ///
 /// If either the main loop or client thread return an error.
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
-	let ClientResult {
-		status_handle,
-		conductor_client_handle,
-		client,
-		..
-	} = Client::new().await;
+	let ClientResult(status_handle, _, _, conductor_client_handle, client) =
+		Client::create();
 	let conductor = Conductor::default();
 
 	let client_thread = spawn(client.run());

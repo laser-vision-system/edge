@@ -1,23 +1,9 @@
-//! Low level and higher level types used for camera control values.
+//! Low level types used for camera control values.
 
 use nokhwa::utils::ControlValueSetter;
 use serde::{
 	Deserialize,
 	Serialize,
-};
-
-#[expect(unused_imports, reason = "Needed for docstring")]
-use super::{
-	descriptions::{
-		KeyValuePairControl,
-		PointControl,
-		RGBControl,
-	},
-	values::{
-		ConValueKeyValue,
-		ConValuePoint,
-		ConValueRGB,
-	},
 };
 
 // TODO: Use COW for String and Bytes.
@@ -36,6 +22,9 @@ type _ConTypeRGB = f64;
 
 /// Represents a key and value use by [`ConValueKeyValue`] and by extention,
 /// [`KeyValuePairControl`].
+///
+/// [`ConValueKeyValue`]: super::values::ConValueKeyValue
+/// [`KeyValuePairControl`]: super::descriptions::KeyValuePairControl
 #[derive(
 	Clone,
 	Copy,
@@ -52,11 +41,13 @@ type _ConTypeRGB = f64;
 pub struct ConTypeKeyValue(_ConTypeKeyValue, _ConTypeKeyValue);
 
 impl ConTypeKeyValue {
-	pub fn get_key(&self) -> _ConTypeKeyValue {
+	/// Get the key field.
+	pub fn key(&self) -> _ConTypeKeyValue {
 		self.0
 	}
 
-	pub fn get_value(&self) -> _ConTypeKeyValue {
+	/// Get the value field.
+	pub fn value(&self) -> _ConTypeKeyValue {
 		self.1
 	}
 }
@@ -75,23 +66,28 @@ impl From<ConTypeKeyValue> for (_ConTypeKeyValue, _ConTypeKeyValue) {
 
 impl From<ConTypeKeyValue> for ControlValueSetter {
 	fn from(value: ConTypeKeyValue) -> Self {
-		ControlValueSetter::KeyValue(value.get_key(), value.get_value())
+		ControlValueSetter::KeyValue(value.key(), value.value())
 	}
 }
 
 /// Represents a point value use by [`ConValuePoint`] and by extention,
 /// [`PointControl`].
+///
+/// [`ConValuePoint`]: super::values::ConValuePoint
+/// [`PointControl`]: super::descriptions::PointControl
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
 pub struct ConTypePoint(_ConTypePoint, _ConTypePoint);
 
 impl ConTypePoint {
-	pub fn get_x(&self) -> _ConTypePoint {
+	/// Get the first value of this point.
+	pub fn x_value(&self) -> _ConTypePoint {
 		self.0
 	}
 
-	pub fn get_y(&self) -> _ConTypePoint {
+	/// Get the second value of this point.
+	pub fn y_value(&self) -> _ConTypePoint {
 		self.1
 	}
 }
@@ -110,27 +106,33 @@ impl From<ConTypePoint> for (_ConTypePoint, _ConTypePoint) {
 
 impl From<ConTypePoint> for ControlValueSetter {
 	fn from(value: ConTypePoint) -> Self {
-		ControlValueSetter::Point(value.get_x(), value.get_y())
+		ControlValueSetter::Point(value.x_value(), value.y_value())
 	}
 }
 
 /// Represents an RGB value use by [`ConValueRGB`] and by extention,
 /// [`RGBControl`].
+///
+/// [`ConValueRGB`]: super::values::ConValueRGB
+/// [`RGBControl`]: super::descriptions::RGBControl
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
 pub struct ConTypeRGB(_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
 
 impl ConTypeRGB {
-	pub fn get_r(&self) -> _ConTypeRGB {
+	/// Get the red channel.
+	pub fn red(&self) -> _ConTypeRGB {
 		self.0
 	}
 
-	pub fn get_g(&self) -> _ConTypeRGB {
+	/// Get the green channel.
+	pub fn green(&self) -> _ConTypeRGB {
 		self.1
 	}
 
-	pub fn get_b(&self) -> _ConTypeRGB {
+	/// Get the blue channel.
+	pub fn blue(&self) -> _ConTypeRGB {
 		self.2
 	}
 }
@@ -149,6 +151,6 @@ impl From<ConTypeRGB> for (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB) {
 
 impl From<ConTypeRGB> for ControlValueSetter {
 	fn from(value: ConTypeRGB) -> Self {
-		ControlValueSetter::RGB(value.get_r(), value.get_g(), value.get_b())
+		ControlValueSetter::RGB(value.red(), value.green(), value.blue())
 	}
 }

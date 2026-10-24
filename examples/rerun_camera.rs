@@ -81,10 +81,7 @@ impl Context {
 		let mut batched = [batch];
 		self.demo.process(&mut batched);
 
-		let VisionState::AvgLightness {
-			data, ..
-		} = &self.state
-		else {
+		let VisionState::AvgLightness(_, data) = &self.state else {
 			return;
 		};
 

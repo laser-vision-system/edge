@@ -1,5 +1,7 @@
 //! Defines the behavior of the websocket thread.
 
+// TODO: Remove expects and then remove this.
+#![expect(clippy::expect_used, reason = "WIP development")]
 #![expect(deprecated, reason = "Temporarily used for backwards compatibility")]
 
 mod auto_connect;
@@ -93,21 +95,21 @@ use crate::{
 	},
 };
 
-pub const API: &str = "/edge_ws";
-pub const PORT: &str = "8080";
+/// How long between each attempt to autoconnect.
 pub const AUTO_CONNECT_DELAY: Duration = Duration::from_secs(5);
+/// The minimum time between each websocket heartbeat.
 pub const WS_KEEP_ALIVE: Duration = Duration::from_secs(6);
 type WebsocketType = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
-/// Helper dataholder for the result of calling [`Client::new`].
+/// Helper dataholder for the result of calling [`Client::create`].
 #[derive(Debug)]
-pub struct ClientResult {
-	pub status_handle: StatusHandle,
-	pub vision_client_handle: VisionClientHandle,
-	pub persistence_client_handle: PersistenceClientHandle,
-	pub conductor_client_handle: ConductorClientHandle,
-	pub client: Client,
-}
+pub struct ClientResult(
+	pub StatusHandle,
+	pub VisionClientHandle,
+	pub PersistenceClientHandle,
+	pub ConductorClientHandle,
+	pub Client,
+);
 
 /// The main websocket `client_2` implementation.
 #[derive(Debug)]
@@ -154,7 +156,7 @@ impl Client {
 		clippy::expect_used,
 		reason = "Ideally, we'd want this to be a compile-time error"
 	)]
-	fn convert_url(url: &String) -> String {
+	fn convert_url(url: &str) -> String {
 		let regex = Regex::new("^[A-z]+://([0-9.]+:[0-9]+)/edge_ws")
 			.expect("invalid regex");
 
@@ -221,42 +223,7 @@ impl Client {
 			)))
 			.await;
 
-		self.process_ws_err(result)
-	}
-
-	/// Converts `tungstenite::error` into an [`EdgeClientError`].
-	fn process_ws_err(
-		&mut self,
-		result: Result<(), Error>,
-	) -> EdgeClientResult<()> {
-		if result.is_err() {
-			return match result.err() {
-				None => {
-					logger().log_warn(
-						"Could not send text through websocket for unknown reason",
-					);
-					Ok(())
-				},
-				Some(err) => {
-					match err {
-						Error::ConnectionClosed | Error::AlreadyClosed => {
-							Err(EdgeClientError::WebsocketClosed)
-						},
-
-						err => {
-							logger().log_warn(
-								format!(
-									"Could not send text through websocket due to: {err}"
-								)
-								.as_str(),
-							);
-							Ok(())
-						},
-					}
-				},
-			};
-		}
-		Ok(())
+		process_ws_err(result)
 	}
 
 	/// Forwards the `SetProcessingType` request to `vision_rx`.
@@ -303,7 +270,7 @@ impl Client {
 	/// purposes.
 	fn forward_request(
 		&mut self,
-		request: EdgeRequests,
+		request: &EdgeRequests,
 	) {
 		self.listeners
 			.iter()
@@ -333,10 +300,10 @@ impl Client {
 
 	/// Listens for incoming commands and websocket requests.
 	///
-	/// Every interval, it checks if the websocket is closed,
-	/// sends a keepalive, and checks the status of listeners from other threads
+	/// Every interval, it checks if the websocket is closed, sends a keepalive,
+	/// and checks the status of listeners from other threads.
 	///
-	/// Exits when the websocket closes
+	/// Exits when the websocket closes.
 	async fn main_loop(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -344,18 +311,18 @@ impl Client {
 		let mut interval = interval(WS_KEEP_ALIVE);
 		loop {
 			tokio::select! {
-				Some(cmd)  = self.cmd_rx.recv() => {
-					if let Err(e) = self.process_command(cmd, websocket).await
-						&& let EdgeClientError::WebsocketClosed = e {
-									  break
-								  }
+				Some(cmd) = self.cmd_rx.recv() => {
+					if let Err(why) = self.process_command(cmd, websocket).await
+						&& let EdgeClientError::WebsocketClosed = why {
+						break
+					}
 				}
 
 				Some(Ok(msg)) = websocket.next() => {
-					if let Err(e) = self.process_ws(msg).await
-						&& let EdgeClientError::WebsocketClosed = e {
-									  break
-								  }
+					if let Err(why) = self.process_ws(msg)
+						&& let EdgeClientError::WebsocketClosed = why {
+						break
+					}
 				}
 
 				_ = interval.tick() => {
@@ -373,8 +340,13 @@ impl Client {
 	/// Processes Commands send by the `client_2` handle.
 	///
 	/// # Panics
+	///
 	/// This will panic if the return channels close before it returns,
 	/// which should not happen unless the main thread panics.
+	#[expect(
+		clippy::too_many_lines,
+		reason = "Command enum has a lot of variants"
+	)]
 	async fn process_command(
 		&mut self,
 		command: Command,
@@ -510,13 +482,13 @@ impl Client {
 	}
 
 	/// Processes a websocket message, returning an error on close.
-	async fn process_ws(
+	fn process_ws(
 		&mut self,
 		msg: Message,
 	) -> EdgeClientResult<()> {
 		match msg {
 			Message::Text(text) => {
-				self.process_message(&text).await;
+				self.process_message(&text);
 			},
 
 			Message::Close(_) => return Err(EdgeClientError::WebsocketClosed),
@@ -527,7 +499,7 @@ impl Client {
 	}
 
 	/// Parses websocket requests and calls their respective functions.
-	async fn process_message(
+	fn process_message(
 		&mut self,
 		text: &str,
 	) {
@@ -538,16 +510,15 @@ impl Client {
 
 		let request: EdgeRequests = match data_unchecked {
 			Ok(data) => data,
-			Err(e) => {
-				logger().log_warn(&format!(
-					"Could not deserialise websocket message due to: {:?}",
-					e.to_string()
+			Err(why) => {
+				logger().log_error(&format!(
+					"Could not deserialise websocket message due to: {why}",
 				));
 				return;
 			},
 		};
 
-		self.forward_request(request.clone());
+		self.forward_request(&request);
 
 		match request {
 			EdgeRequests::SetNameCamera(data) => {
@@ -601,7 +572,7 @@ impl Client {
 /// Methods for handling commands from the handle.
 impl Client {
 	/// Adds a new camera receiver to the internal camera list, and returns the
-	/// associated receiver
+	/// associated receiver.
 	fn subscribe_new_camera(
 		&mut self,
 		camera_id: CameraId,
@@ -611,25 +582,24 @@ impl Client {
 		rx
 	}
 
-	/// Adds a new listener to the internal list, returning the
-	/// associated receiver.
+	/// Adds a new listener to the internal list, returning the associated
+	/// receiver.
 	///
-	/// TO BE DEPRECIATED
+	/// TO BE DEPRECIATED.
 	fn subscribe_listener(&mut self) -> ListenerRx {
 		let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 		self.listeners.insert(0, tx);
 		rx
 	}
 
-	/// Creates a new status channel, returning the
-	/// associated receiver.
+	/// Creates a new status channel, returning the associated receiver.
 	fn get_new_status_channel(&mut self) -> StatusRx {
 		let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 		self.status_listeners.insert(0, tx);
 		rx
 	}
 
-	/// Sends the `RegisterCameras` command to the server
+	/// Sends the `RegisterCameras` command to the server.
 	async fn register_cameras(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -641,7 +611,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `UpdateCameraStatus` command to the server
+	/// Sends the `UpdateCameraStatus` command to the server.
 	async fn update_camera_status(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -656,7 +626,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `ImageAnalysis` command to the server
+	/// Sends the `ImageAnalysis` command to the server.
 	async fn image_analysis(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -670,7 +640,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `Configuration` command to the server
+	/// Sends the `Configuration` command to the server.
 	async fn configuration(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -686,7 +656,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `ForgetCameraRequest` command to the server
+	/// Sends the `ForgetCameraRequest` command to the server.
 	async fn forget_camera_request(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -703,7 +673,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `Alert` command to the server
+	/// Sends the `Alert` command to the server.
 	async fn alert(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -723,7 +693,7 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `SetNameCamera` command to the server
+	/// Sends the `SetNameCamera` command to the server.
 	async fn set_name_camera(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -737,10 +707,12 @@ impl Client {
 		self.send_text(websocket, message).await
 	}
 
-	/// Sends the `SendImage` command to the server
+	/// Sends the `SendImage` command to the server.
 	///
 	/// # Errors
-	/// Returns an error if the websocket was closed
+	///
+	/// Returns an error if the websocket was closed.
+	#[expect(clippy::big_endian_bytes, reason = "Sending to server")]
 	async fn send_image(
 		&mut self,
 		websocket: &mut WebsocketType,
@@ -750,7 +722,7 @@ impl Client {
 		let mut msg = camera_id.to_be_bytes().to_vec();
 		msg.append(frame);
 		let result = websocket.send(Message::Binary(Bytes::from(msg))).await;
-		self.process_ws_err(result)
+		process_ws_err(result)
 	}
 
 	/// Gets the default settings from the server.
@@ -773,7 +745,8 @@ impl Client {
 }
 
 impl Client {
-	pub async fn new() -> ClientResult {
+	/// Create a new [`Client`] instance via the [`ClientResult`] struct.
+	pub fn create() -> ClientResult {
 		let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (status_tx, status_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (conductor_status_tx, conductor_status_rx) =
@@ -787,20 +760,17 @@ impl Client {
 		status_listeners.insert(0, conductor_status_tx);
 		status_listeners.insert(1, persistence_status_tx);
 
-		ClientResult {
-			status_handle: StatusHandle::new(status_rx),
-			vision_client_handle: VisionClientHandle::new(vision_rx),
-			persistence_client_handle: PersistenceClientHandle::new(
+		ClientResult(
+			StatusHandle::new(status_rx),
+			VisionClientHandle::new(vision_rx),
+			PersistenceClientHandle::new(
 				cmd_tx.clone(),
 				persistence_rx,
 				false,
 				persistence_status_rx,
 			),
-			conductor_client_handle: ConductorClientHandle::new(
-				cmd_tx,
-				conductor_status_rx,
-			),
-			client: Client {
+			ConductorClientHandle::new(cmd_tx, conductor_status_rx),
+			Client {
 				cmd_rx,
 				status_listeners,
 				status_tx,
@@ -810,9 +780,18 @@ impl Client {
 				listeners: Vec::new(),
 				url: None,
 			},
-		}
+		)
 	}
 
+	/// Start the websocket thread.
+	///
+	/// # Errors
+	///
+	/// Never.
+	#[expect(
+		clippy::infinite_loop,
+		reason = "Thread should remain active until forced to close"
+	)]
 	pub async fn run(mut self) -> EdgeClientResult<()> {
 		loop {
 			let (mut websocket, url) = self.connect_ws().await;
@@ -830,4 +809,16 @@ impl Client {
 			sleep(AUTO_CONNECT_DELAY).await;
 		}
 	}
+}
+
+/// Converts [`tungstenite::error::Error`] into an [`EdgeClientError`].
+fn process_ws_err(result: Result<(), Error>) -> EdgeClientResult<()> {
+	result.map_err(|why| {
+		match why {
+			Error::ConnectionClosed | Error::AlreadyClosed => {
+				EdgeClientError::WebsocketClosed
+			},
+			why => EdgeClientError::TungsteniteError(why.to_string()),
+		}
+	})
 }

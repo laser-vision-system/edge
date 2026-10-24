@@ -1,3 +1,9 @@
+#![allow(
+	missing_docs,
+	clippy::missing_docs_in_private_items,
+	reason = "Benchmark"
+)]
+
 #[cfg(not(feature = "cnn-backend-wgpu"))]
 compile_error!("wgpu backend not selected");
 

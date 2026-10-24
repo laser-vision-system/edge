@@ -189,7 +189,7 @@ fn get_all_available_controls() {
 #[ignore = "IO bound"]
 fn get_stripped_controls() {
 	let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-	let controls = cam.get_controls().unwrap().stripped();
+	let controls = cam.get_controls().unwrap().to_stripped();
 	println!("{controls}");
 }
 
@@ -208,30 +208,30 @@ fn set_control() -> EdgeCamerasResult<()> {
 			"unexpected control variant".into(),
 		));
 	};
-	println!("Start: {}", control.get_value().get_value());
+	println!("Start: {}", control.control_value().get());
 
-	let new = control.get_max() - (control.get_step() * 8);
+	let new = control.control_max() - (control.control_step() * 8);
 	control
-		.set_value(new.into())
+		.try_set_control_value(new.into())
 		.expect("new value should be valid");
-	cam.set_control_value(id, control.get_value())?;
+	cam.set_control_value(id, control.control_value())?;
 
 	let CamControl::IntegerRange(mut control) = cam.get_control(id)? else {
 		return Err(EdgeCamerasError::General(
 			"unexpected control variant".into(),
 		));
 	};
-	println!("Modified: {}", control.get_value().get_value());
+	println!("Modified: {}", control.control_value().get());
 
 	control.reset_to_default();
-	cam.set_control_value(id, control.get_value())?;
+	cam.set_control_value(id, control.control_value())?;
 
 	let CamControl::IntegerRange(control) = cam.get_control(id)? else {
 		return Err(EdgeCamerasError::General(
 			"unexpected control variant".into(),
 		));
 	};
-	println!("Default: {}", control.get_value().get_value());
+	println!("Default: {}", control.control_value().get());
 
 	Ok(())
 }
@@ -254,14 +254,14 @@ fn set_control_exposure() -> EdgeCamerasResult<()> {
 	};
 	println!(
 		"Start: {}, {:?}",
-		control.get_value().get_value(),
-		control.get_items()
+		control.control_value().get(),
+		control.control_items()
 	);
 
 	control
-		.set_value(desired.into())
+		.try_set_control_value(desired.into())
 		.expect("new value should be valid");
-	cam.set_control_value(id, control.get_value())?;
+	cam.set_control_value(id, control.control_value())?;
 
 	let CamControl::Menu(mut control) = cam.get_control(id)? else {
 		return Err(EdgeCamerasError::General(
@@ -270,12 +270,12 @@ fn set_control_exposure() -> EdgeCamerasResult<()> {
 	};
 	println!(
 		"Modified: {}, {:?}",
-		control.get_value().get_value(),
-		control.get_items()
+		control.control_value().get(),
+		control.control_items()
 	);
 
 	control.reset_to_default();
-	cam.set_control_value(id, control.get_value())?;
+	cam.set_control_value(id, control.control_value())?;
 
 	let CamControl::Menu(control) = cam.get_control(id)? else {
 		return Err(EdgeCamerasError::General(
@@ -284,8 +284,8 @@ fn set_control_exposure() -> EdgeCamerasResult<()> {
 	};
 	println!(
 		"Default: {}, {:?}",
-		control.get_value().get_value(),
-		control.get_items()
+		control.control_value().get(),
+		control.control_items()
 	);
 
 	Ok(())

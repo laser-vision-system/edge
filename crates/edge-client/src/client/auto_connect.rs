@@ -1,5 +1,4 @@
-// TODO: Remove all unwraps and then this.
-#![expect(clippy::unwrap_used, reason = "WIP development")]
+//! Automatically find and connect to the websocket on the local network.
 
 use std::{
 	collections::HashSet,
@@ -162,7 +161,7 @@ async fn get_websocket_url(
 		}
 	}
 
-	Err(EdgeClientError::AutoConnect)
+	Err(EdgeClientError::AutoConnectUrl)
 }
 
 pub async fn get_ws_stream()
@@ -184,23 +183,16 @@ pub async fn get_ws_stream()
 		get_websocket_url(urls).await?
 	};
 
-	let Ok((stream, _)) =
-		connect_async(websocket_url.clone()).await.map_err(|why| {
-			EdgeClientError::AutoConnectUrl {
-				reason: why.to_string(),
-			}
-		})
+	let Ok((stream, _)) = connect_async(websocket_url.clone())
+		.await
+		.map_err(|why| EdgeClientError::AutoConnect(why.to_string()))
 	else {
 		return Err(EdgeClientError::WebSocketConnection);
 	};
 	Ok((stream, websocket_url))
 }
 
-// TODO: Remove this once the server request is implemented.
-#[expect(
-	clippy::unused_async,
-	reason = "Async will be needed once this function is re-enabled"
-)]
+#[expect(clippy::map_err_ignore, reason = "WIP development")]
 pub async fn get_default_settings(url: &str) -> EdgeClientResult<Settings> {
 	// TODO: Get the default settings from the server
 	// Build the settings struct from the received data.
@@ -225,6 +217,7 @@ pub async fn get_default_settings(url: &str) -> EdgeClientResult<Settings> {
 	)
 }
 
+#[expect(clippy::map_err_ignore, reason = "WIP development")]
 pub fn unpack<T>(data: &str) -> EdgeClientResult<T>
 where
 	T: DeserializeOwned,
@@ -236,7 +229,8 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::client;
+
+	pub const API: &str = "/edge_ws";
 
 	#[test]
 	fn chop_end() {
@@ -251,7 +245,7 @@ mod tests {
 			.rev()
 			.collect::<Vec<_>>()
 			.join("");
-		please.push_str(client::API);
+		please.push_str(API);
 
 		println!("{please}");
 	}

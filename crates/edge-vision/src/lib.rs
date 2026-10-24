@@ -1,3 +1,5 @@
+//! The vision capabilities of the Edge system.
+
 #![cfg_attr(feature = "cnn-backend-wgpu", recursion_limit = "256")]
 #![cfg_attr(
 	test,
@@ -52,14 +54,14 @@ use self::{
 	vision_variant::VisionVariant,
 };
 
-pub type VisionRef = &'static VisionGuard;
-
 static VISION: OnceLock<VisionGuard> = OnceLock::new();
 
-pub fn vision() -> VisionRef {
+/// Get exclusive access to the [`VisionGuard`].
+pub fn vision() -> &'static VisionGuard {
 	VISION.get_or_init(VisionGuard::new)
 }
 
+/// A thread-safe protection over the [`VisionVariant`] type.
 #[derive(Debug)]
 pub struct VisionGuard {
 	inner: Mutex<RefCell<Option<VisionVariant>>>,

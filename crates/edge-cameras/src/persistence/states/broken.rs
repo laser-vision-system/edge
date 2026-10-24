@@ -1,3 +1,5 @@
+//! A type for a connected and non-functional camera device.
+
 use std::borrow::Cow;
 
 use api::shared::CameraStatus;
@@ -15,13 +17,14 @@ use crate::persistence::OccupiedIndices;
 /// to read in image data.
 ///
 /// It can be created from:
-/// - Active
-/// - Limbo
+/// - [`Active`]
+/// - [`Limbo`]
 ///
 /// It can change state to:
-/// - Disconnected
+/// - [`Disconnected`](super::Disconnected)
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Broken {
+	/// The indices that this device occupies.
 	pub occupied_indices: OccupiedIndices,
 	/// A user configurable name for this camera.
 	///

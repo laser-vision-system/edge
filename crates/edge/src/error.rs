@@ -1,5 +1,4 @@
-use edge_client::error::EdgeClientError;
-use edge_core::logger::logger;
+//! Defines error handling types for the [edge](crate) crate.
 
 /// Specialised [`Result`] type for the Edge tier.
 ///
@@ -9,28 +8,19 @@ use edge_core::logger::logger;
 #[expect(clippy::absolute_paths, reason = "Single use aliasing")]
 pub type EdgeResult<T> = std::result::Result<T, EdgeError>;
 
-/// The error type for all operations in the Edge tier.
+/// The error type for all operations in [edge](crate).
 ///
 /// Any errors from underlying crates should be translated to this immediately.
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum EdgeError {
-	/// Non-specific error type, please create a dedicated variant instead.
-	#[error("{reason}")]
-	General { reason: String },
-	#[error(transparent)]
-	EdgeClientError(#[from] EdgeClientError),
+	/// An error for when a specific type does not yet exist.
+	#[error("{0}")]
+	General(String),
 }
 
-impl EdgeError {
-	pub fn log(self) {
-		logger().log_error(&self);
-	}
-}
-
+// Needed because String doesn't auto-convert to `dyn Error`.
 impl From<String> for EdgeError {
 	fn from(value: String) -> Self {
-		EdgeError::General {
-			reason: value,
-		}
+		EdgeError::General(value)
 	}
 }

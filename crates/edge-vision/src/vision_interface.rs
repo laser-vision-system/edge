@@ -1,3 +1,5 @@
+//! A trait implemented on all vision techniques.
+
 use std::fmt;
 
 use crate::{

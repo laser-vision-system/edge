@@ -1,0 +1,108 @@
+//! Defines for a camera control that consists of a `value`, `default`, and
+//! `step`.
+
+use nokhwa::utils::KnownCameraControl;
+use serde::{
+	Deserialize,
+	Serialize,
+};
+
+use super::super::{
+	traits::{
+		ControlDefault,
+		ControlDescription,
+		ControlStep,
+		ControlValue as _,
+	},
+	types::ConTypeFloat,
+	values::{
+		ConValueFloat,
+		ConValueFloatType,
+	},
+};
+use crate::error::{
+	EdgeCamerasError,
+	EdgeCamerasResult,
+};
+
+/// A camera control that consists of a `value`, `default`, and `step`.
+///
+/// Maps to [`ControlValueDescription::Float`].
+///
+/// [`ControlValueDescription::Float`]: nokhwa::utils::ControlValueDescription::Float
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+pub struct FloatControl {
+	control_type: KnownCameraControl,
+	value: ConValueFloat,
+	default: ConValueFloatType,
+	step: ConValueFloatType,
+}
+
+impl FloatControl {
+	/// Create a new [`FloatControl`] instance.
+	pub fn new(
+		control_type: KnownCameraControl,
+		value: ConValueFloat,
+		default: ConValueFloatType,
+		step: ConValueFloatType,
+	) -> Self {
+		Self {
+			control_type,
+			value,
+			default,
+			step,
+		}
+	}
+}
+
+impl ControlDescription for FloatControl {
+	type ConType = ConTypeFloat;
+	type ValueType = ConValueFloat;
+
+	fn control_id(&self) -> KnownCameraControl {
+		self.control_type
+	}
+
+	fn try_set_control_value(
+		&mut self,
+		value: Self::ValueType,
+	) -> EdgeCamerasResult<()> {
+		if self.validate(value.get()) {
+			self.value = value;
+			Ok(())
+		} else {
+			Err(EdgeCamerasError::InvalidControlValue)
+		}
+	}
+
+	fn control_value(&self) -> Self::ValueType {
+		self.value
+	}
+}
+
+impl ControlDefault for FloatControl {
+	type DefaultType = Self::ConType;
+
+	fn control_default(&self) -> Self::DefaultType {
+		self.default
+	}
+}
+
+impl ControlStep for FloatControl {
+	// Default should be based on ValueType, so this makes sure they can be
+	// compared.
+	type StepType = Self::ConType;
+
+	fn control_step(&self) -> Self::StepType {
+		self.step
+	}
+
+	fn validate(
+		&self,
+		value: Self::StepType,
+	) -> bool {
+		(value - self.control_default()).abs() % self.control_step() == 0.0
+			|| (value - self.control_value().get()).abs() % self.control_step()
+				== 0.0
+	}
+}

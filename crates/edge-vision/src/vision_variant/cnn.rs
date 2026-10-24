@@ -1,3 +1,5 @@
+//! Convolutional neural network.
+
 #![expect(
 	clippy::allow_attributes,
 	reason = "Expect might not always be fulfilled"
@@ -31,14 +33,20 @@ use crate::{
 	write_optional,
 };
 
+/// The errors that can arise with the [`Cnn`].
 #[derive(Debug, thiserror::Error)]
 pub enum CnnError {
+	/// When a model fails to load.
 	#[error("failed to load CNN model from {path}: {source}")]
 	ModelLoad {
+		/// The path to the model file. Not relevant if using an embedded
+		/// model.
 		path: PathBuf,
+		/// The source error from [`BurnpackStore`](burn_store::BurnpackStore).
 		#[source]
 		source: BurnpackError,
 	},
+	/// If the prediction results are malformed.
 	#[error(transparent)]
 	Predict(#[from] DataError),
 }
@@ -46,8 +54,11 @@ pub enum CnnError {
 /// Closely associated data used by external holders.
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
 pub struct ExternalData {
+	/// The intensity value used for deviation measurement.
 	pub setpoint: Option<f32>,
+	/// The currently predicted intensity.
 	pub intensity: Option<f32>,
+	/// The calculated deviation value, if the setpoint exists.
 	pub deviation: Option<f32>,
 }
 
@@ -56,7 +67,7 @@ impl fmt::Display for ExternalData {
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		write!(f, "ExternalData for Cnn {{ setpoint: ")?;
+		f.write_str("ExternalData for Cnn { setpoint: ")?;
 		write_optional(f, self.setpoint)?;
 		f.write_str(", intensity: ")?;
 		write_optional(f, self.intensity)?;
@@ -66,6 +77,10 @@ impl fmt::Display for ExternalData {
 	}
 }
 
+/// A [`VisionVariant`] that uses a convolutional neural network to predict
+/// intensity.
+///
+/// [`VisionVariant`]: super::VisionVariant
 pub struct Cnn {
 	session: SessionToken,
 	device: config::BackendDevice,
@@ -73,7 +88,7 @@ pub struct Cnn {
 }
 
 impl Cnn {
-	/// Create and load the CNN model.
+	/// Create and load the [`Cnn`] model.
 	///
 	/// # Errors
 	///
@@ -133,10 +148,7 @@ impl VisionInterface for Cnn {
 	}
 
 	fn new_state(&self) -> VisionState {
-		VisionState::Cnn {
-			handle: self.session.downgrade(),
-			data: ExternalData::default(),
-		}
+		VisionState::Cnn(self.session.downgrade(), ExternalData::default())
 	}
 }
 
@@ -169,10 +181,7 @@ fn apply_predictions(
 	);
 
 	for (item, intensity) in batch.iter_mut().zip(predictions) {
-		if let VisionState::Cnn {
-			data, ..
-		} = item.state
-		{
+		if let VisionState::Cnn(_, data) = item.state {
 			if item.calibrate {
 				data.setpoint = Some(intensity);
 			}
@@ -187,10 +196,7 @@ fn apply_predictions(
 
 fn clear_predictions(batch: &mut [BatchItem]) {
 	for item in batch.iter_mut() {
-		if let VisionState::Cnn {
-			data, ..
-		} = item.state
-		{
+		if let VisionState::Cnn(_, data) = item.state {
 			data.intensity = None;
 			data.deviation = None;
 		}
@@ -231,10 +237,7 @@ mod tests {
 	}
 
 	fn cnn_state(data: ExternalData) -> VisionState {
-		VisionState::Cnn {
-			handle: SessionToken::new().downgrade(),
-			data,
-		}
+		VisionState::Cnn(SessionToken::new().downgrade(), data)
 	}
 
 	#[test]
@@ -265,9 +268,7 @@ mod tests {
 		apply_predictions(&mut batch, vec![12.5]);
 
 		match &batch[0].state {
-			VisionState::Cnn {
-				data, ..
-			} => {
+			VisionState::Cnn(_, data) => {
 				assert_eq!(data.setpoint, Some(12.5));
 				assert_eq!(data.intensity, Some(12.5));
 				assert_eq!(data.deviation, Some(1.0));
@@ -294,9 +295,7 @@ mod tests {
 		apply_predictions(&mut batch, vec![4.0]);
 
 		match &batch[0].state {
-			VisionState::Cnn {
-				data, ..
-			} => {
+			VisionState::Cnn(_, data) => {
 				assert_eq!(data.setpoint, Some(10.0));
 				assert_eq!(data.intensity, Some(4.0));
 				assert_eq!(data.deviation, Some(0.4));
@@ -323,9 +322,7 @@ mod tests {
 		clear_predictions(&mut batch);
 
 		match &batch[0].state {
-			VisionState::Cnn {
-				data, ..
-			} => {
+			VisionState::Cnn(_, data) => {
 				assert_eq!(data.setpoint, Some(9.0));
 				assert_eq!(data.intensity, None);
 				assert_eq!(data.deviation, None);
@@ -349,9 +346,7 @@ mod tests {
 		cnn.process(&mut batch);
 
 		match &batch[0].state {
-			VisionState::Cnn {
-				data, ..
-			} => {
+			VisionState::Cnn(_, data) => {
 				assert!(data.setpoint.is_some());
 				assert!(data.intensity.is_some());
 				assert!(data.deviation.is_some());

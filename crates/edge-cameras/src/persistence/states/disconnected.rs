@@ -1,3 +1,5 @@
+//! A type for a camera that is not connected.
+
 use std::{
 	borrow::Cow,
 	ops::{
@@ -21,15 +23,16 @@ use crate::persistence::PerpetualInfo;
 /// for the (assumed) eventual reconnect.
 ///
 /// It can be created from:
-/// - Active
-/// - Broken
-/// - Limbo
+/// - [`Active`]
+/// - [`Broken`]
+/// - [`Limbo`]
 ///
 /// It can change state to:
-/// - Active
-/// - Limbo
+/// - [`Active`]
+/// - [`Limbo`]
 #[derive(Clone, Debug, Default)]
 pub struct Disconnected {
+	/// Persistent data for this device.
 	pub data: PerpetualInfo,
 	/// A user configurable name for this camera.
 	///

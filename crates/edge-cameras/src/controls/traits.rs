@@ -1,11 +1,7 @@
-//! Core traits for camera controls.
+//! Core traits used to build camera control descriptions.
 
 use std::fmt::Debug;
-#[expect(unused_imports, reason = "Needed for trait docstring")]
-use std::hash::Hash;
 
-#[expect(unused_imports, reason = "Needed for trait docstring")]
-use nokhwa::utils::ControlValueSetter;
 use nokhwa::{
 	self,
 	utils::{
@@ -35,8 +31,11 @@ use crate::error::EdgeCamerasResult;
 ///
 /// #### [`Copy`]
 /// - [`String`], [`Vec`]
+///
 /// #### [`Hash`], [`Eq`], [`Ord`]
 /// - [`f64`]
+///
+/// [`Hash`]: std::hash::Hash
 pub trait ValidControlValue: Clone + Debug + PartialEq + PartialOrd {}
 
 // ===== Value fields (used in ControlValueSetter) =====
@@ -59,6 +58,7 @@ impl ValidControlValue for ConTypeRGB {
 } // KeyValuePair
 impl ValidControlValue for ConTypeMenu {
 } // Menu
+
 // TODO: Would these be better than the implicit?
 // TODO: Would it be better to use an array in either case?
 // impl ValidControlValue for (f64, f64) {} // Point
@@ -78,6 +78,8 @@ impl ValidControlValue for ConTypeMenu {
 // impl ValidControlValue for Option<String> {} // String: default
 // impl ValidControlValue for (i128, i128) {} // KeyValuePair: default
 
+/// A marker trait that determines what is acceptable to use within a
+/// [`ControlDefault`].
 pub trait ValidDefaultValue: Clone + Debug + PartialEq + PartialOrd {}
 
 impl<T> ValidDefaultValue for T where T: ValidControlValue
@@ -87,6 +89,8 @@ impl<T> ValidDefaultValue for T where T: ValidControlValue
 impl ValidDefaultValue for Option<ConTypeString> {
 }
 
+/// A marker trait that determines what is acceptable to use within a
+/// [`ControlPossible`].
 pub trait ValidPossibleValue: Clone + Debug + PartialEq + PartialOrd {}
 
 impl<T> ValidPossibleValue for T where T: ValidControlValue
@@ -96,6 +100,8 @@ impl<T> ValidPossibleValue for T where T: ValidControlValue
 impl ValidPossibleValue for Vec<ConTypeEnum> {
 }
 
+/// A marker trait that determines what is acceptable to use within a
+/// [`ControlItems`].
 pub trait ValidItemValue: Clone + Debug + PartialEq + PartialOrd {}
 
 impl ValidItemValue for Vec<MenuEntry> {
@@ -105,116 +111,176 @@ impl ValidItemValue for Vec<MenuEntry> {
 /// a new value.
 ///
 /// Maps to [`nokhwa`]'s [`ControlValueSetter`].
+///
+/// [`ControlValueSetter`]: nokhwa::utils::ControlValueSetter
 pub trait ControlValue {
+	/// The type that this control uses.
 	type ConType: ValidControlValue;
 
-	fn get_value(&self) -> Self::ConType;
-	// TODO: Maybe make this hidden outside of the control description.
-	fn set_value(
-		&mut self,
-		value: Self::ConType,
-	);
+	/// Get the current control value.
+	fn get(&self) -> Self::ConType;
+	/// Get the current control value as mutable.
+	fn get_mut(&mut self) -> &mut Self::ConType;
 }
 
-/// A type that wraps a [`ControlValue`] with other control fields.
+/// A type that represents a camera's control in its entirely.
+///
+/// This wraps a [`ControlValue`] with other control fields.
 pub trait ControlDescription {
+	/// The underlying control type of this control.
 	type ValueType;
+	/// The type that this control uses.
 	type ConType: ValidControlValue;
 
-	fn get_id(&self) -> KnownCameraControl;
+	/// Get the camera control identifier for this control.
+	fn control_id(&self) -> KnownCameraControl;
 	/// Try to set the value for this control description.
 	///
 	/// # Errors
 	///
 	/// If the control is invalid, given the controls other requirements.
-	fn set_value(
+	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
 	) -> EdgeCamerasResult<()>;
-	fn get_value(&self) -> Self::ValueType;
+	/// Get the current value of this control.
+	fn control_value(&self) -> Self::ValueType;
 }
 
-/// A type that supports the `default` field.
+/// A description that supports the `default` field.
 ///
 /// Bound by [`ControlValue`].
 pub trait ControlDefault: ControlDescription {
-	// type DefaultType = Self::ValueType;
+	/// The value type of the `default` value.
+	///
+	/// In most cases, this should be the same as
+	/// [`ControlDescription::ValueType`].
 	type DefaultType: ValidDefaultValue;
+	// type DefaultType = Self::ValueType;
 
-	fn get_default(&self) -> Self::DefaultType;
-	fn reset_to_default(&mut self);
+	/// Get the `default` value for this control description.
+	fn control_default(&self) -> Self::DefaultType;
+
+	/// Change the [`ControlDescription`] back to the default value.
+	#[expect(
+		clippy::expect_used,
+		reason = "Default value should never be invalid"
+	)]
+	// TODO: Mark this as fallible.
+	fn reset_to_default(&mut self)
+	where
+		<Self as ControlDescription>::ValueType:
+			From<<Self as ControlDefault>::DefaultType>,
+	{
+		self.try_set_control_value(self.control_default().into())
+			.expect("default value should never be invalid");
+	}
 }
 
-/// A type that supports the `min` field.
+/// A description that supports the `min` field.
 ///
 /// Equal to [`ControlValue`].
 pub trait ControlMin: ControlDescription {
-	// type MinType = Self::ValueType;
+	/// The value type of the `min` value.
+	///
+	/// In most cases, this should be the same as
+	/// [`ControlDescription::ValueType`].
 	type MinType: ValidControlValue;
+	// type MinType = Self::ValueType;
 
-	fn get_min(&self) -> Self::MinType;
+	/// Get the `min` value for this control description.
+	fn control_min(&self) -> Self::MinType;
 
-	fn valid(
+	/// Validate a control value against this type.
+	fn validate(
 		&self,
 		value: Self::MinType,
 	) -> bool {
-		value >= self.get_min()
+		value >= self.control_min()
 	}
 }
 
-/// A type that supports the `max` field.
+/// A description that supports the `max` field.
 ///
 /// Equal to [`ControlValue`].
 pub trait ControlMax: ControlDescription {
-	// type MaxType = Self::ValueType;
+	/// The value type of the `max` value.
+	///
+	/// In most cases, this should be the same as
+	/// [`ControlDescription::ValueType`].
 	type MaxType: ValidControlValue;
+	// type MaxType = Self::ValueType;
 
-	fn get_max(&self) -> Self::MaxType;
+	/// Get the `max` value for this control description.
+	fn control_max(&self) -> Self::MaxType;
 
-	fn valid(
+	/// Validate a control value against this type.
+	fn validate(
 		&self,
 		value: Self::MaxType,
 	) -> bool {
-		value <= self.get_max()
+		value <= self.control_max()
 	}
 }
 
-/// A type that supports the `step` field.
+/// A description that supports the `step` field.
 ///
 /// Equal to [`ControlValue`].
 pub trait ControlStep: ControlDescription {
-	// type StepType = Self::ValueType;
+	/// The value type of the `step` value.
+	///
+	/// In most cases, this should be the same as
+	/// [`ControlDescription::ValueType`].
 	type StepType: ValidControlValue;
+	// type StepType = Self::ValueType;
 
-	fn get_step(&self) -> Self::StepType;
+	/// Get the `step` value for this control description.
+	fn control_step(&self) -> Self::StepType;
+
+	/// Validate a control value against this type.
 	// TODO: Default implementation.
-	fn valid(
+	fn validate(
 		&self,
 		value: Self::StepType,
 	) -> bool;
 }
 
-/// A type that supports the `possible` field.
+/// A description that supports the `possible` field.
 ///
 /// Bound by [`ControlValue`].
 pub trait ControlPossible: ControlDescription {
-	// type PossibleType = Self::ValueType;
+	/// The value type of the `possible` values.
+	///
+	/// In most cases, this should be the same as
+	/// [`ControlDescription::ValueType`].
 	type PossibleType: ValidPossibleValue;
+	// type PossibleType = Self::ValueType;
 
-	fn get_possible(&self) -> Self::PossibleType;
+	/// Get the `possible` values for this control description.
+	fn control_possible(&self) -> Self::PossibleType;
+
+	/// Validate a control value against this type.
 	// TODO: Default implementation.
-	fn valid(
+	fn validate(
 		&self,
 		value: &Self::ConType,
 	) -> bool;
 }
 
-/// A type that supports the `items` field.
+/// A description that supports the `items` field.
 pub trait ControlItems: ControlDescription {
+	/// The value type of the `items` values.
+	///
+	/// In most cases, this should be the same as
+	/// [`ControlDescription::ValueType`].
 	type ItemType: ValidItemValue;
 
-	fn get_items(&self) -> Self::ItemType;
-	fn valid(
+	/// Get the `items` values for this control description.
+	fn control_items(&self) -> Self::ItemType;
+
+	/// Validate a control value against this type.
+	// TODO: Default implementation.
+	fn validate(
 		&self,
 		value: Self::ConType,
 	) -> bool;
