@@ -56,7 +56,7 @@ impl fmt::Display for ExternalData {
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		write!(f, "ExternalData for Cnn {{ setpoint: ")?;
+		f.write_str("ExternalData for Cnn { setpoint: ")?;
 		write_optional(f, self.setpoint)?;
 		f.write_str(", intensity: ")?;
 		write_optional(f, self.intensity)?;

@@ -20,7 +20,35 @@ use crate::{
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
+	write_optional,
 };
+
+/// Closely associated data used by external holders.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ExternalData {
+	pub image: Option<GrayImage>,
+	pub peak: Option<f32>,
+	pub mean: Option<f32>,
+	pub std_dev: Option<f32>,
+	pub deviation: Option<f32>,
+}
+
+impl fmt::Display for ExternalData {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		f.write_str("ExternalData for Diff { peak: ")?;
+		write_optional(f, self.peak)?;
+		f.write_str(", mean: ")?;
+		write_optional(f, self.mean)?;
+		f.write_str(", std_dev: ")?;
+		write_optional(f, self.std_dev)?;
+		f.write_str(", deviation: ")?;
+		write_optional(f, self.deviation)?;
+		f.write_str(" }")
+	}
+}
 
 struct DiffModel {
 	intercept: f32,
@@ -234,28 +262,5 @@ impl fmt::Display for Diff {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		write!(f, "Diff")
-	}
-}
-
-/// Closely associated data used by external holders.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct ExternalData {
-	pub image: Option<GrayImage>,
-	pub peak: Option<f32>,
-	pub mean: Option<f32>,
-	pub std_dev: Option<f32>,
-	pub deviation: Option<f32>,
-}
-
-impl fmt::Display for ExternalData {
-	fn fmt(
-		&self,
-		f: &mut fmt::Formatter<'_>,
-	) -> fmt::Result {
-		write!(
-			f,
-			"ExternalData for Diff\n - peak: {:?}\n - mean: {:?}\n - std_dev: {:?}",
-			self.peak, self.mean, self.std_dev
-		)
 	}
 }

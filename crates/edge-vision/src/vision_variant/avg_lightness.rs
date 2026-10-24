@@ -9,7 +9,31 @@ use crate::{
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
+	write_optional,
 };
+
+/// Closely associated data used by external holders.
+#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
+pub struct ExternalData {
+	pub setpoint: Option<f32>,
+	pub intensity: Option<f32>,
+	pub deviation: Option<f32>,
+}
+
+impl fmt::Display for ExternalData {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		f.write_str("ExternalData for AvgLightness { setpoint: ")?;
+		write_optional(f, self.setpoint)?;
+		f.write_str(", intensity: ")?;
+		write_optional(f, self.intensity)?;
+		f.write_str(", deviation: ")?;
+		write_optional(f, self.deviation)?;
+		f.write_str(" }")
+	}
+}
 
 #[derive(Clone, Default)]
 pub struct AvgLightness {
@@ -101,22 +125,5 @@ impl fmt::Display for AvgLightness {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		write!(f, "AvgLightness")
-	}
-}
-
-/// Closely associated data used by external holders.
-#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd)]
-pub struct ExternalData {
-	pub setpoint: Option<f32>,
-	pub intensity: Option<f32>,
-	pub deviation: Option<f32>,
-}
-
-impl fmt::Display for ExternalData {
-	fn fmt(
-		&self,
-		f: &mut fmt::Formatter<'_>,
-	) -> fmt::Result {
-		write!(f, "ExternalData for AvgLightness: {:?}", self.setpoint)
 	}
 }
