@@ -62,6 +62,7 @@ pub struct ControlMap {
 }
 
 impl ControlMap {
+	#[must_use]
 	pub fn into_inner(self) -> MapType {
 		self.inner
 	}
