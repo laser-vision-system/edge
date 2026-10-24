@@ -31,23 +31,22 @@ use crate::error::EdgeClientResult;
 /// indicating the websocket has come up, and false indicating
 /// the websocket has gone down. Any iteration through the
 /// `.next()` method will be in chronological order.
-pub type StatusRx = UnboundedReceiver<bool>;
+pub(crate) type StatusRx = UnboundedReceiver<bool>;
+pub(crate) type StatusTx = UnboundedSender<bool>;
 
-pub type StatusTx = UnboundedSender<bool>;
-
-pub type VisionRx = UnboundedReceiver<VisionTechnique>;
-pub type VisionTx = UnboundedSender<VisionTechnique>;
+pub(crate) type VisionRx = UnboundedReceiver<VisionTechnique>;
+pub(crate) type VisionTx = UnboundedSender<VisionTechnique>;
 
 #[deprecated]
 pub type ListenerRx = UnboundedReceiver<EdgeRequests>;
 #[deprecated]
-pub type ListenerTx = UnboundedSender<EdgeRequests>;
+pub(crate) type ListenerTx = UnboundedSender<EdgeRequests>;
 
-pub type PersistenceRx = UnboundedReceiver<PersistenceRequest>;
-pub type PersistenceTx = UnboundedSender<PersistenceRequest>;
+pub(crate) type PersistenceRx = UnboundedReceiver<PersistenceRequest>;
+pub(crate) type PersistenceTx = UnboundedSender<PersistenceRequest>;
 
-pub type CameraRx = UnboundedReceiver<CameraRequest>;
-pub type CameraTx = UnboundedSender<CameraRequest>;
+pub(crate) type CameraRx = UnboundedReceiver<CameraRequest>;
+pub(crate) type CameraTx = UnboundedSender<CameraRequest>;
 
 #[derive(Debug)]
 pub enum Command {
