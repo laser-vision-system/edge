@@ -147,7 +147,7 @@ enum LogLevel {
 ///
 /// Any other inputs including non-numeric strings will default to level 1
 /// (error logs only).
-pub struct Logger {
+struct Logger {
 	logs: Vec<String>,
 	counter: LogCounter,
 	verbosity: u8,
@@ -186,7 +186,7 @@ impl Logger {
 		}
 	}
 
-	pub fn log_info(
+	fn log_info(
 		&mut self,
 		message: &str,
 	) {
@@ -207,7 +207,7 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn log_warn(
+	fn log_warn(
 		&mut self,
 		message: &str,
 	) {
@@ -229,7 +229,7 @@ impl Logger {
 	}
 
 	// HACK: Temporary workaround while restructuring the project.
-	pub fn log_error<T>(
+	fn log_error<T>(
 		&mut self,
 		error: &T,
 	) where
@@ -252,7 +252,7 @@ impl Logger {
 		self.logs.push(log_entry);
 	}
 
-	pub fn send_logs(&mut self) {
+	fn send_logs(&mut self) {
 		let _logs = mem::take(&mut self.logs);
 
 		// for log in logs {
