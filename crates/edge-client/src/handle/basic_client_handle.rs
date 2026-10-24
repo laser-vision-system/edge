@@ -82,7 +82,7 @@ impl BasicClientHandle {
 
 	/// Updates the status, and returns it.
 	pub fn status(&mut self) -> bool {
-		let _ = self.update_status();
+		_ = self.update_status();
 
 		self.status
 	}

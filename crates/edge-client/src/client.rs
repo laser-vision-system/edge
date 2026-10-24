@@ -154,7 +154,7 @@ impl Client {
 		clippy::expect_used,
 		reason = "Ideally, we'd want this to be a compile-time error"
 	)]
-	fn convert_url(url: &String) -> String {
+	fn convert_url(url: &str) -> String {
 		let regex = Regex::new("^[A-z]+://([0-9.]+:[0-9]+)/edge_ws")
 			.expect("invalid regex");
 
@@ -268,7 +268,7 @@ impl Client {
 	/// purposes.
 	fn forward_request(
 		&mut self,
-		request: EdgeRequests,
+		request: &EdgeRequests,
 	) {
 		self.listeners
 			.iter()
@@ -309,18 +309,18 @@ impl Client {
 		let mut interval = interval(WS_KEEP_ALIVE);
 		loop {
 			tokio::select! {
-				Some(cmd)  = self.cmd_rx.recv() => {
-					if let Err(e) = self.process_command(cmd, websocket).await
-						&& let EdgeClientError::WebsocketClosed = e {
-									  break
-								  }
+				Some(cmd) = self.cmd_rx.recv() => {
+					if let Err(why) = self.process_command(cmd, websocket).await
+						&& let EdgeClientError::WebsocketClosed = why {
+						break
+					}
 				}
 
 				Some(Ok(msg)) = websocket.next() => {
-					if let Err(e) = self.process_ws(msg).await
-						&& let EdgeClientError::WebsocketClosed = e {
-									  break
-								  }
+					if let Err(why) = self.process_ws(msg)
+						&& let EdgeClientError::WebsocketClosed = why {
+						break
+					}
 				}
 
 				_ = interval.tick() => {
@@ -479,13 +479,13 @@ impl Client {
 	}
 
 	/// Processes a websocket message, returning an error on close.
-	async fn process_ws(
+	fn process_ws(
 		&mut self,
 		msg: Message,
 	) -> EdgeClientResult<()> {
 		match msg {
 			Message::Text(text) => {
-				self.process_message(&text).await;
+				self.process_message(&text);
 			},
 
 			Message::Close(_) => return Err(EdgeClientError::WebsocketClosed),
@@ -496,7 +496,7 @@ impl Client {
 	}
 
 	/// Parses websocket requests and calls their respective functions.
-	async fn process_message(
+	fn process_message(
 		&mut self,
 		text: &str,
 	) {
@@ -507,16 +507,15 @@ impl Client {
 
 		let request: EdgeRequests = match data_unchecked {
 			Ok(data) => data,
-			Err(e) => {
-				logger().log_warn(&format!(
-					"Could not deserialise websocket message due to: {:?}",
-					e.to_string()
+			Err(why) => {
+				logger().log_error(&format!(
+					"Could not deserialise websocket message due to: {why}",
 				));
 				return;
 			},
 		};
 
-		self.forward_request(request.clone());
+		self.forward_request(&request);
 
 		match request {
 			EdgeRequests::SetNameCamera(data) => {
@@ -743,7 +742,7 @@ impl Client {
 }
 
 impl Client {
-	pub async fn new() -> ClientResult {
+	pub fn create() -> ClientResult {
 		let (cmd_tx, cmd_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (status_tx, status_rx) = tokio::sync::mpsc::unbounded_channel();
 		let (conductor_status_tx, conductor_status_rx) =
