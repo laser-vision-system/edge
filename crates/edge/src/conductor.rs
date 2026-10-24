@@ -44,8 +44,6 @@ use tokio::{
 	try_join,
 };
 
-use crate::error::EdgeError;
-
 /// # Conductor
 ///
 /// The main execution context.
@@ -127,19 +125,16 @@ impl Conductor {
 			let deviation_maybe = item.state.get_deviation();
 			let cam_id = item.camera_id;
 			if let Some(deviation) = deviation_maybe {
-				let result = client.image_analysis(cam_id, deviation);
-
-				_ = result.inspect_err(|_| {
-					EdgeError::from(EdgeClientError::ServerConnection).log();
-				});
+				if let Err(why) = client.image_analysis(cam_id, deviation) {
+					logger().log_error(&why);
+				}
 			}
 
 			if item.send_to_server {
 				let encoded = item.image.encode();
-				let result = client.send_image(item.camera_id, encoded);
-				_ = result.inspect_err(|_| {
-					EdgeError::from(EdgeClientError::ServerConnection).log();
-				});
+				if let Err(why) = client.send_image(item.camera_id, encoded) {
+					logger().log_error(&why);
+				}
 			}
 		}
 
@@ -191,14 +186,14 @@ impl Conductor {
 			EdgeRequests::ViewCameraConfig(view_config_req) => {
 				if let Some(configuration) =
 					self.persistence.get_configuration(view_config_req)
-					&& let Err(_) = client.configuration(
+					&& let Err(why) = client.configuration(
 						configuration.conn_id,
 						configuration.camera_id,
 						configuration.configuration,
 					) {
 					// TODO: Error type for "Failed to send configuration
 					// request"
-					EdgeError::from(EdgeClientError::WebSocketConnection).log();
+					logger().log_error(&why);
 				}
 			},
 			EdgeRequests::Setpoint(calibration_req) => {
