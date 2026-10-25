@@ -1,5 +1,13 @@
 //! Low level types used for camera control values.
 
+use std::{
+	fmt,
+	ops::{
+		Deref,
+		DerefMut,
+	},
+};
+
 use nokhwa::utils::ControlValueSetter;
 use serde::{
 	Deserialize,
@@ -12,13 +20,83 @@ pub(super) type ConTypeInt = i64;
 pub(super) type ConTypeFloat = f64;
 pub(super) type ConTypeBool = bool;
 pub(super) type ConTypeString = String;
-pub(super) type ConTypeBytes = Vec<u8>;
 pub(super) type ConTypeEnum = i64;
 pub(super) type ConTypeMenu = u32;
+
+pub(super) type ConInnerTypeBytes = Vec<u8>;
 
 type _ConTypeKeyValue = i128;
 type _ConTypePoint = f64;
 type _ConTypeRGB = f64;
+
+/// Represents a key and value use by [`ConValueBytes`] and by extention,
+/// [`BytesControl`].
+///
+/// [`ConValueBytes`]: super::values::ConValueBytes
+/// [`BytesControl`]: super::descriptions::BytesControl
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
+pub struct ConTypeBytes(ConInnerTypeBytes);
+
+impl Deref for ConTypeBytes {
+	type Target = ConInnerTypeBytes;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for ConTypeBytes {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+impl From<ConInnerTypeBytes> for ConTypeBytes {
+	fn from(value: ConInnerTypeBytes) -> Self {
+		Self(value)
+	}
+}
+
+impl From<ConTypeBytes> for ConInnerTypeBytes {
+	fn from(value: ConTypeBytes) -> Self {
+		value.0
+	}
+}
+
+impl From<ConTypeBytes> for ControlValueSetter {
+	fn from(value: ConTypeBytes) -> Self {
+		ControlValueSetter::Bytes(value.0)
+	}
+}
+
+impl fmt::Display for ConTypeBytes {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		write!(f, "[")?;
+		let last_byte = self.0.len() - 1;
+		for (index, byte) in self.0.iter().enumerate() {
+			match index {
+				0 => write!(f, "[{byte}")?,
+				val if val == last_byte => write!(f, "{byte}]")?,
+				_ => write!(f, "{byte}, ")?,
+			}
+		}
+		Ok(())
+	}
+}
 
 /// Represents a key and value use by [`ConValueKeyValue`] and by extention,
 /// [`KeyValuePairControl`].

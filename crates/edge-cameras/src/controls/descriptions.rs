@@ -42,6 +42,7 @@ pub use self::{
 use super::{
 	traits::ControlDescription as _,
 	types::{
+		ConTypeBytes,
 		ConTypeKeyValue,
 		ConTypeMenu,
 		ConTypePoint,
@@ -210,8 +211,8 @@ impl CamControl {
 			} => {
 				CamControl::Bytes(BytesControl::new(
 					id,
-					ConValueBytes::from(value.clone()),
-					default.clone(),
+					ConValueBytes::from(value),
+					ConTypeBytes::from(default),
 				))
 			},
 			ControlValueDescription::KeyValuePair {

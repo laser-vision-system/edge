@@ -23,6 +23,7 @@ use serde::{
 use super::{
 	traits::ControlValue,
 	types::{
+		ConInnerTypeBytes,
 		ConTypeBool,
 		ConTypeBytes,
 		ConTypeEnum,
@@ -228,6 +229,12 @@ impl From<ConTypeBytes> for ConValueBytes {
 	}
 }
 
+impl From<ConInnerTypeBytes> for ConValueBytes {
+	fn from(value: ConInnerTypeBytes) -> Self {
+		ConTypeBytes::from(value).into()
+	}
+}
+
 impl ControlValue for ConValueBytes {
 	type ConType = ConTypeBytes;
 
@@ -242,7 +249,7 @@ impl ControlValue for ConValueBytes {
 
 impl From<ConValueBytes> for ControlValueSetter {
 	fn from(value: ConValueBytes) -> Self {
-		ControlValueSetter::Bytes(value.0.clone())
+		value.0.into()
 	}
 }
 
