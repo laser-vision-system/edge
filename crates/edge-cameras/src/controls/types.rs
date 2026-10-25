@@ -70,6 +70,15 @@ impl From<ConTypeKeyValue> for ControlValueSetter {
 	}
 }
 
+impl fmt::Display for ConTypeKeyValue {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		write!(f, "{}: {}", self.0, self.1)
+	}
+}
+
 /// Represents a point value use by [`ConValuePoint`] and by extention,
 /// [`PointControl`].
 ///
@@ -107,6 +116,15 @@ impl From<ConTypePoint> for (_ConTypePoint, _ConTypePoint) {
 impl From<ConTypePoint> for ControlValueSetter {
 	fn from(value: ConTypePoint) -> Self {
 		ControlValueSetter::Point(value.x_value(), value.y_value())
+	}
+}
+
+impl fmt::Display for ConTypePoint {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		write!(f, "({}, {})", self.0, self.1)
 	}
 }
 
@@ -152,5 +170,14 @@ impl From<ConTypeRGB> for (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB) {
 impl From<ConTypeRGB> for ControlValueSetter {
 	fn from(value: ConTypeRGB) -> Self {
 		ControlValueSetter::RGB(value.red(), value.green(), value.blue())
+	}
+}
+
+impl fmt::Display for ConTypeRGB {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		write!(f, "({}, {}, {})", self.0, self.1, self.2)
 	}
 }
