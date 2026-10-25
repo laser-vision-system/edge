@@ -107,7 +107,7 @@ pub trait ValidItemValue: Clone + Debug + PartialEq + PartialOrd {}
 impl ValidItemValue for Vec<MenuEntry> {
 }
 
-/// The type that is use to report the control's current value as well as apply
+/// The type that is used to report the control's current value as well as apply
 /// a new value.
 ///
 /// Maps to [`nokhwa`]'s [`ControlValueSetter`].
