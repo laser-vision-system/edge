@@ -86,7 +86,9 @@ jobs:
           push: true
           tags: ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:${{matrix.build}}-${{steps.meta.outputs.tags}}
           builder: container-builder
-          platforms: linux/${{ matrix.arch }}
+          platforms: |
+            linux/arm64
+            linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
         
