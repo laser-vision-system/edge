@@ -19,3 +19,17 @@ pub mod error;
 pub mod image;
 pub mod logger;
 pub mod settings;
+
+/// Helper function for writing optional values for display.
+pub fn write_optional<V>(
+	fmtr: &mut std::fmt::Formatter<'_>,
+	value: &Option<V>,
+) -> std::fmt::Result
+where
+	V: std::fmt::Display,
+{
+	match value {
+		Some(value) => value.fmt(fmtr),
+		None => fmtr.write_str("None"),
+	}
+}

@@ -5,7 +5,10 @@
 
 use std::fmt;
 
-use edge_core::logger::logger;
+use edge_core::{
+	logger::logger,
+	write_optional,
+};
 use image::{
 	DynamicImage,
 	GrayImage,
@@ -22,7 +25,6 @@ use crate::{
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
-	write_optional,
 };
 
 /// Closely associated data used by external holders.
@@ -46,13 +48,13 @@ impl fmt::Display for ExternalData {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		f.write_str("ExternalData for Diff { peak: ")?;
-		write_optional(f, self.peak)?;
+		write_optional(f, &self.peak)?;
 		f.write_str(", mean: ")?;
-		write_optional(f, self.mean)?;
+		write_optional(f, &self.mean)?;
 		f.write_str(", std_dev: ")?;
-		write_optional(f, self.std_dev)?;
+		write_optional(f, &self.std_dev)?;
 		f.write_str(", deviation: ")?;
-		write_optional(f, self.deviation)?;
+		write_optional(f, &self.deviation)?;
 		f.write_str(" }")
 	}
 }

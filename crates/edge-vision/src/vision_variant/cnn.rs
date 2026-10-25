@@ -19,7 +19,10 @@ use burn::tensor::{
 	Tensor,
 };
 use burn_store::BurnpackError;
-use edge_core::logger::logger;
+use edge_core::{
+	logger::logger,
+	write_optional,
+};
 
 use crate::{
 	batch_item::BatchItem,
@@ -30,7 +33,6 @@ use crate::{
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
-	write_optional,
 };
 
 /// The errors that can arise with the [`Cnn`].
@@ -68,11 +70,11 @@ impl fmt::Display for ExternalData {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		f.write_str("ExternalData for Cnn { setpoint: ")?;
-		write_optional(f, self.setpoint)?;
+		write_optional(f, &self.setpoint)?;
 		f.write_str(", intensity: ")?;
-		write_optional(f, self.intensity)?;
+		write_optional(f, &self.intensity)?;
 		f.write_str(", deviation: ")?;
-		write_optional(f, self.deviation)?;
+		write_optional(f, &self.deviation)?;
 		f.write_str(" }")
 	}
 }
