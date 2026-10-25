@@ -434,7 +434,7 @@ where
 	let last = list.len() - 1;
 	for (index, item) in list.iter().enumerate() {
 		match index {
-			0 => write!(fmtr, "[{item}")?,
+			0 => write!(fmtr, "[{item}, ")?,
 			val if val == last => write!(fmtr, "{item}]")?,
 			_ => write!(fmtr, "{item}, ")?,
 		}
