@@ -32,7 +32,7 @@ pub(super) type ConInnerTypeKeyValue = (_ConTypeKeyValue, _ConTypeKeyValue);
 pub(super) type ConInnerTypePoint = (_ConTypePoint, _ConTypePoint);
 pub(super) type ConInnerTypeRGB = (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
 
-/// Represents a key and value use by [`ConValueString`] and by extention,
+/// Represents a list of Strings used by [`ConValueString`] and by extention,
 /// [`StringControl`].
 ///
 /// [`ConValueString`]: super::values::ConValueString
@@ -92,7 +92,7 @@ impl fmt::Display for ConTypeString {
 	}
 }
 
-/// Represents a key and value use by [`ConValueBytes`] and by extention,
+/// Represents a list of bytes used by [`ConValueBytes`] and by extention,
 /// [`BytesControl`].
 ///
 /// [`ConValueBytes`]: super::values::ConValueBytes
@@ -161,7 +161,7 @@ impl fmt::Display for ConTypeBytes {
 	}
 }
 
-/// Represents a key and value use by [`ConValueKeyValue`] and by extention,
+/// Represents a key and value used by [`ConValueKeyValue`] and by extention,
 /// [`KeyValuePairControl`].
 ///
 /// [`ConValueKeyValue`]: super::values::ConValueKeyValue
@@ -220,7 +220,7 @@ impl fmt::Display for ConTypeKeyValue {
 	}
 }
 
-/// Represents a point value use by [`ConValuePoint`] and by extention,
+/// Represents a point value used by [`ConValuePoint`] and by extention,
 /// [`PointControl`].
 ///
 /// [`ConValuePoint`]: super::values::ConValuePoint
@@ -269,7 +269,7 @@ impl fmt::Display for ConTypePoint {
 	}
 }
 
-/// Represents an RGB value use by [`ConValueRGB`] and by extention,
+/// Represents an RGB value used by [`ConValueRGB`] and by extention,
 /// [`RGBControl`].
 ///
 /// [`ConValueRGB`]: super::values::ConValueRGB

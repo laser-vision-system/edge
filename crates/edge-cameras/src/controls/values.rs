@@ -522,6 +522,7 @@ impl fmt::Display for ConValueRGB {
 		self.0.fmt(f)
 	}
 }
+
 /// [`ConValueRGB`]'s internal type via [`ControlValue`].
 pub type ConValueRGBType = <ConValueRGB as ControlValue>::ConType;
 
