@@ -1,10 +1,7 @@
 //! Defines for a camera control that consists of a `value`, `default`, and list
 //! of `items`.
 
-use nokhwa::utils::{
-	KnownCameraControl,
-	MenuEntry,
-};
+use nokhwa::utils::KnownCameraControl;
 use serde::{
 	Deserialize,
 	Serialize,
@@ -23,9 +20,12 @@ use super::super::{
 		ConValueMenuType,
 	},
 };
-use crate::error::{
-	EdgeCamerasError,
-	EdgeCamerasResult,
+use crate::{
+	controls::types::ConTypeItems,
+	error::{
+		EdgeCamerasError,
+		EdgeCamerasResult,
+	},
 };
 
 /// A camera control that consists of a `value`, `default`, and list of `items`.
@@ -38,7 +38,7 @@ pub struct MenuControl {
 	control_type: KnownCameraControl,
 	value: ConValueMenu,
 	default: ConValueMenuType,
-	items: Vec<MenuEntry>,
+	items: ConTypeItems,
 }
 
 impl MenuControl {
@@ -47,7 +47,7 @@ impl MenuControl {
 		control_type: KnownCameraControl,
 		value: ConValueMenu,
 		default: ConValueMenuType,
-		items: Vec<MenuEntry>,
+		items: ConTypeItems,
 	) -> Self {
 		Self {
 			control_type,
@@ -92,7 +92,7 @@ impl ControlDefault for MenuControl {
 }
 
 impl ControlItems for MenuControl {
-	type ItemType = Vec<MenuEntry>;
+	type ItemType = ConTypeItems;
 
 	fn control_items(&self) -> Self::ItemType {
 		self.items.clone()

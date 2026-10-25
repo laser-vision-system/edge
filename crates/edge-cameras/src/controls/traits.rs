@@ -4,21 +4,19 @@ use std::fmt::Debug;
 
 use nokhwa::{
 	self,
-	utils::{
-		KnownCameraControl,
-		MenuEntry,
-	},
+	utils::KnownCameraControl,
 };
 
 use super::types::{
 	ConTypeBool,
 	ConTypeBytes,
-	ConTypeEnum,
 	ConTypeFloat,
 	ConTypeInt,
+	ConTypeItems,
 	ConTypeKeyValue,
 	ConTypeMenu,
 	ConTypePoint,
+	ConTypePossible,
 	ConTypeRGB,
 	ConTypeString,
 };
@@ -97,14 +95,14 @@ impl<T> ValidPossibleValue for T where T: ValidControlValue
 {
 }
 
-impl ValidPossibleValue for Vec<ConTypeEnum> {
+impl ValidPossibleValue for ConTypePossible {
 }
 
 /// A marker trait that determines what is acceptable to use within a
 /// [`ControlItems`].
 pub trait ValidItemValue: Clone + Debug + PartialEq + PartialOrd {}
 
-impl ValidItemValue for Vec<MenuEntry> {
+impl ValidItemValue for ConTypeItems {
 }
 
 /// The type that is used to report the control's current value as well as apply

@@ -233,7 +233,7 @@ impl CamControl {
 					id,
 					value.into(),
 					default,
-					possible.clone(),
+					possible.into(),
 				))
 			},
 			ControlValueDescription::RGB {
@@ -257,7 +257,7 @@ impl CamControl {
 					id,
 					value.into(),
 					ConTypeMenu::from(default),
-					items.clone(),
+					items.into(),
 				))
 			},
 		}

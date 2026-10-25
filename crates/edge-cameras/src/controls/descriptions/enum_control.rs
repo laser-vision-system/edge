@@ -18,7 +18,10 @@ use super::super::{
 		ConValueEnumType,
 	},
 };
-use crate::error::EdgeCamerasResult;
+use crate::{
+	controls::types::ConTypePossible,
+	error::EdgeCamerasResult,
+};
 
 /// A camera control that consists of a `value`, `default`, and a vector of
 /// `possible` options.
@@ -31,7 +34,7 @@ pub struct EnumControl {
 	control_type: KnownCameraControl,
 	value: ConValueEnum,
 	default: ConValueEnumType,
-	possible: Vec<ConValueEnumType>,
+	possible: ConTypePossible,
 }
 
 impl EnumControl {
@@ -40,7 +43,7 @@ impl EnumControl {
 		control_type: KnownCameraControl,
 		value: ConValueEnum,
 		default: ConValueEnumType,
-		possible: Vec<ConValueEnumType>,
+		possible: ConTypePossible,
 	) -> Self {
 		Self {
 			control_type,
@@ -81,7 +84,7 @@ impl ControlDefault for EnumControl {
 }
 
 impl ControlPossible for EnumControl {
-	type PossibleType = Vec<Self::ConType>;
+	type PossibleType = ConTypePossible;
 
 	fn control_possible(&self) -> Self::PossibleType {
 		self.possible.clone()

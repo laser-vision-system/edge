@@ -8,7 +8,10 @@ use std::{
 	},
 };
 
-use nokhwa::utils::ControlValueSetter;
+use nokhwa::utils::{
+	ControlValueSetter,
+	MenuEntry,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -31,6 +34,9 @@ pub(super) type ConInnerTypeBytes = Vec<u8>;
 pub(super) type ConInnerTypeKeyValue = (_ConTypeKeyValue, _ConTypeKeyValue);
 pub(super) type ConInnerTypePoint = (_ConTypePoint, _ConTypePoint);
 pub(super) type ConInnerTypeRGB = (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
+
+pub(super) type ConInnerTypePossible = Vec<i64>;
+pub(super) type ConInnerTypeItems = Vec<MenuEntry>;
 
 /// Represents a list of Strings used by [`ConValueString`] and by extention,
 /// [`StringControl`].
@@ -311,6 +317,110 @@ impl fmt::Display for ConTypeRGB {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		write!(f, "({}, {}, {})", self.red(), self.green(), self.blue())
+	}
+}
+
+/// Represents a list of possible variants used by [`EnumControl`].
+///
+/// [`EnumControl`]: super::descriptions::EnumControl
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
+pub struct ConTypePossible(ConInnerTypePossible);
+
+impl Deref for ConTypePossible {
+	type Target = ConInnerTypePossible;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for ConTypePossible {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+impl From<ConInnerTypePossible> for ConTypePossible {
+	fn from(value: ConInnerTypePossible) -> Self {
+		Self(value)
+	}
+}
+
+impl From<ConTypePossible> for ConInnerTypePossible {
+	fn from(value: ConTypePossible) -> Self {
+		value.0
+	}
+}
+
+impl fmt::Display for ConTypePossible {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		display_list(f, &self.0)
+	}
+}
+
+/// Represents a list of [`MenuEntry`]s used by [`MenuControl`].
+///
+/// [`MenuControl`]: super::descriptions::MenuControl
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
+pub struct ConTypeItems(ConInnerTypeItems);
+
+impl Deref for ConTypeItems {
+	type Target = ConInnerTypeItems;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for ConTypeItems {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+impl From<ConInnerTypeItems> for ConTypeItems {
+	fn from(value: ConInnerTypeItems) -> Self {
+		Self(value)
+	}
+}
+
+impl From<ConTypeItems> for ConInnerTypeItems {
+	fn from(value: ConTypeItems) -> Self {
+		value.0
+	}
+}
+
+impl fmt::Display for ConTypeItems {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		display_list(f, &self.0)
 	}
 }
 
