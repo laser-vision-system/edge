@@ -84,7 +84,7 @@ jobs:
             BINARY_DIR=${{ matrix.dir }}
           context: .
           push: true
-          tags: ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:${{matrix.arch}}-${{matrix.build}}-${{steps.meta.outputs.tags}}
+          tags: ${{env.REGISTRY}}/${{env.IMAGE_NAME}}:${{matrix.build}}-${{steps.meta.outputs.tags}}
           builder: container-builder
           platforms: linux/${{ matrix.arch }}
           cache-from: type=gha
