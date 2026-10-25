@@ -40,7 +40,15 @@ pub use self::{
 	string_control::StringControl,
 };
 use super::{
-	traits::ControlDescription as _,
+	traits::{
+		ControlDefault,
+		ControlDescription,
+		ControlItems,
+		ControlMax,
+		ControlMin,
+		ControlPossible,
+		ControlStep,
+	},
 	types::{
 		ConTypeBytes,
 		ConTypeMenu,
@@ -260,6 +268,120 @@ impl CamControl {
 					items.into(),
 				))
 			},
+		}
+	}
+
+	/// Convert this control's value to [`String`], if it exists.
+	pub fn try_display_control_value(&self) -> Option<String> {
+		match self {
+			Self::None => None,
+			Self::Integer(control) => Some(control.control_value().to_string()),
+			Self::IntegerRange(control) => {
+				Some(control.control_value().to_string())
+			},
+			Self::Float(control) => Some(control.control_value().to_string()),
+			Self::FloatRange(control) => {
+				Some(control.control_value().to_string())
+			},
+			Self::Boolean(control) => Some(control.control_value().to_string()),
+			Self::String(control) => Some(control.control_value().to_string()),
+			Self::Bytes(control) => Some(control.control_value().to_string()),
+			Self::KeyValuePair(control) => {
+				Some(control.control_value().to_string())
+			},
+			Self::Point(control) => Some(control.control_value().to_string()),
+			Self::Enum(control) => Some(control.control_value().to_string()),
+			Self::RGB(control) => Some(control.control_value().to_string()),
+			Self::Menu(control) => Some(control.control_value().to_string()),
+		}
+	}
+
+	/// Convert this control's default to [`String`], if it exists.
+	pub fn try_display_control_default(&self) -> Option<String> {
+		match self {
+			Self::None => None,
+			Self::Integer(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::IntegerRange(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::Float(control) => Some(control.control_default().to_string()),
+			Self::FloatRange(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::Boolean(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::String(control) => {
+				Some(control.control_default()?.to_string())
+			},
+			Self::Bytes(control) => Some(control.control_default().to_string()),
+			Self::KeyValuePair(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::Point(control) => Some(control.control_default().to_string()),
+			Self::Enum(control) => Some(control.control_default().to_string()),
+			Self::RGB(control) => Some(control.control_default().to_string()),
+			Self::Menu(control) => Some(control.control_default().to_string()),
+		}
+	}
+
+	/// Convert this control's min to [`String`], if it exists.
+	pub fn try_display_control_min(&self) -> Option<String> {
+		match self {
+			Self::IntegerRange(control) => {
+				Some(control.control_min().to_string())
+			},
+			Self::FloatRange(control) => {
+				Some(control.control_min().to_string())
+			},
+			_ => None,
+		}
+	}
+
+	/// Convert this control's max to [`String`], if it exists.
+	pub fn try_display_control_max(&self) -> Option<String> {
+		match self {
+			Self::IntegerRange(control) => {
+				Some(control.control_max().to_string())
+			},
+			Self::FloatRange(control) => {
+				Some(control.control_max().to_string())
+			},
+			Self::RGB(control) => Some(control.control_max().to_string()),
+			_ => None,
+		}
+	}
+
+	/// Convert this control's step to [`String`], if it exists.
+	pub fn try_display_control_step(&self) -> Option<String> {
+		match self {
+			Self::Integer(control) => Some(control.control_step().to_string()),
+			Self::IntegerRange(control) => {
+				Some(control.control_step().to_string())
+			},
+			Self::Float(control) => Some(control.control_step().to_string()),
+			Self::FloatRange(control) => {
+				Some(control.control_step().to_string())
+			},
+			_ => None,
+		}
+	}
+
+	/// Convert this control's possible to [`String`], if it exists.
+	pub fn try_display_control_possible(&self) -> Option<String> {
+		match self {
+			Self::Enum(control) => Some(control.control_possible().to_string()),
+			_ => None,
+		}
+	}
+
+	/// Convert this control's items to [`String`], if it exists.
+	pub fn try_display_control_items(&self) -> Option<String> {
+		match self {
+			Self::Menu(control) => Some(control.control_items().to_string()),
+			_ => None,
 		}
 	}
 }
