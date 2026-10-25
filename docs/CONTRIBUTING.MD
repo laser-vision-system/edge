@@ -2,15 +2,19 @@
 
 Do not push to `main`; only push directly to `dev` if it is a minor change.
 
-For most development work: create a branch off `dev`, add your commits, and push the branch. Then create a pull request to merge into `dev`. Once the pull request has been accepted, make a pull request into `main` to synchronise.
+For most development work: create a branch off `dev`, add your commits, and push the branch. Then create a pull request to merge into `dev`. Work branches must start with either `feat/`, `refactor/`, `rework/`, `bugfix/`, `chore/`, or `temp/`.
 
-Prefer to rebase merge if possible. Only use a squash merge if necessary.
+`dev` should periodically be merged into `main` with a pull request. Only use rebase merge when synchronising from `dev` into `main`.
+
+If the pull request contains many commits with little to no useful information in the change history or commit messages, use a squash merge.
 
 ## Formatting Guidelines
 
 > **Use tab indentation.**
 
-Formatting is handled by `rustfmt`.
+Formatting is handled by `rustfmt`. Remember to run the formatter before committing with `cargo fmt`.
+
+You could also run `cargo clippy --no-deps` to check for any other warnings or errors.
 
 ### Vscode
 

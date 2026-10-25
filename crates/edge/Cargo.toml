@@ -1,0 +1,55 @@
+[package]
+name = "edge"
+edition.workspace = true
+version.workspace = true
+
+[features]
+default = [
+	"cnn-backend-flex",
+	"cnn-model-embedded",
+]
+
+# == Burn backend selection ==
+cnn-backend-flex = [
+	"edge-vision/cnn-backend-flex",
+]
+cnn-backend-wgpu = [
+	"edge-vision/cnn-backend-wgpu",
+]
+cnn-backend-cuda = [
+	"edge-vision/cnn-backend-cuda",
+]
+
+# == Burn model loading mehod ==
+# Embed the model into the compiled binary.
+cnn-model-embedded = [
+	"edge-vision/cnn-model-embedded",
+]
+# Load the model from file at runtime with zero-copy.
+cnn-model-zero-copy = [
+	"edge-vision/cnn-model-zero-copy",
+]
+# Load the model from file at runtime without zero-copy.
+cnn-model-file = [
+	"edge-vision/cnn-model-file",
+]
+
+[dependencies]
+
+# Submodules
+api.workspace = true
+
+# Internal crates
+edge-cameras.workspace = true
+edge-core.workspace = true
+edge-client.workspace = true
+edge-vision.workspace = true
+
+# External crates
+mutually_exclusive_features.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true

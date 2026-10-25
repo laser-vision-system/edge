@@ -1,6 +1,6 @@
-[submodule "api"]
-	path = api
-	url = https://github.com/COS40005-P12/api.git
-[submodule "nokhwa"]
-	path = nokhwa
-	url = https://github.com/COS40005-P12/nokhwa.git
+[submodule "submodules/api"]
+	path = submodules/api
+	url = https://github.com/laser-vision-system/api.git
+[submodule "submodules/nokhwa"]
+	path = submodules/nokhwa
+	url = https://github.com/laser-vision-system/nokhwa.git

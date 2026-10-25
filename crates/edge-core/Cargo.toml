@@ -1,0 +1,21 @@
+[package]
+name = "edge-core"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+
+# Submodules
+api.workspace = true
+
+# Internal crates
+nokhwa.workspace = true
+
+# External crates
+chrono = "0.4"
+image.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
