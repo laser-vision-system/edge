@@ -148,16 +148,7 @@ impl fmt::Display for ConTypeBytes {
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		write!(f, "[")?;
-		let last_byte = self.0.len() - 1;
-		for (index, byte) in self.0.iter().enumerate() {
-			match index {
-				0 => write!(f, "[{byte}")?,
-				val if val == last_byte => write!(f, "{byte}]")?,
-				_ => write!(f, "{byte}, ")?,
-			}
-		}
-		Ok(())
+		display_list(f, &self.0)
 	}
 }
 
@@ -321,4 +312,22 @@ impl fmt::Display for ConTypeRGB {
 	) -> fmt::Result {
 		write!(f, "({}, {}, {})", self.red(), self.green(), self.blue())
 	}
+}
+
+fn display_list<T>(
+	fmtr: &mut fmt::Formatter<'_>,
+	list: &[T],
+) -> fmt::Result
+where
+	T: fmt::Display,
+{
+	let last = list.len() - 1;
+	for (index, item) in list.iter().enumerate() {
+		match index {
+			0 => write!(fmtr, "[{item}")?,
+			val if val == last => write!(fmtr, "{item}]")?,
+			_ => write!(fmtr, "{item}, ")?,
+		}
+	}
+	Ok(())
 }
