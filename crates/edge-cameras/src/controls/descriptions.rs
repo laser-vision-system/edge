@@ -43,23 +43,10 @@ use super::{
 	traits::ControlDescription as _,
 	types::{
 		ConTypeBytes,
-		ConTypeKeyValue,
 		ConTypeMenu,
 		ConTypePoint,
 		ConTypeRGB,
 		ConTypeString,
-	},
-	values::{
-		ConValueBoolean,
-		ConValueBytes,
-		ConValueEnum,
-		ConValueFloat,
-		ConValueInteger,
-		ConValueKeyValue,
-		ConValueMenu,
-		ConValuePoint,
-		ConValueRGB,
-		ConValueString,
 	},
 };
 
@@ -137,7 +124,7 @@ impl CamControl {
 			} => {
 				CamControl::Integer(IntegerControl::new(
 					id,
-					ConValueInteger::from(value),
+					value.into(),
 					default,
 					step,
 				))
@@ -151,7 +138,7 @@ impl CamControl {
 			} => {
 				CamControl::IntegerRange(IntegerRangeControl::new(
 					id,
-					ConValueInteger::from(value),
+					value.into(),
 					default,
 					step,
 					min,
@@ -165,7 +152,7 @@ impl CamControl {
 			} => {
 				CamControl::Float(FloatControl::new(
 					id,
-					ConValueFloat::from(value),
+					value.into(),
 					default,
 					step,
 				))
@@ -179,7 +166,7 @@ impl CamControl {
 			} => {
 				CamControl::FloatRange(FloatRangeControl::new(
 					id,
-					ConValueFloat::from(value),
+					value.into(),
 					default,
 					step,
 					min,
@@ -192,7 +179,7 @@ impl CamControl {
 			} => {
 				CamControl::Boolean(BooleanControl::new(
 					id,
-					ConValueBoolean::from(value),
+					value.into(),
 					default,
 				))
 			},
@@ -202,7 +189,7 @@ impl CamControl {
 			} => {
 				CamControl::String(StringControl::new(
 					id,
-					ConValueString::from(value),
+					value.into(),
 					default.map(ConTypeString::from),
 				))
 			},
@@ -212,7 +199,7 @@ impl CamControl {
 			} => {
 				CamControl::Bytes(BytesControl::new(
 					id,
-					ConValueBytes::from(value),
+					value.into(),
 					ConTypeBytes::from(default),
 				))
 			},
@@ -223,7 +210,7 @@ impl CamControl {
 			} => {
 				CamControl::KeyValuePair(KeyValuePairControl::new(
 					id,
-					ConValueKeyValue::from(ConTypeKeyValue::from((key, value))),
+					(key, value).into(),
 					(default).into(),
 				))
 			},
@@ -233,7 +220,7 @@ impl CamControl {
 			} => {
 				CamControl::Point(PointControl::new(
 					id,
-					ConValuePoint::from(ConTypePoint::from(value)),
+					value.into(),
 					ConTypePoint::from(default),
 				))
 			},
@@ -244,7 +231,7 @@ impl CamControl {
 			} => {
 				CamControl::Enum(EnumControl::new(
 					id,
-					ConValueEnum::from(value),
+					value.into(),
 					default,
 					possible.clone(),
 				))
@@ -256,7 +243,7 @@ impl CamControl {
 			} => {
 				CamControl::RGB(RGBControl::new(
 					id,
-					ConValueRGB::from(ConTypeRGB::from(value)),
+					value.into(),
 					ConTypeRGB::from(default),
 					ConTypeRGB::from(max),
 				))
@@ -268,7 +255,7 @@ impl CamControl {
 			} => {
 				CamControl::Menu(MenuControl::new(
 					id,
-					ConValueMenu::from(value),
+					value.into(),
 					ConTypeMenu::from(default),
 					items.clone(),
 				))

@@ -24,6 +24,9 @@ use super::{
 	traits::ControlValue,
 	types::{
 		ConInnerTypeBytes,
+		ConInnerTypeKeyValue,
+		ConInnerTypePoint,
+		ConInnerTypeRGB,
 		ConInnerTypeString,
 		ConTypeBool,
 		ConTypeBytes,
@@ -287,6 +290,11 @@ impl From<ConTypeKeyValue> for ConValueKeyValue {
 	}
 }
 
+impl From<ConInnerTypeKeyValue> for ConValueKeyValue {
+	fn from(value: ConInnerTypeKeyValue) -> Self {
+		ConTypeKeyValue::from(value).into()
+	}
+}
 impl ControlValue for ConValueKeyValue {
 	type ConType = ConTypeKeyValue;
 
@@ -319,6 +327,12 @@ pub struct ConValuePoint(ConTypePoint);
 impl From<ConTypePoint> for ConValuePoint {
 	fn from(value: ConTypePoint) -> Self {
 		Self(value)
+	}
+}
+
+impl From<ConInnerTypePoint> for ConValuePoint {
+	fn from(value: ConInnerTypePoint) -> Self {
+		ConTypePoint::from(value).into()
 	}
 }
 
@@ -399,6 +413,12 @@ pub struct ConValueRGB(ConTypeRGB);
 impl From<ConTypeRGB> for ConValueRGB {
 	fn from(value: ConTypeRGB) -> Self {
 		Self(value)
+	}
+}
+
+impl From<ConInnerTypeRGB> for ConValueRGB {
+	fn from(value: ConInnerTypeRGB) -> Self {
+		ConTypeRGB::from(value).into()
 	}
 }
 
