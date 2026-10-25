@@ -18,6 +18,7 @@ use std::hash::Hash;
 use nokhwa::utils::{
 	CameraControl,
 	ControlValueDescription,
+	KnownCameraControl,
 };
 use serde::{
 	Deserialize,
@@ -114,15 +115,18 @@ pub enum CamControl {
 	Menu(MenuControl),
 }
 
-impl From<CameraControl> for CamControl {
-	/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
+impl CamControl {
+	/// Create a [`CamControl`] from a [`ControlValueDescription`] and
+	/// [`KnownCameraControl`].
 	#[expect(
 		clippy::too_many_lines,
 		reason = "Necessary to map from one type to the other"
 	)]
-	fn from(value: CameraControl) -> Self {
-		let control_type = value.control();
-		match value.description() {
+	pub fn from_description_and_id(
+		description: ControlValueDescription,
+		id: KnownCameraControl,
+	) -> Self {
+		match description {
 			ControlValueDescription::None => CamControl::None,
 			ControlValueDescription::Integer {
 				value,
@@ -130,10 +134,10 @@ impl From<CameraControl> for CamControl {
 				step,
 			} => {
 				CamControl::Integer(IntegerControl::new(
-					control_type,
-					ConValueInteger::from(*value),
-					*default,
-					*step,
+					id,
+					ConValueInteger::from(value),
+					default,
+					step,
 				))
 			},
 			ControlValueDescription::IntegerRange {
@@ -144,12 +148,12 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::IntegerRange(IntegerRangeControl::new(
-					control_type,
-					ConValueInteger::from(*value),
-					*default,
-					*step,
-					*min,
-					*max,
+					id,
+					ConValueInteger::from(value),
+					default,
+					step,
+					min,
+					max,
 				))
 			},
 			ControlValueDescription::Float {
@@ -158,10 +162,10 @@ impl From<CameraControl> for CamControl {
 				step,
 			} => {
 				CamControl::Float(FloatControl::new(
-					control_type,
-					ConValueFloat::from(*value),
-					*default,
-					*step,
+					id,
+					ConValueFloat::from(value),
+					default,
+					step,
 				))
 			},
 			ControlValueDescription::FloatRange {
@@ -172,12 +176,12 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::FloatRange(FloatRangeControl::new(
-					control_type,
-					ConValueFloat::from(*value),
-					*default,
-					*step,
-					*min,
-					*max,
+					id,
+					ConValueFloat::from(value),
+					default,
+					step,
+					min,
+					max,
 				))
 			},
 			ControlValueDescription::Boolean {
@@ -185,9 +189,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Boolean(BooleanControl::new(
-					control_type,
-					ConValueBoolean::from(*value),
-					*default,
+					id,
+					ConValueBoolean::from(value),
+					default,
 				))
 			},
 			ControlValueDescription::String {
@@ -195,7 +199,7 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::String(StringControl::new(
-					control_type,
+					id,
 					ConValueString::from(value.clone()),
 					default.clone(),
 				))
@@ -205,7 +209,7 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Bytes(BytesControl::new(
-					control_type,
+					id,
 					ConValueBytes::from(value.clone()),
 					default.clone(),
 				))
@@ -216,11 +220,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::KeyValuePair(KeyValuePairControl::new(
-					control_type,
-					ConValueKeyValue::from(ConTypeKeyValue::from((
-						*key, *value,
-					))),
-					(*default).into(),
+					id,
+					ConValueKeyValue::from(ConTypeKeyValue::from((key, value))),
+					(default).into(),
 				))
 			},
 			ControlValueDescription::Point {
@@ -228,9 +230,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Point(PointControl::new(
-					control_type,
-					ConValuePoint::from(ConTypePoint::from(*value)),
-					ConTypePoint::from(*default),
+					id,
+					ConValuePoint::from(ConTypePoint::from(value)),
+					ConTypePoint::from(default),
 				))
 			},
 			ControlValueDescription::Enum {
@@ -239,9 +241,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Enum(EnumControl::new(
-					control_type,
-					ConValueEnum::from(*value),
-					*default,
+					id,
+					ConValueEnum::from(value),
+					default,
 					possible.clone(),
 				))
 			},
@@ -251,10 +253,10 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::RGB(RGBControl::new(
-					control_type,
-					ConValueRGB::from(ConTypeRGB::from(*value)),
-					ConTypeRGB::from(*default),
-					ConTypeRGB::from(*max),
+					id,
+					ConValueRGB::from(ConTypeRGB::from(value)),
+					ConTypeRGB::from(default),
+					ConTypeRGB::from(max),
 				))
 			},
 			ControlValueDescription::Menu {
@@ -263,13 +265,22 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Menu(MenuControl::new(
-					control_type,
-					ConValueMenu::from(*value),
-					ConTypeMenu::from(*default),
+					id,
+					ConValueMenu::from(value),
+					ConTypeMenu::from(default),
 					items.clone(),
 				))
 			},
 		}
+	}
+}
+
+impl From<CameraControl> for CamControl {
+	/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
+	fn from(value: CameraControl) -> Self {
+		let control_type = value.control();
+		// TODO: Remove description clone.
+		Self::from_description_and_id(value.description().clone(), control_type)
 	}
 }
 
