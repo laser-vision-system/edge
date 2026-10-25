@@ -24,6 +24,7 @@ use super::{
 	traits::ControlValue,
 	types::{
 		ConInnerTypeBytes,
+		ConInnerTypeString,
 		ConTypeBool,
 		ConTypeBytes,
 		ConTypeEnum,
@@ -185,6 +186,12 @@ impl From<ConTypeString> for ConValueString {
 	}
 }
 
+impl From<ConInnerTypeString> for ConValueString {
+	fn from(value: ConInnerTypeString) -> Self {
+		ConTypeString::from(value).into()
+	}
+}
+
 impl ControlValue for ConValueString {
 	type ConType = ConTypeString;
 
@@ -199,7 +206,7 @@ impl ControlValue for ConValueString {
 
 impl From<ConValueString> for ControlValueSetter {
 	fn from(value: ConValueString) -> Self {
-		ControlValueSetter::String(value.0.clone())
+		value.0.into()
 	}
 }
 

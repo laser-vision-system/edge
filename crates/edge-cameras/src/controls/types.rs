@@ -19,15 +19,75 @@ use serde::{
 pub(super) type ConTypeInt = i64;
 pub(super) type ConTypeFloat = f64;
 pub(super) type ConTypeBool = bool;
-pub(super) type ConTypeString = String;
 pub(super) type ConTypeEnum = i64;
 pub(super) type ConTypeMenu = u32;
 
+pub(super) type ConInnerTypeString = String;
 pub(super) type ConInnerTypeBytes = Vec<u8>;
 
 type _ConTypeKeyValue = i128;
 type _ConTypePoint = f64;
 type _ConTypeRGB = f64;
+
+/// Represents a key and value use by [`ConValueString`] and by extention,
+/// [`StringControl`].
+///
+/// [`ConValueString`]: super::values::ConValueString
+/// [`StringControl`]: super::descriptions::StringControl
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
+pub struct ConTypeString(ConInnerTypeString);
+
+impl Deref for ConTypeString {
+	type Target = ConInnerTypeString;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for ConTypeString {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+impl From<ConInnerTypeString> for ConTypeString {
+	fn from(value: ConInnerTypeString) -> Self {
+		Self(value)
+	}
+}
+
+impl From<ConTypeString> for ConInnerTypeString {
+	fn from(value: ConTypeString) -> Self {
+		value.0
+	}
+}
+
+impl From<ConTypeString> for ControlValueSetter {
+	fn from(value: ConTypeString) -> Self {
+		ControlValueSetter::String(value.0)
+	}
+}
+
+impl fmt::Display for ConTypeString {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
+	}
+}
 
 /// Represents a key and value use by [`ConValueBytes`] and by extention,
 /// [`BytesControl`].

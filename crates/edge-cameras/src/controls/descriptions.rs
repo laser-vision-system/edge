@@ -47,6 +47,7 @@ use super::{
 		ConTypeMenu,
 		ConTypePoint,
 		ConTypeRGB,
+		ConTypeString,
 	},
 	values::{
 		ConValueBoolean,
@@ -201,8 +202,8 @@ impl CamControl {
 			} => {
 				CamControl::String(StringControl::new(
 					id,
-					ConValueString::from(value.clone()),
-					default.clone(),
+					ConValueString::from(value),
+					default.map(ConTypeString::from),
 				))
 			},
 			ControlValueDescription::Bytes {
