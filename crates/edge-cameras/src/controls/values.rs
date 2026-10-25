@@ -14,6 +14,8 @@
 
 // TODO: Implement `Borrow` on everything.
 
+use std::fmt;
+
 use nokhwa::utils::ControlValueSetter;
 use serde::{
 	Deserialize,
@@ -83,6 +85,15 @@ impl From<ConValueInteger> for ControlValueSetter {
 	}
 }
 
+impl fmt::Display for ConValueInteger {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
+	}
+}
+
 /// [`ConValueInteger`]'s internal type via [`ControlValue`].
 pub type ConValueIntegerType = <ConValueInteger as ControlValue>::ConType;
 
@@ -115,6 +126,15 @@ impl ControlValue for ConValueFloat {
 impl From<ConValueFloat> for ControlValueSetter {
 	fn from(value: ConValueFloat) -> Self {
 		ControlValueSetter::Float(value.0)
+	}
+}
+
+impl fmt::Display for ConValueFloat {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
 	}
 }
 
@@ -160,6 +180,15 @@ impl ControlValue for ConValueBoolean {
 impl From<ConValueBoolean> for ControlValueSetter {
 	fn from(value: ConValueBoolean) -> Self {
 		ControlValueSetter::Boolean(value.0)
+	}
+}
+
+impl fmt::Display for ConValueBoolean {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
 	}
 }
 
@@ -213,6 +242,15 @@ impl From<ConValueString> for ControlValueSetter {
 	}
 }
 
+impl fmt::Display for ConValueString {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
+	}
+}
+
 /// [`ConValueString`]'s internal type via [`ControlValue`].
 pub type ConValueStringType = <ConValueString as ControlValue>::ConType;
 
@@ -260,6 +298,15 @@ impl ControlValue for ConValueBytes {
 impl From<ConValueBytes> for ControlValueSetter {
 	fn from(value: ConValueBytes) -> Self {
 		value.0.into()
+	}
+}
+
+impl fmt::Display for ConValueBytes {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
 	}
 }
 
@@ -313,6 +360,15 @@ impl From<ConValueKeyValue> for ControlValueSetter {
 	}
 }
 
+impl fmt::Display for ConValueKeyValue {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
+	}
+}
+
 /// [`ConValueKeyValue`]'s internal type via [`ControlValue`].
 pub type ConValueKeyValueType = <ConValueKeyValue as ControlValue>::ConType;
 
@@ -351,6 +407,15 @@ impl ControlValue for ConValuePoint {
 impl From<ConValuePoint> for ControlValueSetter {
 	fn from(value: ConValuePoint) -> Self {
 		value.0.into()
+	}
+}
+
+impl fmt::Display for ConValuePoint {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
 	}
 }
 
@@ -399,6 +464,15 @@ impl From<ConValueEnum> for ControlValueSetter {
 	}
 }
 
+impl fmt::Display for ConValueEnum {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
+	}
+}
+
 /// [`ConValueEnum`]'s internal type via [`ControlValue`].
 pub type ConValueEnumType = <ConValueEnum as ControlValue>::ConType;
 
@@ -440,6 +514,14 @@ impl From<ConValueRGB> for ControlValueSetter {
 	}
 }
 
+impl fmt::Display for ConValueRGB {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
+	}
+}
 /// [`ConValueRGB`]'s internal type via [`ControlValue`].
 pub type ConValueRGBType = <ConValueRGB as ControlValue>::ConType;
 
@@ -482,6 +564,15 @@ impl ControlValue for ConValueMenu {
 impl From<ConValueMenu> for ControlValueSetter {
 	fn from(value: ConValueMenu) -> Self {
 		ControlValueSetter::Menu(value.0)
+	}
+}
+
+impl fmt::Display for ConValueMenu {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
 	}
 }
 
