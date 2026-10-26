@@ -154,7 +154,7 @@ impl fmt::Display for ConTypeBytes {
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		display_list(f, &self.0)
+		display_list(f, &self.0, false)
 	}
 }
 
@@ -368,7 +368,7 @@ impl fmt::Display for ConTypePossible {
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		display_list(f, &self.0)
+		display_list(f, &self.0, false)
 	}
 }
 
@@ -420,23 +420,26 @@ impl fmt::Display for ConTypeItems {
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		display_list(f, &self.0)
+		display_list(f, &self.0, true)
 	}
 }
 
-fn display_list<T>(
+fn display_list(
 	fmtr: &mut fmt::Formatter<'_>,
-	list: &[T],
-) -> fmt::Result
-where
-	T: fmt::Display,
-{
+	list: &[impl fmt::Display],
+	isolate: bool,
+) -> fmt::Result {
 	let last = list.len() - 1;
 	for (index, item) in list.iter().enumerate() {
+		let formatted_item = if isolate {
+			format!("{{ {item} }}")
+		} else {
+			format!("{item}")
+		};
 		match index {
-			0 => write!(fmtr, "[{item}, ")?,
-			val if val == last => write!(fmtr, "{item}]")?,
-			_ => write!(fmtr, "{item}, ")?,
+			0 => write!(fmtr, "[{formatted_item}, ")?,
+			val if val == last => write!(fmtr, "{formatted_item}]")?,
+			_ => write!(fmtr, "{formatted_item}, ")?,
 		}
 	}
 	Ok(())
