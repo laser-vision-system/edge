@@ -21,6 +21,10 @@ pub mod logger;
 pub mod settings;
 
 /// Helper function for writing optional values for display.
+///
+/// # Errors
+///
+/// If the formatter fails to write to the standard out.
 pub fn write_optional<V>(
 	fmtr: &mut std::fmt::Formatter<'_>,
 	value: &Option<V>,

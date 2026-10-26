@@ -429,7 +429,7 @@ fn display_list(
 	list: &[impl fmt::Display],
 	isolate: bool,
 ) -> fmt::Result {
-	let last = list.len() - 1;
+	let last_index = list.len() - 1;
 	for (index, item) in list.iter().enumerate() {
 		let formatted_item = if isolate {
 			format!("{{ {item} }}")
@@ -438,7 +438,7 @@ fn display_list(
 		};
 		match index {
 			0 => write!(fmtr, "[{formatted_item}, ")?,
-			val if val == last => write!(fmtr, "{formatted_item}]")?,
+			val if val == last_index => write!(fmtr, "{formatted_item}]")?,
 			_ => write!(fmtr, "{formatted_item}, ")?,
 		}
 	}

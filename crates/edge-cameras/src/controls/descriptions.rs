@@ -41,13 +41,13 @@ pub use self::{
 };
 use super::{
 	traits::{
-		ControlDefault,
-		ControlDescription,
-		ControlItems,
-		ControlMax,
-		ControlMin,
-		ControlPossible,
-		ControlStep,
+		ControlDefault as _,
+		ControlDescription as _,
+		ControlItems as _,
+		ControlMax as _,
+		ControlMin as _,
+		ControlPossible as _,
+		ControlStep as _,
 	},
 	types::{
 		ConTypeBytes,
