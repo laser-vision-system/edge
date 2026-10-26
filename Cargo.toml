@@ -24,7 +24,6 @@ api = { path = "./submodules/api" }
 nokhwa = { path = "./submodules/nokhwa", features = [
 	"serialize",
 	"input-native",
-	"runner",
 ] }
 
 # Internal crates
