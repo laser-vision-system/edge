@@ -1,5 +1,7 @@
 //! Defines for a camera control that consists of a `value` and `default`.
 
+use std::fmt;
+
 use nokhwa::utils::KnownCameraControl;
 use serde::{
 	Deserialize,
@@ -72,5 +74,40 @@ impl ControlDefault for PointControl {
 
 	fn control_default(&self) -> Self::DefaultType {
 		self.default
+	}
+}
+
+impl fmt::Display for PointControl {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		if f.alternate() {
+			write!(f, "{} {} *{}", self.control_type, self.value, self.default)
+		} else {
+			write!(
+				f,
+				"type: '{}' value: '{}' default: '{}'",
+				self.control_type, self.value, self.default
+			)
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	#[ignore = "for manual inspection"]
+	fn control_display() {
+		let control_type = KnownCameraControl::Pan;
+		let value = ConValuePoint::from((0.0, 0.0));
+		let default = ConTypePoint::from((0.0, 0.0));
+		let control = PointControl::new(control_type, value, default);
+		super::super::tests::display_with_different_formats(
+			"PointControl",
+			control,
+		);
 	}
 }

@@ -1,6 +1,8 @@
 //! Defines for a camera control that consists of a `value`, `default`, and list
 //! of `items`.
 
+use std::fmt;
+
 use nokhwa::utils::KnownCameraControl;
 use serde::{
 	Deserialize,
@@ -103,5 +105,51 @@ impl ControlItems for MenuControl {
 		value: Self::ConType,
 	) -> bool {
 		self.items.iter().any(|entry| entry.get_id() == value)
+	}
+}
+
+impl fmt::Display for MenuControl {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		if f.alternate() {
+			write!(
+				f,
+				"{} {} *{} {}",
+				self.control_type, self.value, self.default, self.items
+			)
+		} else {
+			write!(
+				f,
+				"type: '{}' value: '{}' default: '{}' items: '{}'",
+				self.control_type, self.value, self.default, self.items
+			)
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use nokhwa::utils::{
+		MenuEntry,
+		MenuItem,
+	};
+
+	use super::*;
+
+	#[test]
+	#[ignore = "for manual inspection"]
+	fn control_display() {
+		let control_type = KnownCameraControl::Pan;
+		let value = ConValueMenu::from(0);
+		let default = 0;
+		let possible =
+			ConTypeItems::from(vec![MenuEntry::new(0, MenuItem::Value(0)); 5]);
+		let control = MenuControl::new(control_type, value, default, possible);
+		super::super::tests::display_with_different_formats(
+			"MenuControl",
+			control,
+		);
 	}
 }

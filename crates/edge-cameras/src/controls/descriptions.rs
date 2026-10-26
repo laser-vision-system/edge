@@ -457,3 +457,19 @@ impl_identifiable!(PointControl);
 impl_identifiable!(EnumControl);
 impl_identifiable!(RGBControl);
 impl_identifiable!(MenuControl);
+
+#[cfg(test)]
+mod tests {
+	use std::fmt;
+
+	use crate::controls::traits::ControlDescription;
+
+	pub fn display_with_different_formats(
+		label: &'static str,
+		control: impl ControlDescription + fmt::Display + fmt::Debug,
+	) {
+		println!(
+			"{label} (dbg) | {control:?}\n{label} (std) | {control}\n{label} (alt) | {control:#}"
+		);
+	}
+}

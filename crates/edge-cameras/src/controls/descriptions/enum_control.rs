@@ -1,5 +1,7 @@
 //! Defines for a camera control that consists of a `value`, `default`, and a
 //! vector of `possible` options.
+use std::fmt;
+
 use nokhwa::utils::KnownCameraControl;
 use serde::{
 	Deserialize,
@@ -95,5 +97,45 @@ impl ControlPossible for EnumControl {
 		value: &Self::ConType,
 	) -> bool {
 		self.possible.contains(value)
+	}
+}
+
+impl fmt::Display for EnumControl {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		if f.alternate() {
+			write!(
+				f,
+				"{} {} *{} {}",
+				self.control_type, self.value, self.default, self.possible
+			)
+		} else {
+			write!(
+				f,
+				"type: '{}' value: '{}' default: '{}' possible: '{}'",
+				self.control_type, self.value, self.default, self.possible
+			)
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	#[ignore = "for manual inspection"]
+	fn control_display() {
+		let control_type = KnownCameraControl::Pan;
+		let value = ConValueEnum::from(0);
+		let default = 0;
+		let possible = ConTypePossible::from(vec![0; 5]);
+		let control = EnumControl::new(control_type, value, default, possible);
+		super::super::tests::display_with_different_formats(
+			"EnumControl",
+			control,
+		);
 	}
 }
