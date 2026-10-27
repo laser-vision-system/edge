@@ -142,7 +142,7 @@ impl Conductor {
 
 		// This should guarantee that the loop will take at least this long.
 		let duration_of_loop = limit_interval.period().as_millis(); 
-		print!("{duration_of_loop}"); 
+		print!("loop duration: {duration_of_loop}"); 
 		limit_interval.tick().await;
 
 		
