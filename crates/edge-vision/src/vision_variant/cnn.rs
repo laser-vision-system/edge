@@ -21,6 +21,10 @@ use burn::tensor::{
 use burn_store::BurnpackError;
 use edge_core::logger::logger;
 
+use self::model::{
+	LaserModel,
+	LaserModelConfig,
+};
 use crate::{
 	batch_item::BatchItem,
 	error::{
@@ -32,6 +36,12 @@ use crate::{
 	vision_state::VisionState,
 	write_optional,
 };
+
+const DESIRED_IMG_SQUARE: u32 = 60;
+const IMG_CHANNELS_LUMA: usize = 1;
+
+const CNN_IMG_HEIGHT: u32 = DESIRED_IMG_SQUARE;
+const CNN_IMG_WIDTH: u32 = DESIRED_IMG_SQUARE;
 
 /// The errors that can arise with the [`Cnn`].
 #[derive(Debug, thiserror::Error)]
@@ -84,7 +94,7 @@ impl fmt::Display for ExternalData {
 pub struct Cnn {
 	session: SessionToken,
 	device: config::BackendDevice,
-	model: model::LaserModel<config::Backend>,
+	model: LaserModel<config::Backend>,
 }
 
 impl Cnn {
@@ -96,7 +106,8 @@ impl Cnn {
 	pub fn new() -> EdgeVisionResult<Self> {
 		let device = config::get_device();
 		let path = config::model_path();
-		let model = model::LaserModel::load(path, &device)?;
+		let model_config = LaserModelConfig::new();
+		let model = model_config.init(&device).load_weights(path)?;
 		Ok(Self {
 			session: SessionToken::new(),
 			device,
@@ -193,16 +204,29 @@ fn apply_predictions(
 		"The number of predictions does not match the number of items"
 	);
 
-	for (item, intensity) in batch.iter_mut().zip(predictions) {
+	for (item, mut intensity) in batch.iter_mut().zip(predictions) {
 		if let VisionState::Cnn(_, data) = item.state {
+			if intensity <= 0.0 {
+				logger().log_warn(&format!(
+					"Intensity predicted to be {intensity}"
+				));
+				intensity = 0.0;
+			}
 			if item.calibrate {
 				data.setpoint = Some(intensity);
 			}
 			data.intensity = Some(intensity);
 			data.deviation = data
 				.setpoint
-				.filter(|setpoint| *setpoint > 0.0)
-				.map(|setpoint| intensity / setpoint);
+				//.filter(|setpoint| *setpoint > 0.0)
+				//.map(|setpoint| intensity / setpoint);
+				.map(|setpoint| {
+					if setpoint == 0.0 {
+						f32::INFINITY
+					} else {
+						intensity / setpoint
+					}
+				});
 		}
 	}
 }
@@ -225,23 +249,17 @@ mod tests {
 		time::Instant,
 	};
 
-	use edge_core::{
-		image::Image,
-		settings::{
-			IMAGE_HEIGHT,
-			IMAGE_WIDTH,
-		},
-	};
+	use edge_core::image::Image;
 	use image::{
-		Rgb,
-		RgbImage,
+		GrayImage,
+		Luma,
 	};
 
 	use super::*;
 
 	fn test_cnn() -> Cnn {
 		let device = config::get_device();
-		let model = model::LaserModel::<config::Backend>::test_model(&device);
+		let model = LaserModelConfig::new().init::<config::Backend>(&device);
 		Cnn {
 			session: SessionToken::new(),
 			device,
@@ -273,7 +291,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			7,
 			&mut state,
-			Image::from(RgbImage::new(8, 8)),
+			Image::from(GrayImage::new(8, 8)),
 			true,
 			false,
 		)];
@@ -300,7 +318,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			12,
 			&mut state,
-			Image::from(RgbImage::new(8, 8)),
+			Image::from(GrayImage::new(8, 8)),
 			false,
 			false,
 		)];
@@ -327,7 +345,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			21,
 			&mut state,
-			Image::from(RgbImage::new(8, 8)),
+			Image::from(GrayImage::new(8, 8)),
 			false,
 			true,
 		)];
@@ -349,10 +367,10 @@ mod tests {
 	fn process_runs_inference_and_updates_state() {
 		let mut cnn = test_cnn();
 		let mut state = cnn_state(ExternalData::default());
-		let image = Image::from(RgbImage::from_pixel(
-			IMAGE_WIDTH,
-			IMAGE_HEIGHT,
-			Rgb([255, 40, 90]),
+		let image = Image::from(GrayImage::from_pixel(
+			CNN_IMG_WIDTH,
+			CNN_IMG_HEIGHT,
+			Luma([192]),
 		));
 		let mut batch = [BatchItem::new(99, &mut state, image, true, false)];
 
@@ -361,9 +379,11 @@ mod tests {
 		match &batch[0].state {
 			VisionState::Cnn(_, data) => {
 				assert!(data.setpoint.is_some());
-				assert!(data.intensity.is_some());
-				assert!(data.deviation.is_some());
 				assert!(data.intensity.unwrap().is_finite());
+				assert!(data.deviation.is_some());
+				data.setpoint.inspect(|val| println!("Setpoint: {val}"));
+				data.intensity.inspect(|val| println!("Intensity: {val}"));
+				data.deviation.inspect(|val| println!("Deviation: {val}"));
 			},
 			_ => panic!("expected a CNN state"),
 		}
@@ -375,10 +395,10 @@ mod tests {
 		const SAMPLES: u32 = 5;
 		const WARMUP: u32 = 1;
 		let mut cnn = Cnn::new().expect("CNN profiling requires a valid model");
-		let image = Image::from(RgbImage::from_pixel(
-			IMAGE_WIDTH,
-			IMAGE_HEIGHT,
-			Rgb([255, 40, 90]),
+		let image = Image::from(GrayImage::from_pixel(
+			CNN_IMG_WIDTH,
+			CNN_IMG_HEIGHT,
+			Luma([192]),
 		));
 
 		for batch_size in [1, 10] {

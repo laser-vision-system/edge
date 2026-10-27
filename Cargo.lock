@@ -2275,6 +2275,7 @@ dependencies = [
  "lab",
  "mutually_exclusive_features",
  "rayon",
+ "serde",
  "thiserror 2.0.20",
 ]
 
