@@ -91,7 +91,7 @@ impl VisionGuard {
 	pub fn swap(
 		&self,
 		swap_to: VisionTechnique,
-	) -> EdgeVisionResult<()> {
+	) -> EdgeVisionResult {
 		let inner = self.inner.lock().unwrap_or_else(|err| {
 			logger().log_warn("Vision mutex was poisoned");
 			err.into_inner()
