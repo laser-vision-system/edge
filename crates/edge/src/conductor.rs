@@ -63,7 +63,7 @@ impl Conductor {
 		Box<dyn error::Error + Send + Sync>,
 	> {
 		let mut limit_interval = interval(settings.update_delay);
-		limit_interval.tick().await;
+		limit_interval.reset();
 
 		let status_rx = self.handle_reconnect(client, status_rx);
 
@@ -141,7 +141,12 @@ impl Conductor {
 		// Send statistics
 
 		// This should guarantee that the loop will take at least this long.
+		let duration_of_loop = limit_interval.period().as_millis(); 
+		print!("{duration_of_loop}"); 
 		limit_interval.tick().await;
+
+		
+		
 
 		Ok((status_rx, listener, settings))
 	}
