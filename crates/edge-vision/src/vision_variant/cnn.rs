@@ -137,8 +137,18 @@ impl VisionInterface for Cnn {
 		&mut self,
 		batch: &mut [BatchItem],
 	) {
-		let tensors = self.prepare_batch(batch, &self.device);
-		match self.predict(tensors) {
+		let predictions = batch
+			.iter_mut()
+			.map(std::slice::from_mut)
+			.map(|item| self.prepare_batch(item, &self.device))
+			.map(|single_batch| self.predict(single_batch))
+			.try_fold(Vec::new(), |mut acc, prediction| {
+				let valid = prediction?;
+				acc.push(valid);
+				Ok::<_, EdgeVisionError>(acc)
+			})
+			.map(|inner| inner.into_iter().flatten().collect());
+		match predictions {
 			Ok(predictions) => apply_predictions(batch, predictions),
 			Err(why) => {
 				logger().log_error(&why);
