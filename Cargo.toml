@@ -36,6 +36,8 @@ edge-vision = { path = "./crates/edge-vision", default-features = false }
 image = { version = "0.25", default-features = false, features = [
 	"rayon",
 	"jpeg",
+	"webp",
+	"avif",
 ] }
 mutually_exclusive_features = "0.1"
 serde = { version = "1" , features = [

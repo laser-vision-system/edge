@@ -128,7 +128,10 @@ impl Cnn {
 		for item in batch.iter_mut() {
 			self.validate_batch(item);
 		}
-		batching::images_to_tensor(batch.iter().map(|item| &item.image), device)
+		batching::images_to_tensor(
+			batch.iter().map(|item| item.image.clone().into()),
+			device,
+		)
 	}
 }
 

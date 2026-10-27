@@ -131,7 +131,8 @@ impl Conductor {
 			}
 
 			if item.send_to_server {
-				let encoded = item.image.encode();
+				// TODO: Try use webp encoding.
+				let encoded = item.image.encode_to_jpeg()?;
 				if let Err(why) = client.send_image(item.camera_id, encoded) {
 					logger().log_error(&why);
 				}
