@@ -10,7 +10,7 @@ use nokhwa::NokhwaError;
 ///
 /// [`Result`]: std::result::Result
 #[expect(clippy::absolute_paths, reason = "Single use aliasing")]
-pub type EdgeCoreResult<T> = std::result::Result<T, EdgeCoreError>;
+pub type EdgeCoreResult<T = ()> = std::result::Result<T, EdgeCoreError>;
 
 /// The error type for all operations in [edge-core](crate).
 ///
