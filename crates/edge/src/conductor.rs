@@ -292,7 +292,7 @@ async fn flatten<T>(
 ///
 /// If either the main loop or client thread return an error.
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
-	let ClientResult(status_handle, _, _, conductor_client_handle, client) =
+	let ClientResult(status_handle, _vision_client_handle, _persistence_client_handle, conductor_client_handle, client) =
 		Client::create();
 	let conductor = Conductor::default();
 
