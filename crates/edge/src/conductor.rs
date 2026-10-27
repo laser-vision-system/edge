@@ -297,7 +297,7 @@ pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
 		_vision_client_handle,
 		_persistence_client_handle,
 		conductor_client_handle,
-		client
+		client,
 	) = Client::create();
 	let conductor = Conductor::default();
 
