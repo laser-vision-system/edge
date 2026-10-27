@@ -212,7 +212,7 @@ impl Client {
 		&mut self,
 		websocket: &mut WebsocketType,
 		data: T,
-	) -> EdgeClientResult<()>
+	) -> EdgeClientResult
 	where
 		T: Serialize,
 	{
@@ -351,7 +351,7 @@ impl Client {
 		&mut self,
 		command: Command,
 		websocket: &mut WebsocketType,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		match command {
 			Command::SubscribeNewCamera {
 				camera_id,
@@ -485,7 +485,7 @@ impl Client {
 	fn process_ws(
 		&mut self,
 		msg: Message,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		match msg {
 			Message::Text(text) => {
 				self.process_message(&text);
@@ -604,7 +604,7 @@ impl Client {
 		&mut self,
 		websocket: &mut WebsocketType,
 		cameras: HashMap<CameraId, NewCameraInfo>,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		let message = ServerRequests::RegisterCameras(RegisterCameras {
 			cameras,
 		});
@@ -617,7 +617,7 @@ impl Client {
 		websocket: &mut WebsocketType,
 		camera_id: CameraId,
 		status: CameraStatus,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		let message =
 			ServerRequests::UpdateCameraStatus(api::edge::UpdateCameraStatus {
 				camera_id,
@@ -632,7 +632,7 @@ impl Client {
 		websocket: &mut WebsocketType,
 		camera_id: CameraId,
 		deviation: Deviation,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		let message = ServerRequests::ImageAnalysis(ImageAnalysis {
 			camera_id,
 			deviation,
@@ -647,7 +647,7 @@ impl Client {
 		conn_id: ConnId,
 		camera_id: CameraId,
 		configuration: String,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		let message = ServerRequests::Configuration(Configuration {
 			conn_id,
 			camera_id,
@@ -663,7 +663,7 @@ impl Client {
 		conn_id: ConnId,
 		camera_id: CameraId,
 		confirm: bool,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		let message =
 			ServerRequests::ForgetCameraRequest(ForgetCameraRequest {
 				conn_id,
@@ -682,7 +682,7 @@ impl Client {
 		alert_code: u32,
 		alert_name: String,
 		alert_description: String,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		let message = ServerRequests::Alert(Alert {
 			camera_id,
 			alert_type,
@@ -699,7 +699,7 @@ impl Client {
 		websocket: &mut WebsocketType,
 		camera_id: CameraId,
 		name: String,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		let message = ServerRequests::SetNameCamera(SetNameCamera {
 			camera_id,
 			name,
@@ -718,7 +718,7 @@ impl Client {
 		websocket: &mut WebsocketType,
 		camera_id: u64,
 		frame: &mut Vec<u8>,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		let mut msg = camera_id.to_be_bytes().to_vec();
 		msg.append(frame);
 		let result = websocket.send(Message::Binary(Bytes::from(msg))).await;
@@ -792,7 +792,7 @@ impl Client {
 		clippy::infinite_loop,
 		reason = "Thread should remain active until forced to close"
 	)]
-	pub async fn run(mut self) -> EdgeClientResult<()> {
+	pub async fn run(mut self) -> EdgeClientResult {
 		loop {
 			let (mut websocket, url) = self.connect_ws().await;
 
@@ -812,7 +812,7 @@ impl Client {
 }
 
 /// Converts [`tungstenite::error::Error`] into an [`EdgeClientError`].
-fn process_ws_err(result: Result<(), Error>) -> EdgeClientResult<()> {
+fn process_ws_err(result: Result<(), Error>) -> EdgeClientResult {
 	result.map_err(|why| {
 		match why {
 			Error::ConnectionClosed | Error::AlreadyClosed => {
