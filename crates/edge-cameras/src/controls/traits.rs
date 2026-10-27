@@ -142,7 +142,7 @@ pub trait ControlDescription {
 	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
-	) -> EdgeCamerasResult<()>;
+	) -> EdgeCamerasResult;
 	/// Get the current value of this control.
 	fn control_value(&self) -> Self::ValueType;
 }

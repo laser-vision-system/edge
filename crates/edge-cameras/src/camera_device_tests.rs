@@ -90,7 +90,7 @@ impl CameraLike for FakeCamera {
 		&mut self,
 		id: KnownCameraControl,
 		value: ControlValueSetter,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		self.set_calls.borrow_mut().push((id, value));
 		Ok(())
 	}
@@ -98,7 +98,7 @@ impl CameraLike for FakeCamera {
 	fn set_controls(
 		&mut self,
 		_controls: ControlMap,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		Ok(())
 	}
 }
@@ -195,7 +195,7 @@ fn get_stripped_controls() {
 
 #[test]
 #[ignore = "IO bound"]
-fn set_control() -> EdgeCamerasResult<()> {
+fn set_control() -> EdgeCamerasResult {
 	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
 		.unwrap()
 		.open()
@@ -238,7 +238,7 @@ fn set_control() -> EdgeCamerasResult<()> {
 
 #[test]
 #[ignore = "IO bound"]
-fn set_control_exposure() -> EdgeCamerasResult<()> {
+fn set_control_exposure() -> EdgeCamerasResult {
 	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
 		.unwrap()
 		.open()
