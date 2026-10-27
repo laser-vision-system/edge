@@ -8,7 +8,7 @@ use crate::vision_variant::cnn::CnnError;
 ///
 /// [`Result`]: std::result::Result
 #[expect(clippy::absolute_paths, reason = "Single use aliasing")]
-pub type EdgeVisionResult<T> = std::result::Result<T, EdgeVisionError>;
+pub type EdgeVisionResult<T = ()> = std::result::Result<T, EdgeVisionError>;
 
 /// The error type for all operations in [edge-vision](crate).
 ///

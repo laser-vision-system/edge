@@ -6,7 +6,7 @@
 ///
 /// [`Result`]: std::result::Result
 #[expect(clippy::absolute_paths, reason = "Single use aliasing")]
-pub type EdgeClientResult<T> = std::result::Result<T, EdgeClientError>;
+pub type EdgeClientResult<T = ()> = std::result::Result<T, EdgeClientError>;
 
 /// The error type for all operations in [edge-client](crate).
 ///

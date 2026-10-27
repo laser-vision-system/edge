@@ -71,7 +71,7 @@ impl VisionVariant {
 	pub fn swap(
 		&mut self,
 		swap_to: VisionTechnique,
-	) -> EdgeVisionResult<()> {
+	) -> EdgeVisionResult {
 		if self.identifier() == swap_to {
 			logger().log_info(&format!("{swap_to:?} is already active"));
 			return Ok(());

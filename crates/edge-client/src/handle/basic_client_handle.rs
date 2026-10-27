@@ -75,7 +75,7 @@ impl BasicClientHandle {
 	pub fn send_ws_request(
 		&mut self,
 		cmd: Command,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.update_status()?;
 
 		self.cmd_tx.send(cmd).expect("Client thread closed");
@@ -95,7 +95,7 @@ impl BasicClientHandle {
 	/// # Errors
 	///
 	/// Returns a `WebsocketDown` error if the status is false.
-	pub fn update_status(&mut self) -> EdgeClientResult<()> {
+	pub fn update_status(&mut self) -> EdgeClientResult {
 		while let Ok(status) = self.internal_status_rx.try_recv() {
 			self.status = status;
 		}
