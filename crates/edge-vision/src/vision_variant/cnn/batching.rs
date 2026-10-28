@@ -16,8 +16,8 @@ use image::{
 use super::{
 	IMG_CHANNELS_LUMA,
 	config::{
-		Backend,
 		BackendDevice,
+		BackendType,
 	},
 };
 use crate::vision_variant::cnn::{
@@ -32,7 +32,7 @@ use crate::vision_variant::cnn::{
 pub(super) fn images_to_tensor<I>(
 	images: I,
 	device: &BackendDevice,
-) -> Tensor<Backend, 4>
+) -> Tensor<BackendType, 4>
 where
 	I: ExactSizeIterator<Item = GrayImage>,
 {

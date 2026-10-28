@@ -85,7 +85,7 @@ impl fmt::Display for ExternalData {
 pub struct Cnn {
 	session: SessionToken,
 	device: config::BackendDevice,
-	model: LaserModel<config::Backend>,
+	model: LaserModel<config::BackendType>,
 }
 
 impl Cnn {
@@ -138,7 +138,7 @@ impl Cnn {
 	#[expect(clippy::expect_used, reason = "Model output will always be f32")]
 	fn forward(
 		&self,
-		images: Tensor<config::Backend, 4>,
+		images: Tensor<config::BackendType, 4>,
 	) -> Vec<f32> {
 		self.model
 			.forward(images)
@@ -156,7 +156,7 @@ impl Cnn {
 		&self,
 		batch: &mut [BatchItem],
 		device: &config::BackendDevice,
-	) -> Tensor<config::Backend, 4> {
+	) -> Tensor<config::BackendType, 4> {
 		batching::images_to_tensor(
 			batch.iter().map(|item| item.image.clone().into()),
 			device,
@@ -247,7 +247,8 @@ mod tests {
 
 	fn test_cnn() -> Cnn {
 		let device = config::get_device();
-		let model = LaserModelConfig::new().init::<config::Backend>(&device);
+		let model =
+			LaserModelConfig::new().init::<config::BackendType>(&device);
 		Cnn {
 			session: SessionToken::new(),
 			device,

@@ -6,28 +6,32 @@ use std::{
 	},
 };
 
-// ===== BACKENDS =====
-#[cfg(feature = "cnn-backend-flex")]
-use burn::backend::Flex;
 use burn::prelude::Device;
 use burn_store::BurnpackStore;
 
+// ===== BACKENDS =====
+
 #[cfg(feature = "cnn-backend-flex")]
-pub(super) type Backend = Flex<f32>;
+mod backend {
+	use burn::backend::Flex;
+	pub(crate) type BackendType = Flex<f32>;
+}
 
 #[cfg(feature = "cnn-backend-wgpu")]
-use burn::backend::Wgpu;
-
-#[cfg(feature = "cnn-backend-wgpu")]
-pub(super) type Backend = Wgpu<f32>;
-
-#[cfg(feature = "cnn-backend-cuda")]
-use burn::backend::Cuda;
+mod backend {
+	use burn::backend::Wgpu;
+	pub(crate) type BackendType = Wgpu<f32>;
+}
 
 #[cfg(feature = "cnn-backend-cuda")]
-pub(super) type Backend = Cuda<f32>;
+mod backend {
+	use burn::backend::Cuda;
+	pub(crate) type BackendType = Cuda<f32>;
+}
 
-pub(super) type BackendDevice = Device<Backend>;
+pub(super) use backend::*;
+
+pub(super) type BackendDevice = Device<BackendType>;
 
 pub(super) fn get_device() -> BackendDevice {
 	BackendDevice::default()
