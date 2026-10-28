@@ -15,7 +15,6 @@ use burn::{
 	},
 	prelude::*,
 };
-use burn_store::ModuleSnapshot as _;
 
 use self::{
 	normalisation::{
@@ -27,10 +26,7 @@ use self::{
 		ReadHeadConfig,
 	},
 };
-use super::{
-	CnnError,
-	config,
-};
+use super::CnnError;
 use crate::error::{
 	EdgeVisionError,
 	EdgeVisionResult,
@@ -46,13 +42,10 @@ pub(super) struct LaserModelConfig {
 
 impl LaserModelConfig {
 	/// Create a [`LaserModel`] with the configured hyper-parameters.
-	pub(super) fn init<B>(
+	pub fn init(
 		&self,
-		device: &B::Device,
-	) -> LaserModel<B>
-	where
-		B: Backend,
-	{
+		device: &Device,
+	) -> LaserModel {
 		let start_channels = self.read_head_config.start_channels;
 		let double = start_channels * 2;
 		let quad = start_channels * 4;
@@ -65,28 +58,38 @@ impl LaserModelConfig {
 	}
 }
 
+/// The laser intensity prediction model.
 #[derive(Module, Debug)]
-pub struct LaserModel<B: Backend> {
+pub struct LaserModel {
 	normalisation: Normalisation,
-	read_head: ReadHead<B>,
-	hidden: Linear<B>,
-	prediction: Linear<B>,
+	read_head: ReadHead,
+	hidden: Linear,
+	prediction: Linear,
 }
 
-impl<B: Backend> LaserModel<B> {
+impl LaserModel {
 	pub fn load_weights(
-		mut self,
+		self,
 		path: impl AsRef<Path>,
 	) -> EdgeVisionResult<Self> {
-		let path_buf = path.as_ref().to_path_buf();
-		let mut store = config::get_burnpack(path);
-		let _apply_result = self.load_from(&mut store).map_err(|source| {
+		// let record = ModuleRecord::load(&path).map_err(|source| {
+		// 	EdgeVisionError::from(CnnError::ModelLoad {
+		// 		path: path.as_ref().to_path_buf(),
+		// 		source,
+		// 	})
+		//})?;
+		// self.try_load_record(record).map_err(|source| {
+		// 	EdgeVisionError::from(CnnError::ModelLoad {
+		// 		path: path.as_ref().to_path_buf(),
+		// 		source,
+		// 	})
+		//})
+		self.try_load_file(&path).map_err(|source| {
 			EdgeVisionError::from(CnnError::ModelLoad {
-				path: path_buf,
+				path: path.as_ref().to_path_buf(),
 				source,
 			})
-		})?;
-		Ok(self)
+		})
 	}
 
 	/// A single forward pass on the model.
@@ -96,8 +99,8 @@ impl<B: Backend> LaserModel<B> {
 	///   - Output `[batch_size, 1]`
 	pub fn forward(
 		&self,
-		input: Tensor<B, 4>,
-	) -> Tensor<B, 2> {
+		input: Tensor<4>,
+	) -> Tensor<2> {
 		let [_, channels, _, _] = input.dims();
 		debug_assert_eq!(channels, 1, "expected a Luma tensor");
 
@@ -121,12 +124,7 @@ mod tests {
 		},
 	};
 
-	use burn_store::BurnpackStore;
-
-	use super::{
-		super::config,
-		*,
-	};
+	use super::*;
 
 	static NEXT_MODEL_FILE: AtomicUsize = AtomicUsize::new(0);
 
@@ -137,12 +135,11 @@ mod tests {
 			process::id(),
 			NEXT_MODEL_FILE.fetch_add(1, Ordering::Relaxed),
 		));
-		let device = config::get_device();
-		let model =
-			LaserModelConfig::new().init::<config::BackendType>(&device);
-		let mut store = BurnpackStore::from_file(&path).overwrite(true);
+		let device = Device::default();
+		let model = LaserModelConfig::new().init(&device);
 		model
-			.save_into(&mut store)
+			.clone()
+			.save_file(&path)
 			.expect("model should save to Burnpack");
 
 		let loaded = model.load_weights(&path);

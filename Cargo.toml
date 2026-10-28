@@ -39,19 +39,18 @@ image = { version = "0.25", default-features = false, features = [
 	"webp",
 	"avif",
 ] }
-mutually_exclusive_features = "0.1"
 serde = { version = "1" , features = [
 	"derive"
 ] }
 serde_json = "1.0"
 thiserror = "2.0"
-tokio = { version = "1.26", features = [
+tokio = { version = "1.54", features = [
 	"full"
 ] }
 
 # Dependencies only needed for tests, examples, or benchmarks.
 [workspace.dev-dependencies]
-rerun = { version = "0.35", features = [
+rerun = { version = "0.40", features = [
 	"image"
 ] }
 

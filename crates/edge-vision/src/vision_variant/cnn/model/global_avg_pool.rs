@@ -17,7 +17,7 @@ use burn::{
 /// Collapses the remaining spatial information into the channels via averaging.
 ///
 /// Does not have any configuration options.
-#[derive(Module, Clone, Debug)]
+#[derive(Module, Debug)]
 #[module(custom_display)]
 pub struct GlobalAvgPooling2d;
 
@@ -31,17 +31,10 @@ impl GlobalAvgPooling2d {
 	///
 	/// - input: `[batch_size, channels, height_in, width_in]`
 	/// - output: `[batch_size, channels]`
-	#[expect(
-		clippy::unused_self,
-		reason = "Needed to include this module in the model structure"
-	)]
-	pub fn forward<B>(
+	pub fn forward(
 		&self,
-		input: Tensor<B, 4>,
-	) -> Tensor<B, 2>
-	where
-		B: Backend,
-	{
+		input: Tensor<4>,
+	) -> Tensor<2> {
 		let [batch_size, channels, ..] = input.dims();
 		let x = adaptive_avg_pool2d(input, [1, 1]);
 		x.reshape([batch_size, channels])

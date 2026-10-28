@@ -28,7 +28,7 @@ impl NormalisationConfig {
 /// Ingests image data into latent space.
 ///
 /// Should be created with [`NormalisationConfig`].
-#[derive(Clone, Module, Debug)]
+#[derive(Module, Debug)]
 pub struct Normalisation {
 	upper: f64,
 	lower: f64,
@@ -40,13 +40,11 @@ impl Normalisation {
 	/// # Shapes
 	///   - Images `[batch_size, channels, height, width]`
 	///   - Output `[batch_size, channels, height, width]`
-	pub fn forward<B>(
+	pub fn forward(
 		&self,
-		input: Tensor<B, 4>,
-	) -> Tensor<B, 4>
-	where
-		B: Backend,
-	{
+		input: Tensor<4>,
+	) -> Tensor<4>
+where {
 		let rebased = input - self.lower;
 		rebased / self.upper
 	}

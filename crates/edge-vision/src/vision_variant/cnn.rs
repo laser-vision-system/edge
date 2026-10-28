@@ -9,19 +9,18 @@ use std::{
 	path::PathBuf,
 };
 
-use burn::tensor::Tensor;
-use burn_store::BurnpackError;
+use burn::{
+	store::RecordError,
+	tensor::{
+		Device,
+		Tensor,
+	},
+};
 use edge_core::logger::logger;
 
-use self::{
-	config::{
-		BackendDevice,
-		BackendType,
-	},
-	model::{
-		LaserModel,
-		LaserModelConfig,
-	},
+use self::model::{
+	LaserModel,
+	LaserModelConfig,
 };
 use crate::{
 	batch_item::BatchItem,
@@ -49,7 +48,7 @@ pub enum CnnError {
 		path: PathBuf,
 		/// The source error from [`BurnpackStore`](burn_store::BurnpackStore).
 		#[source]
-		source: BurnpackError,
+		source: RecordError,
 	},
 }
 
@@ -85,8 +84,8 @@ impl fmt::Display for ExternalData {
 /// [`VisionVariant`]: super::VisionVariant
 pub struct Cnn {
 	session: SessionToken,
-	model: LaserModel<BackendType>,
-	device: BackendDevice,
+	model: LaserModel,
+	device: Device,
 }
 
 impl Cnn {
@@ -96,7 +95,7 @@ impl Cnn {
 	///
 	/// If the model could not be loaded correctly.
 	pub fn new() -> EdgeVisionResult<Self> {
-		let device = config::get_device();
+		let device = Device::default();
 		let path = config::model_path();
 		let model_config = LaserModelConfig::new();
 		let model = model_config.init(&device).load_weights(path)?;
@@ -139,20 +138,20 @@ impl Cnn {
 	#[expect(clippy::expect_used, reason = "Model output will always be f32")]
 	fn forward(
 		&self,
-		images: Tensor<BackendType, 4>,
+		images: Tensor<4>,
 	) -> Vec<f32> {
 		self.model
 			.forward(images)
 			.flatten::<1>(0, 1)
 			.into_data()
-			.to_vec::<f32>()
+			.try_to_vec()
 			.expect("the CNN model should produce f32 prediction values")
 	}
 
 	fn prepare_batch(
 		&self,
 		batch: &mut [BatchItem],
-	) -> Tensor<BackendType, 4> {
+	) -> Tensor<4> {
 		batching::images_to_tensor(
 			batch.iter().map(|item| item.image.clone().into()),
 			&self.device,
@@ -240,11 +239,10 @@ mod tests {
 	};
 
 	use super::*;
-	use crate::vision_variant::cnn::BackendType;
 
 	fn test_cnn() -> Cnn {
-		let device = config::get_device();
-		let model = LaserModelConfig::new().init::<BackendType>(&device);
+		let device = Device::default();
+		let model = LaserModelConfig::new().init(&device);
 		Cnn {
 			session: SessionToken::new(),
 			device,

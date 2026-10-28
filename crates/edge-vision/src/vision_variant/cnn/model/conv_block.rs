@@ -17,9 +17,13 @@ use burn::{
 		relu,
 	},
 };
+use serde::{
+	Deserialize,
+	Serialize,
+};
 
 /// Selection for the activation type of a [`ConvBlock`].
-#[derive(Clone, Copy, Debug, Default, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum ConvBlockActivation {
 	/// Use the [`relu`] activation function.
 	#[default]
@@ -77,13 +81,10 @@ pub struct ConvBlockConfig {
 
 impl ConvBlockConfig {
 	/// Initialises a new [`ConvBlock`] module.
-	pub fn init<B>(
+	pub fn init(
 		&self,
-		device: &B::Device,
-	) -> ConvBlock<B>
-	where
-		B: Backend,
-	{
+		device: &Device,
+	) -> ConvBlock {
 		ConvBlock {
 			conv: Conv2dConfig::new(
 				[self.input_channels, self.output_channels],
@@ -113,13 +114,14 @@ impl ConvBlockConfig {
 ///
 /// Should be created with [`ConvBlockConfig`].
 #[derive(Module, Debug)]
-pub struct ConvBlock<B: Backend> {
-	conv: Conv2d<B>,
-	batch_norm: BatchNorm<B>,
+pub struct ConvBlock {
+	conv: Conv2d,
+	batch_norm: BatchNorm,
+	#[module(skip)]
 	activation: ConvBlockActivation,
 }
 
-impl<B: Backend> ConvBlock<B> {
+impl ConvBlock {
 	/// Runs the forward pass for this layer module.
 	///
 	/// # Shapes
@@ -127,8 +129,8 @@ impl<B: Backend> ConvBlock<B> {
 	///   - Output `[batch_size, channels, height, width]`
 	pub fn forward(
 		&self,
-		input: Tensor<B, 4>,
-	) -> Tensor<B, 4> {
+		input: Tensor<4>,
+	) -> Tensor<4> {
 		let x = input;
 		let x = self.conv.forward(x);
 		let x = self.batch_norm.forward(x);

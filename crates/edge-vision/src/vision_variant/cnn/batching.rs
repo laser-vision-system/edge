@@ -1,7 +1,7 @@
 use burn::tensor::{
+	Device,
 	Tensor,
 	TensorData,
-	backend::Backend,
 };
 use image::{
 	DynamicImage,
@@ -15,10 +15,10 @@ use crate::vision_variant::cnn::{
 	CNN_IMG_WIDTH,
 };
 
-pub(super) fn images_to_tensor<B: Backend>(
+pub(super) fn images_to_tensor(
 	images: impl ExactSizeIterator<Item = GrayImage>,
-	device: &B::Device,
-) -> Tensor<B, 4> {
+	device: &Device,
+) -> Tensor<4> {
 	let batch_size = images.len();
 
 	let values = images
@@ -57,11 +57,7 @@ pub(super) fn images_to_tensor<B: Backend>(
 mod tests {
 	use image::GrayImage;
 
-	use super::{
-		super::config,
-		*,
-	};
-	use crate::vision_variant::cnn::config::BackendType;
+	use super::*;
 	const IMAGE_PIXELS: usize = (CNN_IMG_HEIGHT * CNN_IMG_WIDTH) as usize;
 
 	//#[test]
@@ -109,14 +105,12 @@ mod tests {
 				image::Luma([40]),
 			),
 		];
-		let tensor = images_to_tensor::<BackendType>(
-			images.into_iter(),
-			&config::get_device(),
-		);
+		let device = Device::default();
+		let tensor = images_to_tensor(images.into_iter(), &device);
 		let dimensions = tensor.dims();
 		let values = tensor
 			.into_data()
-			.to_vec::<f32>()
+			.try_to_vec()
 			.expect("tensor values should be readable");
 
 		assert_eq!(dimensions, [2, 1, 60, 60]);

@@ -49,13 +49,11 @@ pub struct ReadHeadConfig {
 
 impl ReadHeadConfig {
 	/// Initialises a new [`ReadHead`] module.
-	pub fn init<B>(
+	pub fn init(
 		&self,
-		device: &B::Device,
-	) -> ReadHead<B>
-	where
-		B: Backend,
-	{
+		device: &Device,
+	) -> ReadHead
+where {
 		let stage1_out = self.start_channels;
 		let stage2_out = stage1_out * 2;
 		let stage3_out = stage2_out * 2;
@@ -87,16 +85,16 @@ impl ReadHeadConfig {
 ///
 /// Should be created with [`ReadHeadConfig`].
 #[derive(Module, Debug)]
-pub struct ReadHead<B: Backend> {
-	stage_1_conv: ConvBlock<B>,
+pub struct ReadHead {
+	stage_1_conv: ConvBlock,
 	stage_1_max_pooling: MaxPool2d,
-	stage_2a_conv: ConvBlock<B>,
-	stage_2b_conv: ConvBlock<B>,
-	stage_3_conv: ConvBlock<B>,
+	stage_2a_conv: ConvBlock,
+	stage_2b_conv: ConvBlock,
+	stage_3_conv: ConvBlock,
 	global_avg_pool: GlobalAvgPooling2d,
 }
 
-impl<B: Backend> ReadHead<B> {
+impl ReadHead {
 	/// Runs the forward pass for this layer module.
 	///
 	/// # Shapes
@@ -104,8 +102,8 @@ impl<B: Backend> ReadHead<B> {
 	///   - Output `[batch_size, channels]`
 	pub fn forward(
 		&self,
-		input: Tensor<B, 4>,
-	) -> Tensor<B, 2> {
+		input: Tensor<4>,
+	) -> Tensor<2> {
 		let x = input; // [batch_size, 1, 640, 480]
 		let x = self.stage_1_conv.forward(x); // [batch_size, 8, 320, 240]
 		let x = self.stage_1_max_pooling.forward(x); // [batch_size, 8, 160, 120]
