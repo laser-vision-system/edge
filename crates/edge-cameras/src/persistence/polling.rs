@@ -191,15 +191,20 @@ impl Persistence {
 		let entry = self
 			.inner
 			.entry(connection.identifier.clone())
-			.and_modify(|entry| before = entry.get_status())
-			.and_modify(|entry| update = entry.update(&connection.points))
+			.and_modify(|entry| {
+				before = entry.get_status();
+				update = entry.update(&connection.points)
+			})
 			.or_insert_with(|| {
 				logger().log_info(&format!(
 					"New identifier added: {}",
 					connection.identifier
 				));
 				new = true;
-				ValType::new(&connection.points)
+				ValType::new(
+					&connection.points,
+					connection.identifier.as_name().to_string(),
+				)
 			});
 
 		if new {
