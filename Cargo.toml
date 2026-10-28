@@ -60,7 +60,7 @@ missing_docs = "deny" # Make sure to include documentation.
 [workspace.lints.rustdoc]
 missing_crate_level_docs = "deny" # The crate-level docs should give a brief overview.
 broken_intra_doc_links = "deny" # All links should be correct.
-too_long_first_doc_paragraph = "warn" # Hurts readability.
+#too_long_first_doc_paragraph = "warn" # Hurts readability.
 
 [workspace.lints.clippy]
 
