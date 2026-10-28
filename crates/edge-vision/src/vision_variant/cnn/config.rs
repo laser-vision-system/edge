@@ -1,13 +1,9 @@
 use std::{
 	env,
-	path::{
-		Path,
-		PathBuf,
-	},
+	path::PathBuf,
 };
 
 use burn::prelude::Device;
-use burn_store::BurnpackStore;
 
 // ===== BACKENDS =====
 
@@ -50,42 +46,39 @@ pub(super) fn model_path() -> PathBuf {
 		.map_or_else(|| PathBuf::from(DEFAULT_MODEL_PATH), PathBuf::from)
 }
 
-pub fn get_burnpack<P>(path: P) -> BurnpackStore
-where
-	P: AsRef<Path>,
-{
-	#[cfg(feature = "cnn-model-embedded")]
-	return store_from_embedded(path);
-
-	#[cfg(feature = "cnn-model-file")]
-	return store_from_file(path);
-
-	#[cfg(feature = "cnn-model-zero-copy")]
-	return store_from_zero_copy(path);
-}
-
 #[cfg(feature = "cnn-model-embedded")]
-fn store_from_embedded<P>(_: P) -> BurnpackStore
-where
-	P: AsRef<Path>,
-{
-	static MODEL_DATA: &[u8] =
-		include_bytes!("../../../../../models/laser-cnn.bpk");
-	BurnpackStore::from_static(MODEL_DATA)
-}
+mod model {
+	use std::path::Path;
 
-#[cfg(feature = "cnn-model-file")]
-fn store_from_file<P>(path: P) -> BurnpackStore
-where
-	P: AsRef<Path>,
-{
-	BurnpackStore::from_file(&path)
+	use burn_store::BurnpackStore;
+
+	pub fn get_burnpack<P: AsRef<Path>>(_: P) -> BurnpackStore {
+		static MODEL_DATA: &[u8] =
+			include_bytes!("../../../../../models/laser-cnn.bpk");
+		BurnpackStore::from_static(MODEL_DATA)
+	}
 }
 
 #[cfg(feature = "cnn-model-zero-copy")]
-fn store_from_zero_copy<P>(path: P) -> BurnpackStore
-where
-	P: AsRef<Path>,
-{
-	BurnpackStore::from_file(&path).zero_copy(true)
+mod model {
+	use std::path::Path;
+
+	use burn_store::BurnpackStore;
+
+	pub fn get_burnpack<P: AsRef<Path>>(path: P) -> BurnpackStore {
+		BurnpackStore::from_file(&path).zero_copy(true)
+	}
 }
+
+#[cfg(feature = "cnn-model-file")]
+mod model {
+	use std::path::Path;
+
+	use burn_store::BurnpackStore;
+
+	pub fn get_burnpack<P: AsRef<Path>>(path: P) -> BurnpackStore {
+		BurnpackStore::from_file(&path)
+	}
+}
+
+pub(super) use model::*;
