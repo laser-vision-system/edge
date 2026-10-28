@@ -138,7 +138,8 @@ mod tests {
 			NEXT_MODEL_FILE.fetch_add(1, Ordering::Relaxed),
 		));
 		let device = config::get_device();
-		let model = LaserModelConfig::new().init::<config::BackendType>(&device);
+		let model =
+			LaserModelConfig::new().init::<config::BackendType>(&device);
 		let mut store = BurnpackStore::from_file(&path).overwrite(true);
 		model
 			.save_into(&mut store)
