@@ -199,17 +199,13 @@ fn apply_predictions(
 				data.setpoint = Some(intensity);
 			}
 			data.intensity = Some(intensity);
-			data.deviation = data
-				.setpoint
-				//.filter(|setpoint| *setpoint > 0.0)
-				//.map(|setpoint| intensity / setpoint);
-				.map(|setpoint| {
-					if setpoint == 0.0 {
-						f32::INFINITY
-					} else {
-						intensity / setpoint
-					}
-				});
+			data.deviation = data.setpoint.map(|setpoint| {
+				if setpoint == 0.0 {
+					f32::INFINITY
+				} else {
+					intensity / setpoint
+				}
+			});
 		}
 	}
 }
