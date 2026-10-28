@@ -106,9 +106,37 @@ impl Cnn {
 		})
 	}
 
+	/// Run prediction on the entire batch at once.
+	pub fn predict_as_batch(
+		&self,
+		batch: &mut [BatchItem],
+	) -> Vec<f32> {
+		for item in batch.iter_mut() {
+			self.validate_batch(item);
+		}
+		let tensors = self.prepare_batch(batch, &self.device);
+		self.forward(tensors)
+	}
+
+	/// Run prediction on each batch item sequentially.
+	pub fn predict_sequentially(
+		&self,
+		batch: &mut [BatchItem],
+	) -> Vec<f32> {
+		batch
+			.iter_mut()
+			.map(|item| {
+				self.validate_batch(item);
+				std::slice::from_mut(item)
+			})
+			.map(|item| self.prepare_batch(item, &self.device))
+			.flat_map(|tensor| self.forward(tensor))
+			.collect()
+	}
+
 	/// Run the forward pass on the model, converting the output to a vector.
 	#[expect(clippy::expect_used, reason = "Model output will always be f32")]
-	fn predict(
+	fn forward(
 		&self,
 		images: Tensor<config::Backend, 4>,
 	) -> Vec<f32> {
@@ -129,9 +157,6 @@ impl Cnn {
 		batch: &mut [BatchItem],
 		device: &config::BackendDevice,
 	) -> Tensor<config::Backend, 4> {
-		for item in batch.iter_mut() {
-			self.validate_batch(item);
-		}
 		batching::images_to_tensor(
 			batch.iter().map(|item| item.image.clone().into()),
 			device,
@@ -144,13 +169,7 @@ impl VisionInterface for Cnn {
 		&mut self,
 		batch: &mut [BatchItem],
 	) {
-		let predictions = batch
-			.iter_mut()
-			.map(std::slice::from_mut)
-			.map(|item| self.prepare_batch(item, &self.device))
-			.map(|single_batch| self.predict(single_batch))
-			.flatten()
-			.collect();
+		let predictions = self.predict_sequentially(batch);
 		apply_predictions(batch, predictions);
 	}
 
@@ -215,7 +234,6 @@ mod tests {
 	use std::{
 		hint,
 		iter,
-		slice,
 		time::Instant,
 	};
 
@@ -337,7 +355,7 @@ mod tests {
 	fn profile_process_vs_prepared_prediction() {
 		const SAMPLES: u32 = 5;
 		const WARMUP: u32 = 1;
-		let mut cnn = Cnn::new().expect("CNN profiling requires a valid model");
+		let cnn = Cnn::new().expect("CNN profiling requires a valid model");
 		let image = Image::from(GrayImage::from_pixel(
 			CNN_IMG_WIDTH,
 			CNN_IMG_HEIGHT,
@@ -364,28 +382,26 @@ mod tests {
 			let prepared = cnn.prepare_batch(&mut batch, &cnn.device);
 
 			for _ in 0..WARMUP {
-				let _predictions = cnn.predict(prepared.clone());
-				cnn.process(&mut batch);
+				let _predictions = cnn.forward(prepared.clone());
+				cnn.predict_as_batch(&mut batch);
 			}
 
 			let prediction_start = Instant::now();
 			for _ in 0..SAMPLES {
-				let predictions = cnn.predict(prepared.clone());
+				let predictions = cnn.forward(prepared.clone());
 				hint::black_box(predictions);
 			}
 			let prediction_elapsed = prediction_start.elapsed() / SAMPLES;
 
 			let process_start = Instant::now();
 			for _ in 0..SAMPLES {
-				cnn.process(&mut batch);
+				cnn.predict_as_batch(&mut batch);
 			}
 			let process_elapsed = process_start.elapsed() / SAMPLES;
 			let individual_process_elapsed = (batch_size == 10).then(|| {
 				let individual_start = Instant::now();
 				for _ in 0..SAMPLES {
-					for item in &mut batch {
-						cnn.process(slice::from_mut(item));
-					}
+					cnn.predict_sequentially(&mut batch);
 				}
 				individual_start.elapsed() / SAMPLES
 			});
