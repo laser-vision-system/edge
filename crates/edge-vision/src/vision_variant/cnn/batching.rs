@@ -1,11 +1,7 @@
-#![expect(
-	clippy::allow_attributes,
-	reason = "Expect might not always be fulfilled"
-)]
-
 use burn::tensor::{
 	Tensor,
 	TensorData,
+	backend::Backend,
 };
 use image::{
 	DynamicImage,
@@ -13,29 +9,16 @@ use image::{
 	imageops::FilterType,
 };
 
-use super::{
-	IMG_CHANNELS_LUMA,
-	config::{
-		BackendDevice,
-		BackendType,
-	},
-};
+use super::IMG_CHANNELS_LUMA;
 use crate::vision_variant::cnn::{
 	CNN_IMG_HEIGHT,
 	CNN_IMG_WIDTH,
 };
 
-#[allow(
-	clippy::trivially_copy_pass_by_ref,
-	reason = "Type may change with feature flag"
-)]
-pub(super) fn images_to_tensor<I>(
-	images: I,
-	device: &BackendDevice,
-) -> Tensor<BackendType, 4>
-where
-	I: ExactSizeIterator<Item = GrayImage>,
-{
+pub(super) fn images_to_tensor<B: Backend>(
+	images: impl ExactSizeIterator<Item = GrayImage>,
+	device: &B::Device,
+) -> Tensor<B, 4> {
 	let batch_size = images.len();
 
 	let values = images
@@ -78,6 +61,7 @@ mod tests {
 		super::config,
 		*,
 	};
+	use crate::vision_variant::cnn::config::BackendType;
 	const IMAGE_PIXELS: usize = (CNN_IMG_HEIGHT * CNN_IMG_WIDTH) as usize;
 
 	//#[test]
@@ -125,8 +109,10 @@ mod tests {
 				image::Luma([40]),
 			),
 		];
-		let tensor =
-			images_to_tensor(images.into_iter(), &config::get_device());
+		let tensor = images_to_tensor::<BackendType>(
+			images.into_iter(),
+			&config::get_device(),
+		);
 		let dimensions = tensor.dims();
 		let values = tensor
 			.into_data()

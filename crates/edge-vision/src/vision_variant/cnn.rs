@@ -1,10 +1,5 @@
 //! Convolutional neural network.
 
-#![expect(
-	clippy::allow_attributes,
-	reason = "Expect might not always be fulfilled"
-)]
-
 mod batching;
 mod config;
 mod model;
@@ -18,9 +13,15 @@ use burn::tensor::Tensor;
 use burn_store::BurnpackError;
 use edge_core::logger::logger;
 
-use self::model::{
-	LaserModel,
-	LaserModelConfig,
+use self::{
+	config::{
+		BackendDevice,
+		BackendType,
+	},
+	model::{
+		LaserModel,
+		LaserModelConfig,
+	},
 };
 use crate::{
 	batch_item::BatchItem,
@@ -84,8 +85,8 @@ impl fmt::Display for ExternalData {
 /// [`VisionVariant`]: super::VisionVariant
 pub struct Cnn {
 	session: SessionToken,
-	device: config::BackendDevice,
-	model: LaserModel<config::BackendType>,
+	model: LaserModel<BackendType>,
+	device: BackendDevice,
 }
 
 impl Cnn {
@@ -114,7 +115,7 @@ impl Cnn {
 		for item in batch.iter_mut() {
 			self.validate_batch(item);
 		}
-		let tensors = self.prepare_batch(batch, &self.device);
+		let tensors = self.prepare_batch(batch);
 		self.forward(tensors)
 	}
 
@@ -129,7 +130,7 @@ impl Cnn {
 				self.validate_batch(item);
 				std::slice::from_mut(item)
 			})
-			.map(|item| self.prepare_batch(item, &self.device))
+			.map(|item| self.prepare_batch(item))
 			.flat_map(|tensor| self.forward(tensor))
 			.collect()
 	}
@@ -138,7 +139,7 @@ impl Cnn {
 	#[expect(clippy::expect_used, reason = "Model output will always be f32")]
 	fn forward(
 		&self,
-		images: Tensor<config::BackendType, 4>,
+		images: Tensor<BackendType, 4>,
 	) -> Vec<f32> {
 		self.model
 			.forward(images)
@@ -148,18 +149,13 @@ impl Cnn {
 			.expect("the CNN model should produce f32 prediction values")
 	}
 
-	#[allow(
-		clippy::trivially_copy_pass_by_ref,
-		reason = "Type may change with feature flag"
-	)]
 	fn prepare_batch(
 		&self,
 		batch: &mut [BatchItem],
-		device: &config::BackendDevice,
-	) -> Tensor<config::BackendType, 4> {
+	) -> Tensor<BackendType, 4> {
 		batching::images_to_tensor(
 			batch.iter().map(|item| item.image.clone().into()),
-			device,
+			&self.device,
 		)
 	}
 }
@@ -244,11 +240,11 @@ mod tests {
 	};
 
 	use super::*;
+	use crate::vision_variant::cnn::BackendType;
 
 	fn test_cnn() -> Cnn {
 		let device = config::get_device();
-		let model =
-			LaserModelConfig::new().init::<config::BackendType>(&device);
+		let model = LaserModelConfig::new().init::<BackendType>(&device);
 		Cnn {
 			session: SessionToken::new(),
 			device,
@@ -380,7 +376,7 @@ mod tests {
 					)
 				})
 				.collect::<Vec<_>>();
-			let prepared = cnn.prepare_batch(&mut batch, &cnn.device);
+			let prepared = cnn.prepare_batch(&mut batch);
 
 			for _ in 0..WARMUP {
 				let _predictions = cnn.forward(prepared.clone());
