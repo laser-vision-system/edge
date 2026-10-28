@@ -52,7 +52,7 @@ for backend in sys.argv[1:]:
 			means.append(f"{mean_ms:.3f} ms")
 		except (OSError, KeyError, json.JSONDecodeError):
 			means.append("n/a")
-	print(f"{backend:<10} {means[0]:>14} {means[1]:>14} {means[2]:>14}")
+	print(f"{backend:<10} {means[0]:>14} {means[1]:>14} {means[2]:>14} {means[3]:>14} {means[4]:>14} {means[5]:>14} {means[6]:>14} {means[7]:>14} {means[8]:>14} {means[9]:>14}")
 print(f"{'backend':<10} {'sequential_01':>14} {'sequential_02':>14} {'sequential_03':>14} {'sequential_04':>14} {'sequential_05':>14} {'sequential_06':>14} {'sequential_07':>14} {'sequential_08':>14} {'sequential_09':>14} {'sequential_10':>14}")
 for backend in sys.argv[1:]:
 	means = []
@@ -63,7 +63,7 @@ for backend in sys.argv[1:]:
 			means.append(f"{mean_ms:.3f} ms")
 		except (OSError, KeyError, json.JSONDecodeError):
 			means.append("n/a")
-	print(f"{backend:<10} {means[0]:>14} {means[1]:>14} {means[2]:>14}")
+	print(f"{backend:<10} {means[0]:>14} {means[1]:>14} {means[2]:>14} {means[3]:>14} {means[4]:>14} {means[5]:>14} {means[6]:>14} {means[7]:>14} {means[8]:>14} {means[9]:>14}")
 PY
 fi
 
