@@ -14,10 +14,7 @@ use std::{
 	path::PathBuf,
 };
 
-use burn::tensor::{
-	DataError,
-	Tensor,
-};
+use burn::tensor::Tensor;
 use burn_store::BurnpackError;
 use edge_core::logger::logger;
 
@@ -27,10 +24,7 @@ use self::model::{
 };
 use crate::{
 	batch_item::BatchItem,
-	error::{
-		EdgeVisionError,
-		EdgeVisionResult,
-	},
+	error::EdgeVisionResult,
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
@@ -56,9 +50,6 @@ pub enum CnnError {
 		#[source]
 		source: BurnpackError,
 	},
-	/// If the prediction results are malformed.
-	#[error(transparent)]
-	Predict(#[from] DataError),
 }
 
 /// Closely associated data used by external holders.
@@ -115,16 +106,18 @@ impl Cnn {
 		})
 	}
 
+	/// Run the forward pass on the model, converting the output to a vector.
+	#[expect(clippy::expect_used, reason = "Model output will always be f32")]
 	fn predict(
 		&self,
 		images: Tensor<config::Backend, 4>,
-	) -> EdgeVisionResult<Vec<f32>> {
+	) -> Vec<f32> {
 		self.model
 			.forward(images)
 			.flatten::<1>(0, 1)
 			.into_data()
 			.to_vec::<f32>()
-			.map_err(|why| EdgeVisionError::from(CnnError::from(why)))
+			.expect("the CNN model should produce f32 prediction values")
 	}
 
 	#[allow(
@@ -156,19 +149,9 @@ impl VisionInterface for Cnn {
 			.map(std::slice::from_mut)
 			.map(|item| self.prepare_batch(item, &self.device))
 			.map(|single_batch| self.predict(single_batch))
-			.try_fold(Vec::new(), |mut acc, prediction| {
-				let valid = prediction?;
-				acc.push(valid);
-				Ok::<_, EdgeVisionError>(acc)
-			})
-			.map(|inner| inner.into_iter().flatten().collect());
-		match predictions {
-			Ok(predictions) => apply_predictions(batch, predictions),
-			Err(why) => {
-				logger().log_error(&why);
-				clear_predictions(batch);
-			},
-		}
+			.flatten()
+			.collect();
+		apply_predictions(batch, predictions);
 	}
 
 	fn new_state(&self) -> VisionState {
@@ -227,15 +210,6 @@ fn apply_predictions(
 						intensity / setpoint
 					}
 				});
-		}
-	}
-}
-
-fn clear_predictions(batch: &mut [BatchItem]) {
-	for item in batch.iter_mut() {
-		if let VisionState::Cnn(_, data) = item.state {
-			data.intensity = None;
-			data.deviation = None;
 		}
 	}
 }
@@ -336,33 +310,6 @@ mod tests {
 	}
 
 	#[test]
-	fn clear_predictions_removes_inference_values() {
-		let mut state = cnn_state(ExternalData {
-			setpoint: Some(9.0),
-			intensity: Some(6.0),
-			deviation: Some(0.666),
-		});
-		let mut batch = [BatchItem::new(
-			21,
-			&mut state,
-			Image::from(GrayImage::new(8, 8)),
-			false,
-			true,
-		)];
-
-		clear_predictions(&mut batch);
-
-		match &batch[0].state {
-			VisionState::Cnn(_, data) => {
-				assert_eq!(data.setpoint, Some(9.0));
-				assert_eq!(data.intensity, None);
-				assert_eq!(data.deviation, None);
-			},
-			_ => panic!("expected a CNN state"),
-		}
-	}
-
-	#[test]
 	#[ignore = "Must be run in isolation"]
 	fn process_runs_inference_and_updates_state() {
 		let mut cnn = test_cnn();
@@ -421,17 +368,13 @@ mod tests {
 			let prepared = cnn.prepare_batch(&mut batch, &cnn.device);
 
 			for _ in 0..WARMUP {
-				let _predictions = cnn
-					.predict(prepared.clone())
-					.expect("prepared prediction should succeed");
+				let _predictions = cnn.predict(prepared.clone());
 				cnn.process(&mut batch);
 			}
 
 			let prediction_start = Instant::now();
 			for _ in 0..SAMPLES {
-				let predictions = cnn
-					.predict(prepared.clone())
-					.expect("prepared prediction should succeed");
+				let predictions = cnn.predict(prepared.clone());
 				hint::black_box(predictions);
 			}
 			let prediction_elapsed = prediction_start.elapsed() / SAMPLES;
