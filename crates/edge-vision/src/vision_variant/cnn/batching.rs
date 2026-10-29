@@ -108,7 +108,7 @@ mod tests {
 		let device = Device::default();
 		let tensor = images_to_tensor(images.into_iter(), &device);
 		let dimensions = tensor.dims();
-		let values = tensor
+		let values: Vec<f32> = tensor
 			.into_data()
 			.try_to_vec()
 			.expect("tensor values should be readable");
