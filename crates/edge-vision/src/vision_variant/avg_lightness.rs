@@ -94,7 +94,7 @@ impl VisionInterface for AvgLightness {
 				continue;
 			};
 
-			let lightness = Self::average_lightness(&item.image);
+			let lightness = Self::average_lightness(&item.image.clone().into());
 
 			if item.calibrate {
 				data.setpoint = Some(lightness);

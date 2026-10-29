@@ -193,7 +193,7 @@ impl Persistence {
 			.entry(connection.identifier.clone())
 			.and_modify(|entry| {
 				before = entry.get_status();
-				update = entry.update(&connection.points)
+				update = entry.update(&connection.points);
 			})
 			.or_insert_with(|| {
 				logger().log_info(&format!(

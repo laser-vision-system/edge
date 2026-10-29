@@ -8,7 +8,6 @@
 use std::{
 	hint::black_box,
 	iter,
-	slice,
 	time::Instant,
 };
 
@@ -30,7 +29,7 @@ pub fn benchmark_inference(
 	criterion: &mut Criterion,
 	backend: &str,
 ) {
-	let mut cnn = Cnn::new().expect("CNN benchmark requires a valid model");
+	let cnn = Cnn::new().expect("CNN benchmark requires a valid model");
 	let image = RgbImage::from_pixel(640, 480, Rgb([10, 240, 120]));
 	let mut group =
 		criterion.benchmark_group(format!("cnn_inference_{backend}"));
@@ -59,7 +58,7 @@ pub fn benchmark_inference(
 				let batch = black_box(&mut batch);
 				let start = Instant::now();
 				for _ in 0..iterations {
-					cnn.process(batch);
+					cnn.predict_as_batch(batch);
 				}
 				start.elapsed()
 			});
@@ -74,9 +73,7 @@ pub fn benchmark_inference(
 					let batch = black_box(&mut batch);
 					let start = Instant::now();
 					for _ in 0..iterations {
-						for item in batch.iter_mut() {
-							cnn.process(slice::from_mut(item));
-						}
+						cnn.predict_sequentially(batch);
 					}
 					start.elapsed()
 				});
