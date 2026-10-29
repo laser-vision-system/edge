@@ -31,6 +31,11 @@ impl GlobalAvgPooling2d {
 	///
 	/// - input: `[batch_size, channels, height_in, width_in]`
 	/// - output: `[batch_size, channels]`
+	#[expect(
+		clippy::unused_self,
+		reason = "Needed to be included in the model structure"
+	)]
+	// TODO: Try use associated function instead.
 	pub fn forward(
 		&self,
 		input: Tensor<4>,
