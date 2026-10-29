@@ -191,7 +191,7 @@ mod tests {
 		);
 		super::super::tests::display_with_different_formats(
 			"IntegerRangeControl",
-			control,
+			&control,
 		);
 	}
 }

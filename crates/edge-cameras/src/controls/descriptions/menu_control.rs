@@ -149,7 +149,7 @@ mod tests {
 		let control = MenuControl::new(control_type, value, default, possible);
 		super::super::tests::display_with_different_formats(
 			"MenuControl",
-			control,
+			&control,
 		);
 	}
 }

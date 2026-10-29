@@ -126,7 +126,7 @@ mod tests {
 		let control = StringControl::new(control_type, value, default);
 		super::super::tests::display_with_different_formats(
 			"StringControl",
-			control,
+			&control,
 		);
 	}
 }

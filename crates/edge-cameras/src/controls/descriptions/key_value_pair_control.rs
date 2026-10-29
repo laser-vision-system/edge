@@ -111,7 +111,7 @@ mod tests {
 		let control = KeyValuePairControl::new(control_type, value, default);
 		super::super::tests::display_with_different_formats(
 			"KeyValuePairControl",
-			control,
+			&control,
 		);
 	}
 }

@@ -107,7 +107,7 @@ mod tests {
 		let control = BooleanControl::new(control_type, value, default);
 		super::super::tests::display_with_different_formats(
 			"BooleanControl",
-			control,
+			&control,
 		);
 	}
 }

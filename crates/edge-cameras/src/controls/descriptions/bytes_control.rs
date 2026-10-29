@@ -107,7 +107,7 @@ mod tests {
 		let control = BytesControl::new(control_type, value, default);
 		super::super::tests::display_with_different_formats(
 			"BytesControl",
-			control,
+			&control,
 		);
 	}
 }

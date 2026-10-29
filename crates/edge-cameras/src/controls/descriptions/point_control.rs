@@ -107,7 +107,7 @@ mod tests {
 		let control = PointControl::new(control_type, value, default);
 		super::super::tests::display_with_different_formats(
 			"PointControl",
-			control,
+			&control,
 		);
 	}
 }

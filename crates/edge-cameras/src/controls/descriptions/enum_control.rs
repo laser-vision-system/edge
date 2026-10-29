@@ -135,7 +135,7 @@ mod tests {
 		let control = EnumControl::new(control_type, value, default, possible);
 		super::super::tests::display_with_different_formats(
 			"EnumControl",
-			control,
+			&control,
 		);
 	}
 }

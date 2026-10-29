@@ -144,7 +144,7 @@ mod tests {
 		let control = FloatControl::new(control_type, value, default, step);
 		super::super::tests::display_with_different_formats(
 			"FloatControl",
-			control,
+			&control,
 		);
 	}
 }

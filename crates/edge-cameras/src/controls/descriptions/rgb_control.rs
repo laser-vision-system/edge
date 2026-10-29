@@ -135,7 +135,7 @@ mod tests {
 		let control = RGBControl::new(control_type, value, default, max);
 		super::super::tests::display_with_different_formats(
 			"RGBControl",
-			control,
+			&control,
 		);
 	}
 }
