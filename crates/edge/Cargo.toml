@@ -6,7 +6,6 @@ version.workspace = true
 [features]
 default = [
 	"cnn-backend-flex",
-	"cnn-backend-wgpu",
 ]
 
 # == Burn backend selection ==
