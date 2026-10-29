@@ -394,12 +394,12 @@ mod tests {
 
 		let first_key =
 			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
-		let first_entry = PersistEntry::new(&points);
+		let first_entry = PersistEntry::new(&points, String::from("name"));
 		persist_map.inner.insert(first_key, first_entry);
 
 		let second_key =
 			Identifier::from(IdentMetaInfo::new("name", "description", "misc"));
-		let second_entry = PersistEntry::new(&points);
+		let second_entry = PersistEntry::new(&points, String::from("name"));
 		persist_map.inner.insert(second_key, second_entry);
 
 		assert_eq!(persist_map.inner.len(), 1);

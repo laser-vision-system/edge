@@ -77,7 +77,7 @@ impl ControlDescription for FloatRangeControl {
 	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		if ControlMin::validate(self, value.get())
 			&& ControlMax::validate(self, value.get())
 			&& ControlStep::validate(self, value.get())

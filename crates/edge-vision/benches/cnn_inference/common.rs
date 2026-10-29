@@ -8,7 +8,6 @@
 use std::{
 	hint::black_box,
 	iter,
-	slice,
 	time::Instant,
 };
 
@@ -30,12 +29,12 @@ pub fn benchmark_inference(
 	criterion: &mut Criterion,
 	backend: &str,
 ) {
-	let mut cnn = Cnn::new().expect("CNN benchmark requires a valid model");
-	let image = RgbImage::from_pixel(640, 480, Rgb([255, 40, 90]));
+	let cnn = Cnn::new().expect("CNN benchmark requires a valid model");
+	let image = RgbImage::from_pixel(640, 480, Rgb([10, 240, 120]));
 	let mut group =
 		criterion.benchmark_group(format!("cnn_inference_{backend}"));
 
-	for batch_size in [1, 10] {
+	for batch_size in 1..=10 {
 		let mut states: Vec<_> = iter::repeat_with(|| cnn.new_state())
 			.take(batch_size)
 			.collect();
@@ -54,31 +53,32 @@ pub fn benchmark_inference(
 			.collect::<Vec<_>>();
 
 		group.throughput(Throughput::Elements(batch_size as u64));
-		group.bench_function(format!("batch_{batch_size}"), |bencher| {
+		group.bench_function(format!("batch_{batch_size:02}"), |bencher| {
 			bencher.iter_custom(|iterations| {
 				let batch = black_box(&mut batch);
 				let start = Instant::now();
 				for _ in 0..iterations {
-					cnn.process(batch);
+					cnn.predict_as_batch(batch);
 				}
 				start.elapsed()
 			});
 		});
 
-		if batch_size == 10 {
-			group.bench_function("ten_single_calls", |bencher| {
+		// `batch_01` and `sequential_01` should be the same.
+		// Still include it for completeness.
+		group.bench_function(
+			format!("sequential_{batch_size:02}"),
+			|bencher| {
 				bencher.iter_custom(|iterations| {
 					let batch = black_box(&mut batch);
 					let start = Instant::now();
 					for _ in 0..iterations {
-						for item in batch.iter_mut() {
-							cnn.process(slice::from_mut(item));
-						}
+						cnn.predict_sequentially(batch);
 					}
 					start.elapsed()
 				});
-			});
-		}
+			},
+		);
 	}
 
 	group.finish();

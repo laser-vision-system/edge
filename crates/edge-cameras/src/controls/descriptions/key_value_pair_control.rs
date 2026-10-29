@@ -59,7 +59,7 @@ impl ControlDescription for KeyValuePairControl {
 	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		self.value = value;
 		Ok(())
 	}

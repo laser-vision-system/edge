@@ -94,7 +94,7 @@ impl CameraClientHandle {
 	pub fn update_camera_status(
 		&mut self,
 		status: CameraStatus,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::UpdateCameraStatus {
 			camera_id: self.camera_id,
 			status,
@@ -113,7 +113,7 @@ impl CameraClientHandle {
 	pub fn image_analysis(
 		&mut self,
 		deviation: Deviation,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::ImageAnalysis {
 			camera_id: self.camera_id,
 			deviation,
@@ -133,7 +133,7 @@ impl CameraClientHandle {
 		&mut self,
 		conn_id: ConnId,
 		configuration: String,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::Configuration {
 			conn_id,
 			camera_id: self.camera_id,
@@ -156,7 +156,7 @@ impl CameraClientHandle {
 		alert_code: u32,
 		alert_name: String,
 		alert_description: String,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::Alert {
 			camera_id: Some(self.camera_id),
 			alert_type,
@@ -178,7 +178,7 @@ impl CameraClientHandle {
 	pub fn send_image(
 		&mut self,
 		frame: Vec<u8>,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::SendImage {
 			camera_id: self.camera_id,
 			frame,
@@ -197,7 +197,7 @@ impl CameraClientHandle {
 	pub fn set_name_camera(
 		&mut self,
 		name: String,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::SetNameCamera {
 			camera_id: self.camera_id,
 			name,

@@ -9,10 +9,7 @@ use edge_core::{
 	logger::logger,
 	write_optional,
 };
-use image::{
-	DynamicImage,
-	GrayImage,
-};
+use image::GrayImage;
 use image_compare::{
 	Algorithm,
 	Metric,
@@ -212,11 +209,10 @@ impl VisionInterface for Diff {
 			};
 
 			if item.calibrate {
-				let grey_image =
-					DynamicImage::ImageRgb8((*item.image).clone()).into_luma8();
-				data.image = Some(grey_image.clone());
+				let grey_image = item.image.clone().into();
 				let (peak, mean, std_dev) =
 					Self::compute_brightness_stats(&grey_image);
+				data.image = Some(grey_image);
 				data.peak = Some(f32::from(peak));
 				data.mean = Some(mean);
 				data.std_dev = Some(std_dev);
@@ -224,8 +220,7 @@ impl VisionInterface for Diff {
 			}
 
 			if let Some(setpoint) = &data.image {
-				let grey_image =
-					DynamicImage::ImageRgb8((*item.image).clone()).into_luma8();
+				let grey_image = item.image.clone().into();
 
 				let (
 					peak_diff,

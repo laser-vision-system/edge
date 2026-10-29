@@ -80,13 +80,15 @@ pub struct PersistEntry {
 /// Constructors.
 impl PersistEntry {
 	/// Create a new [`PersistEntry`] instance.
-	pub fn new(points: &HashSet<AccessPoint>) -> Self {
+	pub fn new(
+		points: &HashSet<AccessPoint>,
+		name: String,
+	) -> Self {
 		let occupied_indices: HashSet<CameraIndex> =
 			points.iter().map(|point| point.index.clone()).collect();
 
 		let res = Self::try_make_camera_from_points(points);
 		if let Some(camera) = res {
-			let name = camera.get_info().to_string();
 			let new =
 				ConnectionStatus::new_active(camera, occupied_indices, name);
 			logger().log_info("Camera successfully initialised");

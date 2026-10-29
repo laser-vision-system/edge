@@ -68,7 +68,7 @@ impl ControlDescription for IntegerControl {
 	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		if self.validate(value.get()) {
 			self.value = value;
 			Ok(())

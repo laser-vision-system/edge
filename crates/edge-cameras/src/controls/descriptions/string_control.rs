@@ -64,7 +64,7 @@ impl ControlDescription for StringControl {
 	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		self.value = value;
 		Ok(())
 	}

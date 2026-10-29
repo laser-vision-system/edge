@@ -154,7 +154,7 @@ impl ConductorClientHandle {
 	pub fn register_cameras(
 		&mut self,
 		cameras: HashMap<CameraId, NewCameraInfo>,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::RegisterCameras {
 			cameras,
 		})
@@ -179,7 +179,7 @@ impl ConductorClientHandle {
 		&mut self,
 		camera_id: CameraId,
 		status: CameraStatus,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::UpdateCameraStatus {
 			camera_id,
 			status,
@@ -200,7 +200,7 @@ impl ConductorClientHandle {
 		&mut self,
 		camera_id: CameraId,
 		deviation: Deviation,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::ImageAnalysis {
 			camera_id,
 			deviation,
@@ -222,7 +222,7 @@ impl ConductorClientHandle {
 		conn_id: ConnId,
 		camera_id: CameraId,
 		configuration: String,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::Configuration {
 			conn_id,
 			camera_id,
@@ -246,7 +246,7 @@ impl ConductorClientHandle {
 		alert_code: u32,
 		alert_name: String,
 		alert_description: String,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::Alert {
 			camera_id,
 			alert_type,
@@ -270,7 +270,7 @@ impl ConductorClientHandle {
 		&mut self,
 		camera_id: CameraId,
 		frame: Vec<u8>,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::SendImage {
 			camera_id,
 			frame,
@@ -291,7 +291,7 @@ impl ConductorClientHandle {
 		&mut self,
 		camera_id: CameraId,
 		name: String,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::SetNameCamera {
 			camera_id,
 			name,

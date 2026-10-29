@@ -2,6 +2,7 @@
 
 use std::env::VarError;
 
+use image::ImageError;
 use nokhwa::NokhwaError;
 
 /// Specialised [`Result`] type for the [edge-core](crate) crate.
@@ -10,7 +11,7 @@ use nokhwa::NokhwaError;
 ///
 /// [`Result`]: std::result::Result
 #[expect(clippy::absolute_paths, reason = "Single use aliasing")]
-pub type EdgeCoreResult<T> = std::result::Result<T, EdgeCoreError>;
+pub type EdgeCoreResult<T = ()> = std::result::Result<T, EdgeCoreError>;
 
 /// The error type for all operations in [edge-core](crate).
 ///
@@ -49,4 +50,14 @@ pub enum EdgeCoreError {
 		"The frame could not be decoded because not more memory could be allocated: {0}"
 	)]
 	FrameDecodeOutOfMemory(#[source] NokhwaError),
+	/// The image failed to be encoded.
+	#[error("The image failed to be encoded: {0}")]
+	ImageEncode(String),
+}
+
+// Needed because `ImageError` doesn't implement `Clone`.
+impl From<ImageError> for EdgeCoreError {
+	fn from(value: ImageError) -> Self {
+		Self::ImageEncode(value.to_string())
+	}
 }
