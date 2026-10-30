@@ -1,10 +1,5 @@
 //! Convolutional neural network.
 
-#![expect(
-	clippy::allow_attributes,
-	reason = "Expect might not always be fulfilled"
-)]
-
 mod batching;
 mod config;
 mod model;
@@ -14,24 +9,35 @@ use std::{
 	path::PathBuf,
 };
 
-use burn::tensor::{
-	DataError,
-	Tensor,
+use burn::{
+	store::RecordError,
+	tensor::{
+		Device,
+		Tensor,
+	},
 };
-use burn_store::BurnpackError;
-use edge_core::logger::logger;
+use edge_core::{
+	logger::logger,
+	write_optional,
+};
 
+use self::model::{
+	LaserModel,
+	LaserModelConfig,
+};
 use crate::{
 	batch_item::BatchItem,
-	error::{
-		EdgeVisionError,
-		EdgeVisionResult,
-	},
+	error::EdgeVisionResult,
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
-	write_optional,
 };
+
+const DESIRED_IMG_SQUARE: u32 = 60;
+const IMG_CHANNELS_LUMA: usize = 1;
+
+const CNN_IMG_HEIGHT: u32 = DESIRED_IMG_SQUARE;
+const CNN_IMG_WIDTH: u32 = DESIRED_IMG_SQUARE;
 
 /// The errors that can arise with the [`Cnn`].
 #[derive(Debug, thiserror::Error)]
@@ -44,11 +50,8 @@ pub enum CnnError {
 		path: PathBuf,
 		/// The source error from [`BurnpackStore`](burn_store::BurnpackStore).
 		#[source]
-		source: BurnpackError,
+		source: RecordError,
 	},
-	/// If the prediction results are malformed.
-	#[error(transparent)]
-	Predict(#[from] DataError),
 }
 
 /// Closely associated data used by external holders.
@@ -68,11 +71,11 @@ impl fmt::Display for ExternalData {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		f.write_str("ExternalData for Cnn { setpoint: ")?;
-		write_optional(f, self.setpoint)?;
+		write_optional(f, &self.setpoint)?;
 		f.write_str(", intensity: ")?;
-		write_optional(f, self.intensity)?;
+		write_optional(f, &self.intensity)?;
 		f.write_str(", deviation: ")?;
-		write_optional(f, self.deviation)?;
+		write_optional(f, &self.deviation)?;
 		f.write_str(" }")
 	}
 }
@@ -83,8 +86,8 @@ impl fmt::Display for ExternalData {
 /// [`VisionVariant`]: super::VisionVariant
 pub struct Cnn {
 	session: SessionToken,
-	device: config::BackendDevice,
-	model: model::LaserModel<config::Backend>,
+	model: LaserModel,
+	device: Device,
 }
 
 impl Cnn {
@@ -94,9 +97,10 @@ impl Cnn {
 	///
 	/// If the model could not be loaded correctly.
 	pub fn new() -> EdgeVisionResult<Self> {
-		let device = config::get_device();
+		let device = Device::default();
 		let path = config::model_path();
-		let model = model::LaserModel::load(path, &device)?;
+		let model_config = LaserModelConfig::new();
+		let model = model_config.init(&device).load_weights(path)?;
 		Ok(Self {
 			session: SessionToken::new(),
 			device,
@@ -104,31 +108,56 @@ impl Cnn {
 		})
 	}
 
-	fn predict(
+	/// Run prediction on the entire batch at once.
+	pub fn predict_as_batch(
 		&self,
-		images: Tensor<config::Backend, 4>,
-	) -> EdgeVisionResult<Vec<f32>> {
+		batch: &mut [BatchItem],
+	) -> Vec<f32> {
+		for item in batch.iter_mut() {
+			self.validate_batch(item);
+		}
+		let tensors = self.prepare_batch(batch);
+		self.forward(tensors)
+	}
+
+	/// Run prediction on each batch item sequentially.
+	pub fn predict_sequentially(
+		&self,
+		batch: &mut [BatchItem],
+	) -> Vec<f32> {
+		batch
+			.iter_mut()
+			.map(|item| {
+				self.validate_batch(item);
+				std::slice::from_mut(item)
+			})
+			.map(|item| self.prepare_batch(item))
+			.flat_map(|tensor| self.forward(tensor))
+			.collect()
+	}
+
+	/// Run the forward pass on the model, converting the output to a vector.
+	#[expect(clippy::expect_used, reason = "Model output will always be f32")]
+	fn forward(
+		&self,
+		images: Tensor<4>,
+	) -> Vec<f32> {
 		self.model
 			.forward(images)
 			.flatten::<1>(0, 1)
 			.into_data()
-			.to_vec::<f32>()
-			.map_err(|why| EdgeVisionError::from(CnnError::from(why)))
+			.try_to_vec()
+			.expect("the CNN model should produce f32 prediction values")
 	}
 
-	#[allow(
-		clippy::trivially_copy_pass_by_ref,
-		reason = "Type may change with feature flag"
-	)]
 	fn prepare_batch(
 		&self,
 		batch: &mut [BatchItem],
-		device: &config::BackendDevice,
-	) -> Tensor<config::Backend, 4> {
-		for item in batch.iter_mut() {
-			self.validate_batch(item);
-		}
-		batching::images_to_tensor(batch.iter().map(|item| &item.image), device)
+	) -> Tensor<4> {
+		batching::images_to_tensor(
+			batch.iter().map(|item| item.image.clone().into()),
+			&self.device,
+		)
 	}
 }
 
@@ -137,14 +166,8 @@ impl VisionInterface for Cnn {
 		&mut self,
 		batch: &mut [BatchItem],
 	) {
-		let tensors = self.prepare_batch(batch, &self.device);
-		match self.predict(tensors) {
-			Ok(predictions) => apply_predictions(batch, predictions),
-			Err(why) => {
-				logger().log_error(&why);
-				clear_predictions(batch);
-			},
-		}
+		let predictions = self.predict_sequentially(batch);
+		apply_predictions(batch, predictions);
 	}
 
 	fn new_state(&self) -> VisionState {
@@ -180,25 +203,25 @@ fn apply_predictions(
 		"The number of predictions does not match the number of items"
 	);
 
-	for (item, intensity) in batch.iter_mut().zip(predictions) {
+	for (item, mut intensity) in batch.iter_mut().zip(predictions) {
 		if let VisionState::Cnn(_, data) = item.state {
+			if intensity <= 0.0 {
+				logger().log_warn(&format!(
+					"Intensity predicted to be {intensity}"
+				));
+				intensity = 0.0;
+			}
 			if item.calibrate {
 				data.setpoint = Some(intensity);
 			}
 			data.intensity = Some(intensity);
-			data.deviation = data
-				.setpoint
-				.filter(|setpoint| *setpoint > 0.0)
-				.map(|setpoint| intensity / setpoint);
-		}
-	}
-}
-
-fn clear_predictions(batch: &mut [BatchItem]) {
-	for item in batch.iter_mut() {
-		if let VisionState::Cnn(_, data) = item.state {
-			data.intensity = None;
-			data.deviation = None;
+			data.deviation = data.setpoint.map(|setpoint| {
+				if setpoint == 0.0 {
+					f32::INFINITY
+				} else {
+					intensity / setpoint
+				}
+			});
 		}
 	}
 }
@@ -208,27 +231,20 @@ mod tests {
 	use std::{
 		hint,
 		iter,
-		slice,
 		time::Instant,
 	};
 
-	use edge_core::{
-		image::Image,
-		settings::{
-			IMAGE_HEIGHT,
-			IMAGE_WIDTH,
-		},
-	};
+	use edge_core::image::Image;
 	use image::{
-		Rgb,
-		RgbImage,
+		GrayImage,
+		Luma,
 	};
 
 	use super::*;
 
 	fn test_cnn() -> Cnn {
-		let device = config::get_device();
-		let model = model::LaserModel::<config::Backend>::test_model(&device);
+		let device = Device::default();
+		let model = LaserModelConfig::new().init(&device);
 		Cnn {
 			session: SessionToken::new(),
 			device,
@@ -260,7 +276,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			7,
 			&mut state,
-			Image::from(RgbImage::new(8, 8)),
+			Image::from(GrayImage::new(8, 8)),
 			true,
 			false,
 		)];
@@ -287,7 +303,7 @@ mod tests {
 		let mut batch = [BatchItem::new(
 			12,
 			&mut state,
-			Image::from(RgbImage::new(8, 8)),
+			Image::from(GrayImage::new(8, 8)),
 			false,
 			false,
 		)];
@@ -305,41 +321,14 @@ mod tests {
 	}
 
 	#[test]
-	fn clear_predictions_removes_inference_values() {
-		let mut state = cnn_state(ExternalData {
-			setpoint: Some(9.0),
-			intensity: Some(6.0),
-			deviation: Some(0.666),
-		});
-		let mut batch = [BatchItem::new(
-			21,
-			&mut state,
-			Image::from(RgbImage::new(8, 8)),
-			false,
-			true,
-		)];
-
-		clear_predictions(&mut batch);
-
-		match &batch[0].state {
-			VisionState::Cnn(_, data) => {
-				assert_eq!(data.setpoint, Some(9.0));
-				assert_eq!(data.intensity, None);
-				assert_eq!(data.deviation, None);
-			},
-			_ => panic!("expected a CNN state"),
-		}
-	}
-
-	#[test]
 	#[ignore = "Must be run in isolation"]
 	fn process_runs_inference_and_updates_state() {
 		let mut cnn = test_cnn();
 		let mut state = cnn_state(ExternalData::default());
-		let image = Image::from(RgbImage::from_pixel(
-			IMAGE_WIDTH,
-			IMAGE_HEIGHT,
-			Rgb([255, 40, 90]),
+		let image = Image::from(GrayImage::from_pixel(
+			CNN_IMG_WIDTH,
+			CNN_IMG_HEIGHT,
+			Luma([192]),
 		));
 		let mut batch = [BatchItem::new(99, &mut state, image, true, false)];
 
@@ -348,9 +337,11 @@ mod tests {
 		match &batch[0].state {
 			VisionState::Cnn(_, data) => {
 				assert!(data.setpoint.is_some());
-				assert!(data.intensity.is_some());
-				assert!(data.deviation.is_some());
 				assert!(data.intensity.unwrap().is_finite());
+				assert!(data.deviation.is_some());
+				data.setpoint.inspect(|val| println!("Setpoint: {val}"));
+				data.intensity.inspect(|val| println!("Intensity: {val}"));
+				data.deviation.inspect(|val| println!("Deviation: {val}"));
 			},
 			_ => panic!("expected a CNN state"),
 		}
@@ -361,11 +352,11 @@ mod tests {
 	fn profile_process_vs_prepared_prediction() {
 		const SAMPLES: u32 = 5;
 		const WARMUP: u32 = 1;
-		let mut cnn = Cnn::new().expect("CNN profiling requires a valid model");
-		let image = Image::from(RgbImage::from_pixel(
-			IMAGE_WIDTH,
-			IMAGE_HEIGHT,
-			Rgb([255, 40, 90]),
+		let cnn = Cnn::new().expect("CNN profiling requires a valid model");
+		let image = Image::from(GrayImage::from_pixel(
+			CNN_IMG_WIDTH,
+			CNN_IMG_HEIGHT,
+			Luma([192]),
 		));
 
 		for batch_size in [1, 10] {
@@ -385,35 +376,29 @@ mod tests {
 					)
 				})
 				.collect::<Vec<_>>();
-			let prepared = cnn.prepare_batch(&mut batch, &cnn.device);
+			let prepared = cnn.prepare_batch(&mut batch);
 
 			for _ in 0..WARMUP {
-				let _predictions = cnn
-					.predict(prepared.clone())
-					.expect("prepared prediction should succeed");
-				cnn.process(&mut batch);
+				let _predictions = cnn.forward(prepared.clone());
+				cnn.predict_as_batch(&mut batch);
 			}
 
 			let prediction_start = Instant::now();
 			for _ in 0..SAMPLES {
-				let predictions = cnn
-					.predict(prepared.clone())
-					.expect("prepared prediction should succeed");
+				let predictions = cnn.forward(prepared.clone());
 				hint::black_box(predictions);
 			}
 			let prediction_elapsed = prediction_start.elapsed() / SAMPLES;
 
 			let process_start = Instant::now();
 			for _ in 0..SAMPLES {
-				cnn.process(&mut batch);
+				cnn.predict_as_batch(&mut batch);
 			}
 			let process_elapsed = process_start.elapsed() / SAMPLES;
 			let individual_process_elapsed = (batch_size == 10).then(|| {
 				let individual_start = Instant::now();
 				for _ in 0..SAMPLES {
-					for item in &mut batch {
-						cnn.process(slice::from_mut(item));
-					}
+					cnn.predict_sequentially(&mut batch);
 				}
 				individual_start.elapsed() / SAMPLES
 			});

@@ -91,7 +91,7 @@ pub trait CameraLike {
 		&mut self,
 		id: KnownCameraControl,
 		value: ControlValueSetter,
-	) -> EdgeCamerasResult<()>;
+	) -> EdgeCamerasResult;
 
 	/// # Errors
 	///
@@ -99,7 +99,7 @@ pub trait CameraLike {
 	fn set_controls(
 		&mut self,
 		controls: ControlMap,
-	) -> EdgeCamerasResult<()>;
+	) -> EdgeCamerasResult;
 }
 
 /// An abstraction over the nokhwa camera objects.
@@ -188,7 +188,7 @@ impl CameraDevice {
 		&mut self,
 		id: KnownCameraControl,
 		value: T,
-	) -> EdgeCamerasResult<()>
+	) -> EdgeCamerasResult
 	where
 		T: Into<ControlValueSetter>,
 	{
@@ -199,7 +199,7 @@ impl CameraDevice {
 		&mut self,
 		id: KnownCameraControl,
 		value: ControlValueSetter,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		if matches!(id, KnownCameraControl::WhiteBalance) {
 			// HACK: Cheekily skip controls that may be inactive/disabled.
 			return Ok(());
@@ -275,14 +275,14 @@ impl CameraLike for CameraDevice {
 		&mut self,
 		id: KnownCameraControl,
 		value: ControlValueSetter,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		self.set_value(id, value)
 	}
 
 	fn set_controls(
 		&mut self,
 		controls: ControlMap,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		controls.into_inner().into_iter().try_for_each(|(id, val)| {
 			let CamControl::IntegerRange(control) = val else {
 				return Err(EdgeCamerasError::SetControlType(id));

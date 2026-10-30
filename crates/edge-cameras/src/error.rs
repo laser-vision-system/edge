@@ -12,7 +12,7 @@ use nokhwa::{
 ///
 /// [`Result`]: std::result::Result
 #[expect(clippy::absolute_paths, reason = "Single use aliasing")]
-pub type EdgeCamerasResult<T> = std::result::Result<T, EdgeCamerasError>;
+pub type EdgeCamerasResult<T = ()> = std::result::Result<T, EdgeCamerasError>;
 
 /// The error type for all operations in [edge-cameras](crate).
 ///

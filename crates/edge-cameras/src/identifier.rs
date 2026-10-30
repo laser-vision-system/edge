@@ -119,16 +119,31 @@ pub struct Identifier {
 	meta_info: IdentMetaInfo,
 }
 
-impl AsRef<CameraId> for Identifier {
-	fn as_ref(&self) -> &CameraId {
-		&self.hashed_id
-	}
-}
-
 impl Identifier {
 	/// See [`Cow`] for more information.
 	pub fn lazy_clone(&self) -> Cow<'_, Self> {
 		Cow::Borrowed(self)
+	}
+
+	/// Access the internal name through a [`Cow`].
+	pub fn as_name(&self) -> Cow<'_, str> {
+		Cow::Borrowed(&self.meta_info.name)
+	}
+
+	/// Access the internal description through a [`Cow`].
+	pub fn as_description(&self) -> Cow<'_, str> {
+		Cow::Borrowed(&self.meta_info.name)
+	}
+
+	/// Access the internal misc through a [`Cow`].
+	pub fn as_misc(&self) -> Cow<'_, str> {
+		Cow::Borrowed(&self.meta_info.name)
+	}
+}
+
+impl AsRef<CameraId> for Identifier {
+	fn as_ref(&self) -> &CameraId {
+		&self.hashed_id
 	}
 }
 

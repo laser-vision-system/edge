@@ -137,7 +137,7 @@ impl PersistenceClientHandle {
 	pub fn register_cameras(
 		&mut self,
 		cameras: HashMap<CameraId, NewCameraInfo>,
-	) -> EdgeClientResult<()> {
+	) -> EdgeClientResult {
 		self.base.send_ws_request(Command::RegisterCameras {
 			cameras,
 		})

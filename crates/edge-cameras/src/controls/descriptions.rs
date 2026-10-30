@@ -18,6 +18,7 @@ use std::hash::Hash;
 use nokhwa::utils::{
 	CameraControl,
 	ControlValueDescription,
+	KnownCameraControl,
 };
 use serde::{
 	Deserialize,
@@ -39,24 +40,21 @@ pub use self::{
 	string_control::StringControl,
 };
 use super::{
-	traits::ControlDescription as _,
+	traits::{
+		ControlDefault as _,
+		ControlDescription as _,
+		ControlItems as _,
+		ControlMax as _,
+		ControlMin as _,
+		ControlPossible as _,
+		ControlStep as _,
+	},
 	types::{
-		ConTypeKeyValue,
+		ConTypeBytes,
 		ConTypeMenu,
 		ConTypePoint,
 		ConTypeRGB,
-	},
-	values::{
-		ConValueBoolean,
-		ConValueBytes,
-		ConValueEnum,
-		ConValueFloat,
-		ConValueInteger,
-		ConValueKeyValue,
-		ConValueMenu,
-		ConValuePoint,
-		ConValueRGB,
-		ConValueString,
+		ConTypeString,
 	},
 };
 
@@ -114,15 +112,18 @@ pub enum CamControl {
 	Menu(MenuControl),
 }
 
-impl From<CameraControl> for CamControl {
-	/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
+impl CamControl {
+	/// Create a [`CamControl`] from a [`ControlValueDescription`] and
+	/// [`KnownCameraControl`].
 	#[expect(
 		clippy::too_many_lines,
 		reason = "Necessary to map from one type to the other"
 	)]
-	fn from(value: CameraControl) -> Self {
-		let control_type = value.control();
-		match value.description() {
+	pub fn from_description_and_id(
+		description: ControlValueDescription,
+		id: KnownCameraControl,
+	) -> Self {
+		match description {
 			ControlValueDescription::None => CamControl::None,
 			ControlValueDescription::Integer {
 				value,
@@ -130,10 +131,10 @@ impl From<CameraControl> for CamControl {
 				step,
 			} => {
 				CamControl::Integer(IntegerControl::new(
-					control_type,
-					ConValueInteger::from(*value),
-					*default,
-					*step,
+					id,
+					value.into(),
+					default,
+					step,
 				))
 			},
 			ControlValueDescription::IntegerRange {
@@ -144,12 +145,12 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::IntegerRange(IntegerRangeControl::new(
-					control_type,
-					ConValueInteger::from(*value),
-					*default,
-					*step,
-					*min,
-					*max,
+					id,
+					value.into(),
+					default,
+					step,
+					min,
+					max,
 				))
 			},
 			ControlValueDescription::Float {
@@ -158,10 +159,10 @@ impl From<CameraControl> for CamControl {
 				step,
 			} => {
 				CamControl::Float(FloatControl::new(
-					control_type,
-					ConValueFloat::from(*value),
-					*default,
-					*step,
+					id,
+					value.into(),
+					default,
+					step,
 				))
 			},
 			ControlValueDescription::FloatRange {
@@ -172,12 +173,12 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::FloatRange(FloatRangeControl::new(
-					control_type,
-					ConValueFloat::from(*value),
-					*default,
-					*step,
-					*min,
-					*max,
+					id,
+					value.into(),
+					default,
+					step,
+					min,
+					max,
 				))
 			},
 			ControlValueDescription::Boolean {
@@ -185,9 +186,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Boolean(BooleanControl::new(
-					control_type,
-					ConValueBoolean::from(*value),
-					*default,
+					id,
+					value.into(),
+					default,
 				))
 			},
 			ControlValueDescription::String {
@@ -195,9 +196,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::String(StringControl::new(
-					control_type,
-					ConValueString::from(value.clone()),
-					default.clone(),
+					id,
+					value.into(),
+					default.map(ConTypeString::from),
 				))
 			},
 			ControlValueDescription::Bytes {
@@ -205,9 +206,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Bytes(BytesControl::new(
-					control_type,
-					ConValueBytes::from(value.clone()),
-					default.clone(),
+					id,
+					value.into(),
+					ConTypeBytes::from(default),
 				))
 			},
 			ControlValueDescription::KeyValuePair {
@@ -216,11 +217,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::KeyValuePair(KeyValuePairControl::new(
-					control_type,
-					ConValueKeyValue::from(ConTypeKeyValue::from((
-						*key, *value,
-					))),
-					(*default).into(),
+					id,
+					(key, value).into(),
+					(default).into(),
 				))
 			},
 			ControlValueDescription::Point {
@@ -228,9 +227,9 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Point(PointControl::new(
-					control_type,
-					ConValuePoint::from(ConTypePoint::from(*value)),
-					ConTypePoint::from(*default),
+					id,
+					value.into(),
+					ConTypePoint::from(default),
 				))
 			},
 			ControlValueDescription::Enum {
@@ -239,10 +238,10 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Enum(EnumControl::new(
-					control_type,
-					ConValueEnum::from(*value),
-					*default,
-					possible.clone(),
+					id,
+					value.into(),
+					default,
+					possible.into(),
 				))
 			},
 			ControlValueDescription::RGB {
@@ -251,10 +250,10 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::RGB(RGBControl::new(
-					control_type,
-					ConValueRGB::from(ConTypeRGB::from(*value)),
-					ConTypeRGB::from(*default),
-					ConTypeRGB::from(*max),
+					id,
+					value.into(),
+					ConTypeRGB::from(default),
+					ConTypeRGB::from(max),
 				))
 			},
 			ControlValueDescription::Menu {
@@ -263,13 +262,136 @@ impl From<CameraControl> for CamControl {
 				default,
 			} => {
 				CamControl::Menu(MenuControl::new(
-					control_type,
-					ConValueMenu::from(*value),
-					ConTypeMenu::from(*default),
-					items.clone(),
+					id,
+					value.into(),
+					ConTypeMenu::from(default),
+					items.into(),
 				))
 			},
 		}
+	}
+
+	/// Convert this control's value to [`String`], if it exists.
+	pub fn try_display_control_value(&self) -> Option<String> {
+		match self {
+			Self::None => None,
+			Self::Integer(control) => Some(control.control_value().to_string()),
+			Self::IntegerRange(control) => {
+				Some(control.control_value().to_string())
+			},
+			Self::Float(control) => Some(control.control_value().to_string()),
+			Self::FloatRange(control) => {
+				Some(control.control_value().to_string())
+			},
+			Self::Boolean(control) => Some(control.control_value().to_string()),
+			Self::String(control) => Some(control.control_value().to_string()),
+			Self::Bytes(control) => Some(control.control_value().to_string()),
+			Self::KeyValuePair(control) => {
+				Some(control.control_value().to_string())
+			},
+			Self::Point(control) => Some(control.control_value().to_string()),
+			Self::Enum(control) => Some(control.control_value().to_string()),
+			Self::RGB(control) => Some(control.control_value().to_string()),
+			Self::Menu(control) => Some(control.control_value().to_string()),
+		}
+	}
+
+	/// Convert this control's default to [`String`], if it exists.
+	pub fn try_display_control_default(&self) -> Option<String> {
+		match self {
+			Self::None => None,
+			Self::Integer(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::IntegerRange(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::Float(control) => Some(control.control_default().to_string()),
+			Self::FloatRange(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::Boolean(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::String(control) => {
+				Some(control.control_default()?.to_string())
+			},
+			Self::Bytes(control) => Some(control.control_default().to_string()),
+			Self::KeyValuePair(control) => {
+				Some(control.control_default().to_string())
+			},
+			Self::Point(control) => Some(control.control_default().to_string()),
+			Self::Enum(control) => Some(control.control_default().to_string()),
+			Self::RGB(control) => Some(control.control_default().to_string()),
+			Self::Menu(control) => Some(control.control_default().to_string()),
+		}
+	}
+
+	/// Convert this control's min to [`String`], if it exists.
+	pub fn try_display_control_min(&self) -> Option<String> {
+		match self {
+			Self::IntegerRange(control) => {
+				Some(control.control_min().to_string())
+			},
+			Self::FloatRange(control) => {
+				Some(control.control_min().to_string())
+			},
+			_ => None,
+		}
+	}
+
+	/// Convert this control's max to [`String`], if it exists.
+	pub fn try_display_control_max(&self) -> Option<String> {
+		match self {
+			Self::IntegerRange(control) => {
+				Some(control.control_max().to_string())
+			},
+			Self::FloatRange(control) => {
+				Some(control.control_max().to_string())
+			},
+			Self::RGB(control) => Some(control.control_max().to_string()),
+			_ => None,
+		}
+	}
+
+	/// Convert this control's step to [`String`], if it exists.
+	pub fn try_display_control_step(&self) -> Option<String> {
+		match self {
+			Self::Integer(control) => Some(control.control_step().to_string()),
+			Self::IntegerRange(control) => {
+				Some(control.control_step().to_string())
+			},
+			Self::Float(control) => Some(control.control_step().to_string()),
+			Self::FloatRange(control) => {
+				Some(control.control_step().to_string())
+			},
+			_ => None,
+		}
+	}
+
+	/// Convert this control's possible to [`String`], if it exists.
+	pub fn try_display_control_possible(&self) -> Option<String> {
+		match self {
+			Self::Enum(control) => Some(control.control_possible().to_string()),
+			_ => None,
+		}
+	}
+
+	/// Convert this control's items to [`String`], if it exists.
+	pub fn try_display_control_items(&self) -> Option<String> {
+		match self {
+			Self::Menu(control) => Some(control.control_items().to_string()),
+			_ => None,
+		}
+	}
+}
+
+impl From<CameraControl> for CamControl {
+	/// Convert a single [`nokhwa`] [`CameraControl`] into a custom type.
+	fn from(value: CameraControl) -> Self {
+		let control_type = value.control();
+		// TODO: Remove description clone.
+		Self::from_description_and_id(value.description().clone(), control_type)
 	}
 }
 
@@ -335,3 +457,19 @@ impl_identifiable!(PointControl);
 impl_identifiable!(EnumControl);
 impl_identifiable!(RGBControl);
 impl_identifiable!(MenuControl);
+
+#[cfg(test)]
+mod tests {
+	use std::fmt;
+
+	use crate::controls::traits::ControlDescription;
+
+	pub fn display_with_different_formats(
+		label: &'static str,
+		control: &(impl ControlDescription + fmt::Display + fmt::Debug),
+	) {
+		println!(
+			"{label} (dbg) | {control:?}\n{label} (std) | {control}\n{label} (alt) | {control:#}"
+		);
+	}
+}

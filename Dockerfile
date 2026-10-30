@@ -29,4 +29,5 @@ RUN apt-get update && apt-get install -y ca-certificates
 
 # coppies the compiled binary from our builder 
 COPY --from=builder /app/target/$BINARY_DIR/edge /edge
+COPY --from=builder /app/models/laser-cnn.bpk /models/laser-cnn.bpk
 CMD ["/edge"]

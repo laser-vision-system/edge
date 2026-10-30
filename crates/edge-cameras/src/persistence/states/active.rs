@@ -161,7 +161,9 @@ impl Active {
 	) -> EdgeCamerasResult<Image> {
 		let frame = self.get_camera_mut().get_frame_buffer()?;
 		// TODO: Inspect error reason. If out of memory, send log and panic.
-		let image = frame.try_decode().map_err(EdgeCamerasError::from)?;
+		let image = frame
+			.try_decode_to_image()
+			.map_err(EdgeCamerasError::from)?;
 		self.data.reduce_error(camera_err_decrement);
 		Ok(image)
 	}

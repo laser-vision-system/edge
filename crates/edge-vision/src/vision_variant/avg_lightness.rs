@@ -2,6 +2,7 @@
 
 use std::fmt;
 
+use edge_core::write_optional;
 use image::RgbImage;
 use lab::Lab;
 use rayon::prelude::*;
@@ -11,7 +12,6 @@ use crate::{
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
-	write_optional,
 };
 
 /// Closely associated data used by external holders.
@@ -31,11 +31,11 @@ impl fmt::Display for ExternalData {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		f.write_str("ExternalData for AvgLightness { setpoint: ")?;
-		write_optional(f, self.setpoint)?;
+		write_optional(f, &self.setpoint)?;
 		f.write_str(", intensity: ")?;
-		write_optional(f, self.intensity)?;
+		write_optional(f, &self.intensity)?;
 		f.write_str(", deviation: ")?;
-		write_optional(f, self.deviation)?;
+		write_optional(f, &self.deviation)?;
 		f.write_str(" }")
 	}
 }
@@ -94,7 +94,7 @@ impl VisionInterface for AvgLightness {
 				continue;
 			};
 
-			let lightness = Self::average_lightness(&item.image);
+			let lightness = Self::average_lightness(&item.image.clone().into());
 
 			if item.calibrate {
 				data.setpoint = Some(lightness);

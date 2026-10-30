@@ -1,6 +1,8 @@
 //! Defines for a camera control that consists of a `value`, `default`, and
 //! `max`.
 
+use std::fmt;
+
 use nokhwa::utils::KnownCameraControl;
 use serde::{
 	Deserialize,
@@ -68,7 +70,7 @@ impl ControlDescription for RGBControl {
 	fn try_set_control_value(
 		&mut self,
 		value: Self::ValueType,
-	) -> EdgeCamerasResult<()> {
+	) -> EdgeCamerasResult {
 		if self.validate(value.get()) {
 			self.value = value;
 			Ok(())
@@ -95,5 +97,45 @@ impl ControlMax for RGBControl {
 
 	fn control_max(&self) -> Self::MaxType {
 		self.max
+	}
+}
+
+impl fmt::Display for RGBControl {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		if f.alternate() {
+			write!(
+				f,
+				"{} {} *{} <{}",
+				self.control_type, self.value, self.default, self.max
+			)
+		} else {
+			write!(
+				f,
+				"type: '{}' value: '{}' default: '{}' max: '{}'",
+				self.control_type, self.value, self.default, self.max
+			)
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	#[ignore = "for manual inspection"]
+	fn control_display() {
+		let control_type = KnownCameraControl::Pan;
+		let value = ConValueRGB::from((0.0, 0.0, 0.0));
+		let default = ConTypeRGB::from((0.0, 0.0, 0.0));
+		let max = ConTypeRGB::from((0.0, 0.0, 0.0));
+		let control = RGBControl::new(control_type, value, default, max);
+		super::super::tests::display_with_different_formats(
+			"RGBControl",
+			&control,
+		);
 	}
 }

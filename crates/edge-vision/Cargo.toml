@@ -6,7 +6,6 @@ version.workspace = true
 [features]
 default = [
 	"cnn-backend-flex",
-	"cnn-model-embedded",
 ]
 
 # == Burn backend selection ==
@@ -17,24 +16,18 @@ cnn-backend-flex = [
 cnn-backend-wgpu = [
 	"burn/wgpu",
 	"burn/fusion",
-	"burn-store/wgpu",
 ]
 cnn-backend-cuda = [
 	"burn/cuda",
 	"burn/fusion",
-	"burn-store/cuda",
 ]
-
-# == Burn model loading mehod ==
-# Embed the model into the compiled binary.
-cnn-model-embedded = [
+cnn-backend-rocm = [
+	"burn/rocm",
+	"burn/fusion",
 ]
-# Load the model from file at runtime with zero-copy.
-cnn-model-zero-copy = [
-	"burn-store/memmap",
-]
-# Load the model from file at runtime without zero-copy.
-cnn-model-file = [
+cnn-backend-cpu = [
+	"burn/cpu",
+	"burn/fusion",
 ]
 
 [dependencies]
@@ -46,22 +39,18 @@ api.workspace = true
 edge-core.workspace = true
 
 # External crates
-burn = { version = "0.21", default-features = false, features = [
+burn = { version = "0.22", default-features = false, features = [
 	"std",
 ] }
-burn-flex = { version = "0.21", default-features = false, features = [
+burn-flex = { version = "0.22", default-features = false, features = [
 	"rayon",
 	"simd",
 ], optional = true }
-burn-store = { version = "0.21", default-features = false, features = [
-	"std",
-	"burnpack",
-] }
 image.workspace = true
 image-compare = "0.5"
 lab = "0.11"
-mutually_exclusive_features.workspace = true
 rayon = "1"
+serde.workspace = true
 thiserror.workspace = true
 
 # Dependencies only needed for tests, examples, or benchmarks.

@@ -1,6 +1,17 @@
 //! Low level types used for camera control values.
 
-use nokhwa::utils::ControlValueSetter;
+use std::{
+	fmt,
+	ops::{
+		Deref,
+		DerefMut,
+	},
+};
+
+use nokhwa::utils::{
+	ControlValueSetter,
+	MenuEntry,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -11,8 +22,6 @@ use serde::{
 pub(super) type ConTypeInt = i64;
 pub(super) type ConTypeFloat = f64;
 pub(super) type ConTypeBool = bool;
-pub(super) type ConTypeString = String;
-pub(super) type ConTypeBytes = Vec<u8>;
 pub(super) type ConTypeEnum = i64;
 pub(super) type ConTypeMenu = u32;
 
@@ -20,7 +29,136 @@ type _ConTypeKeyValue = i128;
 type _ConTypePoint = f64;
 type _ConTypeRGB = f64;
 
-/// Represents a key and value use by [`ConValueKeyValue`] and by extention,
+pub(super) type ConInnerTypeString = String;
+pub(super) type ConInnerTypeBytes = Vec<u8>;
+pub(super) type ConInnerTypeKeyValue = (_ConTypeKeyValue, _ConTypeKeyValue);
+pub(super) type ConInnerTypePoint = (_ConTypePoint, _ConTypePoint);
+pub(super) type ConInnerTypeRGB = (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
+
+pub(super) type ConInnerTypePossible = Vec<i64>;
+pub(super) type ConInnerTypeItems = Vec<MenuEntry>;
+
+/// Represents a list of Strings used by [`ConValueString`] and by extention,
+/// [`StringControl`].
+///
+/// [`ConValueString`]: super::values::ConValueString
+/// [`StringControl`]: super::descriptions::StringControl
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
+pub struct ConTypeString(ConInnerTypeString);
+
+impl Deref for ConTypeString {
+	type Target = ConInnerTypeString;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for ConTypeString {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+impl From<ConInnerTypeString> for ConTypeString {
+	fn from(value: ConInnerTypeString) -> Self {
+		Self(value)
+	}
+}
+
+impl From<ConTypeString> for ConInnerTypeString {
+	fn from(value: ConTypeString) -> Self {
+		value.0
+	}
+}
+
+impl From<ConTypeString> for ControlValueSetter {
+	fn from(value: ConTypeString) -> Self {
+		ControlValueSetter::String(value.0)
+	}
+}
+
+impl fmt::Display for ConTypeString {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		self.0.fmt(f)
+	}
+}
+
+/// Represents a list of bytes used by [`ConValueBytes`] and by extention,
+/// [`BytesControl`].
+///
+/// [`ConValueBytes`]: super::values::ConValueBytes
+/// [`BytesControl`]: super::descriptions::BytesControl
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
+pub struct ConTypeBytes(ConInnerTypeBytes);
+
+impl Deref for ConTypeBytes {
+	type Target = ConInnerTypeBytes;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for ConTypeBytes {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+impl From<ConInnerTypeBytes> for ConTypeBytes {
+	fn from(value: ConInnerTypeBytes) -> Self {
+		Self(value)
+	}
+}
+
+impl From<ConTypeBytes> for ConInnerTypeBytes {
+	fn from(value: ConTypeBytes) -> Self {
+		value.0
+	}
+}
+
+impl From<ConTypeBytes> for ControlValueSetter {
+	fn from(value: ConTypeBytes) -> Self {
+		ControlValueSetter::Bytes(value.0)
+	}
+}
+
+impl fmt::Display for ConTypeBytes {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		display_list(f, &self.0, false)
+	}
+}
+
+/// Represents a key and value used by [`ConValueKeyValue`] and by extention,
 /// [`KeyValuePairControl`].
 ///
 /// [`ConValueKeyValue`]: super::values::ConValueKeyValue
@@ -38,29 +176,29 @@ type _ConTypeRGB = f64;
 	Serialize,
 	Deserialize,
 )]
-pub struct ConTypeKeyValue(_ConTypeKeyValue, _ConTypeKeyValue);
+pub struct ConTypeKeyValue(ConInnerTypeKeyValue);
 
 impl ConTypeKeyValue {
 	/// Get the key field.
 	pub fn key(&self) -> _ConTypeKeyValue {
-		self.0
+		self.0.0
 	}
 
 	/// Get the value field.
 	pub fn value(&self) -> _ConTypeKeyValue {
-		self.1
+		self.0.1
 	}
 }
 
-impl From<(_ConTypeKeyValue, _ConTypeKeyValue)> for ConTypeKeyValue {
-	fn from(value: (_ConTypeKeyValue, _ConTypeKeyValue)) -> Self {
-		Self(value.0, value.1)
+impl From<ConInnerTypeKeyValue> for ConTypeKeyValue {
+	fn from(value: ConInnerTypeKeyValue) -> Self {
+		Self(value)
 	}
 }
 
-impl From<ConTypeKeyValue> for (_ConTypeKeyValue, _ConTypeKeyValue) {
+impl From<ConTypeKeyValue> for ConInnerTypeKeyValue {
 	fn from(value: ConTypeKeyValue) -> Self {
-		(value.0, value.1)
+		value.0
 	}
 }
 
@@ -70,7 +208,16 @@ impl From<ConTypeKeyValue> for ControlValueSetter {
 	}
 }
 
-/// Represents a point value use by [`ConValuePoint`] and by extention,
+impl fmt::Display for ConTypeKeyValue {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		write!(f, "{}: {}", self.key(), self.value())
+	}
+}
+
+/// Represents a point value used by [`ConValuePoint`] and by extention,
 /// [`PointControl`].
 ///
 /// [`ConValuePoint`]: super::values::ConValuePoint
@@ -78,29 +225,29 @@ impl From<ConTypeKeyValue> for ControlValueSetter {
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct ConTypePoint(_ConTypePoint, _ConTypePoint);
+pub struct ConTypePoint(ConInnerTypePoint);
 
 impl ConTypePoint {
 	/// Get the first value of this point.
 	pub fn x_value(&self) -> _ConTypePoint {
-		self.0
+		self.0.0
 	}
 
 	/// Get the second value of this point.
 	pub fn y_value(&self) -> _ConTypePoint {
-		self.1
+		self.0.1
 	}
 }
 
-impl From<(_ConTypePoint, _ConTypePoint)> for ConTypePoint {
-	fn from(value: (_ConTypePoint, _ConTypePoint)) -> Self {
-		Self(value.0, value.1)
+impl From<ConInnerTypePoint> for ConTypePoint {
+	fn from(value: ConInnerTypePoint) -> Self {
+		Self(value)
 	}
 }
 
-impl From<ConTypePoint> for (_ConTypePoint, _ConTypePoint) {
+impl From<ConTypePoint> for ConInnerTypePoint {
 	fn from(value: ConTypePoint) -> Self {
-		(value.0, value.1)
+		value.0
 	}
 }
 
@@ -110,7 +257,16 @@ impl From<ConTypePoint> for ControlValueSetter {
 	}
 }
 
-/// Represents an RGB value use by [`ConValueRGB`] and by extention,
+impl fmt::Display for ConTypePoint {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		write!(f, "({}, {})", self.x_value(), self.y_value())
+	}
+}
+
+/// Represents an RGB value used by [`ConValueRGB`] and by extention,
 /// [`RGBControl`].
 ///
 /// [`ConValueRGB`]: super::values::ConValueRGB
@@ -118,34 +274,34 @@ impl From<ConTypePoint> for ControlValueSetter {
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct ConTypeRGB(_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
+pub struct ConTypeRGB(ConInnerTypeRGB);
 
 impl ConTypeRGB {
 	/// Get the red channel.
 	pub fn red(&self) -> _ConTypeRGB {
-		self.0
+		self.0.0
 	}
 
 	/// Get the green channel.
 	pub fn green(&self) -> _ConTypeRGB {
-		self.1
+		self.0.1
 	}
 
 	/// Get the blue channel.
 	pub fn blue(&self) -> _ConTypeRGB {
-		self.2
+		self.0.2
 	}
 }
 
-impl From<(_ConTypeRGB, _ConTypeRGB, _ConTypeRGB)> for ConTypeRGB {
-	fn from(value: (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB)) -> Self {
-		Self(value.0, value.1, value.2)
+impl From<ConInnerTypeRGB> for ConTypeRGB {
+	fn from(value: ConInnerTypeRGB) -> Self {
+		Self(value)
 	}
 }
 
-impl From<ConTypeRGB> for (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB) {
+impl From<ConTypeRGB> for ConInnerTypeRGB {
 	fn from(value: ConTypeRGB) -> Self {
-		(value.0, value.1, value.2)
+		value.0
 	}
 }
 
@@ -153,4 +309,138 @@ impl From<ConTypeRGB> for ControlValueSetter {
 	fn from(value: ConTypeRGB) -> Self {
 		ControlValueSetter::RGB(value.red(), value.green(), value.blue())
 	}
+}
+
+impl fmt::Display for ConTypeRGB {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		write!(f, "({}, {}, {})", self.red(), self.green(), self.blue())
+	}
+}
+
+/// Represents a list of possible variants used by [`EnumControl`].
+///
+/// [`EnumControl`]: super::descriptions::EnumControl
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
+pub struct ConTypePossible(ConInnerTypePossible);
+
+impl Deref for ConTypePossible {
+	type Target = ConInnerTypePossible;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for ConTypePossible {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+impl From<ConInnerTypePossible> for ConTypePossible {
+	fn from(value: ConInnerTypePossible) -> Self {
+		Self(value)
+	}
+}
+
+impl From<ConTypePossible> for ConInnerTypePossible {
+	fn from(value: ConTypePossible) -> Self {
+		value.0
+	}
+}
+
+impl fmt::Display for ConTypePossible {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		display_list(f, &self.0, false)
+	}
+}
+
+/// Represents a list of [`MenuEntry`]s used by [`MenuControl`].
+///
+/// [`MenuControl`]: super::descriptions::MenuControl
+#[derive(
+	Clone,
+	Debug,
+	Default,
+	Hash,
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Serialize,
+	Deserialize,
+)]
+pub struct ConTypeItems(ConInnerTypeItems);
+
+impl Deref for ConTypeItems {
+	type Target = ConInnerTypeItems;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for ConTypeItems {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
+	}
+}
+
+impl From<ConInnerTypeItems> for ConTypeItems {
+	fn from(value: ConInnerTypeItems) -> Self {
+		Self(value)
+	}
+}
+
+impl From<ConTypeItems> for ConInnerTypeItems {
+	fn from(value: ConTypeItems) -> Self {
+		value.0
+	}
+}
+
+impl fmt::Display for ConTypeItems {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		display_list(f, &self.0, true)
+	}
+}
+
+fn display_list(
+	fmtr: &mut fmt::Formatter<'_>,
+	list: &[impl fmt::Display],
+	isolate: bool,
+) -> fmt::Result {
+	let last_index = list.len() - 1;
+	for (index, item) in list.iter().enumerate() {
+		let formatted_item = if isolate {
+			format!("{{ {item} }}")
+		} else {
+			format!("{item}")
+		};
+		match index {
+			0 => write!(fmtr, "[{formatted_item}, ")?,
+			val if val == last_index => write!(fmtr, "{formatted_item}]")?,
+			_ => write!(fmtr, "{formatted_item}, ")?,
+		}
+	}
+	Ok(())
 }

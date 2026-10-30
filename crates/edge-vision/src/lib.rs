@@ -16,20 +16,6 @@
 	)
 )]
 
-// Verify that only one backend feature flag is enabled at once.
-mutually_exclusive_features::exactly_one_of!(
-	"cnn-backend-flex",
-	"cnn-backend-cuda",
-	"cnn-backend-wgpu"
-);
-
-// Verify that only one model loading feature flag is enabled at once.
-mutually_exclusive_features::exactly_one_of!(
-	"cnn-model-embedded",
-	"cnn-model-file",
-	"cnn-model-zero-copy"
-);
-
 pub mod batch_item;
 pub mod error;
 pub mod session;
@@ -39,7 +25,6 @@ pub mod vision_variant;
 
 use std::{
 	cell::RefCell,
-	fmt,
 	sync::{
 		Mutex,
 		OnceLock,
@@ -91,7 +76,7 @@ impl VisionGuard {
 	pub fn swap(
 		&self,
 		swap_to: VisionTechnique,
-	) -> EdgeVisionResult<()> {
+	) -> EdgeVisionResult {
 		let inner = self.inner.lock().unwrap_or_else(|err| {
 			logger().log_warn("Vision mutex was poisoned");
 			err.into_inner()
@@ -129,20 +114,6 @@ impl VisionGuard {
 			.as_mut()
 			.expect("vision should never be None outside of VisionGuard::swap");
 		func(variant)
-	}
-}
-
-/// Helper function for writing optional values for display.
-fn write_optional<V>(
-	fmtr: &mut fmt::Formatter<'_>,
-	value: Option<V>,
-) -> fmt::Result
-where
-	V: fmt::Display,
-{
-	match value {
-		Some(value) => write!(fmtr, "{value}"),
-		None => fmtr.write_str("None"),
 	}
 }
 

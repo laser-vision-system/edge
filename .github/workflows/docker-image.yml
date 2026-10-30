@@ -5,15 +5,6 @@ run-name: ${{ github.actor }} is building and pushing a docker image for ${{ git
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - 'main'
-    paths:
-      - '**.rs'
-      - 'Cargo.lock'
-      - 'Dockerfile'
-      - ...
-
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}

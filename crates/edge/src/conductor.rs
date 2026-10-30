@@ -131,7 +131,8 @@ impl Conductor {
 			}
 
 			if item.send_to_server {
-				let encoded = item.image.encode();
+				// TODO: Try use webp encoding.
+				let encoded = item.image.encode_to_jpeg()?;
 				if let Err(why) = client.send_image(item.camera_id, encoded) {
 					logger().log_error(&why);
 				}
@@ -292,8 +293,13 @@ async fn flatten<T>(
 ///
 /// If either the main loop or client thread return an error.
 pub async fn run() -> Result<(), Box<dyn error::Error + Send + Sync>> {
-	let ClientResult(status_handle, _, _, conductor_client_handle, client) =
-		Client::create();
+	let ClientResult(
+		status_handle,
+		_vision_client_handle,
+		_persistence_client_handle,
+		conductor_client_handle,
+		client,
+	) = Client::create();
 	let conductor = Conductor::default();
 
 	let client_thread = spawn(client.run());

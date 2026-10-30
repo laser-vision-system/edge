@@ -36,20 +36,21 @@ edge-vision = { path = "./crates/edge-vision", default-features = false }
 image = { version = "0.25", default-features = false, features = [
 	"rayon",
 	"jpeg",
+	"webp",
+	"avif",
 ] }
-mutually_exclusive_features = "0.1"
 serde = { version = "1" , features = [
 	"derive"
 ] }
 serde_json = "1.0"
 thiserror = "2.0"
-tokio = { version = "1.26", features = [
+tokio = { version = "1.54", features = [
 	"full"
 ] }
 
 # Dependencies only needed for tests, examples, or benchmarks.
 [workspace.dev-dependencies]
-rerun = { version = "0.35", features = [
+rerun = { version = "0.40", features = [
 	"image"
 ] }
 
@@ -60,10 +61,12 @@ missing_docs = "deny" # Make sure to include documentation.
 [workspace.lints.rustdoc]
 missing_crate_level_docs = "deny" # The crate-level docs should give a brief overview.
 broken_intra_doc_links = "deny" # All links should be correct.
+#too_long_first_doc_paragraph = "warn" # Hurts readability.
 
 [workspace.lints.clippy]
 
 tabs_in_doc_comments = "allow" # Tabs expected for indentation.
+empty_docs = "deny" # Unhelpful clearing of documentation lint.
 
 # ===== pedantic group lints ======
 
@@ -88,6 +91,7 @@ exhaustive_structs = "allow" # TODO: Check if this is only for public enums.
 implicit_return = "allow" # You are encouraged to omit `return`.
 impl_trait_in_params = "allow" # `impl Trait` hides from turbofish (`::<>`) which can be useful in some scenarios. Think of it like an anonymouse generic type.
 inline_modules = "allow" # Currently complains about inline test modules.
+inline_trait_bounds = "allow" # Do not use inline bounds when there is more than one generic parameter.
 iter_over_hash_type = "allow" # We do not care about order.
 let_underscore_untyped = "allow" # Overlaps with `let_underscore_must_use`, little other value added.
 missing_inline_in_public_items = "allow" # TODO: Maybe upgrade in the future for performance.
@@ -108,7 +112,6 @@ empty_structs_with_brackets = "warn" # Helps readability, but could be a breakin
 expect_used = "warn" # Expect should be used as sparingly as possible.
 filetype_is_file = "warn" # Encourage using `!is_dir()` instead.
 if_then_some_else_none = "warn" # Encourages a simpler pattern.
-inline_trait_bounds = "warn" # Do not use inline bounds when there is more than one generic parameter.
 let_underscore_must_use = "warn" # Do not discard these types. # TODO: Upgrade in the future.
 lossy_float_literal = "warn" # Alerts to potential issues.
 map_err_ignore = "warn" # Will cause a loss of error details. # TODO: Upgrade in the future.
