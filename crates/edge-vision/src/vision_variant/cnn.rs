@@ -16,7 +16,10 @@ use burn::{
 		Tensor,
 	},
 };
-use edge_core::logger::logger;
+use edge_core::{
+	logger::logger,
+	write_optional,
+};
 
 use self::model::{
 	LaserModel,
@@ -28,7 +31,6 @@ use crate::{
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
-	write_optional,
 };
 
 const DESIRED_IMG_SQUARE: u32 = 60;
@@ -69,11 +71,11 @@ impl fmt::Display for ExternalData {
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		f.write_str("ExternalData for Cnn { setpoint: ")?;
-		write_optional(f, self.setpoint)?;
+		write_optional(f, &self.setpoint)?;
 		f.write_str(", intensity: ")?;
-		write_optional(f, self.intensity)?;
+		write_optional(f, &self.intensity)?;
 		f.write_str(", deviation: ")?;
-		write_optional(f, self.deviation)?;
+		write_optional(f, &self.deviation)?;
 		f.write_str(" }")
 	}
 }

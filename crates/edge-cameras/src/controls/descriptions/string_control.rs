@@ -1,6 +1,12 @@
 //! Defines for a camera control that consists of a `value` and an optional
 //! `default`.
 
+use std::fmt::{
+	self,
+	Write as _,
+};
+
+use edge_core::write_optional;
 use nokhwa::utils::KnownCameraControl;
 use serde::{
 	Deserialize,
@@ -84,5 +90,43 @@ impl ControlDefault for StringControl {
 			self.control_default().unwrap_or_default().into(),
 		)
 		.expect("default value should never be invalid");
+	}
+}
+
+impl fmt::Display for StringControl {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		if f.alternate() {
+			write!(f, "{} {} *", self.control_type, self.value)?;
+			write_optional(f, &self.default)
+		} else {
+			write!(
+				f,
+				"type: '{}' value: '{}' default: '",
+				self.control_type, self.value,
+			)?;
+			write_optional(f, &self.default)?;
+			f.write_char('\'')
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	#[ignore = "for manual inspection"]
+	fn control_display() {
+		let control_type = KnownCameraControl::Pan;
+		let value = ConValueString::from("Value".to_owned());
+		let default = Some(ConTypeString::from("default".to_owned()));
+		let control = StringControl::new(control_type, value, default);
+		super::super::tests::display_with_different_formats(
+			"StringControl",
+			&control,
+		);
 	}
 }

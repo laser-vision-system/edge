@@ -1,6 +1,8 @@
 //! Defines for a camera control that consists of a `value`, `default`, and
 //! `step`.
 
+use std::fmt;
+
 use nokhwa::utils::KnownCameraControl;
 use serde::{
 	Deserialize,
@@ -104,5 +106,45 @@ impl ControlStep for IntegerControl {
 		(value - self.control_default()).abs() % self.control_step() == 0
 			|| (value - self.control_value().get()).abs() % self.control_step()
 				== 0
+	}
+}
+
+impl fmt::Display for IntegerControl {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		if f.alternate() {
+			write!(
+				f,
+				"{} {} *{} %{}",
+				self.control_type, self.value, self.default, self.step
+			)
+		} else {
+			write!(
+				f,
+				"type: '{}' value: '{}' default: '{}' step: '{}'",
+				self.control_type, self.value, self.default, self.step
+			)
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	#[ignore = "for manual inspection"]
+	fn control_display() {
+		let control_type = KnownCameraControl::Pan;
+		let value = ConValueInteger::from(0);
+		let default = 0;
+		let step = 1;
+		let control = IntegerControl::new(control_type, value, default, step);
+		super::super::tests::display_with_different_formats(
+			"IntegerControl",
+			&control,
+		);
 	}
 }

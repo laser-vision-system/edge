@@ -1,6 +1,8 @@
 //! Defines for a camera control that consists of a `value`, `default`, `step`,
 //! `min`, and `max`.
 
+use std::fmt;
+
 use nokhwa::utils::KnownCameraControl;
 use serde::{
 	Deserialize,
@@ -132,5 +134,64 @@ impl ControlMax for IntegerRangeControl {
 
 	fn control_max(&self) -> Self::MaxType {
 		self.max
+	}
+}
+
+impl fmt::Display for IntegerRangeControl {
+	fn fmt(
+		&self,
+		f: &mut fmt::Formatter<'_>,
+	) -> fmt::Result {
+		if f.alternate() {
+			write!(
+				f,
+				"{} {} *{} >{} <{} %{}",
+				self.control_type,
+				self.value,
+				self.default,
+				self.min,
+				self.max,
+				self.step
+			)
+		} else {
+			write!(
+				f,
+				"type: '{}' value: '{}' default: '{}' min: '{}' max: '{}' step: '{}'",
+				self.control_type,
+				self.value,
+				self.default,
+				self.min,
+				self.max,
+				self.step
+			)
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	#[ignore = "for manual inspection"]
+	fn control_display() {
+		let control_type = KnownCameraControl::Pan;
+		let value = ConValueInteger::from(0);
+		let default = 0;
+		let step = 1;
+		let min = -1;
+		let max = 1;
+		let control = IntegerRangeControl::new(
+			control_type,
+			value,
+			default,
+			step,
+			min,
+			max,
+		);
+		super::super::tests::display_with_different_formats(
+			"IntegerRangeControl",
+			&control,
+		);
 	}
 }

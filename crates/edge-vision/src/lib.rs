@@ -25,7 +25,6 @@ pub mod vision_variant;
 
 use std::{
 	cell::RefCell,
-	fmt,
 	sync::{
 		Mutex,
 		OnceLock,
@@ -115,20 +114,6 @@ impl VisionGuard {
 			.as_mut()
 			.expect("vision should never be None outside of VisionGuard::swap");
 		func(variant)
-	}
-}
-
-/// Helper function for writing optional values for display.
-fn write_optional<V>(
-	fmtr: &mut fmt::Formatter<'_>,
-	value: Option<V>,
-) -> fmt::Result
-where
-	V: fmt::Display,
-{
-	match value {
-		Some(value) => write!(fmtr, "{value}"),
-		None => fmtr.write_str("None"),
 	}
 }
 
