@@ -145,7 +145,7 @@ async fn get_websocket_url(
 				{
 					let url = response.url;
 					let new_url =
-						format!("ws://{}{}/edge_ws", url.host, url.port);
+						format!("wss://{}{}/edge_ws", url.host, url.port);
 					logger().log_info(&format!(
 						"Correct message response recived from: {new_url}"
 					));
