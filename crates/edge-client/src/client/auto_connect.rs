@@ -145,7 +145,7 @@ async fn get_websocket_url(
 				{
 					let url = response.url;
 					let new_url =
-						format!("wss://{}{}/edge_ws", url.host, url.port);
+						format!("ws://{}{}/edge_ws", url.host, url.port);
 					logger().log_info(&format!(
 						"Correct message response recived from: {new_url}"
 					));
@@ -175,7 +175,7 @@ pub async fn get_ws_stream()
 			logger().log_info(&format!(
 				"Connecting to provided server address: {url}"
 			));
-			format!("ws://{url}/edge_ws")
+			format!("wss://{url}/edge_ws")
 		}
 	} else {
 		logger().log_info("Connecting using auto connect");
