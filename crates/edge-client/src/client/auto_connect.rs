@@ -183,13 +183,18 @@ pub async fn get_ws_stream()
 		get_websocket_url(urls).await?
 	};
 
-	let Ok((stream, _)) = connect_async(websocket_url.clone())
-		.await
-		.map_err(|why| EdgeClientError::AutoConnect(why.to_string()))
-	else {
-		return Err(EdgeClientError::WebSocketConnection);
-	};
-	Ok((stream, websocket_url))
+	// let Ok((stream, _)) =
+	match connect_async(websocket_url.clone()).await {
+		Ok((stream, _)) => {
+			// stream.map_err(|why|
+			// EdgeClientError::AutoConnect(why.to_string()))
+			return Ok((stream, websocket_url));
+		},
+		Err(err) => {
+			println!("{err}");
+			return Err(EdgeClientError::WebSocketConnection);
+		},
+	}
 }
 
 #[expect(clippy::map_err_ignore, reason = "WIP development")]
