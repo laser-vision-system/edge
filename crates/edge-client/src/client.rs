@@ -157,8 +157,8 @@ impl Client {
 		reason = "Ideally, we'd want this to be a compile-time error"
 	)]
 	fn convert_url(url: &str) -> String {
-		let regex = Regex::new("^[A-z]+://([0-9.]+:[0-9]+)/edge_ws")
-			.expect("invalid regex");
+		let regex =
+			Regex::new("^[A-z]+://(.+)/edge_ws").expect("invalid regex");
 
 		let captures = regex.captures(url);
 
