@@ -18,6 +18,7 @@ use std::hash::Hash;
 use nokhwa::utils::{
 	CameraControl,
 	ControlValueDescription,
+	ControlValueSetter,
 	KnownCameraControl,
 };
 use serde::{
@@ -56,6 +57,10 @@ use super::{
 		ConTypeRGB,
 		ConTypeString,
 	},
+};
+use crate::error::{
+	EdgeCamerasError,
+	EdgeCamerasResult,
 };
 
 // ===== Field relationship bounds =====
@@ -268,6 +273,85 @@ impl CamControl {
 					items.into(),
 				))
 			},
+		}
+	}
+
+	/// Get the camera control identifier for this control.
+	///
+	/// # Errors
+	///
+	/// Returns an error if this control has no description.
+	pub fn control_id(&self) -> EdgeCamerasResult<KnownCameraControl> {
+		match self {
+			CamControl::Integer(control) => Ok(control.control_id()),
+			CamControl::IntegerRange(control) => Ok(control.control_id()),
+			CamControl::Float(control) => Ok(control.control_id()),
+			CamControl::FloatRange(control) => Ok(control.control_id()),
+			CamControl::Boolean(control) => Ok(control.control_id()),
+			CamControl::String(control) => Ok(control.control_id()),
+			CamControl::Bytes(control) => Ok(control.control_id()),
+			CamControl::KeyValuePair(control) => Ok(control.control_id()),
+			CamControl::Point(control) => Ok(control.control_id()),
+			CamControl::Enum(control) => Ok(control.control_id()),
+			CamControl::RGB(control) => Ok(control.control_id()),
+			CamControl::Menu(control) => Ok(control.control_id()),
+			CamControl::None => Err(EdgeCamerasError::NoControlDescription),
+		}
+	}
+
+	/// Convert the control description to its corresponding Nokhwa setter.
+	///
+	/// # Errors
+	///
+	/// Returns an error when the control has no description.
+	pub fn control_value_setter(
+		&self,
+		id: KnownCameraControl,
+	) -> EdgeCamerasResult<ControlValueSetter> {
+		match &self {
+			CamControl::Integer(control) => Ok(control.control_value().into()),
+			CamControl::IntegerRange(control) => {
+				Ok(control.control_value().into())
+			},
+			CamControl::Float(control) => Ok(control.control_value().into()),
+			CamControl::FloatRange(control) => {
+				Ok(control.control_value().into())
+			},
+			CamControl::Boolean(control) => Ok(control.control_value().into()),
+			CamControl::String(control) => Ok(control.control_value().into()),
+			CamControl::Bytes(control) => Ok(control.control_value().into()),
+			CamControl::KeyValuePair(control) => {
+				Ok(control.control_value().into())
+			},
+			CamControl::Point(control) => Ok(control.control_value().into()),
+			CamControl::Enum(control) => Ok(control.control_value().into()),
+			CamControl::RGB(control) => Ok(control.control_value().into()),
+			CamControl::Menu(control) => Ok(control.control_value().into()),
+			CamControl::None => Err(EdgeCamerasError::GetControlType(id)),
+		}
+	}
+
+	/// Reset the control description to its default value.
+	///
+	/// # Errors
+	///
+	/// If the control has no default value, the default value is invalid for
+	/// this control, or this control has no description.
+	pub fn reset_to_default(&mut self) -> EdgeCamerasResult {
+		match self {
+			CamControl::Integer(control) => control.reset_to_default(),
+			CamControl::IntegerRange(control) => control.reset_to_default(),
+			CamControl::Float(control) => control.reset_to_default(),
+			CamControl::FloatRange(control) => control.reset_to_default(),
+			CamControl::Boolean(control) => control.reset_to_default(),
+			CamControl::String(control) => control.reset_to_default(),
+			CamControl::Bytes(control) => control.reset_to_default(),
+			CamControl::KeyValuePair(control) => control.reset_to_default(),
+			CamControl::Point(control) => control.reset_to_default(),
+			CamControl::Enum(control) => control.reset_to_default(),
+			CamControl::RGB(control) => control.reset_to_default(),
+			CamControl::Menu(control) => control.reset_to_default(),
+			CamControl::None => Err(EdgeCamerasError::NoControlDescription),
 		}
 	}
 

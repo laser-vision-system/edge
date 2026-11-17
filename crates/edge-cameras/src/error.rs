@@ -85,6 +85,11 @@ pub enum EdgeCamerasError {
 	/// Tried to set a control to an invalid value.
 	#[error("Attempting to set an invalid control value")]
 	InvalidControlValue,
+	/// The operation was performed on the [`CamControl::None`] variant.
+	///
+	/// [`CamControl::None`]: crate::controls::descriptions::CamControl::None
+	#[error("The camera control does not have a description")]
+	NoControlDescription,
 
 	// ===== Persistence Errors =====
 	/// Tried to access persistence with an unknown camera id.
