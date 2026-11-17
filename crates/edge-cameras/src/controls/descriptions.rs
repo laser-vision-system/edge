@@ -70,6 +70,9 @@ use crate::error::{
 // possible: Vec<value>
 // !!!default: (value, value)!!! Not anymore, see [`KeyValue`].
 
+// Every variant has a value and default.
+// There are no hard correllations for the other fields.
+
 /// Represents one type of camera control.
 ///
 /// Maps to [`ControlValueDescription`].
@@ -479,8 +482,77 @@ impl From<CameraControl> for CamControl {
 	}
 }
 
-// Every variant has a value and default.
-// There are no hard correllations for the other fields.
+impl From<IntegerControl> for CamControl {
+	fn from(value: IntegerControl) -> Self {
+		CamControl::Integer(value)
+	}
+}
+
+impl From<IntegerRangeControl> for CamControl {
+	fn from(value: IntegerRangeControl) -> Self {
+		CamControl::IntegerRange(value)
+	}
+}
+
+impl From<FloatControl> for CamControl {
+	fn from(value: FloatControl) -> Self {
+		Self::Float(value)
+	}
+}
+
+impl From<FloatRangeControl> for CamControl {
+	fn from(value: FloatRangeControl) -> Self {
+		Self::FloatRange(value)
+	}
+}
+
+impl From<BooleanControl> for CamControl {
+	fn from(value: BooleanControl) -> Self {
+		Self::Boolean(value)
+	}
+}
+
+impl From<StringControl> for CamControl {
+	fn from(value: StringControl) -> Self {
+		Self::String(value)
+	}
+}
+
+impl From<BytesControl> for CamControl {
+	fn from(value: BytesControl) -> Self {
+		Self::Bytes(value)
+	}
+}
+
+impl From<KeyValuePairControl> for CamControl {
+	fn from(value: KeyValuePairControl) -> Self {
+		Self::KeyValuePair(value)
+	}
+}
+
+impl From<PointControl> for CamControl {
+	fn from(value: PointControl) -> Self {
+		Self::Point(value)
+	}
+}
+
+impl From<EnumControl> for CamControl {
+	fn from(value: EnumControl) -> Self {
+		Self::Enum(value)
+	}
+}
+
+impl From<RGBControl> for CamControl {
+	fn from(value: RGBControl) -> Self {
+		Self::RGB(value)
+	}
+}
+
+impl From<MenuControl> for CamControl {
+	fn from(value: MenuControl) -> Self {
+		Self::Menu(value)
+	}
+}
 
 /// Automatically implement [`Hash`], [`PartialEq`], [`Eq`], [`PartialOrd`], and
 /// [`Ord`] on a struct by its control id.
