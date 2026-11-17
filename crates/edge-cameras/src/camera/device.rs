@@ -406,7 +406,7 @@ mod tests {
 	}
 
 	#[test]
-	#[ignore = "IO bound"]
+	#[ignore = "IO bound, for manual inspection"]
 	fn print_devices() {
 		let cameras = query_for_available_cameras();
 
@@ -431,16 +431,40 @@ mod tests {
 	}
 
 	#[test]
-	#[ignore = "IO bound"]
-	fn new() -> EdgeCamerasResult<CameraDevice> {
-		CameraDevice::try_new(CameraIndex::Index(0))
+	#[ignore = "IO bound, for manual inspection"]
+	fn display_camera_details() {
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+		println!("{:#?}", cam.inner.info());
+	}
+
+	#[test]
+	#[ignore = "IO bound, for manual inspection"]
+	fn display_raw_controls() {
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+		let controls = cam.get_raw_controls();
+		println!("{controls:#?}");
+	}
+
+	#[test]
+	#[ignore = "IO bound, for manual inspection"]
+	fn display_all_available_controls() {
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+		let controls = cam.get_controls().unwrap();
+		println!("{controls}");
+	}
+
+	#[test]
+	#[ignore = "IO bound, for manual inspection"]
+	fn get_stripped_controls() {
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+		let controls = cam.get_controls().unwrap().to_stripped();
+		println!("{controls}");
 	}
 
 	#[test]
 	#[ignore = "IO bound"]
-	fn print_camera_details() {
-		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-		println!("{:#?}", cam.inner.info());
+	fn new() -> EdgeCamerasResult<CameraDevice> {
+		CameraDevice::try_new(CameraIndex::Index(0))
 	}
 
 	// Can't implement `Termination` for `RgbImage`.
@@ -451,32 +475,8 @@ mod tests {
 			.unwrap()
 			.open()
 			.unwrap();
-		let _ = cam.get_frame_buffer().unwrap();
-		let _ = cam.get_frame_buffer().unwrap();
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn get_raw_controls() {
-		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-		let controls = cam.get_raw_controls();
-		println!("{controls:#?}");
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn get_all_available_controls() {
-		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-		let controls = cam.get_controls().unwrap();
-		println!("{controls}");
-	}
-
-	#[test]
-	#[ignore = "IO bound"]
-	fn get_stripped_controls() {
-		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
-		let controls = cam.get_controls().unwrap().to_stripped();
-		println!("{controls}");
+		_ = cam.get_frame_buffer().unwrap();
+		_ = cam.get_frame_buffer().unwrap();
 	}
 
 	#[test]
