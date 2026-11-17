@@ -1,14 +1,9 @@
-//! A physical camera device, as made available by [`nokhwa`].
-//!
-//! Also provides [`CameraLike`] to abstract implemention details away.
+//! Camera device related operations.
 
 mod device;
 mod interface;
 
 pub use self::{
-	device::{
-		CameraDevice,
-		query_for_available_cameras,
-	},
+	device::*,
 	interface::CameraLike,
 };

@@ -7,19 +7,18 @@ use edge_core::{
 	logger::logger,
 	settings::CAMERA_BUFFER_COUNT,
 };
+pub use nokhwa::utils::{
+	CameraIndex,
+	CameraInfo,
+	ControlValueSetter,
+	KnownCameraControl,
+};
 use nokhwa::{
 	OpenRequest,
 	OpenedCamera,
 	StreamCamera,
 	session::open_with_buffers,
-	utils::{
-		ApiBackend,
-		CameraControl,
-		CameraIndex,
-		CameraInfo,
-		ControlValueSetter,
-		KnownCameraControl,
-	},
+	utils::CameraControl,
 };
 
 use super::CameraLike;
@@ -359,7 +358,7 @@ impl CameraLike for CameraDevice {
 /// If no nokhwa backend was available.
 #[expect(clippy::expect_used, reason = "Low priority edge case")]
 pub fn query_for_available_cameras() -> Vec<CameraInfo> {
-	let mut cameras = nokhwa::query(ApiBackend::Auto)
+	let mut cameras = nokhwa::query(nokhwa::utils::ApiBackend::Auto)
 		.expect("The backend should be supported");
 	cameras.sort_by(|left, right| -> Ordering {
 		let left_ind = left.index().as_index().unwrap_or(u32::MAX);
