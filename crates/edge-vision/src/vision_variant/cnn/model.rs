@@ -27,10 +27,6 @@ use self::{
 	},
 };
 use super::CnnError;
-use crate::error::{
-	EdgeVisionError,
-	EdgeVisionResult,
-};
 
 /// Model hyper-parameters for the laser regression CNN.
 #[derive(Config, Debug)]
@@ -71,24 +67,14 @@ impl LaserModel {
 	pub fn load_weights(
 		self,
 		path: impl AsRef<Path>,
-	) -> EdgeVisionResult<Self> {
-		// let record = ModuleRecord::load(&path).map_err(|source| {
-		// 	EdgeVisionError::from(CnnError::ModelLoad {
-		// 		path: path.as_ref().to_path_buf(),
-		// 		source,
-		// 	})
-		//})?;
-		// self.try_load_record(record).map_err(|source| {
-		// 	EdgeVisionError::from(CnnError::ModelLoad {
-		// 		path: path.as_ref().to_path_buf(),
-		// 		source,
-		// 	})
-		//})
+	) -> Result<Self, CnnError> {
 		self.try_load_file(&path).map_err(|source| {
-			EdgeVisionError::from(CnnError::ModelLoad {
-				path: path.as_ref().to_path_buf(),
+			let path =
+				std::path::absolute(&path).expect("critical path failure");
+			CnnError::ModelLoad {
+				path,
 				source,
-			})
+			}
 		})
 	}
 
@@ -142,8 +128,9 @@ mod tests {
 			.save_file(&path)
 			.expect("model should save to Burnpack");
 
-		let loaded = model.load_weights(&path);
-		assert!(loaded.is_ok(), "saved Burnpack should load");
+		_ = model
+			.load_weights(&path)
+			.expect("saved Burnpack should load");
 		fs::remove_file(path).expect("test Burnpack should be removed");
 	}
 }
