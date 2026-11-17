@@ -1,14 +1,4 @@
 //! A physical camera device, as made available by [`nokhwa`].
-//!
-//! Also provides [`CameraLike`] to abstract implemention details away.
-
-#[cfg(test)]
-#[path = "camera_device_tests.rs"]
-mod tests;
-
-#[cfg(test)]
-#[path = "nokhwa_test.rs"]
-mod nokhwa_test;
 
 use std::cmp::Ordering;
 
@@ -32,6 +22,7 @@ use nokhwa::{
 	},
 };
 
+use super::CameraLike;
 use crate::{
 	controls::{
 		ControlMap,
@@ -43,74 +34,6 @@ use crate::{
 		EdgeCamerasResult,
 	},
 };
-
-/// An abstraction over the functionalities that a camera would provide.
-///
-/// This is used to allow for testing fixtures to be used in place of real
-/// cameras for unit tests.
-pub trait CameraLike {
-	/// Get the [`CameraInfo`] struct.
-	fn get_info(&self) -> &CameraInfo;
-
-	/// Get the [`CameraIndex`] enum.
-	fn get_index(&self) -> &CameraIndex;
-
-	/// Request an image of the current camera frame.
-	///
-	/// Latency is based on the buffer count.
-	///
-	/// # Errors
-	///
-	/// If the stream hasn't been opened yet.
-	fn get_frame_buffer(&mut self) -> EdgeCamerasResult<FrameBuffer>;
-
-	/// Returns a list of control IDs that this camera has.
-	///
-	/// # Errors
-	///
-	/// If this camera has no controls.
-	fn get_all_supported_controls(
-		&self
-	) -> EdgeCamerasResult<Vec<KnownCameraControl>>;
-
-	/// Returns a full map of this camera's controls.
-	///
-	/// # Errors
-	///
-	/// If this camera has no controls.
-	fn get_controls(&self) -> EdgeCamerasResult<ControlMap>;
-
-	/// Returns a camera control by ID.
-	///
-	/// # Errors
-	///
-	/// If the control id could not be found on this camera.
-	fn get_control(
-		&self,
-		id: KnownCameraControl,
-	) -> EdgeCamerasResult<CamControl>;
-
-	/// Update a camera control by ID.
-	///
-	/// # Errors
-	///
-	/// If attempting to set the controls to an invalid value.
-	fn set_control(
-		&mut self,
-		id: KnownCameraControl,
-		value: ControlValueSetter,
-	) -> EdgeCamerasResult;
-
-	/// Update multiple of camera controls.
-	///
-	/// # Errors
-	///
-	/// If attempting to set the controls to an invalid value.
-	fn set_controls(
-		&mut self,
-		controls: ControlMap,
-	) -> EdgeCamerasResult;
-}
 
 /// An abstraction over the nokhwa camera objects.
 ///
@@ -450,4 +373,217 @@ pub fn query_for_available_cameras() -> Vec<CameraInfo> {
 		}
 	});
 	cameras
+}
+
+#[cfg(test)]
+mod tests {
+	use std::process::{
+		ExitCode,
+		Termination,
+	};
+
+	use nokhwa::utils::CameraControl;
+
+	use super::*;
+	use crate::controls::traits::{
+		ControlDefault as _,
+		ControlItems as _,
+		ControlMax as _,
+		ControlStep as _,
+		ControlValue as _,
+	};
+
+	impl CameraDevice {
+		fn get_raw_controls(&self) -> Vec<CameraControl> {
+			self.inner.controls().unwrap()
+		}
+	}
+
+	impl Termination for CameraDevice {
+		fn report(self) -> ExitCode {
+			ExitCode::SUCCESS
+		}
+	}
+
+	#[test]
+	#[ignore = "IO bound"]
+	fn print_devices() {
+		let cameras = query_for_available_cameras();
+
+		println!("Available devices: [");
+		for cam in cameras {
+			if cam.is_metadata() {
+				println!("\tindex `{}` (metadata):", cam.index().as_string());
+			} else {
+				println!("\tindex `{}`:", cam.index().as_string());
+			}
+			println!(
+				"\t\tname: {}\n\t\tdesc: {}",
+				cam.human_name(),
+				cam.description()
+			);
+			let misc = cam.misc();
+			if !misc.is_empty() {
+				println!("\t\tmisc: {misc}");
+			}
+		}
+		println!("]");
+	}
+
+	#[test]
+	#[ignore = "IO bound"]
+	fn new() -> EdgeCamerasResult<CameraDevice> {
+		CameraDevice::try_new(CameraIndex::Index(0))
+	}
+
+	#[test]
+	#[ignore = "IO bound"]
+	fn print_camera_details() {
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+		println!("{:#?}", cam.inner.info());
+	}
+
+	// Can't implement `Termination` for `RgbImage`.
+	#[test]
+	#[ignore = "IO bound"]
+	fn get_frame() {
+		let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+			.unwrap()
+			.open()
+			.unwrap();
+		let _ = cam.get_frame_buffer().unwrap();
+		let _ = cam.get_frame_buffer().unwrap();
+	}
+
+	#[test]
+	#[ignore = "IO bound"]
+	fn get_raw_controls() {
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+		let controls = cam.get_raw_controls();
+		println!("{controls:#?}");
+	}
+
+	#[test]
+	#[ignore = "IO bound"]
+	fn get_all_available_controls() {
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+		let controls = cam.get_controls().unwrap();
+		println!("{controls}");
+	}
+
+	#[test]
+	#[ignore = "IO bound"]
+	fn get_stripped_controls() {
+		let cam = CameraDevice::try_new(CameraIndex::Index(0)).unwrap();
+		let controls = cam.get_controls().unwrap().to_stripped();
+		println!("{controls}");
+	}
+
+	#[test]
+	#[ignore = "IO bound"]
+	fn set_control() -> EdgeCamerasResult {
+		let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+			.unwrap()
+			.open()
+			.unwrap();
+		let id = KnownCameraControl::Brightness;
+
+		// Assume it will always be this variant.
+		let CamControl::IntegerRange(mut control) = cam.get_control(id)? else {
+			return Err(EdgeCamerasError::General(
+				"unexpected control variant".into(),
+			));
+		};
+		println!("Start: {}", control.control_value().get());
+
+		let new = control.control_max() - (control.control_step() * 8);
+		control
+			.try_set_control_value(new.into())
+			.expect("new value should be valid");
+		cam.set_control_value(id, control.control_value())?;
+
+		let CamControl::IntegerRange(mut control) = cam.get_control(id)? else {
+			return Err(EdgeCamerasError::General(
+				"unexpected control variant".into(),
+			));
+		};
+		println!("Modified: {}", control.control_value().get());
+
+		control.reset_to_default();
+		cam.set_control_value(id, control.control_value())?;
+
+		let CamControl::IntegerRange(control) = cam.get_control(id)? else {
+			return Err(EdgeCamerasError::General(
+				"unexpected control variant".into(),
+			));
+		};
+		println!("Default: {}", control.control_value().get());
+
+		Ok(())
+	}
+
+	#[test]
+	#[ignore = "IO bound"]
+	fn set_control_exposure() -> EdgeCamerasResult {
+		let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+			.unwrap()
+			.open()
+			.unwrap();
+		let id = KnownCameraControl::AutoExposure;
+		let desired = 1;
+
+		// Assume it will always be this variant.
+		let CamControl::Menu(mut control) = cam.get_control(id)? else {
+			return Err(EdgeCamerasError::General(
+				"unexpected control variant".into(),
+			));
+		};
+		println!(
+			"Start: {}, {:?}",
+			control.control_value().get(),
+			control.control_items()
+		);
+
+		control
+			.try_set_control_value(desired.into())
+			.expect("new value should be valid");
+		cam.set_control_value(id, control.control_value())?;
+
+		let CamControl::Menu(mut control) = cam.get_control(id)? else {
+			return Err(EdgeCamerasError::General(
+				"unexpected control variant".into(),
+			));
+		};
+		println!(
+			"Modified: {}, {:?}",
+			control.control_value().get(),
+			control.control_items()
+		);
+
+		control.reset_to_default();
+		cam.set_control_value(id, control.control_value())?;
+
+		let CamControl::Menu(control) = cam.get_control(id)? else {
+			return Err(EdgeCamerasError::General(
+				"unexpected control variant".into(),
+			));
+		};
+		println!(
+			"Default: {}, {:?}",
+			control.control_value().get(),
+			control.control_items()
+		);
+
+		Ok(())
+	}
+
+	//#[test]
+	//#[ignore = "IO bound"]
+	// fn reset_controls_to_default() {
+	// 	let mut cam = CameraDevice::try_new(CameraIndex::Index(0))
+	// 		.unwrap()
+	// 		.open()
+	// 		.unwrap();
+	// 	cam.reset_controls_to_default();
+	//}
 }

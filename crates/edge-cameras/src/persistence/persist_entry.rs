@@ -31,7 +31,7 @@ use super::{
 	},
 };
 use crate::{
-	camera_device::{
+	camera::{
 		CameraDevice,
 		CameraLike,
 	},

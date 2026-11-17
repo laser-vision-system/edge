@@ -59,7 +59,7 @@ use super::{
 	ValType,
 };
 use crate::{
-	camera_device::query_for_available_cameras,
+	camera::query_for_available_cameras,
 	identifier::Identifier,
 };
 
