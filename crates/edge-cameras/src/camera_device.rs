@@ -64,6 +64,8 @@ pub trait CameraLike {
 	/// If the stream hasn't been opened yet.
 	fn get_frame_buffer(&mut self) -> EdgeCamerasResult<FrameBuffer>;
 
+	/// Returns a list of control IDs that this camera has.
+	///
 	/// # Errors
 	///
 	/// If this camera has no controls.
@@ -71,11 +73,15 @@ pub trait CameraLike {
 		&self
 	) -> EdgeCamerasResult<Vec<KnownCameraControl>>;
 
+	/// Returns a full map of this camera's controls.
+	///
 	/// # Errors
 	///
 	/// If this camera has no controls.
 	fn get_controls(&self) -> EdgeCamerasResult<ControlMap>;
 
+	/// Returns a camera control by ID.
+	///
 	/// # Errors
 	///
 	/// If the control id could not be found on this camera.
@@ -84,6 +90,8 @@ pub trait CameraLike {
 		id: KnownCameraControl,
 	) -> EdgeCamerasResult<CamControl>;
 
+	/// Update a camera control by ID.
+	///
 	/// # Errors
 	///
 	/// If attempting to set the controls to an invalid value.
@@ -93,6 +101,8 @@ pub trait CameraLike {
 		value: ControlValueSetter,
 	) -> EdgeCamerasResult;
 
+	/// Update multiple of camera controls.
+	///
 	/// # Errors
 	///
 	/// If attempting to set the controls to an invalid value.
@@ -235,7 +245,6 @@ impl CameraLike for CameraDevice {
 		Ok(FrameBuffer::from(frame))
 	}
 
-	/// Get the IDs of all supported controls.
 	fn get_all_supported_controls(
 		&self
 	) -> EdgeCamerasResult<Vec<KnownCameraControl>> {
@@ -248,7 +257,6 @@ impl CameraLike for CameraDevice {
 			.collect()
 	}
 
-	/// Get a map of the camera controls.
 	fn get_controls(&self) -> EdgeCamerasResult<ControlMap> {
 		self.inner
 			.controls()
@@ -256,7 +264,6 @@ impl CameraLike for CameraDevice {
 			.map(ControlMap::from)
 	}
 
-	/// Get a camera control by ID.
 	fn get_control(
 		&self,
 		id: KnownCameraControl,
@@ -270,7 +277,6 @@ impl CameraLike for CameraDevice {
 			.map(CamControl::from)
 	}
 
-	/// Set a camera control.
 	fn set_control(
 		&mut self,
 		id: KnownCameraControl,
