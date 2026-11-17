@@ -26,7 +26,12 @@ use self::{
 		ReadHeadConfig,
 	},
 };
-use super::CnnError;
+use super::{
+	CNN_IMG_HEIGHT,
+	CNN_IMG_WIDTH,
+	CnnError,
+	IMG_CHANNELS_LUMA,
+};
 
 /// Model hyper-parameters for the laser regression CNN.
 #[derive(Config, Debug)]
@@ -87,8 +92,15 @@ impl LaserModel {
 		&self,
 		input: Tensor<4>,
 	) -> Tensor<2> {
-		let [_, channels, _, _] = input.dims();
-		debug_assert_eq!(channels, 1, "expected a Luma tensor");
+		assert_shape!(
+			input,
+			[
+				_,
+				IMG_CHANNELS_LUMA,
+				CNN_IMG_WIDTH as usize,
+				CNN_IMG_HEIGHT as usize
+			]
+		);
 
 		let x = input; // [batch_size, 1, 640, 480]
 		let x = self.normalisation.forward(x);
