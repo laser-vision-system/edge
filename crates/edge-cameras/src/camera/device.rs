@@ -509,7 +509,7 @@ mod tests {
 		};
 		println!("Modified: {}", control.control_value().get());
 
-		control.reset_to_default();
+		control.reset_to_default()?;
 		cam.set_control_value(id, control.control_value())?;
 
 		let CamControl::IntegerRange(control) = cam.get_control(id)? else {
@@ -560,7 +560,7 @@ mod tests {
 			control.control_items()
 		);
 
-		control.reset_to_default();
+		control.reset_to_default()?;
 		cam.set_control_value(id, control.control_value())?;
 
 		let CamControl::Menu(control) = cam.get_control(id)? else {

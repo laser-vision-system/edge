@@ -7,20 +7,38 @@ use nokhwa::{
 	utils::KnownCameraControl,
 };
 
-use super::types::{
-	ConTypeBool,
-	ConTypeBytes,
-	ConTypeFloat,
-	ConTypeInt,
-	ConTypeItems,
-	ConTypeKeyValue,
-	ConTypeMenu,
-	ConTypePoint,
-	ConTypePossible,
-	ConTypeRGB,
-	ConTypeString,
+use super::{
+	types::{
+		ConTypeBool,
+		ConTypeBytes,
+		ConTypeEnum,
+		ConTypeFloat,
+		ConTypeInt,
+		ConTypeItems,
+		ConTypeKeyValue,
+		ConTypeMenu,
+		ConTypePoint,
+		ConTypePossible,
+		ConTypeRGB,
+		ConTypeString,
+	},
+	values::{
+		ConValueBoolean,
+		ConValueBytes,
+		ConValueEnum,
+		ConValueFloat,
+		ConValueInteger,
+		ConValueKeyValue,
+		ConValueMenu,
+		ConValuePoint,
+		ConValueRGB,
+		ConValueString,
+	},
 };
-use crate::error::EdgeCamerasResult;
+use crate::error::{
+	EdgeCamerasError,
+	EdgeCamerasResult,
+};
 
 /// A marker trait that determines what is acceptable to use within a
 /// [`ControlValue`].
@@ -153,25 +171,25 @@ pub trait ControlDefault: ControlDescription {
 	///
 	/// In most cases, this should be the same as
 	/// [`ControlDescription::ValueType`].
-	type DefaultType: ValidDefaultValue;
+	type DefaultType: ValidDefaultValue + IntoControlDefault<Self::ValueType>;
 	// type DefaultType = Self::ValueType;
 
 	/// Get the `default` value for this control description.
 	fn control_default(&self) -> Self::DefaultType;
 
-	/// Change the [`ControlDescription`] back to the default value.
-	#[expect(
-		clippy::expect_used,
-		reason = "Default value should never be invalid"
-	)]
-	// TODO: Mark this as fallible.
-	fn reset_to_default(&mut self)
-	where
-		<Self as ControlDescription>::ValueType:
-			From<<Self as ControlDefault>::DefaultType>,
-	{
-		self.try_set_control_value(self.control_default().into())
-			.expect("default value should never be invalid");
+	/// Change the [`ControlDescription`] back to its default value.
+	///
+	/// # Errors
+	///
+	/// If the control has no default value or the default value is invalid for
+	/// this control.
+	fn reset_to_default(&mut self) -> EdgeCamerasResult {
+		let Some(value) = self.control_default().into_control_default() else {
+			return Err(EdgeCamerasError::ControlDefaultUnavailable(
+				self.control_id(),
+			));
+		};
+		self.try_set_control_value(value)
 	}
 }
 
@@ -282,4 +300,40 @@ pub trait ControlItems: ControlDescription {
 		&self,
 		value: Self::ConType,
 	) -> bool;
+}
+
+/// Converts a control's default type into a [`Option`] wrapper over the value
+/// used by that control.
+///
+/// Needed because the String control description uses an optional default.
+pub trait IntoControlDefault<T> {
+	/// Convert this default into the control's value type.
+	fn into_control_default(self) -> Option<T>;
+}
+
+/// Automatically implement [`IntoControlDefault`] for control descriptions.
+macro_rules! impl_control_default_conversion {
+	($default:ty => $value:ty) => {
+		impl IntoControlDefault<$value> for $default {
+			fn into_control_default(self) -> Option<$value> {
+				Some(self.into())
+			}
+		}
+	};
+}
+
+impl_control_default_conversion!(ConTypeInt => ConValueInteger);
+impl_control_default_conversion!(ConTypeFloat => ConValueFloat);
+impl_control_default_conversion!(ConTypeBool => ConValueBoolean);
+impl_control_default_conversion!(ConTypeBytes => ConValueBytes);
+impl_control_default_conversion!(ConTypeEnum => ConValueEnum);
+impl_control_default_conversion!(ConTypeKeyValue => ConValueKeyValue);
+impl_control_default_conversion!(ConTypeMenu => ConValueMenu);
+impl_control_default_conversion!(ConTypePoint => ConValuePoint);
+impl_control_default_conversion!(ConTypeRGB => ConValueRGB);
+
+impl IntoControlDefault<ConValueString> for Option<ConTypeString> {
+	fn into_control_default(self) -> Option<ConValueString> {
+		self.map(Into::into)
+	}
 }

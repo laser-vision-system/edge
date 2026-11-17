@@ -80,17 +80,6 @@ impl ControlDefault for StringControl {
 	fn control_default(&self) -> Self::DefaultType {
 		self.default.clone()
 	}
-
-	#[expect(
-		clippy::expect_used,
-		reason = "Default value should never be invalid"
-	)]
-	fn reset_to_default(&mut self) {
-		self.try_set_control_value(
-			self.control_default().unwrap_or_default().into(),
-		)
-		.expect("default value should never be invalid");
-	}
 }
 
 impl fmt::Display for StringControl {
@@ -116,6 +105,33 @@ impl fmt::Display for StringControl {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::controls::traits::ControlValue as _;
+
+	#[test]
+	fn reset_default_preserves_value_when_default_is_missing() {
+		let current = ConValueString::from("current".to_owned());
+		let mut control = StringControl::new(
+			KnownCameraControl::Other(1),
+			current.clone(),
+			None,
+		);
+
+		control.reset_to_default().unwrap();
+		assert_eq!(control.control_value(), current);
+	}
+
+	#[test]
+	fn reset_default_applies_present_default() {
+		let default = ConTypeString::from("default".to_owned());
+		let mut control = StringControl::new(
+			KnownCameraControl::Other(1),
+			ConValueString::from("current".to_owned()),
+			Some(default.clone()),
+		);
+
+		control.reset_to_default().unwrap();
+		assert_eq!(control.control_value().get(), default);
+	}
 
 	#[test]
 	#[ignore = "for manual inspection"]

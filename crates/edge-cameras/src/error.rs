@@ -70,6 +70,9 @@ pub enum EdgeCamerasError {
 	/// A control description type is not currently supported.
 	#[error("Attempting to set a control of an unsupported type: {0}")]
 	SetControlType(KnownCameraControl),
+	/// A control does not provide a default value.
+	#[error("Control {0} does not provide a default value")]
+	ControlDefaultUnavailable(KnownCameraControl),
 	/// The camera offers up no controls at all.
 	#[error("{0}")]
 	CannotGetControls(#[source] NokhwaError),
