@@ -154,6 +154,10 @@ impl Persistence {
 	/// Poll all devices to instantiate newly connected cameras.
 	///
 	/// Returns a list of information about newly added cameras.
+	///
+	/// # Errors
+	///
+	/// If the query operation panics.
 	pub fn poll_for_new_cameras(
 		&mut self
 	) -> EdgeCamerasResult<HashMap<CameraId, ConnectionDetail>> {
