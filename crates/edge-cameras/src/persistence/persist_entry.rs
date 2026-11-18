@@ -31,7 +31,7 @@ use super::{
 	},
 };
 use crate::{
-	camera_device::{
+	camera::{
 		CameraDevice,
 		CameraLike,
 	},
@@ -97,8 +97,10 @@ impl PersistEntry {
 				inner,
 			}
 		} else {
-			let err = EdgeCamerasError::InvalidDeviceConnection;
-			logger().log_error(&err);
+			// Warn instead of error to avoid confusing people.
+			logger().log_warn(
+				&EdgeCamerasError::InvalidDeviceConnection.to_string(),
+			);
 			let new = ConnectionStatus::new_invalid(occupied_indices);
 			let inner = Some(new);
 			Self {
@@ -114,14 +116,16 @@ impl PersistEntry {
 			if point.is_metadata {
 				continue;
 			}
-			let maybe_camera = CameraDevice::try_new_open(point.index.clone());
-			match maybe_camera {
-				Ok(camera) => {
-					return Some(camera);
-				},
-				// TODO: This might be better suited as a warn.
-				Err(why) => logger().log_error(&why),
+			let Some(mut camera) = point.make_camera() else {
+				continue;
+			};
+			if let Err(why) = camera.try_set_default_controls() {
+				logger().log_error(&why);
 			}
+			if let Err(why) = camera.try_set_manual_controls() {
+				logger().log_error(&why);
+			}
+			return Some(camera);
 		}
 		None
 	}

@@ -17,26 +17,31 @@ use serde::{
 	Serialize,
 };
 
+use super::display_list;
+
 // TODO: Use COW for String and Bytes.
 
-pub(super) type ConTypeInt = i64;
-pub(super) type ConTypeFloat = f64;
-pub(super) type ConTypeBool = bool;
-pub(super) type ConTypeEnum = i64;
-pub(super) type ConTypeMenu = u32;
+pub(super) type ControlTypeInt = i64;
+pub(super) type ControlTypeFloat = f64;
+pub(super) type ControlTypeBoolean = bool;
+pub(super) type ControlTypeEnum = i64;
+pub(super) type ControlTypeMenu = u32;
 
-type _ConTypeKeyValue = i128;
-type _ConTypePoint = f64;
-type _ConTypeRGB = f64;
+pub(super) type ControlTypeStringInner = String;
+pub(super) type ControlTypeBytesInner = Vec<u8>;
 
-pub(super) type ConInnerTypeString = String;
-pub(super) type ConInnerTypeBytes = Vec<u8>;
-pub(super) type ConInnerTypeKeyValue = (_ConTypeKeyValue, _ConTypeKeyValue);
-pub(super) type ConInnerTypePoint = (_ConTypePoint, _ConTypePoint);
-pub(super) type ConInnerTypeRGB = (_ConTypeRGB, _ConTypeRGB, _ConTypeRGB);
+type KeyValuePrimitive = i128;
+type PointPrimitive = f64;
+type RgbPrimitive = f64;
 
-pub(super) type ConInnerTypePossible = Vec<i64>;
-pub(super) type ConInnerTypeItems = Vec<MenuEntry>;
+pub(super) type ControlTypeKeyValueInner =
+	(KeyValuePrimitive, KeyValuePrimitive);
+pub(super) type ControlTypePointInner = (PointPrimitive, PointPrimitive);
+pub(super) type ControlTypeRgbInner =
+	(RgbPrimitive, RgbPrimitive, RgbPrimitive);
+
+pub(super) type ControlTypePossibleInner = Vec<i64>;
+pub(super) type ControlTypeItemsInner = Vec<MenuEntry>;
 
 /// Represents a list of Strings used by [`ConValueString`] and by extention,
 /// [`StringControl`].
@@ -55,41 +60,41 @@ pub(super) type ConInnerTypeItems = Vec<MenuEntry>;
 	Serialize,
 	Deserialize,
 )]
-pub struct ConTypeString(ConInnerTypeString);
+pub struct ControlTypeString(ControlTypeStringInner);
 
-impl Deref for ConTypeString {
-	type Target = ConInnerTypeString;
+impl Deref for ControlTypeString {
+	type Target = ControlTypeStringInner;
 
 	fn deref(&self) -> &Self::Target {
 		&self.0
 	}
 }
 
-impl DerefMut for ConTypeString {
+impl DerefMut for ControlTypeString {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0
 	}
 }
 
-impl From<ConInnerTypeString> for ConTypeString {
-	fn from(value: ConInnerTypeString) -> Self {
+impl From<ControlTypeStringInner> for ControlTypeString {
+	fn from(value: ControlTypeStringInner) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConTypeString> for ConInnerTypeString {
-	fn from(value: ConTypeString) -> Self {
+impl From<ControlTypeString> for ControlTypeStringInner {
+	fn from(value: ControlTypeString) -> Self {
 		value.0
 	}
 }
 
-impl From<ConTypeString> for ControlValueSetter {
-	fn from(value: ConTypeString) -> Self {
+impl From<ControlTypeString> for ControlValueSetter {
+	fn from(value: ControlTypeString) -> Self {
 		ControlValueSetter::String(value.0)
 	}
 }
 
-impl fmt::Display for ConTypeString {
+impl fmt::Display for ControlTypeString {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -115,46 +120,46 @@ impl fmt::Display for ConTypeString {
 	Serialize,
 	Deserialize,
 )]
-pub struct ConTypeBytes(ConInnerTypeBytes);
+pub struct ControlTypeBytes(ControlTypeBytesInner);
 
-impl Deref for ConTypeBytes {
-	type Target = ConInnerTypeBytes;
+impl Deref for ControlTypeBytes {
+	type Target = ControlTypeBytesInner;
 
 	fn deref(&self) -> &Self::Target {
 		&self.0
 	}
 }
 
-impl DerefMut for ConTypeBytes {
+impl DerefMut for ControlTypeBytes {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0
 	}
 }
 
-impl From<ConInnerTypeBytes> for ConTypeBytes {
-	fn from(value: ConInnerTypeBytes) -> Self {
+impl From<ControlTypeBytesInner> for ControlTypeBytes {
+	fn from(value: ControlTypeBytesInner) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConTypeBytes> for ConInnerTypeBytes {
-	fn from(value: ConTypeBytes) -> Self {
+impl From<ControlTypeBytes> for ControlTypeBytesInner {
+	fn from(value: ControlTypeBytes) -> Self {
 		value.0
 	}
 }
 
-impl From<ConTypeBytes> for ControlValueSetter {
-	fn from(value: ConTypeBytes) -> Self {
+impl From<ControlTypeBytes> for ControlValueSetter {
+	fn from(value: ControlTypeBytes) -> Self {
 		ControlValueSetter::Bytes(value.0)
 	}
 }
 
-impl fmt::Display for ConTypeBytes {
+impl fmt::Display for ControlTypeBytes {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		display_list(f, &self.0, false)
+		display_list(f, &self.0, false, None)
 	}
 }
 
@@ -176,39 +181,39 @@ impl fmt::Display for ConTypeBytes {
 	Serialize,
 	Deserialize,
 )]
-pub struct ConTypeKeyValue(ConInnerTypeKeyValue);
+pub struct ControlTypeKeyValue(ControlTypeKeyValueInner);
 
-impl ConTypeKeyValue {
+impl ControlTypeKeyValue {
 	/// Get the key field.
-	pub fn key(&self) -> _ConTypeKeyValue {
+	pub fn key(&self) -> KeyValuePrimitive {
 		self.0.0
 	}
 
 	/// Get the value field.
-	pub fn value(&self) -> _ConTypeKeyValue {
+	pub fn value(&self) -> KeyValuePrimitive {
 		self.0.1
 	}
 }
 
-impl From<ConInnerTypeKeyValue> for ConTypeKeyValue {
-	fn from(value: ConInnerTypeKeyValue) -> Self {
+impl From<ControlTypeKeyValueInner> for ControlTypeKeyValue {
+	fn from(value: ControlTypeKeyValueInner) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConTypeKeyValue> for ConInnerTypeKeyValue {
-	fn from(value: ConTypeKeyValue) -> Self {
+impl From<ControlTypeKeyValue> for ControlTypeKeyValueInner {
+	fn from(value: ControlTypeKeyValue) -> Self {
 		value.0
 	}
 }
 
-impl From<ConTypeKeyValue> for ControlValueSetter {
-	fn from(value: ConTypeKeyValue) -> Self {
+impl From<ControlTypeKeyValue> for ControlValueSetter {
+	fn from(value: ControlTypeKeyValue) -> Self {
 		ControlValueSetter::KeyValue(value.key(), value.value())
 	}
 }
 
-impl fmt::Display for ConTypeKeyValue {
+impl fmt::Display for ControlTypeKeyValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -225,39 +230,39 @@ impl fmt::Display for ConTypeKeyValue {
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct ConTypePoint(ConInnerTypePoint);
+pub struct ControlTypePoint(ControlTypePointInner);
 
-impl ConTypePoint {
+impl ControlTypePoint {
 	/// Get the first value of this point.
-	pub fn x_value(&self) -> _ConTypePoint {
+	pub fn x_value(&self) -> PointPrimitive {
 		self.0.0
 	}
 
 	/// Get the second value of this point.
-	pub fn y_value(&self) -> _ConTypePoint {
+	pub fn y_value(&self) -> PointPrimitive {
 		self.0.1
 	}
 }
 
-impl From<ConInnerTypePoint> for ConTypePoint {
-	fn from(value: ConInnerTypePoint) -> Self {
+impl From<ControlTypePointInner> for ControlTypePoint {
+	fn from(value: ControlTypePointInner) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConTypePoint> for ConInnerTypePoint {
-	fn from(value: ConTypePoint) -> Self {
+impl From<ControlTypePoint> for ControlTypePointInner {
+	fn from(value: ControlTypePoint) -> Self {
 		value.0
 	}
 }
 
-impl From<ConTypePoint> for ControlValueSetter {
-	fn from(value: ConTypePoint) -> Self {
+impl From<ControlTypePoint> for ControlValueSetter {
+	fn from(value: ControlTypePoint) -> Self {
 		ControlValueSetter::Point(value.x_value(), value.y_value())
 	}
 }
 
-impl fmt::Display for ConTypePoint {
+impl fmt::Display for ControlTypePoint {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -274,44 +279,44 @@ impl fmt::Display for ConTypePoint {
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct ConTypeRGB(ConInnerTypeRGB);
+pub struct ControlTypeRgb(ControlTypeRgbInner);
 
-impl ConTypeRGB {
+impl ControlTypeRgb {
 	/// Get the red channel.
-	pub fn red(&self) -> _ConTypeRGB {
+	pub fn red(&self) -> RgbPrimitive {
 		self.0.0
 	}
 
 	/// Get the green channel.
-	pub fn green(&self) -> _ConTypeRGB {
+	pub fn green(&self) -> RgbPrimitive {
 		self.0.1
 	}
 
 	/// Get the blue channel.
-	pub fn blue(&self) -> _ConTypeRGB {
+	pub fn blue(&self) -> RgbPrimitive {
 		self.0.2
 	}
 }
 
-impl From<ConInnerTypeRGB> for ConTypeRGB {
-	fn from(value: ConInnerTypeRGB) -> Self {
+impl From<ControlTypeRgbInner> for ControlTypeRgb {
+	fn from(value: ControlTypeRgbInner) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConTypeRGB> for ConInnerTypeRGB {
-	fn from(value: ConTypeRGB) -> Self {
+impl From<ControlTypeRgb> for ControlTypeRgbInner {
+	fn from(value: ControlTypeRgb) -> Self {
 		value.0
 	}
 }
 
-impl From<ConTypeRGB> for ControlValueSetter {
-	fn from(value: ConTypeRGB) -> Self {
+impl From<ControlTypeRgb> for ControlValueSetter {
+	fn from(value: ControlTypeRgb) -> Self {
 		ControlValueSetter::RGB(value.red(), value.green(), value.blue())
 	}
 }
 
-impl fmt::Display for ConTypeRGB {
+impl fmt::Display for ControlTypeRgb {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -335,40 +340,40 @@ impl fmt::Display for ConTypeRGB {
 	Serialize,
 	Deserialize,
 )]
-pub struct ConTypePossible(ConInnerTypePossible);
+pub struct ControlTypePossible(ControlTypePossibleInner);
 
-impl Deref for ConTypePossible {
-	type Target = ConInnerTypePossible;
+impl Deref for ControlTypePossible {
+	type Target = ControlTypePossibleInner;
 
 	fn deref(&self) -> &Self::Target {
 		&self.0
 	}
 }
 
-impl DerefMut for ConTypePossible {
+impl DerefMut for ControlTypePossible {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0
 	}
 }
 
-impl From<ConInnerTypePossible> for ConTypePossible {
-	fn from(value: ConInnerTypePossible) -> Self {
+impl From<ControlTypePossibleInner> for ControlTypePossible {
+	fn from(value: ControlTypePossibleInner) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConTypePossible> for ConInnerTypePossible {
-	fn from(value: ConTypePossible) -> Self {
+impl From<ControlTypePossible> for ControlTypePossibleInner {
+	fn from(value: ControlTypePossible) -> Self {
 		value.0
 	}
 }
 
-impl fmt::Display for ConTypePossible {
+impl fmt::Display for ControlTypePossible {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		display_list(f, &self.0, false)
+		display_list(f, &self.0, false, None)
 	}
 }
 
@@ -387,60 +392,39 @@ impl fmt::Display for ConTypePossible {
 	Serialize,
 	Deserialize,
 )]
-pub struct ConTypeItems(ConInnerTypeItems);
+pub struct ControlTypeItems(ControlTypeItemsInner);
 
-impl Deref for ConTypeItems {
-	type Target = ConInnerTypeItems;
+impl Deref for ControlTypeItems {
+	type Target = ControlTypeItemsInner;
 
 	fn deref(&self) -> &Self::Target {
 		&self.0
 	}
 }
 
-impl DerefMut for ConTypeItems {
+impl DerefMut for ControlTypeItems {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0
 	}
 }
 
-impl From<ConInnerTypeItems> for ConTypeItems {
-	fn from(value: ConInnerTypeItems) -> Self {
+impl From<ControlTypeItemsInner> for ControlTypeItems {
+	fn from(value: ControlTypeItemsInner) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConTypeItems> for ConInnerTypeItems {
-	fn from(value: ConTypeItems) -> Self {
+impl From<ControlTypeItems> for ControlTypeItemsInner {
+	fn from(value: ControlTypeItems) -> Self {
 		value.0
 	}
 }
 
-impl fmt::Display for ConTypeItems {
+impl fmt::Display for ControlTypeItems {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		display_list(f, &self.0, true)
+		display_list(f, &self.0, true, None)
 	}
-}
-
-fn display_list(
-	fmtr: &mut fmt::Formatter<'_>,
-	list: &[impl fmt::Display],
-	isolate: bool,
-) -> fmt::Result {
-	let last_index = list.len() - 1;
-	for (index, item) in list.iter().enumerate() {
-		let formatted_item = if isolate {
-			format!("{{ {item} }}")
-		} else {
-			format!("{item}")
-		};
-		match index {
-			0 => write!(fmtr, "[{formatted_item}, ")?,
-			val if val == last_index => write!(fmtr, "{formatted_item}]")?,
-			_ => write!(fmtr, "{formatted_item}, ")?,
-		}
-	}
-	Ok(())
 }

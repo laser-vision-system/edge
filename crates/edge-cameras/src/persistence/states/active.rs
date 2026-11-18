@@ -21,7 +21,7 @@ use super::{
 	Limbo,
 };
 use crate::{
-	camera_device::CameraLike,
+	camera::CameraLike,
 	error::{
 		EdgeCamerasError,
 		EdgeCamerasResult,

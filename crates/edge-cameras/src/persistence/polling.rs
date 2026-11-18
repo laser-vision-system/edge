@@ -59,7 +59,12 @@ use super::{
 	ValType,
 };
 use crate::{
-	camera_device::query_for_available_cameras,
+	camera::{
+		CameraDevice,
+		query_for_available_cameras,
+		run_backend_operation,
+	},
+	error::EdgeCamerasResult,
 	identifier::Identifier,
 };
 
@@ -71,6 +76,22 @@ pub struct AccessPoint {
 	pub index: CameraIndex,
 	/// Whether v4l2 reports this index as belonging to a metadata device.
 	pub is_metadata: bool,
+}
+
+impl AccessPoint {
+	pub(super) fn make_camera(&self) -> Option<CameraDevice> {
+		if self.is_metadata {
+			return None;
+		}
+
+		match CameraDevice::try_new_open(self.index.clone()) {
+			Ok(camera) => Some(camera),
+			Err(why) => {
+				logger().log_warn(&why.to_string());
+				None
+			},
+		}
+	}
 }
 
 impl fmt::Display for AccessPoint {
@@ -150,12 +171,19 @@ impl Persistence {
 	/// Poll all devices to instantiate newly connected cameras.
 	///
 	/// Returns a list of information about newly added cameras.
+	///
+	/// # Errors
+	///
+	/// If the query operation panics.
 	pub fn poll_for_new_cameras(
 		&mut self
-	) -> HashMap<CameraId, ConnectionDetail> {
-		let all_devices = query_for_available_cameras();
+	) -> EdgeCamerasResult<HashMap<CameraId, ConnectionDetail>> {
+		let all_devices =
+			run_backend_operation("query available camera", || {
+				Ok(query_for_available_cameras())
+			})?;
 		let inter = convert_to_intermediaries(all_devices);
-		self.get_new_from_inter(inter)
+		Ok(self.get_new_from_inter(inter))
 	}
 
 	fn get_new_from_inter(

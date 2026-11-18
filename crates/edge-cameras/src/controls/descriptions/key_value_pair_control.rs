@@ -1,8 +1,14 @@
 //! Defines for a camera control that consists of a `value` and `default`.
 
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -12,45 +18,53 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 	},
-	types::ConTypeKeyValue,
+	types::ControlTypeKeyValue,
 	values::{
-		ConValueKeyValue,
-		ConValueKeyValueType,
+		KeyValueControlValue,
+		KeyValueControlValueType,
 	},
 };
-use crate::error::EdgeCamerasResult;
+use crate::{
+	controls::write_flags,
+	error::EdgeCamerasResult,
+};
 
 /// A camera control that consists of a `value` and `default`.
 ///
 /// Maps to [`ControlValueDescription::KeyValuePair`].
 ///
 /// [`ControlValueDescription::KeyValuePair`]: nokhwa::utils::ControlValueDescription::KeyValuePair
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KeyValuePairControl {
 	control_type: KnownCameraControl,
-	value: ConValueKeyValue,
-	default: ConValueKeyValueType,
+	value: KeyValueControlValue,
+	default: KeyValueControlValueType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl KeyValuePairControl {
 	/// Create a new [`KeyValuePairControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueKeyValue,
-		default: ConValueKeyValueType,
+		value: KeyValueControlValue,
+		default: KeyValueControlValueType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for KeyValuePairControl {
-	type ConType = ConTypeKeyValue;
-	type ValueType = ConValueKeyValue;
+	type ConType = ControlTypeKeyValue;
+	type ValueType = KeyValueControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -77,6 +91,12 @@ impl ControlDefault for KeyValuePairControl {
 	}
 }
 
+impl ControlFlags for KeyValuePairControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for KeyValuePairControl {
 	fn fmt(
 		&self,
@@ -85,16 +105,20 @@ impl fmt::Display for KeyValuePairControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {{{}}} *{}",
+				"{} {{{}}} *{} ",
 				self.control_type, self.value, self.default
-			)
+			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}'",
+				"type: '{}' value: '{}' default: '{}' flags: '",
 				self.control_type, self.value, self.default
-			)
+			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
+		Ok(())
 	}
 }
 
@@ -106,9 +130,11 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueKeyValue::from((0, 0));
-		let default = ConTypeKeyValue::from((0, 0));
-		let control = KeyValuePairControl::new(control_type, value, default);
+		let value = KeyValueControlValue::from((0, 0));
+		let default = ControlTypeKeyValue::from((0, 0));
+		let flags = vec![KnownCameraControlFlag::Disabled];
+		let control =
+			KeyValuePairControl::new(control_type, value, default, flags);
 		super::super::tests::display_with_different_formats(
 			"KeyValuePairControl",
 			&control,

@@ -1,9 +1,15 @@
 //! Defines for a camera control that consists of a `value`, `default`, `step`,
 //! `min`, and `max`.
 
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,20 +19,24 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlMax,
 		ControlMin,
 		ControlStep,
 		ControlValue as _,
 	},
-	types::ConTypeInt,
+	types::ControlTypeInt,
 	values::{
-		ConValueInteger,
-		ConValueIntegerType,
+		IntegerControlValue,
+		IntegerControlValueType,
 	},
 };
-use crate::error::{
-	EdgeCamerasError,
-	EdgeCamerasResult,
+use crate::{
+	controls::write_flags,
+	error::{
+		EdgeCamerasError,
+		EdgeCamerasResult,
+	},
 };
 
 /// A camera control that consists of a `value`, `default`, `step`, `min`, and
@@ -35,25 +45,28 @@ use crate::error::{
 /// Maps to [`ControlValueDescription::IntegerRange`].
 ///
 /// [`ControlValueDescription::IntegerRange`]: nokhwa::utils::ControlValueDescription::IntegerRange
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IntegerRangeControl {
 	control_type: KnownCameraControl,
-	value: ConValueInteger,
-	default: ConValueIntegerType,
-	step: ConValueIntegerType,
-	min: ConValueIntegerType,
-	max: ConValueIntegerType,
+	value: IntegerControlValue,
+	default: IntegerControlValueType,
+	step: IntegerControlValueType,
+	min: IntegerControlValueType,
+	max: IntegerControlValueType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl IntegerRangeControl {
 	/// Create a new [`IntegerRangeControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueInteger,
-		default: ConValueIntegerType,
-		step: ConValueIntegerType,
-		min: ConValueIntegerType,
-		max: ConValueIntegerType,
+		value: IntegerControlValue,
+		default: IntegerControlValueType,
+		step: IntegerControlValueType,
+		min: IntegerControlValueType,
+		max: IntegerControlValueType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
@@ -62,13 +75,14 @@ impl IntegerRangeControl {
 			step,
 			min,
 			max,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for IntegerRangeControl {
-	type ConType = ConTypeInt;
-	type ValueType = ConValueInteger;
+	type ConType = ControlTypeInt;
+	type ValueType = IntegerControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -137,6 +151,12 @@ impl ControlMax for IntegerRangeControl {
 	}
 }
 
+impl ControlFlags for IntegerRangeControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for IntegerRangeControl {
 	fn fmt(
 		&self,
@@ -145,26 +165,30 @@ impl fmt::Display for IntegerRangeControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {} *{} >{} <{} %{}",
+				"{} {} *{} >{} <{} %{} ",
 				self.control_type,
 				self.value,
 				self.default,
 				self.min,
 				self.max,
 				self.step
-			)
+			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}' min: '{}' max: '{}' step: '{}'",
+				"type: '{}' value: '{}' default: '{}' min: '{}' max: '{}' step: '{}' flags: '",
 				self.control_type,
 				self.value,
 				self.default,
 				self.min,
 				self.max,
 				self.step
-			)
+			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
+		Ok(())
 	}
 }
 
@@ -176,11 +200,12 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueInteger::from(0);
+		let value = IntegerControlValue::from(0);
 		let default = 0;
 		let step = 1;
 		let min = -1;
 		let max = 1;
+		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control = IntegerRangeControl::new(
 			control_type,
 			value,
@@ -188,6 +213,7 @@ mod tests {
 			step,
 			min,
 			max,
+			flags,
 		);
 		super::super::tests::display_with_different_formats(
 			"IntegerRangeControl",

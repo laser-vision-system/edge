@@ -1,8 +1,14 @@
 //! Defines for a camera control that consists of a `value`, `default`, and a
 //! vector of `possible` options.
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -12,16 +18,20 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlPossible,
 	},
-	types::ConTypeEnum,
+	types::{
+		ControlTypeEnum,
+		ControlTypePossible,
+	},
 	values::{
-		ConValueEnum,
-		ConValueEnumType,
+		EnumControlValue,
+		EnumControlValueType,
 	},
 };
 use crate::{
-	controls::types::ConTypePossible,
+	controls::write_flags,
 	error::EdgeCamerasResult,
 };
 
@@ -34,31 +44,35 @@ use crate::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EnumControl {
 	control_type: KnownCameraControl,
-	value: ConValueEnum,
-	default: ConValueEnumType,
-	possible: ConTypePossible,
+	value: EnumControlValue,
+	default: EnumControlValueType,
+	possible: ControlTypePossible,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl EnumControl {
 	/// Create a new [`EnumControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueEnum,
-		default: ConValueEnumType,
-		possible: ConTypePossible,
+		value: EnumControlValue,
+		default: EnumControlValueType,
+		possible: ControlTypePossible,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
 			possible,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for EnumControl {
-	type ConType = ConTypeEnum;
-	type ValueType = ConValueEnum;
+	type ConType = ControlTypeEnum;
+	type ValueType = EnumControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -86,7 +100,7 @@ impl ControlDefault for EnumControl {
 }
 
 impl ControlPossible for EnumControl {
-	type PossibleType = ConTypePossible;
+	type PossibleType = ControlTypePossible;
 
 	fn control_possible(&self) -> Self::PossibleType {
 		self.possible.clone()
@@ -100,6 +114,12 @@ impl ControlPossible for EnumControl {
 	}
 }
 
+impl ControlFlags for EnumControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for EnumControl {
 	fn fmt(
 		&self,
@@ -108,16 +128,20 @@ impl fmt::Display for EnumControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {} *{} {}",
+				"{} {} *{} {} ",
 				self.control_type, self.value, self.default, self.possible
-			)
+			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}' possible: '{}'",
+				"type: '{}' value: '{}' default: '{}' possible: '{}' flags: '",
 				self.control_type, self.value, self.default, self.possible
-			)
+			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
+		Ok(())
 	}
 }
 
@@ -129,10 +153,12 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueEnum::from(0);
+		let value = EnumControlValue::from(0);
 		let default = 0;
-		let possible = ConTypePossible::from(vec![0; 5]);
-		let control = EnumControl::new(control_type, value, default, possible);
+		let possible = ControlTypePossible::from(vec![0; 5]);
+		let flags = vec![KnownCameraControlFlag::Disabled];
+		let control =
+			EnumControl::new(control_type, value, default, possible, flags);
 		super::super::tests::display_with_different_formats(
 			"EnumControl",
 			&control,
