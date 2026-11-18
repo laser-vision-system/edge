@@ -16,7 +16,7 @@
 	)
 )]
 
-pub mod camera_device;
+pub mod camera;
 pub mod controls;
 pub mod error;
 pub mod identifier;

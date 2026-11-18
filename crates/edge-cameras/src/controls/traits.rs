@@ -2,25 +2,43 @@
 
 use std::fmt::Debug;
 
-use nokhwa::{
-	self,
-	utils::KnownCameraControl,
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
 };
 
-use super::types::{
-	ConTypeBool,
-	ConTypeBytes,
-	ConTypeFloat,
-	ConTypeInt,
-	ConTypeItems,
-	ConTypeKeyValue,
-	ConTypeMenu,
-	ConTypePoint,
-	ConTypePossible,
-	ConTypeRGB,
-	ConTypeString,
+use super::{
+	types::{
+		ConTypeBool,
+		ConTypeBytes,
+		ConTypeEnum,
+		ConTypeFloat,
+		ConTypeInt,
+		ConTypeItems,
+		ConTypeKeyValue,
+		ConTypeMenu,
+		ConTypePoint,
+		ConTypePossible,
+		ConTypeRGB,
+		ConTypeString,
+	},
+	values::{
+		BooleanControlValue,
+		BytesControlValue,
+		EnumControlValue,
+		FloatControlValue,
+		IntegerControlValue,
+		KeyValueControlValue,
+		MenuControlValue,
+		PointControlValue,
+		RgbControlValue,
+		StringControlValue,
+	},
 };
-use crate::error::EdgeCamerasResult;
+use crate::error::{
+	EdgeCamerasError,
+	EdgeCamerasResult,
+};
 
 /// A marker trait that determines what is acceptable to use within a
 /// [`ControlValue`].
@@ -153,25 +171,25 @@ pub trait ControlDefault: ControlDescription {
 	///
 	/// In most cases, this should be the same as
 	/// [`ControlDescription::ValueType`].
-	type DefaultType: ValidDefaultValue;
+	type DefaultType: ValidDefaultValue + IntoControlDefault<Self::ValueType>;
 	// type DefaultType = Self::ValueType;
 
 	/// Get the `default` value for this control description.
 	fn control_default(&self) -> Self::DefaultType;
 
-	/// Change the [`ControlDescription`] back to the default value.
-	#[expect(
-		clippy::expect_used,
-		reason = "Default value should never be invalid"
-	)]
-	// TODO: Mark this as fallible.
-	fn reset_to_default(&mut self)
-	where
-		<Self as ControlDescription>::ValueType:
-			From<<Self as ControlDefault>::DefaultType>,
-	{
-		self.try_set_control_value(self.control_default().into())
-			.expect("default value should never be invalid");
+	/// Change the [`ControlDescription`] back to its default value.
+	///
+	/// # Errors
+	///
+	/// If the control has no default value or the default value is invalid for
+	/// this control.
+	fn reset_to_default(&mut self) -> EdgeCamerasResult {
+		let Some(value) = self.control_default().into_control_default() else {
+			return Err(EdgeCamerasError::ControlDefaultUnavailable(
+				self.control_id(),
+			));
+		};
+		self.try_set_control_value(value)
 	}
 }
 
@@ -282,4 +300,99 @@ pub trait ControlItems: ControlDescription {
 		&self,
 		value: Self::ConType,
 	) -> bool;
+}
+
+/// A description that supports the `flags` field.
+///
+/// Extends [`ControlDescription`] with methods for camera control flags.
+pub trait ControlFlags: ControlDescription {
+	/// Get the `flags` for this control description.
+	fn control_flags(&self) -> &[KnownCameraControlFlag];
+
+	/// Check whether the control description has a specific flag.
+	fn has_flag(
+		&self,
+		flag: KnownCameraControlFlag,
+	) -> bool {
+		self.control_flags().contains(&flag)
+	}
+
+	/// Whether the control is currently in automatic mode.
+	fn is_auto(&self) -> bool {
+		self.has_flag(KnownCameraControlFlag::Automatic)
+	}
+
+	/// Whether the control is currently in manual mode.
+	fn is_manual(&self) -> bool {
+		self.has_flag(KnownCameraControlFlag::Manual)
+	}
+
+	/// Whether the control is continuously updating or adjusting.
+	fn is_continuous(&self) -> bool {
+		self.has_flag(KnownCameraControlFlag::Continuous)
+	}
+
+	/// Whether the control is disabled or inactive.
+	fn is_disabled(&self) -> bool {
+		self.has_flag(KnownCameraControlFlag::Disabled)
+	}
+
+	/// Whether this control is readable by its mapped value.
+	fn is_readable(&self) -> bool {
+		!self.control_flags().iter().any(|flag| {
+			matches!(
+				flag,
+				KnownCameraControlFlag::WriteOnly
+					| KnownCameraControlFlag::Volatile
+			)
+		})
+	}
+
+	/// Whether this control may safely be written.
+	fn is_writable(&self) -> bool {
+		!self.control_flags().iter().any(|flag| {
+			matches!(
+				flag,
+				KnownCameraControlFlag::ReadOnly
+					| KnownCameraControlFlag::Disabled
+					| KnownCameraControlFlag::Volatile
+			)
+		})
+	}
+}
+
+/// Converts a control's default type into a [`Option`] wrapper over the value
+/// used by that control.
+///
+/// Needed because the String control description uses an optional default.
+pub trait IntoControlDefault<T> {
+	/// Convert this default into the control's value type.
+	fn into_control_default(self) -> Option<T>;
+}
+
+/// Automatically implement [`IntoControlDefault`] for control descriptions.
+macro_rules! impl_control_default_conversion {
+	($default:ty => $value:ty) => {
+		impl IntoControlDefault<$value> for $default {
+			fn into_control_default(self) -> Option<$value> {
+				Some(self.into())
+			}
+		}
+	};
+}
+
+impl_control_default_conversion!(ConTypeInt => IntegerControlValue);
+impl_control_default_conversion!(ConTypeFloat => FloatControlValue);
+impl_control_default_conversion!(ConTypeBool => BooleanControlValue);
+impl_control_default_conversion!(ConTypeBytes => BytesControlValue);
+impl_control_default_conversion!(ConTypeEnum => EnumControlValue);
+impl_control_default_conversion!(ConTypeKeyValue => KeyValueControlValue);
+impl_control_default_conversion!(ConTypeMenu => MenuControlValue);
+impl_control_default_conversion!(ConTypePoint => PointControlValue);
+impl_control_default_conversion!(ConTypeRGB => RgbControlValue);
+
+impl IntoControlDefault<StringControlValue> for Option<ConTypeString> {
+	fn into_control_default(self) -> Option<StringControlValue> {
+		self.map(Into::into)
+	}
 }

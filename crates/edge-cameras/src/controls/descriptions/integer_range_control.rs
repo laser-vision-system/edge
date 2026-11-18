@@ -3,7 +3,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,6 +16,7 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlMax,
 		ControlMin,
 		ControlStep,
@@ -20,8 +24,8 @@ use super::super::{
 	},
 	types::ConTypeInt,
 	values::{
-		ConValueInteger,
 		ConValueIntegerType,
+		IntegerControlValue,
 	},
 };
 use crate::error::{
@@ -35,25 +39,28 @@ use crate::error::{
 /// Maps to [`ControlValueDescription::IntegerRange`].
 ///
 /// [`ControlValueDescription::IntegerRange`]: nokhwa::utils::ControlValueDescription::IntegerRange
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IntegerRangeControl {
 	control_type: KnownCameraControl,
-	value: ConValueInteger,
+	value: IntegerControlValue,
 	default: ConValueIntegerType,
 	step: ConValueIntegerType,
 	min: ConValueIntegerType,
 	max: ConValueIntegerType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl IntegerRangeControl {
 	/// Create a new [`IntegerRangeControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueInteger,
+		value: IntegerControlValue,
 		default: ConValueIntegerType,
 		step: ConValueIntegerType,
 		min: ConValueIntegerType,
 		max: ConValueIntegerType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
@@ -62,13 +69,14 @@ impl IntegerRangeControl {
 			step,
 			min,
 			max,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for IntegerRangeControl {
 	type ConType = ConTypeInt;
-	type ValueType = ConValueInteger;
+	type ValueType = IntegerControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -137,6 +145,12 @@ impl ControlMax for IntegerRangeControl {
 	}
 }
 
+impl ControlFlags for IntegerRangeControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for IntegerRangeControl {
 	fn fmt(
 		&self,
@@ -152,7 +166,7 @@ impl fmt::Display for IntegerRangeControl {
 				self.min,
 				self.max,
 				self.step
-			)
+			)?;
 		} else {
 			write!(
 				f,
@@ -163,8 +177,10 @@ impl fmt::Display for IntegerRangeControl {
 				self.min,
 				self.max,
 				self.step
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -176,7 +192,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueInteger::from(0);
+		let value = IntegerControlValue::from(0);
 		let default = 0;
 		let step = 1;
 		let min = -1;
@@ -188,6 +204,7 @@ mod tests {
 			step,
 			min,
 			max,
+			Vec::new(),
 		);
 		super::super::tests::display_with_different_formats(
 			"IntegerRangeControl",

@@ -215,7 +215,13 @@ impl Conductor {
 		&mut self,
 		client: &mut ConductorClientHandle,
 	) {
-		let mut results = self.persistence.poll_for_new_cameras();
+		// Evil loop to catch OS bug with hotplug.
+		let mut results = loop {
+			match self.persistence.poll_for_new_cameras() {
+				Ok(devices) => break devices,
+				Err(why) => logger().log_error(&why),
+			}
+		};
 
 		let new_cameras = results.extract_if(|_, value| {
 			match value {

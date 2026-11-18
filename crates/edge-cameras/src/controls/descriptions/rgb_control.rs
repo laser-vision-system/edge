@@ -3,7 +3,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,13 +16,14 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlMax,
 		ControlValue as _,
 	},
 	types::ConTypeRGB,
 	values::{
-		ConValueRGB,
 		ConValueRGBType,
+		RgbControlValue,
 	},
 };
 use crate::error::{
@@ -34,34 +38,38 @@ use crate::error::{
 /// Maps to [`ControlValueDescription::RGB`].
 ///
 /// [`ControlValueDescription::RGB`]: nokhwa::utils::ControlValueDescription::RGB
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RGBControl {
 	control_type: KnownCameraControl,
-	value: ConValueRGB,
+	value: RgbControlValue,
 	default: ConValueRGBType,
 	max: ConValueRGBType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl RGBControl {
 	/// Create a new [`RGBControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueRGB,
+		value: RgbControlValue,
 		default: ConValueRGBType,
 		max: ConValueRGBType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
 			max,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for RGBControl {
 	type ConType = ConTypeRGB;
-	type ValueType = ConValueRGB;
+	type ValueType = RgbControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -100,6 +108,12 @@ impl ControlMax for RGBControl {
 	}
 }
 
+impl ControlFlags for RGBControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for RGBControl {
 	fn fmt(
 		&self,
@@ -110,14 +124,16 @@ impl fmt::Display for RGBControl {
 				f,
 				"{} {} *{} <{}",
 				self.control_type, self.value, self.default, self.max
-			)
+			)?;
 		} else {
 			write!(
 				f,
 				"type: '{}' value: '{}' default: '{}' max: '{}'",
 				self.control_type, self.value, self.default, self.max
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -129,10 +145,11 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueRGB::from((0.0, 0.0, 0.0));
+		let value = RgbControlValue::from((0.0, 0.0, 0.0));
 		let default = ConTypeRGB::from((0.0, 0.0, 0.0));
 		let max = ConTypeRGB::from((0.0, 0.0, 0.0));
-		let control = RGBControl::new(control_type, value, default, max);
+		let control =
+			RGBControl::new(control_type, value, default, max, Vec::new());
 		super::super::tests::display_with_different_formats(
 			"RGBControl",
 			&control,

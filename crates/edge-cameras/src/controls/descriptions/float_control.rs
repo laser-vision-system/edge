@@ -3,7 +3,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,13 +16,14 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlStep,
 		ControlValue as _,
 	},
 	types::ConTypeFloat,
 	values::{
-		ConValueFloat,
 		ConValueFloatType,
+		FloatControlValue,
 	},
 };
 use crate::error::{
@@ -32,34 +36,38 @@ use crate::error::{
 /// Maps to [`ControlValueDescription::Float`].
 ///
 /// [`ControlValueDescription::Float`]: nokhwa::utils::ControlValueDescription::Float
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FloatControl {
 	control_type: KnownCameraControl,
-	value: ConValueFloat,
+	value: FloatControlValue,
 	default: ConValueFloatType,
 	step: ConValueFloatType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl FloatControl {
 	/// Create a new [`FloatControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueFloat,
+		value: FloatControlValue,
 		default: ConValueFloatType,
 		step: ConValueFloatType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
 			step,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for FloatControl {
 	type ConType = ConTypeFloat;
-	type ValueType = ConValueFloat;
+	type ValueType = FloatControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -109,6 +117,12 @@ impl ControlStep for FloatControl {
 	}
 }
 
+impl ControlFlags for FloatControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for FloatControl {
 	fn fmt(
 		&self,
@@ -119,14 +133,16 @@ impl fmt::Display for FloatControl {
 				f,
 				"{} {} *{} %{}",
 				self.control_type, self.value, self.default, self.step
-			)
+			)?;
 		} else {
 			write!(
 				f,
 				"type: '{}' value: '{}' default: '{}' step: '{}'",
 				self.control_type, self.value, self.default, self.step
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -138,10 +154,11 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueFloat::from(0.0);
+		let value = FloatControlValue::from(0.0);
 		let default = 0.0;
 		let step = 1.0;
-		let control = FloatControl::new(control_type, value, default, step);
+		let control =
+			FloatControl::new(control_type, value, default, step, Vec::new());
 		super::super::tests::display_with_different_formats(
 			"FloatControl",
 			&control,

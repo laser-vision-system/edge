@@ -2,7 +2,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -12,11 +15,12 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 	},
 	types::ConTypePoint,
 	values::{
-		ConValuePoint,
 		ConValuePointType,
+		PointControlValue,
 	},
 };
 use crate::error::EdgeCamerasResult;
@@ -26,31 +30,35 @@ use crate::error::EdgeCamerasResult;
 /// Maps to [`ControlValueDescription::Point`].
 ///
 /// [`ControlValueDescription::Point`]: nokhwa::utils::ControlValueDescription::Point
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PointControl {
 	control_type: KnownCameraControl,
-	value: ConValuePoint,
+	value: PointControlValue,
 	default: ConValuePointType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl PointControl {
 	/// Create a new [`PointControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValuePoint,
+		value: PointControlValue,
 		default: ConValuePointType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for PointControl {
 	type ConType = ConTypePoint;
-	type ValueType = ConValuePoint;
+	type ValueType = PointControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -77,20 +85,32 @@ impl ControlDefault for PointControl {
 	}
 }
 
+impl ControlFlags for PointControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for PointControl {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		if f.alternate() {
-			write!(f, "{} {} *{}", self.control_type, self.value, self.default)
+			write!(
+				f,
+				"{} {} *{}",
+				self.control_type, self.value, self.default
+			)?;
 		} else {
 			write!(
 				f,
 				"type: '{}' value: '{}' default: '{}'",
 				self.control_type, self.value, self.default
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -102,9 +122,10 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValuePoint::from((0.0, 0.0));
+		let value = PointControlValue::from((0.0, 0.0));
 		let default = ConTypePoint::from((0.0, 0.0));
-		let control = PointControl::new(control_type, value, default);
+		let control =
+			PointControl::new(control_type, value, default, Vec::new());
 		super::super::tests::display_with_different_formats(
 			"PointControl",
 			&control,

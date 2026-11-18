@@ -3,7 +3,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,13 +16,14 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlItems,
 		ControlValue as _,
 	},
 	types::ConTypeMenu,
 	values::{
-		ConValueMenu,
 		ConValueMenuType,
+		MenuControlValue,
 	},
 };
 use crate::{
@@ -38,31 +42,35 @@ use crate::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MenuControl {
 	control_type: KnownCameraControl,
-	value: ConValueMenu,
+	value: MenuControlValue,
 	default: ConValueMenuType,
 	items: ConTypeItems,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl MenuControl {
 	/// Create a new [`MenuControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueMenu,
+		value: MenuControlValue,
 		default: ConValueMenuType,
 		items: ConTypeItems,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
 			items,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for MenuControl {
 	type ConType = ConTypeMenu;
-	type ValueType = ConValueMenu;
+	type ValueType = MenuControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -108,6 +116,12 @@ impl ControlItems for MenuControl {
 	}
 }
 
+impl ControlFlags for MenuControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for MenuControl {
 	fn fmt(
 		&self,
@@ -118,14 +132,16 @@ impl fmt::Display for MenuControl {
 				f,
 				"{} {} *{} {}",
 				self.control_type, self.value, self.default, self.items
-			)
+			)?;
 		} else {
 			write!(
 				f,
 				"type: '{}' value: '{}' default: '{}' items: '{}'",
 				self.control_type, self.value, self.default, self.items
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -142,11 +158,17 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueMenu::from(0);
+		let value = MenuControlValue::from(0);
 		let default = 0;
 		let possible =
 			ConTypeItems::from(vec![MenuEntry::new(0, MenuItem::Value(0)); 5]);
-		let control = MenuControl::new(control_type, value, default, possible);
+		let control = MenuControl::new(
+			control_type,
+			value,
+			default,
+			possible,
+			Vec::new(),
+		);
 		super::super::tests::display_with_different_formats(
 			"MenuControl",
 			&control,

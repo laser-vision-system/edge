@@ -59,7 +59,11 @@ use super::{
 	ValType,
 };
 use crate::{
-	camera_device::query_for_available_cameras,
+	camera::{
+		query_for_available_cameras,
+		run_backend_operation,
+	},
+	error::EdgeCamerasResult,
 	identifier::Identifier,
 };
 
@@ -152,10 +156,13 @@ impl Persistence {
 	/// Returns a list of information about newly added cameras.
 	pub fn poll_for_new_cameras(
 		&mut self
-	) -> HashMap<CameraId, ConnectionDetail> {
-		let all_devices = query_for_available_cameras();
+	) -> EdgeCamerasResult<HashMap<CameraId, ConnectionDetail>> {
+		let all_devices =
+			run_backend_operation("query available camera", || {
+				Ok(query_for_available_cameras())
+			})?;
 		let inter = convert_to_intermediaries(all_devices);
-		self.get_new_from_inter(inter)
+		Ok(self.get_new_from_inter(inter))
 	}
 
 	fn get_new_from_inter(
