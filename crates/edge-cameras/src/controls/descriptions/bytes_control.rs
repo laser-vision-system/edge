@@ -20,7 +20,7 @@ use super::super::{
 		ControlDescription,
 		ControlFlags,
 	},
-	types::ConTypeBytes,
+	types::ControlTypeBytes,
 	values::{
 		BytesControlValue,
 		BytesControlValueType,
@@ -63,7 +63,7 @@ impl BytesControl {
 }
 
 impl ControlDescription for BytesControl {
-	type ConType = ConTypeBytes;
+	type ConType = ControlTypeBytes;
 	type ValueType = BytesControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
@@ -131,7 +131,7 @@ mod tests {
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
 		let value = BytesControlValue::from(vec![0; 5]);
-		let default = ConTypeBytes::from(vec![0; 5]);
+		let default = ControlTypeBytes::from(vec![0; 5]);
 		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control = BytesControl::new(control_type, value, default, flags);
 		super::super::tests::display_with_different_formats(

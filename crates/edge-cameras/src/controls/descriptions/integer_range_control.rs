@@ -25,7 +25,7 @@ use super::super::{
 		ControlStep,
 		ControlValue as _,
 	},
-	types::ConTypeInt,
+	types::ControlTypeInt,
 	values::{
 		IntegerControlValue,
 		IntegerControlValueType,
@@ -81,7 +81,7 @@ impl IntegerRangeControl {
 }
 
 impl ControlDescription for IntegerRangeControl {
-	type ConType = ConTypeInt;
+	type ConType = ControlTypeInt;
 	type ValueType = IntegerControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {

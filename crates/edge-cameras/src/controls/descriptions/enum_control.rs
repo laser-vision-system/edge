@@ -22,8 +22,8 @@ use super::super::{
 		ControlPossible,
 	},
 	types::{
-		ConTypeEnum,
-		ConTypePossible,
+		ControlTypeEnum,
+		ControlTypePossible,
 	},
 	values::{
 		EnumControlValue,
@@ -46,7 +46,7 @@ pub struct EnumControl {
 	control_type: KnownCameraControl,
 	value: EnumControlValue,
 	default: EnumControlValueType,
-	possible: ConTypePossible,
+	possible: ControlTypePossible,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
 }
@@ -57,7 +57,7 @@ impl EnumControl {
 		control_type: KnownCameraControl,
 		value: EnumControlValue,
 		default: EnumControlValueType,
-		possible: ConTypePossible,
+		possible: ControlTypePossible,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
@@ -71,7 +71,7 @@ impl EnumControl {
 }
 
 impl ControlDescription for EnumControl {
-	type ConType = ConTypeEnum;
+	type ConType = ControlTypeEnum;
 	type ValueType = EnumControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
@@ -100,7 +100,7 @@ impl ControlDefault for EnumControl {
 }
 
 impl ControlPossible for EnumControl {
-	type PossibleType = ConTypePossible;
+	type PossibleType = ControlTypePossible;
 
 	fn control_possible(&self) -> Self::PossibleType {
 		self.possible.clone()
@@ -155,7 +155,7 @@ mod tests {
 		let control_type = KnownCameraControl::Pan;
 		let value = EnumControlValue::from(0);
 		let default = 0;
-		let possible = ConTypePossible::from(vec![0; 5]);
+		let possible = ControlTypePossible::from(vec![0; 5]);
 		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control =
 			EnumControl::new(control_type, value, default, possible, flags);

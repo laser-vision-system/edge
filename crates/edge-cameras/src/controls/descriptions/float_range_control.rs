@@ -25,7 +25,7 @@ use super::super::{
 		ControlStep,
 		ControlValue as _,
 	},
-	types::ConTypeFloat,
+	types::ControlTypeFloat,
 	values::{
 		FloatControlValue,
 		FloatControlValueType,
@@ -81,7 +81,7 @@ impl FloatRangeControl {
 }
 
 impl ControlDescription for FloatRangeControl {
-	type ConType = ConTypeFloat;
+	type ConType = ControlTypeFloat;
 	type ValueType = FloatControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {

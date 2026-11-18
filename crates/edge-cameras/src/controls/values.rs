@@ -25,21 +25,21 @@ use serde::{
 use super::{
 	traits::ControlValue,
 	types::{
-		ConInnerTypeBytes,
-		ConInnerTypeKeyValue,
-		ConInnerTypePoint,
-		ConInnerTypeRGB,
-		ConInnerTypeString,
-		ConTypeBool,
-		ConTypeBytes,
-		ConTypeEnum,
-		ConTypeFloat,
-		ConTypeInt,
-		ConTypeKeyValue,
-		ConTypeMenu,
-		ConTypePoint,
-		ConTypeRGB,
-		ConTypeString,
+		ControlTypeBoolean,
+		ControlTypeBytes,
+		ControlTypeBytesInner,
+		ControlTypeEnum,
+		ControlTypeFloat,
+		ControlTypeInt,
+		ControlTypeKeyValue,
+		ControlTypeKeyValueInner,
+		ControlTypeMenu,
+		ControlTypePoint,
+		ControlTypePointInner,
+		ControlTypeRgb,
+		ControlTypeRgbInner,
+		ControlTypeString,
+		ControlTypeStringInner,
 	},
 };
 
@@ -59,16 +59,16 @@ use super::{
 	Serialize,
 	Deserialize,
 )]
-pub struct IntegerControlValue(ConTypeInt);
+pub struct IntegerControlValue(ControlTypeInt);
 
-impl From<ConTypeInt> for IntegerControlValue {
-	fn from(value: ConTypeInt) -> Self {
+impl From<ControlTypeInt> for IntegerControlValue {
+	fn from(value: ControlTypeInt) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for IntegerControlValue {
-	type ConType = ConTypeInt;
+	type ConType = ControlTypeInt;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -104,16 +104,16 @@ pub type IntegerControlValueType =
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct FloatControlValue(ConTypeFloat);
+pub struct FloatControlValue(ControlTypeFloat);
 
-impl From<ConTypeFloat> for FloatControlValue {
-	fn from(value: ConTypeFloat) -> Self {
+impl From<ControlTypeFloat> for FloatControlValue {
+	fn from(value: ControlTypeFloat) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for FloatControlValue {
-	type ConType = ConTypeFloat;
+	type ConType = ControlTypeFloat;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -158,16 +158,16 @@ pub type FloatControlValueType = <FloatControlValue as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct BooleanControlValue(ConTypeBool);
+pub struct BooleanControlValue(ControlTypeBoolean);
 
-impl From<ConTypeBool> for BooleanControlValue {
-	fn from(value: ConTypeBool) -> Self {
+impl From<ControlTypeBoolean> for BooleanControlValue {
+	fn from(value: ControlTypeBoolean) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for BooleanControlValue {
-	type ConType = ConTypeBool;
+	type ConType = ControlTypeBoolean;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -212,22 +212,22 @@ pub type BooleanControlValueType =
 	Serialize,
 	Deserialize,
 )]
-pub struct StringControlValue(ConTypeString);
+pub struct StringControlValue(ControlTypeString);
 
-impl From<ConTypeString> for StringControlValue {
-	fn from(value: ConTypeString) -> Self {
+impl From<ControlTypeString> for StringControlValue {
+	fn from(value: ControlTypeString) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypeString> for StringControlValue {
-	fn from(value: ConInnerTypeString) -> Self {
-		ConTypeString::from(value).into()
+impl From<ControlTypeStringInner> for StringControlValue {
+	fn from(value: ControlTypeStringInner) -> Self {
+		ControlTypeString::from(value).into()
 	}
 }
 
 impl ControlValue for StringControlValue {
-	type ConType = ConTypeString;
+	type ConType = ControlTypeString;
 
 	fn get(&self) -> Self::ConType {
 		self.0.clone()
@@ -271,22 +271,22 @@ pub type StringControlValueType = <StringControlValue as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct BytesControlValue(ConTypeBytes);
+pub struct BytesControlValue(ControlTypeBytes);
 
-impl From<ConTypeBytes> for BytesControlValue {
-	fn from(value: ConTypeBytes) -> Self {
+impl From<ControlTypeBytes> for BytesControlValue {
+	fn from(value: ControlTypeBytes) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypeBytes> for BytesControlValue {
-	fn from(value: ConInnerTypeBytes) -> Self {
-		ConTypeBytes::from(value).into()
+impl From<ControlTypeBytesInner> for BytesControlValue {
+	fn from(value: ControlTypeBytesInner) -> Self {
+		ControlTypeBytes::from(value).into()
 	}
 }
 
 impl ControlValue for BytesControlValue {
-	type ConType = ConTypeBytes;
+	type ConType = ControlTypeBytes;
 
 	fn get(&self) -> Self::ConType {
 		self.0.clone()
@@ -331,21 +331,21 @@ pub type BytesControlValueType = <BytesControlValue as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct KeyValueControlValue(ConTypeKeyValue);
+pub struct KeyValueControlValue(ControlTypeKeyValue);
 
-impl From<ConTypeKeyValue> for KeyValueControlValue {
-	fn from(value: ConTypeKeyValue) -> Self {
+impl From<ControlTypeKeyValue> for KeyValueControlValue {
+	fn from(value: ControlTypeKeyValue) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypeKeyValue> for KeyValueControlValue {
-	fn from(value: ConInnerTypeKeyValue) -> Self {
-		ConTypeKeyValue::from(value).into()
+impl From<ControlTypeKeyValueInner> for KeyValueControlValue {
+	fn from(value: ControlTypeKeyValueInner) -> Self {
+		ControlTypeKeyValue::from(value).into()
 	}
 }
 impl ControlValue for KeyValueControlValue {
-	type ConType = ConTypeKeyValue;
+	type ConType = ControlTypeKeyValue;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -381,22 +381,22 @@ pub type KeyValueControlValueType =
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct PointControlValue(ConTypePoint);
+pub struct PointControlValue(ControlTypePoint);
 
-impl From<ConTypePoint> for PointControlValue {
-	fn from(value: ConTypePoint) -> Self {
+impl From<ControlTypePoint> for PointControlValue {
+	fn from(value: ControlTypePoint) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypePoint> for PointControlValue {
-	fn from(value: ConInnerTypePoint) -> Self {
-		ConTypePoint::from(value).into()
+impl From<ControlTypePointInner> for PointControlValue {
+	fn from(value: ControlTypePointInner) -> Self {
+		ControlTypePoint::from(value).into()
 	}
 }
 
 impl ControlValue for PointControlValue {
-	type ConType = ConTypePoint;
+	type ConType = ControlTypePoint;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -441,16 +441,16 @@ pub type PointControlValueType = <PointControlValue as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct EnumControlValue(ConTypeEnum);
+pub struct EnumControlValue(ControlTypeEnum);
 
-impl From<ConTypeEnum> for EnumControlValue {
-	fn from(value: ConTypeEnum) -> Self {
+impl From<ControlTypeEnum> for EnumControlValue {
+	fn from(value: ControlTypeEnum) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for EnumControlValue {
-	type ConType = ConTypeEnum;
+	type ConType = ControlTypeEnum;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -485,22 +485,22 @@ pub type EnumControlValueType = <EnumControlValue as ControlValue>::ConType;
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct RgbControlValue(ConTypeRGB);
+pub struct RgbControlValue(ControlTypeRgb);
 
-impl From<ConTypeRGB> for RgbControlValue {
-	fn from(value: ConTypeRGB) -> Self {
+impl From<ControlTypeRgb> for RgbControlValue {
+	fn from(value: ControlTypeRgb) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypeRGB> for RgbControlValue {
-	fn from(value: ConInnerTypeRGB) -> Self {
-		ConTypeRGB::from(value).into()
+impl From<ControlTypeRgbInner> for RgbControlValue {
+	fn from(value: ControlTypeRgbInner) -> Self {
+		ControlTypeRgb::from(value).into()
 	}
 }
 
 impl ControlValue for RgbControlValue {
-	type ConType = ConTypeRGB;
+	type ConType = ControlTypeRgb;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -545,16 +545,16 @@ pub type RgbControlValueType = <RgbControlValue as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct MenuControlValue(ConTypeMenu);
+pub struct MenuControlValue(ControlTypeMenu);
 
-impl From<ConTypeMenu> for MenuControlValue {
-	fn from(value: ConTypeMenu) -> Self {
+impl From<ControlTypeMenu> for MenuControlValue {
+	fn from(value: ControlTypeMenu) -> Self {
 		Self(value)
 	}
 }
 
 impl ControlValue for MenuControlValue {
-	type ConType = ConTypeMenu;
+	type ConType = ControlTypeMenu;
 
 	fn get(&self) -> Self::ConType {
 		self.0

@@ -20,7 +20,7 @@ use super::super::{
 		ControlDescription,
 		ControlFlags,
 	},
-	types::ConTypePoint,
+	types::ControlTypePoint,
 	values::{
 		PointControlValue,
 		PointControlValueType,
@@ -63,7 +63,7 @@ impl PointControl {
 }
 
 impl ControlDescription for PointControl {
-	type ConType = ConTypePoint;
+	type ConType = ControlTypePoint;
 	type ValueType = PointControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
@@ -131,7 +131,7 @@ mod tests {
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
 		let value = PointControlValue::from((0.0, 0.0));
-		let default = ConTypePoint::from((0.0, 0.0));
+		let default = ControlTypePoint::from((0.0, 0.0));
 		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control = PointControl::new(control_type, value, default, flags);
 		super::super::tests::display_with_different_formats(

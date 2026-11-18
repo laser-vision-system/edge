@@ -23,7 +23,7 @@ use super::super::{
 		ControlMax,
 		ControlValue as _,
 	},
-	types::ConTypeRGB,
+	types::ControlTypeRgb,
 	values::{
 		RgbControlValue,
 		RgbControlValueType,
@@ -74,7 +74,7 @@ impl RGBControl {
 }
 
 impl ControlDescription for RGBControl {
-	type ConType = ConTypeRGB;
+	type ConType = ControlTypeRgb;
 	type ValueType = RgbControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
@@ -154,8 +154,8 @@ mod tests {
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
 		let value = RgbControlValue::from((0.0, 0.0, 0.0));
-		let default = ConTypeRGB::from((0.0, 0.0, 0.0));
-		let max = ConTypeRGB::from((0.0, 0.0, 0.0));
+		let default = ControlTypeRgb::from((0.0, 0.0, 0.0));
+		let max = ControlTypeRgb::from((0.0, 0.0, 0.0));
 		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control = RGBControl::new(control_type, value, default, max, flags);
 		super::super::tests::display_with_different_formats(

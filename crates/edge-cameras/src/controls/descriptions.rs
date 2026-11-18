@@ -53,11 +53,11 @@ use super::{
 		ControlStep as _,
 	},
 	types::{
-		ConTypeBytes,
-		ConTypeMenu,
-		ConTypePoint,
-		ConTypeRGB,
-		ConTypeString,
+		ControlTypeBytes,
+		ControlTypeMenu,
+		ControlTypePoint,
+		ControlTypeRgb,
+		ControlTypeString,
 	},
 };
 use crate::error::{
@@ -214,7 +214,7 @@ impl CamControl {
 				CamControl::String(StringControl::new(
 					id,
 					value.into(),
-					default.map(ConTypeString::from),
+					default.map(ControlTypeString::from),
 					flags,
 				))
 			},
@@ -225,7 +225,7 @@ impl CamControl {
 				CamControl::Bytes(BytesControl::new(
 					id,
 					value.into(),
-					ConTypeBytes::from(default),
+					ControlTypeBytes::from(default),
 					flags,
 				))
 			},
@@ -248,7 +248,7 @@ impl CamControl {
 				CamControl::Point(PointControl::new(
 					id,
 					value.into(),
-					ConTypePoint::from(default),
+					ControlTypePoint::from(default),
 					flags,
 				))
 			},
@@ -273,8 +273,8 @@ impl CamControl {
 				CamControl::RGB(RGBControl::new(
 					id,
 					value.into(),
-					ConTypeRGB::from(default),
-					ConTypeRGB::from(max),
+					ControlTypeRgb::from(default),
+					ControlTypeRgb::from(max),
 					flags,
 				))
 			},
@@ -286,7 +286,7 @@ impl CamControl {
 				CamControl::Menu(MenuControl::new(
 					id,
 					value.into(),
-					ConTypeMenu::from(default),
+					ControlTypeMenu::from(default),
 					items.into(),
 					flags,
 				))

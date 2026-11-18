@@ -20,7 +20,7 @@ use super::super::{
 		ControlDescription,
 		ControlFlags,
 	},
-	types::ConTypeBool,
+	types::ControlTypeBoolean,
 	values::{
 		BooleanControlValue,
 		BooleanControlValueType,
@@ -63,7 +63,7 @@ impl BooleanControl {
 }
 
 impl ControlDescription for BooleanControl {
-	type ConType = ConTypeBool;
+	type ConType = ControlTypeBoolean;
 	type ValueType = BooleanControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {

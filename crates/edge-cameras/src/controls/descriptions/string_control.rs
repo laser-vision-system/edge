@@ -22,7 +22,7 @@ use super::super::{
 		ControlDescription,
 		ControlFlags,
 	},
-	types::ConTypeString,
+	types::ControlTypeString,
 	values::{
 		StringControlValue,
 		StringControlValueType,
@@ -65,7 +65,7 @@ impl StringControl {
 }
 
 impl ControlDescription for StringControl {
-	type ConType = ConTypeString;
+	type ConType = ControlTypeString;
 	type ValueType = StringControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
@@ -150,7 +150,7 @@ mod tests {
 
 	#[test]
 	fn reset_default_applies_present_default() {
-		let default = ConTypeString::from("default".to_owned());
+		let default = ControlTypeString::from("default".to_owned());
 		let mut control = StringControl::new(
 			KnownCameraControl::Other(1),
 			StringControlValue::from("current".to_owned()),
@@ -167,7 +167,7 @@ mod tests {
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
 		let value = StringControlValue::from("Value".to_owned());
-		let default = Some(ConTypeString::from("default".to_owned()));
+		let default = Some(ControlTypeString::from("default".to_owned()));
 		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control = StringControl::new(control_type, value, default, flags);
 		super::super::tests::display_with_different_formats(

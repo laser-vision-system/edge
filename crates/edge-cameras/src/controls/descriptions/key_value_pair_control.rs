@@ -20,7 +20,7 @@ use super::super::{
 		ControlDescription,
 		ControlFlags,
 	},
-	types::ConTypeKeyValue,
+	types::ControlTypeKeyValue,
 	values::{
 		KeyValueControlValue,
 		KeyValueControlValueType,
@@ -63,7 +63,7 @@ impl KeyValuePairControl {
 }
 
 impl ControlDescription for KeyValuePairControl {
-	type ConType = ConTypeKeyValue;
+	type ConType = ControlTypeKeyValue;
 	type ValueType = KeyValueControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
@@ -131,7 +131,7 @@ mod tests {
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
 		let value = KeyValueControlValue::from((0, 0));
-		let default = ConTypeKeyValue::from((0, 0));
+		let default = ControlTypeKeyValue::from((0, 0));
 		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control =
 			KeyValuePairControl::new(control_type, value, default, flags);

@@ -24,8 +24,8 @@ use super::super::{
 		ControlValue as _,
 	},
 	types::{
-		ConTypeItems,
-		ConTypeMenu,
+		ControlTypeItems,
+		ControlTypeMenu,
 	},
 	values::{
 		MenuControlValue,
@@ -50,7 +50,7 @@ pub struct MenuControl {
 	control_type: KnownCameraControl,
 	value: MenuControlValue,
 	default: MenuControlValueType,
-	items: ConTypeItems,
+	items: ControlTypeItems,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
 }
@@ -61,7 +61,7 @@ impl MenuControl {
 		control_type: KnownCameraControl,
 		value: MenuControlValue,
 		default: MenuControlValueType,
-		items: ConTypeItems,
+		items: ControlTypeItems,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
@@ -75,7 +75,7 @@ impl MenuControl {
 }
 
 impl ControlDescription for MenuControl {
-	type ConType = ConTypeMenu;
+	type ConType = ControlTypeMenu;
 	type ValueType = MenuControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
@@ -108,7 +108,7 @@ impl ControlDefault for MenuControl {
 }
 
 impl ControlItems for MenuControl {
-	type ItemType = ConTypeItems;
+	type ItemType = ControlTypeItems;
 
 	fn control_items(&self) -> Self::ItemType {
 		self.items.clone()
@@ -169,7 +169,10 @@ mod tests {
 		let value = MenuControlValue::from(0);
 		let default = 0;
 		let possible =
-			ConTypeItems::from(vec![MenuEntry::new(0, MenuItem::Value(0)); 5]);
+			ControlTypeItems::from(vec![
+				MenuEntry::new(0, MenuItem::Value(0));
+				5
+			]);
 		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control =
 			MenuControl::new(control_type, value, default, possible, flags);

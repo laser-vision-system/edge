@@ -9,18 +9,18 @@ use nokhwa::utils::{
 
 use super::{
 	types::{
-		ConTypeBool,
-		ConTypeBytes,
-		ConTypeEnum,
-		ConTypeFloat,
-		ConTypeInt,
-		ConTypeItems,
-		ConTypeKeyValue,
-		ConTypeMenu,
-		ConTypePoint,
-		ConTypePossible,
-		ConTypeRGB,
-		ConTypeString,
+		ControlTypeBoolean,
+		ControlTypeBytes,
+		ControlTypeEnum,
+		ControlTypeFloat,
+		ControlTypeInt,
+		ControlTypeItems,
+		ControlTypeKeyValue,
+		ControlTypeMenu,
+		ControlTypePoint,
+		ControlTypePossible,
+		ControlTypeRgb,
+		ControlTypeString,
 	},
 	values::{
 		BooleanControlValue,
@@ -56,23 +56,23 @@ pub trait ValidControlValue: Clone + Debug + PartialEq + PartialOrd {}
 
 // ===== Value fields (used in ControlValueSetter) =====
 // ----- Explicit -----
-impl ValidControlValue for ConTypeInt {
+impl ValidControlValue for ControlTypeInt {
 } // Integer, IntegerRange, Enum
-impl ValidControlValue for ConTypeFloat {
+impl ValidControlValue for ControlTypeFloat {
 } // Float,  FloatRange
-impl ValidControlValue for ConTypeBool {
+impl ValidControlValue for ControlTypeBoolean {
 } // Boolean
-impl ValidControlValue for ConTypeString {
+impl ValidControlValue for ControlTypeString {
 } // String
-impl ValidControlValue for ConTypeBytes {
+impl ValidControlValue for ControlTypeBytes {
 } // Bytes
-impl ValidControlValue for ConTypeKeyValue {
+impl ValidControlValue for ControlTypeKeyValue {
 } // KeyValuePair
-impl ValidControlValue for ConTypePoint {
+impl ValidControlValue for ControlTypePoint {
 } // KeyValuePair
-impl ValidControlValue for ConTypeRGB {
+impl ValidControlValue for ControlTypeRgb {
 } // KeyValuePair
-impl ValidControlValue for ConTypeMenu {
+impl ValidControlValue for ControlTypeMenu {
 } // Menu
 
 // TODO: Would these be better than the implicit?
@@ -102,7 +102,7 @@ impl<T> ValidDefaultValue for T where T: ValidControlValue
 {
 }
 
-impl ValidDefaultValue for Option<ConTypeString> {
+impl ValidDefaultValue for Option<ControlTypeString> {
 }
 
 /// A marker trait that determines what is acceptable to use within a
@@ -113,14 +113,14 @@ impl<T> ValidPossibleValue for T where T: ValidControlValue
 {
 }
 
-impl ValidPossibleValue for ConTypePossible {
+impl ValidPossibleValue for ControlTypePossible {
 }
 
 /// A marker trait that determines what is acceptable to use within a
 /// [`ControlItems`].
 pub trait ValidItemValue: Clone + Debug + PartialEq + PartialOrd {}
 
-impl ValidItemValue for ConTypeItems {
+impl ValidItemValue for ControlTypeItems {
 }
 
 /// The type that is used to report the control's current value as well as apply
@@ -381,17 +381,17 @@ macro_rules! impl_control_default_conversion {
 	};
 }
 
-impl_control_default_conversion!(ConTypeInt => IntegerControlValue);
-impl_control_default_conversion!(ConTypeFloat => FloatControlValue);
-impl_control_default_conversion!(ConTypeBool => BooleanControlValue);
-impl_control_default_conversion!(ConTypeBytes => BytesControlValue);
-impl_control_default_conversion!(ConTypeEnum => EnumControlValue);
-impl_control_default_conversion!(ConTypeKeyValue => KeyValueControlValue);
-impl_control_default_conversion!(ConTypeMenu => MenuControlValue);
-impl_control_default_conversion!(ConTypePoint => PointControlValue);
-impl_control_default_conversion!(ConTypeRGB => RgbControlValue);
+impl_control_default_conversion!(ControlTypeInt => IntegerControlValue);
+impl_control_default_conversion!(ControlTypeFloat => FloatControlValue);
+impl_control_default_conversion!(ControlTypeBoolean => BooleanControlValue);
+impl_control_default_conversion!(ControlTypeBytes => BytesControlValue);
+impl_control_default_conversion!(ControlTypeEnum => EnumControlValue);
+impl_control_default_conversion!(ControlTypeKeyValue => KeyValueControlValue);
+impl_control_default_conversion!(ControlTypeMenu => MenuControlValue);
+impl_control_default_conversion!(ControlTypePoint => PointControlValue);
+impl_control_default_conversion!(ControlTypeRgb => RgbControlValue);
 
-impl IntoControlDefault<StringControlValue> for Option<ConTypeString> {
+impl IntoControlDefault<StringControlValue> for Option<ControlTypeString> {
 	fn into_control_default(self) -> Option<StringControlValue> {
 		self.map(Into::into)
 	}
