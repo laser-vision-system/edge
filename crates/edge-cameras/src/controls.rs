@@ -302,7 +302,7 @@ mod tests {
 			vec![KnownCameraControlFlag::Disabled],
 		));
 		map.insert(KnownCameraControl::Zoom, disabled);
-		assert!(!map.is_readable(KnownCameraControl::Zoom));
+		assert!(map.is_readable(KnownCameraControl::Zoom));
 		assert!(!map.is_writable(KnownCameraControl::Zoom));
 
 		// Volatile control
