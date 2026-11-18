@@ -77,11 +77,11 @@ const RETAINED: &[KnownCameraControl] = &[
 	// KnownCameraControl::Exposure,
 	// KnownCameraControl::Iris,
 	// KnownCameraControl::Focus,
-	// KnownCameraControl::AutoExposure,
+	KnownCameraControl::AutoExposure,
 	KnownCameraControl::ExposureAbsolute,
-	// KnownCameraControl::AutoWhiteBalance,
-	// KnownCameraControl::PowerLineFrequency,
-	// KnownCameraControl::ExposureAutoPriority,
+	KnownCameraControl::AutoWhiteBalance,
+	KnownCameraControl::PowerLineFrequency,
+	KnownCameraControl::ExposureAutoPriority,
 ];
 
 type MapType = BTreeMap<KnownCameraControl, CamControl>;
