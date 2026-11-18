@@ -121,7 +121,6 @@ impl PersistEntry {
 				Ok(camera) => {
 					return Some(camera);
 				},
-				// TODO: This might be better suited as a warn.
 				Err(why) => logger().log_warn(&why.to_string()),
 			}
 		}

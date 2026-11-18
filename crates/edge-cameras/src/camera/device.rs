@@ -4,8 +4,6 @@ mod controls;
 #[cfg(test)]
 mod tests;
 
-use std::cmp::Ordering;
-
 use edge_core::{
 	logger::logger,
 	settings::CAMERA_BUFFER_COUNT,
@@ -115,21 +113,4 @@ impl CameraDevice {
 		self.reset_controls_to_default()?;
 		Ok(self)
 	}
-}
-
-/// Query [`nokhwa`] for all available cameras and sort them by index.
-///
-/// # Panics
-///
-/// If no Nokhwa backend is available.
-#[expect(clippy::expect_used, reason = "Low priority edge case")]
-pub fn query_for_available_cameras() -> Vec<CameraInfo> {
-	let mut cameras = nokhwa::query(nokhwa::utils::ApiBackend::Auto)
-		.expect("The backend should be supported");
-	cameras.sort_by(|left, right| -> Ordering {
-		let left_index = left.index().as_index().unwrap_or(u32::MAX);
-		let right_index = right.index().as_index().unwrap_or(u32::MAX);
-		left_index.cmp(&right_index)
-	});
-	cameras
 }
