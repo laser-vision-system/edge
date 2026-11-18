@@ -17,7 +17,7 @@ pub use self::{
 	limbo::Limbo,
 };
 use super::OccupiedIndices;
-use crate::camera_device::CameraLike;
+use crate::camera::CameraLike;
 
 /// Named type for clarity.
 pub type InsertWasSuccessful = bool;

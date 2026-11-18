@@ -3,6 +3,7 @@
 use std::{
 	collections::HashMap,
 	error,
+	time::Duration,
 };
 
 use api::{
@@ -40,7 +41,10 @@ use edge_vision::{
 use tokio::{
 	spawn,
 	task::JoinHandle,
-	time::interval,
+	time::{
+		interval,
+		sleep,
+	},
 	try_join,
 };
 
@@ -68,7 +72,7 @@ impl Conductor {
 		let status_rx = self.handle_reconnect(client, status_rx);
 
 		// TODO: Delay for polling cameras, so it doesn't happen every loop.
-		self.update_camera_device_connections(client);
+		self.update_camera_device_connections(client).await;
 
 		// Save the most recent vision swap request, instead of trying to swap
 		// more than once.
@@ -211,11 +215,20 @@ impl Conductor {
 		}
 	}
 
-	fn update_camera_device_connections(
+	async fn update_camera_device_connections(
 		&mut self,
 		client: &mut ConductorClientHandle,
 	) {
-		let mut results = self.persistence.poll_for_new_cameras();
+		// Evil loop to catch OS bug with hotplug.
+		let mut results = loop {
+			match self.persistence.poll_for_new_cameras() {
+				Ok(devices) => break devices,
+				Err(why) => {
+					sleep(Duration::from_millis(100)).await;
+					logger().log_error(&why);
+				},
+			}
+		};
 
 		let new_cameras = results.extract_if(|_, value| {
 			match value {

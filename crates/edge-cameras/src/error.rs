@@ -70,18 +70,40 @@ pub enum EdgeCamerasError {
 	/// A control description type is not currently supported.
 	#[error("Attempting to set a control of an unsupported type: {0}")]
 	SetControlType(KnownCameraControl),
+	/// A control does not allow writing to.
+	#[error("Control {0} is cannot be written to")]
+	ControlUnwritable(KnownCameraControl),
+	/// A control does not provide a default value.
+	#[error("Control {0} does not provide a default value")]
+	ControlDefaultUnavailable(KnownCameraControl),
+	/// A control's representation does not expose a safe manual/off value.
+	#[error("Control {0} has no recognised manual or off value")]
+	ManualModeUnavailable(KnownCameraControl),
+	/// A Nokhwa control operation panicked and was caught.
+	#[error("Camera control operation '{operation}' panicked: {message}")]
+	ControlOperationPanicked {
+		/// The operation that panicked.
+		operation: &'static str,
+		/// The panic payload, if it could be converted to text.
+		message: String,
+	},
 	/// The camera offers up no controls at all.
 	#[error("{0}")]
 	CannotGetControls(#[source] NokhwaError),
 	/// Unable to get a camera control with the provided ID.
-	#[error("Unable to get control of type '{0}'")]
-	GetControl(KnownCameraControl),
+	#[error("Unable to get control of type '{0}': {1}")]
+	GetControl(KnownCameraControl, String),
 	/// A control description type is not currently supported.
 	#[error("Attempting to get a control of an unsupported type: {0}")]
 	GetControlType(KnownCameraControl),
 	/// Tried to set a control to an invalid value.
 	#[error("Attempting to set an invalid control value")]
 	InvalidControlValue,
+	/// The operation was performed on the [`CamControl::None`] variant.
+	///
+	/// [`CamControl::None`]: crate::controls::descriptions::CamControl::None
+	#[error("The camera control does not have a description")]
+	NoControlDescription,
 
 	// ===== Persistence Errors =====
 	/// Tried to access persistence with an unknown camera id.

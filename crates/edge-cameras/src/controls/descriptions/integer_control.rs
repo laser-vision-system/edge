@@ -1,9 +1,15 @@
 //! Defines for a camera control that consists of a `value`, `default`, and
 //! `step`.
 
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,18 +19,22 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlStep,
 		ControlValue as _,
 	},
-	types::ConTypeInt,
+	types::ControlTypeInt,
 	values::{
-		ConValueInteger,
-		ConValueIntegerType,
+		IntegerControlValue,
+		IntegerControlValueType,
 	},
 };
-use crate::error::{
-	EdgeCamerasError,
-	EdgeCamerasResult,
+use crate::{
+	controls::write_flags,
+	error::{
+		EdgeCamerasError,
+		EdgeCamerasResult,
+	},
 };
 
 /// A camera control that consists of a `value`, `default`, and `step`.
@@ -32,34 +42,38 @@ use crate::error::{
 /// Maps to [`ControlValueDescription::Integer`].
 ///
 /// [`ControlValueDescription::Integer`]: nokhwa::utils::ControlValueDescription::Integer
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IntegerControl {
 	control_type: KnownCameraControl,
-	value: ConValueInteger,
-	default: ConValueIntegerType,
-	step: ConValueIntegerType,
+	value: IntegerControlValue,
+	default: IntegerControlValueType,
+	step: IntegerControlValueType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl IntegerControl {
 	/// Create a new [`IntegerControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueInteger,
-		default: ConValueIntegerType,
-		step: ConValueIntegerType,
+		value: IntegerControlValue,
+		default: IntegerControlValueType,
+		step: IntegerControlValueType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
 			step,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for IntegerControl {
-	type ConType = ConTypeInt;
-	type ValueType = ConValueInteger;
+	type ConType = ControlTypeInt;
+	type ValueType = IntegerControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -109,6 +123,12 @@ impl ControlStep for IntegerControl {
 	}
 }
 
+impl ControlFlags for IntegerControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for IntegerControl {
 	fn fmt(
 		&self,
@@ -117,16 +137,20 @@ impl fmt::Display for IntegerControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {} *{} %{}",
+				"{} {} *{} %{} ",
 				self.control_type, self.value, self.default, self.step
-			)
+			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}' step: '{}'",
+				"type: '{}' value: '{}' default: '{}' step: '{}' flags: '",
 				self.control_type, self.value, self.default, self.step
-			)
+			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
+		Ok(())
 	}
 }
 
@@ -138,10 +162,12 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueInteger::from(0);
+		let value = IntegerControlValue::from(0);
 		let default = 0;
 		let step = 1;
-		let control = IntegerControl::new(control_type, value, default, step);
+		let flags = vec![KnownCameraControlFlag::Disabled];
+		let control =
+			IntegerControl::new(control_type, value, default, step, flags);
 		super::super::tests::display_with_different_formats(
 			"IntegerControl",
 			&control,

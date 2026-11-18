@@ -1,9 +1,15 @@
 //! Defines for a camera control that consists of a `value`, `default`, and list
 //! of `items`.
 
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,17 +19,21 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlItems,
 		ControlValue as _,
 	},
-	types::ConTypeMenu,
+	types::{
+		ControlTypeItems,
+		ControlTypeMenu,
+	},
 	values::{
-		ConValueMenu,
-		ConValueMenuType,
+		MenuControlValue,
+		MenuControlValueType,
 	},
 };
 use crate::{
-	controls::types::ConTypeItems,
+	controls::write_flags,
 	error::{
 		EdgeCamerasError,
 		EdgeCamerasResult,
@@ -38,31 +48,35 @@ use crate::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MenuControl {
 	control_type: KnownCameraControl,
-	value: ConValueMenu,
-	default: ConValueMenuType,
-	items: ConTypeItems,
+	value: MenuControlValue,
+	default: MenuControlValueType,
+	items: ControlTypeItems,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl MenuControl {
 	/// Create a new [`MenuControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueMenu,
-		default: ConValueMenuType,
-		items: ConTypeItems,
+		value: MenuControlValue,
+		default: MenuControlValueType,
+		items: ControlTypeItems,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
 			items,
+			flags,
 		}
 	}
 }
 
 impl ControlDescription for MenuControl {
-	type ConType = ConTypeMenu;
-	type ValueType = ConValueMenu;
+	type ConType = ControlTypeMenu;
+	type ValueType = MenuControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -94,7 +108,7 @@ impl ControlDefault for MenuControl {
 }
 
 impl ControlItems for MenuControl {
-	type ItemType = ConTypeItems;
+	type ItemType = ControlTypeItems;
 
 	fn control_items(&self) -> Self::ItemType {
 		self.items.clone()
@@ -108,6 +122,12 @@ impl ControlItems for MenuControl {
 	}
 }
 
+impl ControlFlags for MenuControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for MenuControl {
 	fn fmt(
 		&self,
@@ -116,16 +136,20 @@ impl fmt::Display for MenuControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {} *{} {}",
+				"{} {} *{} {} ",
 				self.control_type, self.value, self.default, self.items
-			)
+			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}' items: '{}'",
+				"type: '{}' value: '{}' default: '{}' items: '{}' flags: '",
 				self.control_type, self.value, self.default, self.items
-			)
+			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
+		Ok(())
 	}
 }
 
@@ -142,11 +166,16 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueMenu::from(0);
+		let value = MenuControlValue::from(0);
 		let default = 0;
 		let possible =
-			ConTypeItems::from(vec![MenuEntry::new(0, MenuItem::Value(0)); 5]);
-		let control = MenuControl::new(control_type, value, default, possible);
+			ControlTypeItems::from(vec![
+				MenuEntry::new(0, MenuItem::Value(0));
+				5
+			]);
+		let flags = vec![KnownCameraControlFlag::Disabled];
+		let control =
+			MenuControl::new(control_type, value, default, possible, flags);
 		super::super::tests::display_with_different_formats(
 			"MenuControl",
 			&control,

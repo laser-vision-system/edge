@@ -25,21 +25,21 @@ use serde::{
 use super::{
 	traits::ControlValue,
 	types::{
-		ConInnerTypeBytes,
-		ConInnerTypeKeyValue,
-		ConInnerTypePoint,
-		ConInnerTypeRGB,
-		ConInnerTypeString,
-		ConTypeBool,
-		ConTypeBytes,
-		ConTypeEnum,
-		ConTypeFloat,
-		ConTypeInt,
-		ConTypeKeyValue,
-		ConTypeMenu,
-		ConTypePoint,
-		ConTypeRGB,
-		ConTypeString,
+		ControlTypeBoolean,
+		ControlTypeBytes,
+		ControlTypeBytesInner,
+		ControlTypeEnum,
+		ControlTypeFloat,
+		ControlTypeInt,
+		ControlTypeKeyValue,
+		ControlTypeKeyValueInner,
+		ControlTypeMenu,
+		ControlTypePoint,
+		ControlTypePointInner,
+		ControlTypeRgb,
+		ControlTypeRgbInner,
+		ControlTypeString,
+		ControlTypeStringInner,
 	},
 };
 
@@ -59,16 +59,16 @@ use super::{
 	Serialize,
 	Deserialize,
 )]
-pub struct ConValueInteger(ConTypeInt);
+pub struct IntegerControlValue(ControlTypeInt);
 
-impl From<ConTypeInt> for ConValueInteger {
-	fn from(value: ConTypeInt) -> Self {
+impl From<ControlTypeInt> for IntegerControlValue {
+	fn from(value: ControlTypeInt) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ConValueInteger {
-	type ConType = ConTypeInt;
+impl ControlValue for IntegerControlValue {
+	type ConType = ControlTypeInt;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -79,13 +79,13 @@ impl ControlValue for ConValueInteger {
 	}
 }
 
-impl From<ConValueInteger> for ControlValueSetter {
-	fn from(value: ConValueInteger) -> Self {
+impl From<IntegerControlValue> for ControlValueSetter {
+	fn from(value: IntegerControlValue) -> Self {
 		ControlValueSetter::Integer(value.0)
 	}
 }
 
-impl fmt::Display for ConValueInteger {
+impl fmt::Display for IntegerControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -94,8 +94,9 @@ impl fmt::Display for ConValueInteger {
 	}
 }
 
-/// [`ConValueInteger`]'s internal type via [`ControlValue`].
-pub type ConValueIntegerType = <ConValueInteger as ControlValue>::ConType;
+/// [`IntegerControlValue`]'s internal type via [`ControlValue`].
+pub type IntegerControlValueType =
+	<IntegerControlValue as ControlValue>::ConType;
 
 /// A control for floating-point values.
 ///
@@ -103,16 +104,16 @@ pub type ConValueIntegerType = <ConValueInteger as ControlValue>::ConType;
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct ConValueFloat(ConTypeFloat);
+pub struct FloatControlValue(ControlTypeFloat);
 
-impl From<ConTypeFloat> for ConValueFloat {
-	fn from(value: ConTypeFloat) -> Self {
+impl From<ControlTypeFloat> for FloatControlValue {
+	fn from(value: ControlTypeFloat) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ConValueFloat {
-	type ConType = ConTypeFloat;
+impl ControlValue for FloatControlValue {
+	type ConType = ControlTypeFloat;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -123,13 +124,13 @@ impl ControlValue for ConValueFloat {
 	}
 }
 
-impl From<ConValueFloat> for ControlValueSetter {
-	fn from(value: ConValueFloat) -> Self {
+impl From<FloatControlValue> for ControlValueSetter {
+	fn from(value: FloatControlValue) -> Self {
 		ControlValueSetter::Float(value.0)
 	}
 }
 
-impl fmt::Display for ConValueFloat {
+impl fmt::Display for FloatControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -138,8 +139,8 @@ impl fmt::Display for ConValueFloat {
 	}
 }
 
-/// [`ConValueFloat`]'s internal type via [`ControlValue`].
-pub type ConValueFloatType = <ConValueFloat as ControlValue>::ConType;
+/// [`FloatControlValue`]'s internal type via [`ControlValue`].
+pub type FloatControlValueType = <FloatControlValue as ControlValue>::ConType;
 
 /// A control for boolean values.
 ///
@@ -157,16 +158,16 @@ pub type ConValueFloatType = <ConValueFloat as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct ConValueBoolean(ConTypeBool);
+pub struct BooleanControlValue(ControlTypeBoolean);
 
-impl From<ConTypeBool> for ConValueBoolean {
-	fn from(value: ConTypeBool) -> Self {
+impl From<ControlTypeBoolean> for BooleanControlValue {
+	fn from(value: ControlTypeBoolean) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ConValueBoolean {
-	type ConType = ConTypeBool;
+impl ControlValue for BooleanControlValue {
+	type ConType = ControlTypeBoolean;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -177,13 +178,13 @@ impl ControlValue for ConValueBoolean {
 	}
 }
 
-impl From<ConValueBoolean> for ControlValueSetter {
-	fn from(value: ConValueBoolean) -> Self {
+impl From<BooleanControlValue> for ControlValueSetter {
+	fn from(value: BooleanControlValue) -> Self {
 		ControlValueSetter::Boolean(value.0)
 	}
 }
 
-impl fmt::Display for ConValueBoolean {
+impl fmt::Display for BooleanControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -192,8 +193,9 @@ impl fmt::Display for ConValueBoolean {
 	}
 }
 
-/// [`ConValueBoolean`]'s internal type via [`ControlValue`].
-pub type ConValueBooleanType = <ConValueBoolean as ControlValue>::ConType;
+/// [`BooleanControlValue`]'s internal type via [`ControlValue`].
+pub type BooleanControlValueType =
+	<BooleanControlValue as ControlValue>::ConType;
 
 /// A control for string values.
 ///
@@ -210,22 +212,22 @@ pub type ConValueBooleanType = <ConValueBoolean as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct ConValueString(ConTypeString);
+pub struct StringControlValue(ControlTypeString);
 
-impl From<ConTypeString> for ConValueString {
-	fn from(value: ConTypeString) -> Self {
+impl From<ControlTypeString> for StringControlValue {
+	fn from(value: ControlTypeString) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypeString> for ConValueString {
-	fn from(value: ConInnerTypeString) -> Self {
-		ConTypeString::from(value).into()
+impl From<ControlTypeStringInner> for StringControlValue {
+	fn from(value: ControlTypeStringInner) -> Self {
+		ControlTypeString::from(value).into()
 	}
 }
 
-impl ControlValue for ConValueString {
-	type ConType = ConTypeString;
+impl ControlValue for StringControlValue {
+	type ConType = ControlTypeString;
 
 	fn get(&self) -> Self::ConType {
 		self.0.clone()
@@ -236,13 +238,13 @@ impl ControlValue for ConValueString {
 	}
 }
 
-impl From<ConValueString> for ControlValueSetter {
-	fn from(value: ConValueString) -> Self {
+impl From<StringControlValue> for ControlValueSetter {
+	fn from(value: StringControlValue) -> Self {
 		value.0.into()
 	}
 }
 
-impl fmt::Display for ConValueString {
+impl fmt::Display for StringControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -251,8 +253,8 @@ impl fmt::Display for ConValueString {
 	}
 }
 
-/// [`ConValueString`]'s internal type via [`ControlValue`].
-pub type ConValueStringType = <ConValueString as ControlValue>::ConType;
+/// [`StringControlValue`]'s internal type via [`ControlValue`].
+pub type StringControlValueType = <StringControlValue as ControlValue>::ConType;
 
 /// A control for byte vector values.
 ///
@@ -269,22 +271,22 @@ pub type ConValueStringType = <ConValueString as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct ConValueBytes(ConTypeBytes);
+pub struct BytesControlValue(ControlTypeBytes);
 
-impl From<ConTypeBytes> for ConValueBytes {
-	fn from(value: ConTypeBytes) -> Self {
+impl From<ControlTypeBytes> for BytesControlValue {
+	fn from(value: ControlTypeBytes) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypeBytes> for ConValueBytes {
-	fn from(value: ConInnerTypeBytes) -> Self {
-		ConTypeBytes::from(value).into()
+impl From<ControlTypeBytesInner> for BytesControlValue {
+	fn from(value: ControlTypeBytesInner) -> Self {
+		ControlTypeBytes::from(value).into()
 	}
 }
 
-impl ControlValue for ConValueBytes {
-	type ConType = ConTypeBytes;
+impl ControlValue for BytesControlValue {
+	type ConType = ControlTypeBytes;
 
 	fn get(&self) -> Self::ConType {
 		self.0.clone()
@@ -295,13 +297,13 @@ impl ControlValue for ConValueBytes {
 	}
 }
 
-impl From<ConValueBytes> for ControlValueSetter {
-	fn from(value: ConValueBytes) -> Self {
+impl From<BytesControlValue> for ControlValueSetter {
+	fn from(value: BytesControlValue) -> Self {
 		value.0.into()
 	}
 }
 
-impl fmt::Display for ConValueBytes {
+impl fmt::Display for BytesControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -310,8 +312,8 @@ impl fmt::Display for ConValueBytes {
 	}
 }
 
-/// [`ConValueBytes`]'s internal type via [`ControlValue`].
-pub type ConValueBytesType = <ConValueBytes as ControlValue>::ConType;
+/// [`BytesControlValue`]'s internal type via [`ControlValue`].
+pub type BytesControlValueType = <BytesControlValue as ControlValue>::ConType;
 
 /// A control for key-value values.
 ///
@@ -329,21 +331,21 @@ pub type ConValueBytesType = <ConValueBytes as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct ConValueKeyValue(ConTypeKeyValue);
+pub struct KeyValueControlValue(ControlTypeKeyValue);
 
-impl From<ConTypeKeyValue> for ConValueKeyValue {
-	fn from(value: ConTypeKeyValue) -> Self {
+impl From<ControlTypeKeyValue> for KeyValueControlValue {
+	fn from(value: ControlTypeKeyValue) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypeKeyValue> for ConValueKeyValue {
-	fn from(value: ConInnerTypeKeyValue) -> Self {
-		ConTypeKeyValue::from(value).into()
+impl From<ControlTypeKeyValueInner> for KeyValueControlValue {
+	fn from(value: ControlTypeKeyValueInner) -> Self {
+		ControlTypeKeyValue::from(value).into()
 	}
 }
-impl ControlValue for ConValueKeyValue {
-	type ConType = ConTypeKeyValue;
+impl ControlValue for KeyValueControlValue {
+	type ConType = ControlTypeKeyValue;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -354,13 +356,13 @@ impl ControlValue for ConValueKeyValue {
 	}
 }
 
-impl From<ConValueKeyValue> for ControlValueSetter {
-	fn from(value: ConValueKeyValue) -> Self {
+impl From<KeyValueControlValue> for ControlValueSetter {
+	fn from(value: KeyValueControlValue) -> Self {
 		value.0.into()
 	}
 }
 
-impl fmt::Display for ConValueKeyValue {
+impl fmt::Display for KeyValueControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -369,8 +371,9 @@ impl fmt::Display for ConValueKeyValue {
 	}
 }
 
-/// [`ConValueKeyValue`]'s internal type via [`ControlValue`].
-pub type ConValueKeyValueType = <ConValueKeyValue as ControlValue>::ConType;
+/// [`KeyValueControlValue`]'s internal type via [`ControlValue`].
+pub type KeyValueControlValueType =
+	<KeyValueControlValue as ControlValue>::ConType;
 
 /// A control for point values.
 ///
@@ -378,22 +381,22 @@ pub type ConValueKeyValueType = <ConValueKeyValue as ControlValue>::ConType;
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct ConValuePoint(ConTypePoint);
+pub struct PointControlValue(ControlTypePoint);
 
-impl From<ConTypePoint> for ConValuePoint {
-	fn from(value: ConTypePoint) -> Self {
+impl From<ControlTypePoint> for PointControlValue {
+	fn from(value: ControlTypePoint) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypePoint> for ConValuePoint {
-	fn from(value: ConInnerTypePoint) -> Self {
-		ConTypePoint::from(value).into()
+impl From<ControlTypePointInner> for PointControlValue {
+	fn from(value: ControlTypePointInner) -> Self {
+		ControlTypePoint::from(value).into()
 	}
 }
 
-impl ControlValue for ConValuePoint {
-	type ConType = ConTypePoint;
+impl ControlValue for PointControlValue {
+	type ConType = ControlTypePoint;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -404,13 +407,13 @@ impl ControlValue for ConValuePoint {
 	}
 }
 
-impl From<ConValuePoint> for ControlValueSetter {
-	fn from(value: ConValuePoint) -> Self {
+impl From<PointControlValue> for ControlValueSetter {
+	fn from(value: PointControlValue) -> Self {
 		value.0.into()
 	}
 }
 
-impl fmt::Display for ConValuePoint {
+impl fmt::Display for PointControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -419,8 +422,8 @@ impl fmt::Display for ConValuePoint {
 	}
 }
 
-/// [`ConValuePoint`]'s internal type via [`ControlValue`].
-pub type ConValuePointType = <ConValuePoint as ControlValue>::ConType;
+/// [`PointControlValue`]'s internal type via [`ControlValue`].
+pub type PointControlValueType = <PointControlValue as ControlValue>::ConType;
 
 /// A control for enum values.
 ///
@@ -438,16 +441,16 @@ pub type ConValuePointType = <ConValuePoint as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct ConValueEnum(ConTypeEnum);
+pub struct EnumControlValue(ControlTypeEnum);
 
-impl From<ConTypeEnum> for ConValueEnum {
-	fn from(value: ConTypeEnum) -> Self {
+impl From<ControlTypeEnum> for EnumControlValue {
+	fn from(value: ControlTypeEnum) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ConValueEnum {
-	type ConType = ConTypeEnum;
+impl ControlValue for EnumControlValue {
+	type ConType = ControlTypeEnum;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -458,13 +461,13 @@ impl ControlValue for ConValueEnum {
 	}
 }
 
-impl From<ConValueEnum> for ControlValueSetter {
-	fn from(value: ConValueEnum) -> Self {
+impl From<EnumControlValue> for ControlValueSetter {
+	fn from(value: EnumControlValue) -> Self {
 		ControlValueSetter::EnumValue(value.0)
 	}
 }
 
-impl fmt::Display for ConValueEnum {
+impl fmt::Display for EnumControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -473,8 +476,8 @@ impl fmt::Display for ConValueEnum {
 	}
 }
 
-/// [`ConValueEnum`]'s internal type via [`ControlValue`].
-pub type ConValueEnumType = <ConValueEnum as ControlValue>::ConType;
+/// [`EnumControlValue`]'s internal type via [`ControlValue`].
+pub type EnumControlValueType = <EnumControlValue as ControlValue>::ConType;
 
 /// A control for RGB values.
 ///
@@ -482,22 +485,22 @@ pub type ConValueEnumType = <ConValueEnum as ControlValue>::ConType;
 #[derive(
 	Clone, Copy, Debug, Default, PartialEq, PartialOrd, Serialize, Deserialize,
 )]
-pub struct ConValueRGB(ConTypeRGB);
+pub struct RgbControlValue(ControlTypeRgb);
 
-impl From<ConTypeRGB> for ConValueRGB {
-	fn from(value: ConTypeRGB) -> Self {
+impl From<ControlTypeRgb> for RgbControlValue {
+	fn from(value: ControlTypeRgb) -> Self {
 		Self(value)
 	}
 }
 
-impl From<ConInnerTypeRGB> for ConValueRGB {
-	fn from(value: ConInnerTypeRGB) -> Self {
-		ConTypeRGB::from(value).into()
+impl From<ControlTypeRgbInner> for RgbControlValue {
+	fn from(value: ControlTypeRgbInner) -> Self {
+		ControlTypeRgb::from(value).into()
 	}
 }
 
-impl ControlValue for ConValueRGB {
-	type ConType = ConTypeRGB;
+impl ControlValue for RgbControlValue {
+	type ConType = ControlTypeRgb;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -508,13 +511,13 @@ impl ControlValue for ConValueRGB {
 	}
 }
 
-impl From<ConValueRGB> for ControlValueSetter {
-	fn from(value: ConValueRGB) -> Self {
+impl From<RgbControlValue> for ControlValueSetter {
+	fn from(value: RgbControlValue) -> Self {
 		value.0.into()
 	}
 }
 
-impl fmt::Display for ConValueRGB {
+impl fmt::Display for RgbControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -523,8 +526,8 @@ impl fmt::Display for ConValueRGB {
 	}
 }
 
-/// [`ConValueRGB`]'s internal type via [`ControlValue`].
-pub type ConValueRGBType = <ConValueRGB as ControlValue>::ConType;
+/// [`RgbControlValue`]'s internal type via [`ControlValue`].
+pub type RgbControlValueType = <RgbControlValue as ControlValue>::ConType;
 
 /// A control for menu values.
 ///
@@ -542,16 +545,16 @@ pub type ConValueRGBType = <ConValueRGB as ControlValue>::ConType;
 	Serialize,
 	Deserialize,
 )]
-pub struct ConValueMenu(ConTypeMenu);
+pub struct MenuControlValue(ControlTypeMenu);
 
-impl From<ConTypeMenu> for ConValueMenu {
-	fn from(value: ConTypeMenu) -> Self {
+impl From<ControlTypeMenu> for MenuControlValue {
+	fn from(value: ControlTypeMenu) -> Self {
 		Self(value)
 	}
 }
 
-impl ControlValue for ConValueMenu {
-	type ConType = ConTypeMenu;
+impl ControlValue for MenuControlValue {
+	type ConType = ControlTypeMenu;
 
 	fn get(&self) -> Self::ConType {
 		self.0
@@ -562,13 +565,13 @@ impl ControlValue for ConValueMenu {
 	}
 }
 
-impl From<ConValueMenu> for ControlValueSetter {
-	fn from(value: ConValueMenu) -> Self {
+impl From<MenuControlValue> for ControlValueSetter {
+	fn from(value: MenuControlValue) -> Self {
 		ControlValueSetter::Menu(value.0)
 	}
 }
 
-impl fmt::Display for ConValueMenu {
+impl fmt::Display for MenuControlValue {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
@@ -577,5 +580,5 @@ impl fmt::Display for ConValueMenu {
 	}
 }
 
-/// [`ConValueMenu`]'s internal type via [`ControlValue`].
-pub type ConValueMenuType = <ConValueMenu as ControlValue>::ConType;
+/// [`MenuControlValue`]'s internal type via [`ControlValue`].
+pub type MenuControlValueType = <MenuControlValue as ControlValue>::ConType;
