@@ -4,7 +4,6 @@ use edge_core::image::FrameBuffer;
 use nokhwa::utils::{
 	CameraIndex,
 	CameraInfo,
-	ControlValueSetter,
 	KnownCameraControl,
 };
 
@@ -40,7 +39,7 @@ pub trait CameraLike {
 	///
 	/// # Errors
 	///
-	/// If this camera has no controls.
+	/// If the backend cannot read its controls or panics while reading them.
 	fn get_all_supported_controls(
 		&self
 	) -> EdgeCamerasResult<Vec<KnownCameraControl>>;
@@ -49,14 +48,15 @@ pub trait CameraLike {
 	///
 	/// # Errors
 	///
-	/// If this camera has no controls.
+	/// If the backend cannot read its controls or panics while reading them.
 	fn get_controls(&self) -> EdgeCamerasResult<ControlMap>;
 
 	/// Returns a camera control by ID.
 	///
 	/// # Errors
 	///
-	/// If the control id could not be found on this camera.
+	/// If the control ID could not be found on this camera or the backend
+	/// panics while reading it.
 	fn get_control(
 		&self,
 		id: KnownCameraControl,
@@ -66,22 +66,46 @@ pub trait CameraLike {
 	///
 	/// # Errors
 	///
-	/// If attempting to set the controls to an invalid value.
+	/// If the control is unavailable, the value is invalid, the backend rejects
+	/// the operation, or the backend panics while setting the control.
 	fn set_control(
 		&mut self,
-		id: KnownCameraControl,
-		value: ControlValueSetter,
+		control: CamControl,
 	) -> EdgeCamerasResult;
 
 	/// Update multiple of camera controls.
 	///
+	/// This operation is not atomic.
+	///
 	/// # Errors
 	///
-	/// If attempting to set the controls to an invalid value.
+	/// If a control is unavailable, a value is invalid, the backend rejects an
+	/// operation, or the backend panics while setting a control.
 	fn set_controls(
 		&mut self,
 		controls: ControlMap,
 	) -> EdgeCamerasResult;
+
+	/// Revert a camera control to its default value by ID.
+	///
+	/// # Errors
+	///
+	/// If the control is unavailable, has no default, its default is invalid,
+	/// or the nokhwa backend rejects the operation or panics.
+	fn set_control_to_default(
+		&mut self,
+		id: KnownCameraControl,
+	) -> EdgeCamerasResult;
+
+	/// Revert all camera controls to default. Controls without a reported
+	/// default are left unchanged. Automatic controls are temporarily switched
+	/// to manual when required to reset their dependent controls.
+	///
+	/// # Errors
+	///
+	/// If controls cannot be read, a dependent control cannot be switched, or
+	/// the backend rejects an operation or panics.
+	fn reset_controls_to_default(&mut self) -> EdgeCamerasResult;
 }
 
 #[cfg(test)]
@@ -91,8 +115,16 @@ mod tests {
 		rc::Rc,
 	};
 
+	use nokhwa::utils::ControlValueSetter;
+
 	use super::*;
-	use crate::error::EdgeCamerasError;
+	use crate::{
+		controls::{
+			descriptions::IntegerControl,
+			values::ConValueInteger,
+		},
+		error::EdgeCamerasError,
+	};
 
 	type Calls = Vec<(KnownCameraControl, ControlValueSetter)>;
 
@@ -140,7 +172,7 @@ mod tests {
 		}
 
 		fn get_controls(&self) -> EdgeCamerasResult<ControlMap> {
-			Ok(ControlMap::from(Vec::new()))
+			Ok(ControlMap::empty())
 		}
 
 		fn get_control(
@@ -152,9 +184,10 @@ mod tests {
 
 		fn set_control(
 			&mut self,
-			id: KnownCameraControl,
-			value: ControlValueSetter,
+			control: CamControl,
 		) -> EdgeCamerasResult {
+			let id = control.control_id()?;
+			let value = control.control_value_setter(id)?;
 			self.set_calls.borrow_mut().push((id, value));
 			Ok(())
 		}
@@ -165,17 +198,37 @@ mod tests {
 		) -> EdgeCamerasResult {
 			Ok(())
 		}
+
+		fn set_control_to_default(
+			&mut self,
+			_id: KnownCameraControl,
+		) -> EdgeCamerasResult {
+			Ok(())
+		}
+
+		fn reset_controls_to_default(&mut self) -> EdgeCamerasResult {
+			Ok(())
+		}
 	}
 
 	#[test]
 	fn camera_trait_is_testable_without_a_device() {
 		let (fake_camera, calls) = FakeCamera::new();
 		let mut camera: Box<dyn CameraLike> = Box::new(fake_camera);
-		let value = ControlValueSetter::Integer(42);
+		let id = KnownCameraControl::Brightness;
+		let control = CamControl::Integer(IntegerControl::new(
+			id,
+			ConValueInteger::from(18),
+			0,
+			1,
+			Vec::new(),
+		));
 
-		camera
-			.set_control(KnownCameraControl::Brightness, value.clone())
-			.unwrap();
+		let value = control
+			.control_value_setter(id)
+			.expect("control should map to setter");
+
+		camera.set_control(control).unwrap();
 
 		let recorded_calls = calls.borrow();
 		assert_eq!(recorded_calls.len(), 1);

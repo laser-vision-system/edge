@@ -70,9 +70,23 @@ pub enum EdgeCamerasError {
 	/// A control description type is not currently supported.
 	#[error("Attempting to set a control of an unsupported type: {0}")]
 	SetControlType(KnownCameraControl),
+	/// A control is inactive or disallows the requested operation.
+	#[error("Control {0} is unavailable for this operation")]
+	ControlUnavailable(KnownCameraControl),
 	/// A control does not provide a default value.
 	#[error("Control {0} does not provide a default value")]
 	ControlDefaultUnavailable(KnownCameraControl),
+	/// A control's representation does not expose a safe manual/off value.
+	#[error("Control {0} has no recognised manual or off value")]
+	ManualModeUnavailable(KnownCameraControl),
+	/// A Nokhwa control operation panicked and was caught.
+	#[error("Camera control operation '{operation}' panicked: {message}")]
+	ControlOperationPanicked {
+		/// The operation that panicked.
+		operation: &'static str,
+		/// The panic payload, if it could be converted to text.
+		message: String,
+	},
 	/// The camera offers up no controls at all.
 	#[error("{0}")]
 	CannotGetControls(#[source] NokhwaError),
