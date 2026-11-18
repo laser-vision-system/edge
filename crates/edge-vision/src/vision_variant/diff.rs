@@ -101,14 +101,14 @@ impl Default for DiffModel {
 	)]
 	fn default() -> Self {
 		DiffModel {
-			intercept: 0.5819997604631103,
-			peak: -0.027890896459691977,
-			mean: 0.03606082141430921,
-			std_dev: -0.21063533527616005,
-			luma_ssim: 0.024281740506804317,
-			hellinger: -0.6446002924029192,
-			correlation: -0.042378884592307826,
-			intersection: -0.5703440858771205,
+			intercept: 0.0000016508124,
+			peak: 0.0008673023,
+			mean: -0.0322569,
+			std_dev: -0.017504303,
+			luma_ssim: 0.0000007665179,
+			hellinger: 0.0000014174651,
+			correlation: -0.0000015889221,
+			intersection: 0.0000053126696,
 		}
 	}
 }
