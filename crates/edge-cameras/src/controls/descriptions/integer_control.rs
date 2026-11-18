@@ -22,8 +22,8 @@ use super::super::{
 	},
 	types::ConTypeInt,
 	values::{
-		ConValueIntegerType,
 		IntegerControlValue,
+		IntegerControlValueType,
 	},
 };
 use crate::error::{
@@ -40,8 +40,8 @@ use crate::error::{
 pub struct IntegerControl {
 	control_type: KnownCameraControl,
 	value: IntegerControlValue,
-	default: ConValueIntegerType,
-	step: ConValueIntegerType,
+	default: IntegerControlValueType,
+	step: IntegerControlValueType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
 }
@@ -51,8 +51,8 @@ impl IntegerControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: IntegerControlValue,
-		default: ConValueIntegerType,
-		step: ConValueIntegerType,
+		default: IntegerControlValueType,
+		step: IntegerControlValueType,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {

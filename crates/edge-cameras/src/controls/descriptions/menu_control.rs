@@ -22,8 +22,8 @@ use super::super::{
 	},
 	types::ConTypeMenu,
 	values::{
-		ConValueMenuType,
 		MenuControlValue,
+		MenuControlValueType,
 	},
 };
 use crate::{
@@ -43,7 +43,7 @@ use crate::{
 pub struct MenuControl {
 	control_type: KnownCameraControl,
 	value: MenuControlValue,
-	default: ConValueMenuType,
+	default: MenuControlValueType,
 	items: ConTypeItems,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
@@ -54,7 +54,7 @@ impl MenuControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: MenuControlValue,
-		default: ConValueMenuType,
+		default: MenuControlValueType,
 		items: ConTypeItems,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {

@@ -24,8 +24,8 @@ use super::super::{
 	},
 	types::ConTypeString,
 	values::{
-		ConValueStringType,
 		StringControlValue,
+		StringControlValueType,
 	},
 };
 use crate::error::EdgeCamerasResult;
@@ -39,7 +39,7 @@ use crate::error::EdgeCamerasResult;
 pub struct StringControl {
 	control_type: KnownCameraControl,
 	value: StringControlValue,
-	default: Option<ConValueStringType>,
+	default: Option<StringControlValueType>,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
 }
@@ -49,7 +49,7 @@ impl StringControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: StringControlValue,
-		default: Option<ConValueStringType>,
+		default: Option<StringControlValueType>,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {

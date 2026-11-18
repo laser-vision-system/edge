@@ -24,7 +24,7 @@ use super::super::{
 	},
 	types::ConTypeInt,
 	values::{
-		ConValueIntegerType,
+		IntegerControlValueType,
 		IntegerControlValue,
 	},
 };
@@ -43,10 +43,10 @@ use crate::error::{
 pub struct IntegerRangeControl {
 	control_type: KnownCameraControl,
 	value: IntegerControlValue,
-	default: ConValueIntegerType,
-	step: ConValueIntegerType,
-	min: ConValueIntegerType,
-	max: ConValueIntegerType,
+	default: IntegerControlValueType,
+	step: IntegerControlValueType,
+	min: IntegerControlValueType,
+	max: IntegerControlValueType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
 }
@@ -56,10 +56,10 @@ impl IntegerRangeControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: IntegerControlValue,
-		default: ConValueIntegerType,
-		step: ConValueIntegerType,
-		min: ConValueIntegerType,
-		max: ConValueIntegerType,
+		default: IntegerControlValueType,
+		step: IntegerControlValueType,
+		min: IntegerControlValueType,
+		max: IntegerControlValueType,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {

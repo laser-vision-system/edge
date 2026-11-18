@@ -22,8 +22,8 @@ use super::super::{
 	},
 	types::ConTypeRGB,
 	values::{
-		ConValueRGBType,
 		RgbControlValue,
+		RgbControlValueType,
 	},
 };
 use crate::error::{
@@ -42,8 +42,8 @@ use crate::error::{
 pub struct RGBControl {
 	control_type: KnownCameraControl,
 	value: RgbControlValue,
-	default: ConValueRGBType,
-	max: ConValueRGBType,
+	default: RgbControlValueType,
+	max: RgbControlValueType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
 }
@@ -53,8 +53,8 @@ impl RGBControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: RgbControlValue,
-		default: ConValueRGBType,
-		max: ConValueRGBType,
+		default: RgbControlValueType,
+		max: RgbControlValueType,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {

@@ -20,7 +20,7 @@ use super::super::{
 	types::ConTypeBytes,
 	values::{
 		BytesControlValue,
-		ConValueBytesType,
+		BytesControlValueType,
 	},
 };
 use crate::error::EdgeCamerasResult;
@@ -34,7 +34,7 @@ use crate::error::EdgeCamerasResult;
 pub struct BytesControl {
 	control_type: KnownCameraControl,
 	value: BytesControlValue,
-	default: ConValueBytesType,
+	default: BytesControlValueType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
 }
@@ -44,7 +44,7 @@ impl BytesControl {
 	pub fn new(
 		control_type: KnownCameraControl,
 		value: BytesControlValue,
-		default: ConValueBytesType,
+		default: BytesControlValueType,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {

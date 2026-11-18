@@ -95,7 +95,8 @@ impl fmt::Display for IntegerControlValue {
 }
 
 /// [`IntegerControlValue`]'s internal type via [`ControlValue`].
-pub type ConValueIntegerType = <IntegerControlValue as ControlValue>::ConType;
+pub type IntegerControlValueType =
+	<IntegerControlValue as ControlValue>::ConType;
 
 /// A control for floating-point values.
 ///
@@ -139,7 +140,7 @@ impl fmt::Display for FloatControlValue {
 }
 
 /// [`FloatControlValue`]'s internal type via [`ControlValue`].
-pub type ConValueFloatType = <FloatControlValue as ControlValue>::ConType;
+pub type FloatControlValueType = <FloatControlValue as ControlValue>::ConType;
 
 /// A control for boolean values.
 ///
@@ -193,7 +194,8 @@ impl fmt::Display for BooleanControlValue {
 }
 
 /// [`BooleanControlValue`]'s internal type via [`ControlValue`].
-pub type ConValueBooleanType = <BooleanControlValue as ControlValue>::ConType;
+pub type BooleanControlValueType =
+	<BooleanControlValue as ControlValue>::ConType;
 
 /// A control for string values.
 ///
@@ -252,7 +254,7 @@ impl fmt::Display for StringControlValue {
 }
 
 /// [`StringControlValue`]'s internal type via [`ControlValue`].
-pub type ConValueStringType = <StringControlValue as ControlValue>::ConType;
+pub type StringControlValueType = <StringControlValue as ControlValue>::ConType;
 
 /// A control for byte vector values.
 ///
@@ -311,7 +313,7 @@ impl fmt::Display for BytesControlValue {
 }
 
 /// [`BytesControlValue`]'s internal type via [`ControlValue`].
-pub type ConValueBytesType = <BytesControlValue as ControlValue>::ConType;
+pub type BytesControlValueType = <BytesControlValue as ControlValue>::ConType;
 
 /// A control for key-value values.
 ///
@@ -370,7 +372,8 @@ impl fmt::Display for KeyValueControlValue {
 }
 
 /// [`KeyValueControlValue`]'s internal type via [`ControlValue`].
-pub type ConValueKeyValueType = <KeyValueControlValue as ControlValue>::ConType;
+pub type KeyValueControlValueType =
+	<KeyValueControlValue as ControlValue>::ConType;
 
 /// A control for point values.
 ///
@@ -420,7 +423,7 @@ impl fmt::Display for PointControlValue {
 }
 
 /// [`PointControlValue`]'s internal type via [`ControlValue`].
-pub type ConValuePointType = <PointControlValue as ControlValue>::ConType;
+pub type PointControlValueType = <PointControlValue as ControlValue>::ConType;
 
 /// A control for enum values.
 ///
@@ -474,7 +477,7 @@ impl fmt::Display for EnumControlValue {
 }
 
 /// [`EnumControlValue`]'s internal type via [`ControlValue`].
-pub type ConValueEnumType = <EnumControlValue as ControlValue>::ConType;
+pub type EnumControlValueType = <EnumControlValue as ControlValue>::ConType;
 
 /// A control for RGB values.
 ///
@@ -524,7 +527,7 @@ impl fmt::Display for RgbControlValue {
 }
 
 /// [`RgbControlValue`]'s internal type via [`ControlValue`].
-pub type ConValueRGBType = <RgbControlValue as ControlValue>::ConType;
+pub type RgbControlValueType = <RgbControlValue as ControlValue>::ConType;
 
 /// A control for menu values.
 ///
@@ -578,4 +581,4 @@ impl fmt::Display for MenuControlValue {
 }
 
 /// [`MenuControlValue`]'s internal type via [`ControlValue`].
-pub type ConValueMenuType = <MenuControlValue as ControlValue>::ConType;
+pub type MenuControlValueType = <MenuControlValue as ControlValue>::ConType;
