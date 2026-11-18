@@ -49,6 +49,7 @@ pub use nokhwa::utils::{
 	KnownCameraControlFlag,
 };
 
+pub mod automatic;
 pub mod descriptions;
 pub mod traits;
 pub mod types;
