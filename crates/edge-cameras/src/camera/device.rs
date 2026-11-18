@@ -24,6 +24,7 @@ use nokhwa::{
 	session::open_with_buffers,
 };
 
+use super::CameraLike as _;
 use crate::error::{
 	EdgeCamerasError,
 	EdgeCamerasResult,
@@ -111,7 +112,6 @@ impl CameraDevice {
 	///
 	/// If reading or setting controls fails.
 	pub fn with_default_controls(mut self) -> EdgeCamerasResult<Self> {
-		use super::CameraLike as _;
 		self.reset_controls_to_default()?;
 		Ok(self)
 	}
