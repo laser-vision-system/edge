@@ -28,7 +28,10 @@ use super::super::{
 		StringControlValueType,
 	},
 };
-use crate::error::EdgeCamerasResult;
+use crate::{
+	controls::write_flags,
+	error::EdgeCamerasResult,
+};
 
 /// A camera control that consists of a `value` and an optional `default`.
 ///
@@ -104,6 +107,8 @@ impl fmt::Display for StringControl {
 		if f.alternate() {
 			write!(f, "{} {} *", self.control_type, self.value)?;
 			write_optional(f, &self.default)?;
+			f.write_char(' ')?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
@@ -111,9 +116,10 @@ impl fmt::Display for StringControl {
 				self.control_type, self.value,
 			)?;
 			write_optional(f, &self.default)?;
+			write!(f, "'  flags: '")?;
+			write_flags(f, &self.flags)?;
 			f.write_char('\'')?;
 		}
-		super::write_flags(f, &self.flags)?;
 		Ok(())
 	}
 }
@@ -162,8 +168,8 @@ mod tests {
 		let control_type = KnownCameraControl::Pan;
 		let value = StringControlValue::from("Value".to_owned());
 		let default = Some(ConTypeString::from("default".to_owned()));
-		let control =
-			StringControl::new(control_type, value, default, Vec::new());
+		let flags = vec![KnownCameraControlFlag::Disabled];
+		let control = StringControl::new(control_type, value, default, flags);
 		super::super::tests::display_with_different_formats(
 			"StringControl",
 			&control,

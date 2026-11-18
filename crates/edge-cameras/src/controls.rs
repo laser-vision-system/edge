@@ -237,6 +237,56 @@ impl fmt::Display for ControlMap {
 	}
 }
 
+/// Helper to format a list to a [`fmt::Formatter`] using the element's
+/// [`fmt::Display`] implementation without debug formatting.
+///
+/// # Errors
+///
+/// If writing to the formatter fails.
+fn display_list(
+	fmtr: &mut fmt::Formatter<'_>,
+	list: &[impl fmt::Display],
+	isolate: bool,
+	label: Option<&str>,
+) -> fmt::Result {
+	if let Some(label) = label {
+		write!(fmtr, "{label}: ")?;
+	}
+	if list.is_empty() {
+		write!(fmtr, "[]")?;
+		return Ok(());
+	}
+	let last_index = list.len() - 1;
+	for (index, item) in list.iter().enumerate() {
+		let formatted_item = if isolate {
+			format!("{{ {item} }}")
+		} else {
+			format!("{item}")
+		};
+		match index {
+			val if val == 0 && val == last_index => {
+				write!(fmtr, "[{formatted_item}]")?;
+			},
+			0 => write!(fmtr, "[{formatted_item}, ")?,
+			val if val == last_index => write!(fmtr, "{formatted_item}]")?,
+			_ => write!(fmtr, "{formatted_item}, ")?,
+		}
+	}
+	Ok(())
+}
+
+/// Helper to format control flags to a [`fmt::Formatter`].
+///
+/// # Errors
+///
+/// If writing to the formatter fails.
+fn write_flags(
+	fmtr: &mut fmt::Formatter<'_>,
+	flags: &[KnownCameraControlFlag],
+) -> fmt::Result {
+	display_list(fmtr, flags, false, None)
+}
+
 #[cfg(test)]
 mod tests {
 	use super::{

@@ -13,10 +13,7 @@ mod point_control;
 mod rgb_control;
 mod string_control;
 
-use std::{
-	fmt,
-	hash::Hash,
-};
+use std::hash::Hash;
 
 use nokhwa::utils::{
 	CameraControl,
@@ -755,34 +752,14 @@ impl_identifiable!(EnumControl);
 impl_identifiable!(RGBControl);
 impl_identifiable!(MenuControl);
 
-/// Helper to format control flags to a [`fmt::Formatter`] using their
-/// [`fmt::Display`] implementation without debug formatting.
-///
-/// # Errors
-///
-/// If writing to the formatter fails.
-pub fn write_flags(
-	fmtr: &mut fmt::Formatter<'_>,
-	flags: &[KnownCameraControlFlag],
-) -> fmt::Result {
-	if flags.is_empty() {
-		return Ok(());
-	}
-	write!(fmtr, " flags: [")?;
-	for (index, flag) in flags.iter().enumerate() {
-		if index > 0 {
-			write!(fmtr, ", ")?;
-		}
-		write!(fmtr, "{flag}")?;
-	}
-	write!(fmtr, "]")
-}
-
 #[cfg(test)]
 mod tests {
 	use std::fmt;
 
 	use crate::controls::traits::ControlDescription;
+
+	// Use `cargo test -p edge-cameras controls::descriptions --
+	// --include-ignored --no-capture --test-threads 1` to check all controls
 
 	pub fn display_with_different_formats(
 		label: &'static str,

@@ -1,7 +1,10 @@
 //! Defines for a camera control that consists of a `value`, `default`, and
 //! `max`.
 
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
 use nokhwa::utils::{
 	KnownCameraControl,
@@ -26,9 +29,12 @@ use super::super::{
 		RgbControlValueType,
 	},
 };
-use crate::error::{
-	EdgeCamerasError,
-	EdgeCamerasResult,
+use crate::{
+	controls::write_flags,
+	error::{
+		EdgeCamerasError,
+		EdgeCamerasResult,
+	},
 };
 
 /// A camera control that consists of a `value`, `default`, and `max`.
@@ -122,17 +128,19 @@ impl fmt::Display for RGBControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {} *{} <{}",
+				"{} {} *{} <{} ",
 				self.control_type, self.value, self.default, self.max
 			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}' max: '{}'",
+				"type: '{}' value: '{}' default: '{}' max: '{}' flags: '",
 				self.control_type, self.value, self.default, self.max
 			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
-		super::write_flags(f, &self.flags)?;
 		Ok(())
 	}
 }
@@ -148,8 +156,8 @@ mod tests {
 		let value = RgbControlValue::from((0.0, 0.0, 0.0));
 		let default = ConTypeRGB::from((0.0, 0.0, 0.0));
 		let max = ConTypeRGB::from((0.0, 0.0, 0.0));
-		let control =
-			RGBControl::new(control_type, value, default, max, Vec::new());
+		let flags = vec![KnownCameraControlFlag::Disabled];
+		let control = RGBControl::new(control_type, value, default, max, flags);
 		super::super::tests::display_with_different_formats(
 			"RGBControl",
 			&control,

@@ -1,7 +1,10 @@
 //! Defines for a camera control that consists of a `value`, `default`, and list
 //! of `items`.
 
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
 use nokhwa::utils::{
 	KnownCameraControl,
@@ -20,14 +23,17 @@ use super::super::{
 		ControlItems,
 		ControlValue as _,
 	},
-	types::ConTypeMenu,
+	types::{
+		ConTypeItems,
+		ConTypeMenu,
+	},
 	values::{
 		MenuControlValue,
 		MenuControlValueType,
 	},
 };
 use crate::{
-	controls::types::ConTypeItems,
+	controls::write_flags,
 	error::{
 		EdgeCamerasError,
 		EdgeCamerasResult,
@@ -130,17 +136,19 @@ impl fmt::Display for MenuControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {} *{} {}",
+				"{} {} *{} {} ",
 				self.control_type, self.value, self.default, self.items
 			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}' items: '{}'",
+				"type: '{}' value: '{}' default: '{}' items: '{}' flags: '",
 				self.control_type, self.value, self.default, self.items
 			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
-		super::write_flags(f, &self.flags)?;
 		Ok(())
 	}
 }
@@ -162,13 +170,9 @@ mod tests {
 		let default = 0;
 		let possible =
 			ConTypeItems::from(vec![MenuEntry::new(0, MenuItem::Value(0)); 5]);
-		let control = MenuControl::new(
-			control_type,
-			value,
-			default,
-			possible,
-			Vec::new(),
-		);
+		let flags = vec![KnownCameraControlFlag::Disabled];
+		let control =
+			MenuControl::new(control_type, value, default, possible, flags);
 		super::super::tests::display_with_different_formats(
 			"MenuControl",
 			&control,

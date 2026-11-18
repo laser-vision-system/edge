@@ -1,6 +1,9 @@
 //! Defines for a camera control that consists of a `value` and `default`.
 
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
 use nokhwa::utils::{
 	KnownCameraControl,
@@ -23,7 +26,10 @@ use super::super::{
 		KeyValueControlValueType,
 	},
 };
-use crate::error::EdgeCamerasResult;
+use crate::{
+	controls::write_flags,
+	error::EdgeCamerasResult,
+};
 
 /// A camera control that consists of a `value` and `default`.
 ///
@@ -99,17 +105,19 @@ impl fmt::Display for KeyValuePairControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {{{}}} *{}",
+				"{} {{{}}} *{} ",
 				self.control_type, self.value, self.default
 			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}'",
+				"type: '{}' value: '{}' default: '{}' flags: '",
 				self.control_type, self.value, self.default
 			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
-		super::write_flags(f, &self.flags)?;
 		Ok(())
 	}
 }
@@ -124,8 +132,9 @@ mod tests {
 		let control_type = KnownCameraControl::Pan;
 		let value = KeyValueControlValue::from((0, 0));
 		let default = ConTypeKeyValue::from((0, 0));
+		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control =
-			KeyValuePairControl::new(control_type, value, default, Vec::new());
+			KeyValuePairControl::new(control_type, value, default, flags);
 		super::super::tests::display_with_different_formats(
 			"KeyValuePairControl",
 			&control,

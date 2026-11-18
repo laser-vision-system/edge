@@ -1,7 +1,10 @@
 //! Defines for a camera control that consists of a `value`, `default`, and
 //! `step`.
 
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
 use nokhwa::utils::{
 	KnownCameraControl,
@@ -26,9 +29,12 @@ use super::super::{
 		FloatControlValueType,
 	},
 };
-use crate::error::{
-	EdgeCamerasError,
-	EdgeCamerasResult,
+use crate::{
+	controls::write_flags,
+	error::{
+		EdgeCamerasError,
+		EdgeCamerasResult,
+	},
 };
 
 /// A camera control that consists of a `value`, `default`, and `step`.
@@ -131,17 +137,19 @@ impl fmt::Display for FloatControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {} *{} %{}",
+				"{} {} *{} %{} ",
 				self.control_type, self.value, self.default, self.step
 			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}' step: '{}'",
+				"type: '{}' value: '{}' default: '{}' step: '{}' flags: '",
 				self.control_type, self.value, self.default, self.step
 			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
-		super::write_flags(f, &self.flags)?;
 		Ok(())
 	}
 }
@@ -157,8 +165,9 @@ mod tests {
 		let value = FloatControlValue::from(0.0);
 		let default = 0.0;
 		let step = 1.0;
+		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control =
-			FloatControl::new(control_type, value, default, step, Vec::new());
+			FloatControl::new(control_type, value, default, step, flags);
 		super::super::tests::display_with_different_formats(
 			"FloatControl",
 			&control,

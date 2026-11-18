@@ -17,6 +17,8 @@ use serde::{
 	Serialize,
 };
 
+use super::display_list;
+
 // TODO: Use COW for String and Bytes.
 
 pub(super) type ConTypeInt = i64;
@@ -154,7 +156,7 @@ impl fmt::Display for ConTypeBytes {
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		display_list(f, &self.0, false)
+		display_list(f, &self.0, false, None)
 	}
 }
 
@@ -368,7 +370,7 @@ impl fmt::Display for ConTypePossible {
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		display_list(f, &self.0, false)
+		display_list(f, &self.0, false, None)
 	}
 }
 
@@ -420,27 +422,6 @@ impl fmt::Display for ConTypeItems {
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
-		display_list(f, &self.0, true)
+		display_list(f, &self.0, true, None)
 	}
-}
-
-fn display_list(
-	fmtr: &mut fmt::Formatter<'_>,
-	list: &[impl fmt::Display],
-	isolate: bool,
-) -> fmt::Result {
-	let last_index = list.len() - 1;
-	for (index, item) in list.iter().enumerate() {
-		let formatted_item = if isolate {
-			format!("{{ {item} }}")
-		} else {
-			format!("{item}")
-		};
-		match index {
-			0 => write!(fmtr, "[{formatted_item}, ")?,
-			val if val == last_index => write!(fmtr, "{formatted_item}]")?,
-			_ => write!(fmtr, "{formatted_item}, ")?,
-		}
-	}
-	Ok(())
 }

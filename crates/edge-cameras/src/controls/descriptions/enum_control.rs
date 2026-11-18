@@ -1,6 +1,9 @@
 //! Defines for a camera control that consists of a `value`, `default`, and a
 //! vector of `possible` options.
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
 use nokhwa::utils::{
 	KnownCameraControl,
@@ -18,14 +21,17 @@ use super::super::{
 		ControlFlags,
 		ControlPossible,
 	},
-	types::ConTypeEnum,
+	types::{
+		ConTypeEnum,
+		ConTypePossible,
+	},
 	values::{
 		EnumControlValue,
 		EnumControlValueType,
 	},
 };
 use crate::{
-	controls::types::ConTypePossible,
+	controls::write_flags,
 	error::EdgeCamerasResult,
 };
 
@@ -122,17 +128,19 @@ impl fmt::Display for EnumControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {} *{} {}",
+				"{} {} *{} {} ",
 				self.control_type, self.value, self.default, self.possible
 			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}' possible: '{}'",
+				"type: '{}' value: '{}' default: '{}' possible: '{}' flags: '",
 				self.control_type, self.value, self.default, self.possible
 			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
-		super::write_flags(f, &self.flags)?;
 		Ok(())
 	}
 }
@@ -148,13 +156,9 @@ mod tests {
 		let value = EnumControlValue::from(0);
 		let default = 0;
 		let possible = ConTypePossible::from(vec![0; 5]);
-		let control = EnumControl::new(
-			control_type,
-			value,
-			default,
-			possible,
-			Vec::new(),
-		);
+		let flags = vec![KnownCameraControlFlag::Disabled];
+		let control =
+			EnumControl::new(control_type, value, default, possible, flags);
 		super::super::tests::display_with_different_formats(
 			"EnumControl",
 			&control,

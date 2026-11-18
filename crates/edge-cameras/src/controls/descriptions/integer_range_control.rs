@@ -1,7 +1,10 @@
 //! Defines for a camera control that consists of a `value`, `default`, `step`,
 //! `min`, and `max`.
 
-use std::fmt;
+use std::fmt::{
+	self,
+	Write,
+};
 
 use nokhwa::utils::{
 	KnownCameraControl,
@@ -24,13 +27,16 @@ use super::super::{
 	},
 	types::ConTypeInt,
 	values::{
-		IntegerControlValueType,
 		IntegerControlValue,
+		IntegerControlValueType,
 	},
 };
-use crate::error::{
-	EdgeCamerasError,
-	EdgeCamerasResult,
+use crate::{
+	controls::write_flags,
+	error::{
+		EdgeCamerasError,
+		EdgeCamerasResult,
+	},
 };
 
 /// A camera control that consists of a `value`, `default`, `step`, `min`, and
@@ -159,7 +165,7 @@ impl fmt::Display for IntegerRangeControl {
 		if f.alternate() {
 			write!(
 				f,
-				"{} {} *{} >{} <{} %{}",
+				"{} {} *{} >{} <{} %{} ",
 				self.control_type,
 				self.value,
 				self.default,
@@ -167,10 +173,11 @@ impl fmt::Display for IntegerRangeControl {
 				self.max,
 				self.step
 			)?;
+			write_flags(f, &self.flags)?;
 		} else {
 			write!(
 				f,
-				"type: '{}' value: '{}' default: '{}' min: '{}' max: '{}' step: '{}'",
+				"type: '{}' value: '{}' default: '{}' min: '{}' max: '{}' step: '{}' flags: '",
 				self.control_type,
 				self.value,
 				self.default,
@@ -178,8 +185,9 @@ impl fmt::Display for IntegerRangeControl {
 				self.max,
 				self.step
 			)?;
+			write_flags(f, &self.flags)?;
+			f.write_char('\'')?;
 		}
-		super::write_flags(f, &self.flags)?;
 		Ok(())
 	}
 }
@@ -197,6 +205,7 @@ mod tests {
 		let step = 1;
 		let min = -1;
 		let max = 1;
+		let flags = vec![KnownCameraControlFlag::Disabled];
 		let control = IntegerRangeControl::new(
 			control_type,
 			value,
@@ -204,7 +213,7 @@ mod tests {
 			step,
 			min,
 			max,
-			Vec::new(),
+			flags,
 		);
 		super::super::tests::display_with_different_formats(
 			"IntegerRangeControl",
