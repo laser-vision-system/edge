@@ -62,15 +62,23 @@ use serde::{
 
 type MapType = BTreeMap<KnownCameraControl, CamControl>;
 
-/// Every control descriptions that a camera possesses, mapped by its control
+/// Every control description that a camera possesses, mapped by its control
 /// ID.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct ControlMap {
 	inner: MapType,
 }
 
 impl ControlMap {
+	/// Create an empty control map.
+	#[must_use]
+	pub fn empty() -> Self {
+		Self {
+			inner: MapType::new(),
+		}
+	}
+
 	/// Consume this type to produce the inner map type.
 	#[must_use]
 	pub fn into_inner(self) -> MapType {
@@ -146,22 +154,19 @@ impl ControlMap {
 	/// - [`KnownCameraControl::Gamma`]
 	#[must_use]
 	pub fn to_stripped(self) -> Self {
+		let retained = [
+			KnownCameraControl::Brightness,
+			KnownCameraControl::Contrast,
+			KnownCameraControl::Saturation,
+			KnownCameraControl::Hue,
+			KnownCameraControl::Gain,
+			KnownCameraControl::Gamma,
+		];
 		let inner = self
 			.inner
 			.into_iter()
-			.filter(|(key, _)| {
-				[
-					KnownCameraControl::Brightness,
-					KnownCameraControl::Contrast,
-					KnownCameraControl::Saturation,
-					KnownCameraControl::Hue,
-					KnownCameraControl::Gain,
-					KnownCameraControl::Gamma,
-				]
-				.contains(key)
-			})
+			.filter(|(key, _)| retained.contains(key))
 			.collect();
-
 		Self {
 			inner,
 		}
@@ -175,7 +180,7 @@ impl ControlMap {
 	#[expect(clippy::expect_used, reason = "Low priority edge case")]
 	pub fn serialise(&self) -> String {
 		serde_json::to_string(&self.inner).expect(
-			"everything in the inner map should be correcly serialisable",
+			"everything in the inner map should be correctly serialisable",
 		)
 	}
 }
