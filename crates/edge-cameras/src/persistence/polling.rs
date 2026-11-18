@@ -60,6 +60,7 @@ use super::{
 };
 use crate::{
 	camera::{
+		CameraDevice,
 		query_for_available_cameras,
 		run_backend_operation,
 	},
@@ -75,6 +76,22 @@ pub struct AccessPoint {
 	pub index: CameraIndex,
 	/// Whether v4l2 reports this index as belonging to a metadata device.
 	pub is_metadata: bool,
+}
+
+impl AccessPoint {
+	pub(super) fn make_camera(&self) -> Option<CameraDevice> {
+		if self.is_metadata {
+			return None;
+		}
+
+		match CameraDevice::try_new_open(self.index.clone()) {
+			Ok(camera) => Some(camera),
+			Err(why) => {
+				logger().log_warn(&why.to_string());
+				None
+			},
+		}
+	}
 }
 
 impl fmt::Display for AccessPoint {

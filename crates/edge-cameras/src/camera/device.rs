@@ -113,4 +113,35 @@ impl CameraDevice {
 		self.reset_controls_to_default()?;
 		Ok(self)
 	}
+
+	/// Set auto controls to manual.
+	///
+	/// # Errors
+	///
+	/// If the control has an unexpected type or cannot be set.
+	pub fn with_manual_controls(mut self) -> EdgeCamerasResult<Self> {
+		self.set_auto_control_manual(KnownCameraControl::AutoExposure)?;
+		self.set_auto_control_manual(KnownCameraControl::AutoWhiteBalance)?;
+		Ok(self)
+	}
+
+	/// Try to set the camera controls to default.
+	///
+	/// # Errors
+	///
+	/// If reading or setting any control fails.
+	pub fn try_set_default_controls(&mut self) -> EdgeCamerasResult {
+		self.reset_controls_to_default()
+	}
+
+	/// Try to set auto control to manual.
+	///
+	/// # Errors
+	///
+	/// If any contol has an unexpected type or cannot be set.
+	pub fn try_set_manual_controls(&mut self) -> EdgeCamerasResult {
+		self.set_auto_control_manual(KnownCameraControl::AutoExposure)?;
+		self.set_auto_control_manual(KnownCameraControl::AutoWhiteBalance)?;
+		Ok(())
+	}
 }

@@ -98,7 +98,7 @@ impl CameraDevice {
 	/// # Errors
 	///
 	/// Returns an error if the control has an unexpected type or cannot be set.
-	fn set_auto_control_manual(
+	pub fn set_auto_control_manual(
 		&mut self,
 		id: KnownCameraControl,
 	) -> EdgeCamerasResult<Option<ControlValueSetter>> {

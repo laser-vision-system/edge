@@ -114,13 +114,18 @@ impl PersistEntry {
 			if point.is_metadata {
 				continue;
 			}
-			let maybe_camera = CameraDevice::try_new_open(point.index.clone());
-			match maybe_camera {
-				Ok(camera) => {
-					return Some(camera);
-				},
-				Err(why) => logger().log_warn(&why.to_string()),
+			let Some(mut camera) = point.make_camera() else {
+				continue;
+			};
+			if let Err(why) = camera.try_set_default_controls() {
+				logger().log_error(&why);
+				continue;
 			}
+			if let Err(why) = camera.try_set_manual_controls() {
+				logger().log_error(&why);
+				continue;
+			}
+			return Some(camera);
 		}
 		None
 	}
