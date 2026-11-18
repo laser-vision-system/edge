@@ -97,8 +97,10 @@ impl PersistEntry {
 				inner,
 			}
 		} else {
-			let err = EdgeCamerasError::InvalidDeviceConnection;
-			logger().log_error(&err);
+			// Warn instead of error to avoid confusing people.
+			logger().log_warn(
+				&EdgeCamerasError::InvalidDeviceConnection.to_string(),
+			);
 			let new = ConnectionStatus::new_invalid(occupied_indices);
 			let inner = Some(new);
 			Self {
