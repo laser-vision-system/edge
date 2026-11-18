@@ -343,7 +343,6 @@ pub trait ControlFlags: ControlDescription {
 			matches!(
 				flag,
 				KnownCameraControlFlag::WriteOnly
-					| KnownCameraControlFlag::Disabled
 					| KnownCameraControlFlag::Volatile
 			)
 		})
