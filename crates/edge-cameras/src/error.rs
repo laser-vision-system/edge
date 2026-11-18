@@ -70,9 +70,9 @@ pub enum EdgeCamerasError {
 	/// A control description type is not currently supported.
 	#[error("Attempting to set a control of an unsupported type: {0}")]
 	SetControlType(KnownCameraControl),
-	/// A control is inactive or disallows the requested operation.
-	#[error("Control {0} is unavailable for this operation")]
-	ControlUnavailable(KnownCameraControl),
+	/// A control does not allow writing to.
+	#[error("Control {0} is cannot be written to")]
+	ControlUnwritable(KnownCameraControl),
 	/// A control does not provide a default value.
 	#[error("Control {0} does not provide a default value")]
 	ControlDefaultUnavailable(KnownCameraControl),

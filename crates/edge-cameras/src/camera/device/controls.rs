@@ -63,7 +63,7 @@ impl CameraDevice {
 		if let Some(control) = controls.get(&id)
 			&& !control.is_writable()
 		{
-			return Err(EdgeCamerasError::ControlUnavailable(id));
+			return Err(EdgeCamerasError::ControlUnwritable(id));
 		}
 		let value_string = value.to_string();
 		run_backend_operation("set control", || {
@@ -217,7 +217,7 @@ impl CameraDevice {
 				error @ (EdgeCamerasError::SetControl {
 					..
 				}
-				| EdgeCamerasError::ControlUnavailable(_)),
+				| EdgeCamerasError::ControlUnwritable(_)),
 			) => {
 				let result = match auto_id {
 					KnownCameraControl::AutoExposure => {
