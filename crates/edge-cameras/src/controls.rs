@@ -61,6 +61,29 @@ use serde::{
 	Serialize,
 };
 
+const RETAINED: &[KnownCameraControl] = &[
+	KnownCameraControl::Brightness,
+	KnownCameraControl::Contrast,
+	KnownCameraControl::Hue,
+	KnownCameraControl::Saturation,
+	KnownCameraControl::Sharpness,
+	KnownCameraControl::Gamma,
+	// KnownCameraControl::WhiteBalance,
+	// KnownCameraControl::BacklightComp,
+	KnownCameraControl::Gain,
+	// KnownCameraControl::Pan,
+	// KnownCameraControl::Tilt,
+	// KnownCameraControl::Zoom,
+	// KnownCameraControl::Exposure,
+	// KnownCameraControl::Iris,
+	// KnownCameraControl::Focus,
+	// KnownCameraControl::AutoExposure,
+	KnownCameraControl::ExposureAbsolute,
+	// KnownCameraControl::AutoWhiteBalance,
+	// KnownCameraControl::PowerLineFrequency,
+	// KnownCameraControl::ExposureAutoPriority,
+];
+
 type MapType = BTreeMap<KnownCameraControl, CamControl>;
 
 /// Every control description that a camera possesses, mapped by its control
@@ -155,18 +178,10 @@ impl ControlMap {
 	/// - [`KnownCameraControl::Gamma`]
 	#[must_use]
 	pub fn to_stripped(self) -> Self {
-		let retained = [
-			KnownCameraControl::Brightness,
-			KnownCameraControl::Contrast,
-			KnownCameraControl::Saturation,
-			KnownCameraControl::Hue,
-			KnownCameraControl::Gain,
-			KnownCameraControl::Gamma,
-		];
 		let inner = self
 			.inner
 			.into_iter()
-			.filter(|(key, _)| retained.contains(key))
+			.filter(|(key, _)| RETAINED.contains(key))
 			.collect();
 		Self {
 			inner,
