@@ -121,11 +121,9 @@ impl PersistEntry {
 			};
 			if let Err(why) = camera.try_set_default_controls() {
 				logger().log_error(&why);
-				continue;
 			}
 			if let Err(why) = camera.try_set_manual_controls() {
 				logger().log_error(&why);
-				continue;
 			}
 			return Some(camera);
 		}
