@@ -121,7 +121,7 @@ mod tests {
 	use crate::{
 		controls::{
 			descriptions::IntegerControl,
-			values::ConValueInteger,
+			values::IntegerControlValue,
 		},
 		error::EdgeCamerasError,
 	};
@@ -218,7 +218,7 @@ mod tests {
 		let id = KnownCameraControl::Brightness;
 		let control = CamControl::Integer(IntegerControl::new(
 			id,
-			ConValueInteger::from(18),
+			IntegerControlValue::from(18),
 			0,
 			1,
 			Vec::new(),

@@ -23,16 +23,16 @@ use super::{
 		ConTypeString,
 	},
 	values::{
-		ConValueBoolean,
-		ConValueBytes,
-		ConValueEnum,
-		ConValueFloat,
-		ConValueInteger,
-		ConValueKeyValue,
-		ConValueMenu,
-		ConValuePoint,
-		ConValueRGB,
-		ConValueString,
+		BooleanControlValue,
+		BytesControlValue,
+		EnumControlValue,
+		FloatControlValue,
+		IntegerControlValue,
+		KeyValueControlValue,
+		MenuControlValue,
+		PointControlValue,
+		RgbControlValue,
+		StringControlValue,
 	},
 };
 use crate::error::{
@@ -382,18 +382,18 @@ macro_rules! impl_control_default_conversion {
 	};
 }
 
-impl_control_default_conversion!(ConTypeInt => ConValueInteger);
-impl_control_default_conversion!(ConTypeFloat => ConValueFloat);
-impl_control_default_conversion!(ConTypeBool => ConValueBoolean);
-impl_control_default_conversion!(ConTypeBytes => ConValueBytes);
-impl_control_default_conversion!(ConTypeEnum => ConValueEnum);
-impl_control_default_conversion!(ConTypeKeyValue => ConValueKeyValue);
-impl_control_default_conversion!(ConTypeMenu => ConValueMenu);
-impl_control_default_conversion!(ConTypePoint => ConValuePoint);
-impl_control_default_conversion!(ConTypeRGB => ConValueRGB);
+impl_control_default_conversion!(ConTypeInt => IntegerControlValue);
+impl_control_default_conversion!(ConTypeFloat => FloatControlValue);
+impl_control_default_conversion!(ConTypeBool => BooleanControlValue);
+impl_control_default_conversion!(ConTypeBytes => BytesControlValue);
+impl_control_default_conversion!(ConTypeEnum => EnumControlValue);
+impl_control_default_conversion!(ConTypeKeyValue => KeyValueControlValue);
+impl_control_default_conversion!(ConTypeMenu => MenuControlValue);
+impl_control_default_conversion!(ConTypePoint => PointControlValue);
+impl_control_default_conversion!(ConTypeRGB => RgbControlValue);
 
-impl IntoControlDefault<ConValueString> for Option<ConTypeString> {
-	fn into_control_default(self) -> Option<ConValueString> {
+impl IntoControlDefault<StringControlValue> for Option<ConTypeString> {
+	fn into_control_default(self) -> Option<StringControlValue> {
 		self.map(Into::into)
 	}
 }

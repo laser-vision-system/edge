@@ -22,8 +22,8 @@ use super::super::{
 	},
 	types::ConTypeInt,
 	values::{
-		ConValueInteger,
 		ConValueIntegerType,
+		IntegerControlValue,
 	},
 };
 use crate::error::{
@@ -39,7 +39,7 @@ use crate::error::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IntegerControl {
 	control_type: KnownCameraControl,
-	value: ConValueInteger,
+	value: IntegerControlValue,
 	default: ConValueIntegerType,
 	step: ConValueIntegerType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -50,7 +50,7 @@ impl IntegerControl {
 	/// Create a new [`IntegerControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueInteger,
+		value: IntegerControlValue,
 		default: ConValueIntegerType,
 		step: ConValueIntegerType,
 		flags: Vec<KnownCameraControlFlag>,
@@ -67,7 +67,7 @@ impl IntegerControl {
 
 impl ControlDescription for IntegerControl {
 	type ConType = ConTypeInt;
-	type ValueType = ConValueInteger;
+	type ValueType = IntegerControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -154,7 +154,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueInteger::from(0);
+		let value = IntegerControlValue::from(0);
 		let default = 0;
 		let step = 1;
 		let control =

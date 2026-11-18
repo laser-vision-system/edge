@@ -24,8 +24,8 @@ use super::super::{
 	},
 	types::ConTypeString,
 	values::{
-		ConValueString,
 		ConValueStringType,
+		StringControlValue,
 	},
 };
 use crate::error::EdgeCamerasResult;
@@ -38,7 +38,7 @@ use crate::error::EdgeCamerasResult;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StringControl {
 	control_type: KnownCameraControl,
-	value: ConValueString,
+	value: StringControlValue,
 	default: Option<ConValueStringType>,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
@@ -48,7 +48,7 @@ impl StringControl {
 	/// Create a new [`StringControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueString,
+		value: StringControlValue,
 		default: Option<ConValueStringType>,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
@@ -63,7 +63,7 @@ impl StringControl {
 
 impl ControlDescription for StringControl {
 	type ConType = ConTypeString;
-	type ValueType = ConValueString;
+	type ValueType = StringControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -125,7 +125,7 @@ mod tests {
 
 	#[test]
 	fn reset_default_preserves_value_when_default_is_missing() {
-		let current = ConValueString::from("current".to_owned());
+		let current = StringControlValue::from("current".to_owned());
 		let mut control = StringControl::new(
 			KnownCameraControl::Other(1),
 			current.clone(),
@@ -147,7 +147,7 @@ mod tests {
 		let default = ConTypeString::from("default".to_owned());
 		let mut control = StringControl::new(
 			KnownCameraControl::Other(1),
-			ConValueString::from("current".to_owned()),
+			StringControlValue::from("current".to_owned()),
 			Some(default.clone()),
 			Vec::new(),
 		);
@@ -160,7 +160,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueString::from("Value".to_owned());
+		let value = StringControlValue::from("Value".to_owned());
 		let default = Some(ConTypeString::from("default".to_owned()));
 		let control =
 			StringControl::new(control_type, value, default, Vec::new());

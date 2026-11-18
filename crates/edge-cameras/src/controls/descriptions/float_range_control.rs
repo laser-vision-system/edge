@@ -24,8 +24,8 @@ use super::super::{
 	},
 	types::ConTypeFloat,
 	values::{
-		ConValueFloat,
 		ConValueFloatType,
+		FloatControlValue,
 	},
 };
 use crate::error::{
@@ -42,7 +42,7 @@ use crate::error::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FloatRangeControl {
 	control_type: KnownCameraControl,
-	value: ConValueFloat,
+	value: FloatControlValue,
 	default: ConValueFloatType,
 	step: ConValueFloatType,
 	min: ConValueFloatType,
@@ -55,7 +55,7 @@ impl FloatRangeControl {
 	/// Create a new [`FloatRangeControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueFloat,
+		value: FloatControlValue,
 		default: ConValueFloatType,
 		step: ConValueFloatType,
 		min: ConValueFloatType,
@@ -76,7 +76,7 @@ impl FloatRangeControl {
 
 impl ControlDescription for FloatRangeControl {
 	type ConType = ConTypeFloat;
-	type ValueType = ConValueFloat;
+	type ValueType = FloatControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -192,7 +192,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueFloat::from(0.0);
+		let value = FloatControlValue::from(0.0);
 		let default = 0.0;
 		let step = 1.0;
 		let min = -1.0;

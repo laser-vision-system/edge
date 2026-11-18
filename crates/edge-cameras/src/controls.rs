@@ -226,7 +226,7 @@ impl fmt::Display for ControlMap {
 mod tests {
 	use super::{
 		descriptions::IntegerControl,
-		values::ConValueInteger,
+		values::IntegerControlValue,
 		*,
 	};
 
@@ -235,7 +235,7 @@ mod tests {
 		let mut map = ControlMap::empty();
 		let control = CamControl::Integer(IntegerControl::new(
 			KnownCameraControl::Brightness,
-			ConValueInteger::from(42),
+			IntegerControlValue::from(42),
 			0,
 			1,
 			vec![
@@ -272,7 +272,7 @@ mod tests {
 		// Read-only control
 		let read_only = CamControl::Integer(IntegerControl::new(
 			KnownCameraControl::Pan,
-			ConValueInteger::from(0),
+			IntegerControlValue::from(0),
 			0,
 			1,
 			vec![KnownCameraControlFlag::ReadOnly],
@@ -284,7 +284,7 @@ mod tests {
 		// Write-only control
 		let write_only = CamControl::Integer(IntegerControl::new(
 			KnownCameraControl::Tilt,
-			ConValueInteger::from(0),
+			IntegerControlValue::from(0),
 			0,
 			1,
 			vec![KnownCameraControlFlag::WriteOnly],
@@ -296,7 +296,7 @@ mod tests {
 		// Disabled control
 		let disabled = CamControl::Integer(IntegerControl::new(
 			KnownCameraControl::Zoom,
-			ConValueInteger::from(0),
+			IntegerControlValue::from(0),
 			0,
 			1,
 			vec![KnownCameraControlFlag::Disabled],
@@ -308,7 +308,7 @@ mod tests {
 		// Volatile control
 		let volatile = CamControl::Integer(IntegerControl::new(
 			KnownCameraControl::Focus,
-			ConValueInteger::from(0),
+			IntegerControlValue::from(0),
 			0,
 			1,
 			vec![KnownCameraControlFlag::Volatile],

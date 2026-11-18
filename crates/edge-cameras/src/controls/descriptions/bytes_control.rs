@@ -19,7 +19,7 @@ use super::super::{
 	},
 	types::ConTypeBytes,
 	values::{
-		ConValueBytes,
+		BytesControlValue,
 		ConValueBytesType,
 	},
 };
@@ -33,7 +33,7 @@ use crate::error::EdgeCamerasResult;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BytesControl {
 	control_type: KnownCameraControl,
-	value: ConValueBytes,
+	value: BytesControlValue,
 	default: ConValueBytesType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
@@ -43,7 +43,7 @@ impl BytesControl {
 	/// Create a new [`BytesControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueBytes,
+		value: BytesControlValue,
 		default: ConValueBytesType,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
@@ -58,7 +58,7 @@ impl BytesControl {
 
 impl ControlDescription for BytesControl {
 	type ConType = ConTypeBytes;
-	type ValueType = ConValueBytes;
+	type ValueType = BytesControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -122,7 +122,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueBytes::from(vec![0; 5]);
+		let value = BytesControlValue::from(vec![0; 5]);
 		let default = ConTypeBytes::from(vec![0; 5]);
 		let control =
 			BytesControl::new(control_type, value, default, Vec::new());

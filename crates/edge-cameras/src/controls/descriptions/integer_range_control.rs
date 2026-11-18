@@ -24,8 +24,8 @@ use super::super::{
 	},
 	types::ConTypeInt,
 	values::{
-		ConValueInteger,
 		ConValueIntegerType,
+		IntegerControlValue,
 	},
 };
 use crate::error::{
@@ -42,7 +42,7 @@ use crate::error::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IntegerRangeControl {
 	control_type: KnownCameraControl,
-	value: ConValueInteger,
+	value: IntegerControlValue,
 	default: ConValueIntegerType,
 	step: ConValueIntegerType,
 	min: ConValueIntegerType,
@@ -55,7 +55,7 @@ impl IntegerRangeControl {
 	/// Create a new [`IntegerRangeControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueInteger,
+		value: IntegerControlValue,
 		default: ConValueIntegerType,
 		step: ConValueIntegerType,
 		min: ConValueIntegerType,
@@ -76,7 +76,7 @@ impl IntegerRangeControl {
 
 impl ControlDescription for IntegerRangeControl {
 	type ConType = ConTypeInt;
-	type ValueType = ConValueInteger;
+	type ValueType = IntegerControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -192,7 +192,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueInteger::from(0);
+		let value = IntegerControlValue::from(0);
 		let default = 0;
 		let step = 1;
 		let min = -1;

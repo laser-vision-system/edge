@@ -19,8 +19,8 @@ use super::super::{
 	},
 	types::ConTypeKeyValue,
 	values::{
-		ConValueKeyValue,
 		ConValueKeyValueType,
+		KeyValueControlValue,
 	},
 };
 use crate::error::EdgeCamerasResult;
@@ -33,7 +33,7 @@ use crate::error::EdgeCamerasResult;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KeyValuePairControl {
 	control_type: KnownCameraControl,
-	value: ConValueKeyValue,
+	value: KeyValueControlValue,
 	default: ConValueKeyValueType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
@@ -43,7 +43,7 @@ impl KeyValuePairControl {
 	/// Create a new [`KeyValuePairControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueKeyValue,
+		value: KeyValueControlValue,
 		default: ConValueKeyValueType,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
@@ -58,7 +58,7 @@ impl KeyValuePairControl {
 
 impl ControlDescription for KeyValuePairControl {
 	type ConType = ConTypeKeyValue;
-	type ValueType = ConValueKeyValue;
+	type ValueType = KeyValueControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -122,7 +122,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueKeyValue::from((0, 0));
+		let value = KeyValueControlValue::from((0, 0));
 		let default = ConTypeKeyValue::from((0, 0));
 		let control =
 			KeyValuePairControl::new(control_type, value, default, Vec::new());

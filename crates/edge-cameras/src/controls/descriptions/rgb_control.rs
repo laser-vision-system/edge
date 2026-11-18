@@ -22,8 +22,8 @@ use super::super::{
 	},
 	types::ConTypeRGB,
 	values::{
-		ConValueRGB,
 		ConValueRGBType,
+		RgbControlValue,
 	},
 };
 use crate::error::{
@@ -41,7 +41,7 @@ use crate::error::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RGBControl {
 	control_type: KnownCameraControl,
-	value: ConValueRGB,
+	value: RgbControlValue,
 	default: ConValueRGBType,
 	max: ConValueRGBType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -52,7 +52,7 @@ impl RGBControl {
 	/// Create a new [`RGBControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueRGB,
+		value: RgbControlValue,
 		default: ConValueRGBType,
 		max: ConValueRGBType,
 		flags: Vec<KnownCameraControlFlag>,
@@ -69,7 +69,7 @@ impl RGBControl {
 
 impl ControlDescription for RGBControl {
 	type ConType = ConTypeRGB;
-	type ValueType = ConValueRGB;
+	type ValueType = RgbControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -145,7 +145,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueRGB::from((0.0, 0.0, 0.0));
+		let value = RgbControlValue::from((0.0, 0.0, 0.0));
 		let default = ConTypeRGB::from((0.0, 0.0, 0.0));
 		let max = ConTypeRGB::from((0.0, 0.0, 0.0));
 		let control =

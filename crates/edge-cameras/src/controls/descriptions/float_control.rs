@@ -22,8 +22,8 @@ use super::super::{
 	},
 	types::ConTypeFloat,
 	values::{
-		ConValueFloat,
 		ConValueFloatType,
+		FloatControlValue,
 	},
 };
 use crate::error::{
@@ -39,7 +39,7 @@ use crate::error::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FloatControl {
 	control_type: KnownCameraControl,
-	value: ConValueFloat,
+	value: FloatControlValue,
 	default: ConValueFloatType,
 	step: ConValueFloatType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -50,7 +50,7 @@ impl FloatControl {
 	/// Create a new [`FloatControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueFloat,
+		value: FloatControlValue,
 		default: ConValueFloatType,
 		step: ConValueFloatType,
 		flags: Vec<KnownCameraControlFlag>,
@@ -67,7 +67,7 @@ impl FloatControl {
 
 impl ControlDescription for FloatControl {
 	type ConType = ConTypeFloat;
-	type ValueType = ConValueFloat;
+	type ValueType = FloatControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -154,7 +154,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueFloat::from(0.0);
+		let value = FloatControlValue::from(0.0);
 		let default = 0.0;
 		let step = 1.0;
 		let control =

@@ -19,7 +19,7 @@ use super::super::{
 	},
 	types::ConTypeBool,
 	values::{
-		ConValueBoolean,
+		BooleanControlValue,
 		ConValueBooleanType,
 	},
 };
@@ -33,7 +33,7 @@ use crate::error::EdgeCamerasResult;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BooleanControl {
 	control_type: KnownCameraControl,
-	value: ConValueBoolean,
+	value: BooleanControlValue,
 	default: ConValueBooleanType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
@@ -43,7 +43,7 @@ impl BooleanControl {
 	/// Create a new [`BooleanControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueBoolean,
+		value: BooleanControlValue,
 		default: ConValueBooleanType,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
@@ -58,7 +58,7 @@ impl BooleanControl {
 
 impl ControlDescription for BooleanControl {
 	type ConType = ConTypeBool;
-	type ValueType = ConValueBoolean;
+	type ValueType = BooleanControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -122,7 +122,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueBoolean::from(true);
+		let value = BooleanControlValue::from(true);
 		let default = true;
 		let control =
 			BooleanControl::new(control_type, value, default, Vec::new());

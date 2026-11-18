@@ -106,9 +106,9 @@ mod tests {
 			StringControl,
 		},
 		values::{
-			ConValueBoolean,
-			ConValueEnum,
-			ConValueMenu,
+			BooleanControlValue,
+			EnumControlValue,
+			MenuControlValue,
 		},
 	};
 
@@ -116,7 +116,7 @@ mod tests {
 	fn white_balance_boolean_selects_off() {
 		let control = CamControl::Boolean(BooleanControl::new(
 			KnownCameraControl::AutoWhiteBalance,
-			ConValueBoolean::from(true),
+			BooleanControlValue::from(true),
 			true,
 			Vec::new(),
 		));
@@ -130,7 +130,7 @@ mod tests {
 	fn exposure_menu_prefers_labelled_manual_item() {
 		let control = CamControl::Menu(MenuControl::new(
 			KnownCameraControl::AutoExposure,
-			ConValueMenu::from(0),
+			MenuControlValue::from(0),
 			0,
 			vec![
 				MenuEntry::new(0, MenuItem::Name("Automatic".into())),
@@ -149,7 +149,7 @@ mod tests {
 	fn exposure_menu_accepts_standard_manual_id() {
 		let control = CamControl::Menu(MenuControl::new(
 			KnownCameraControl::AutoExposure,
-			ConValueMenu::from(3),
+			MenuControlValue::from(3),
 			3,
 			vec![
 				MenuEntry::new(1, MenuItem::Value(1)),
@@ -168,7 +168,7 @@ mod tests {
 	fn white_balance_menu_recognises_off_label() {
 		let control = CamControl::Menu(MenuControl::new(
 			KnownCameraControl::AutoWhiteBalance,
-			ConValueMenu::from(1),
+			MenuControlValue::from(1),
 			1,
 			vec![
 				MenuEntry::new(1, MenuItem::Name("Automatic".into())),
@@ -187,7 +187,7 @@ mod tests {
 	fn exposure_enum_requires_supported_manual_value() {
 		let control = CamControl::Enum(EnumControl::new(
 			KnownCameraControl::AutoExposure,
-			ConValueEnum::from(1),
+			EnumControlValue::from(1),
 			1,
 			vec![0, 1].into(),
 			Vec::new(),

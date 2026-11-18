@@ -19,8 +19,8 @@ use super::super::{
 	},
 	types::ConTypePoint,
 	values::{
-		ConValuePoint,
 		ConValuePointType,
+		PointControlValue,
 	},
 };
 use crate::error::EdgeCamerasResult;
@@ -33,7 +33,7 @@ use crate::error::EdgeCamerasResult;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PointControl {
 	control_type: KnownCameraControl,
-	value: ConValuePoint,
+	value: PointControlValue,
 	default: ConValuePointType,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
 	flags: Vec<KnownCameraControlFlag>,
@@ -43,7 +43,7 @@ impl PointControl {
 	/// Create a new [`PointControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValuePoint,
+		value: PointControlValue,
 		default: ConValuePointType,
 		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
@@ -58,7 +58,7 @@ impl PointControl {
 
 impl ControlDescription for PointControl {
 	type ConType = ConTypePoint;
-	type ValueType = ConValuePoint;
+	type ValueType = PointControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -122,7 +122,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValuePoint::from((0.0, 0.0));
+		let value = PointControlValue::from((0.0, 0.0));
 		let default = ConTypePoint::from((0.0, 0.0));
 		let control =
 			PointControl::new(control_type, value, default, Vec::new());

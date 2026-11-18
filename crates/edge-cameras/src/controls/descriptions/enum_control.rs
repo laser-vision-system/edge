@@ -20,8 +20,8 @@ use super::super::{
 	},
 	types::ConTypeEnum,
 	values::{
-		ConValueEnum,
 		ConValueEnumType,
+		EnumControlValue,
 	},
 };
 use crate::{
@@ -38,7 +38,7 @@ use crate::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EnumControl {
 	control_type: KnownCameraControl,
-	value: ConValueEnum,
+	value: EnumControlValue,
 	default: ConValueEnumType,
 	possible: ConTypePossible,
 	#[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -49,7 +49,7 @@ impl EnumControl {
 	/// Create a new [`EnumControl`] instance.
 	pub fn new(
 		control_type: KnownCameraControl,
-		value: ConValueEnum,
+		value: EnumControlValue,
 		default: ConValueEnumType,
 		possible: ConTypePossible,
 		flags: Vec<KnownCameraControlFlag>,
@@ -66,7 +66,7 @@ impl EnumControl {
 
 impl ControlDescription for EnumControl {
 	type ConType = ConTypeEnum;
-	type ValueType = ConValueEnum;
+	type ValueType = EnumControlValue;
 
 	fn control_id(&self) -> KnownCameraControl {
 		self.control_type
@@ -145,7 +145,7 @@ mod tests {
 	#[ignore = "for manual inspection"]
 	fn control_display() {
 		let control_type = KnownCameraControl::Pan;
-		let value = ConValueEnum::from(0);
+		let value = EnumControlValue::from(0);
 		let default = 0;
 		let possible = ConTypePossible::from(vec![0; 5]);
 		let control = EnumControl::new(
