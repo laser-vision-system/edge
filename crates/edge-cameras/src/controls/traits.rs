@@ -2,9 +2,9 @@
 
 use std::fmt::Debug;
 
-use nokhwa::{
-	self,
-	utils::KnownCameraControl,
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
 };
 
 use super::{
@@ -300,6 +300,66 @@ pub trait ControlItems: ControlDescription {
 		&self,
 		value: Self::ConType,
 	) -> bool;
+}
+
+/// A description that supports the `flags` field.
+///
+/// Extends [`ControlDescription`] with methods for camera control flags.
+pub trait ControlFlags: ControlDescription {
+	/// Get the `flags` for this control description.
+	fn control_flags(&self) -> &[KnownCameraControlFlag];
+
+	/// Check whether the control description has a specific flag.
+	fn has_flag(
+		&self,
+		flag: KnownCameraControlFlag,
+	) -> bool {
+		self.control_flags().contains(&flag)
+	}
+
+	/// Whether the control is currently in automatic mode.
+	fn is_auto(&self) -> bool {
+		self.has_flag(KnownCameraControlFlag::Automatic)
+	}
+
+	/// Whether the control is currently in manual mode.
+	fn is_manual(&self) -> bool {
+		self.has_flag(KnownCameraControlFlag::Manual)
+	}
+
+	/// Whether the control is continuously updating or adjusting.
+	fn is_continuous(&self) -> bool {
+		self.has_flag(KnownCameraControlFlag::Continuous)
+	}
+
+	/// Whether the control is disabled or inactive.
+	fn is_disabled(&self) -> bool {
+		self.has_flag(KnownCameraControlFlag::Disabled)
+	}
+
+	/// Whether this control is readable by its mapped value.
+	fn is_readable(&self) -> bool {
+		!self.control_flags().iter().any(|flag| {
+			matches!(
+				flag,
+				KnownCameraControlFlag::WriteOnly
+					| KnownCameraControlFlag::Disabled
+					| KnownCameraControlFlag::Volatile
+			)
+		})
+	}
+
+	/// Whether this control may safely be written.
+	fn is_writable(&self) -> bool {
+		!self.control_flags().iter().any(|flag| {
+			matches!(
+				flag,
+				KnownCameraControlFlag::ReadOnly
+					| KnownCameraControlFlag::Disabled
+					| KnownCameraControlFlag::Volatile
+			)
+		})
+	}
 }
 
 /// Converts a control's default type into a [`Option`] wrapper over the value

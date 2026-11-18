@@ -2,7 +2,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -12,6 +15,7 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 	},
 	types::ConTypeBytes,
 	values::{
@@ -31,6 +35,8 @@ pub struct BytesControl {
 	control_type: KnownCameraControl,
 	value: ConValueBytes,
 	default: ConValueBytesType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl BytesControl {
@@ -39,11 +45,13 @@ impl BytesControl {
 		control_type: KnownCameraControl,
 		value: ConValueBytes,
 		default: ConValueBytesType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
+			flags,
 		}
 	}
 }
@@ -77,20 +85,32 @@ impl ControlDefault for BytesControl {
 	}
 }
 
+impl ControlFlags for BytesControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for BytesControl {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		if f.alternate() {
-			write!(f, "{} {} *{}", self.control_type, self.value, self.default)
+			write!(
+				f,
+				"{} {} *{}",
+				self.control_type, self.value, self.default
+			)?;
 		} else {
 			write!(
 				f,
 				"type: '{}' value: '{}' default: '{}'",
 				self.control_type, self.value, self.default
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -104,7 +124,8 @@ mod tests {
 		let control_type = KnownCameraControl::Pan;
 		let value = ConValueBytes::from(vec![0; 5]);
 		let default = ConTypeBytes::from(vec![0; 5]);
-		let control = BytesControl::new(control_type, value, default);
+		let control =
+			BytesControl::new(control_type, value, default, Vec::new());
 		super::super::tests::display_with_different_formats(
 			"BytesControl",
 			&control,

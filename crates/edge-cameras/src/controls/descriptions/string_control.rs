@@ -7,7 +7,10 @@ use std::fmt::{
 };
 
 use edge_core::write_optional;
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -17,6 +20,7 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 	},
 	types::ConTypeString,
 	values::{
@@ -36,6 +40,8 @@ pub struct StringControl {
 	control_type: KnownCameraControl,
 	value: ConValueString,
 	default: Option<ConValueStringType>,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl StringControl {
@@ -44,11 +50,13 @@ impl StringControl {
 		control_type: KnownCameraControl,
 		value: ConValueString,
 		default: Option<ConValueStringType>,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
+			flags,
 		}
 	}
 }
@@ -82,6 +90,12 @@ impl ControlDefault for StringControl {
 	}
 }
 
+impl ControlFlags for StringControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for StringControl {
 	fn fmt(
 		&self,
@@ -89,7 +103,7 @@ impl fmt::Display for StringControl {
 	) -> fmt::Result {
 		if f.alternate() {
 			write!(f, "{} {} *", self.control_type, self.value)?;
-			write_optional(f, &self.default)
+			write_optional(f, &self.default)?;
 		} else {
 			write!(
 				f,
@@ -97,8 +111,10 @@ impl fmt::Display for StringControl {
 				self.control_type, self.value,
 			)?;
 			write_optional(f, &self.default)?;
-			f.write_char('\'')
+			f.write_char('\'')?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -114,9 +130,15 @@ mod tests {
 			KnownCameraControl::Other(1),
 			current.clone(),
 			None,
+			Vec::new(),
 		);
 
-		control.reset_to_default().unwrap();
+		assert!(matches!(
+			control.reset_to_default(),
+			Err(crate::error::EdgeCamerasError::ControlDefaultUnavailable(
+				KnownCameraControl::Other(1)
+			))
+		));
 		assert_eq!(control.control_value(), current);
 	}
 
@@ -127,6 +149,7 @@ mod tests {
 			KnownCameraControl::Other(1),
 			ConValueString::from("current".to_owned()),
 			Some(default.clone()),
+			Vec::new(),
 		);
 
 		control.reset_to_default().unwrap();
@@ -139,7 +162,8 @@ mod tests {
 		let control_type = KnownCameraControl::Pan;
 		let value = ConValueString::from("Value".to_owned());
 		let default = Some(ConTypeString::from("default".to_owned()));
-		let control = StringControl::new(control_type, value, default);
+		let control =
+			StringControl::new(control_type, value, default, Vec::new());
 		super::super::tests::display_with_different_formats(
 			"StringControl",
 			&control,

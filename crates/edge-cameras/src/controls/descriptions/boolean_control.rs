@@ -2,7 +2,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -12,6 +15,7 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 	},
 	types::ConTypeBool,
 	values::{
@@ -26,11 +30,13 @@ use crate::error::EdgeCamerasResult;
 /// Maps to [`ControlValueDescription::Boolean`].
 ///
 /// [`ControlValueDescription::Boolean`]: nokhwa::utils::ControlValueDescription::Boolean
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BooleanControl {
 	control_type: KnownCameraControl,
 	value: ConValueBoolean,
 	default: ConValueBooleanType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl BooleanControl {
@@ -39,11 +45,13 @@ impl BooleanControl {
 		control_type: KnownCameraControl,
 		value: ConValueBoolean,
 		default: ConValueBooleanType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
+			flags,
 		}
 	}
 }
@@ -77,20 +85,32 @@ impl ControlDefault for BooleanControl {
 	}
 }
 
+impl ControlFlags for BooleanControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for BooleanControl {
 	fn fmt(
 		&self,
 		f: &mut fmt::Formatter<'_>,
 	) -> fmt::Result {
 		if f.alternate() {
-			write!(f, "{} {} *{}", self.control_type, self.value, self.default)
+			write!(
+				f,
+				"{} {} *{}",
+				self.control_type, self.value, self.default
+			)?;
 		} else {
 			write!(
 				f,
 				"type: '{}' value: '{}' default: '{}'",
 				self.control_type, self.value, self.default
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -104,7 +124,8 @@ mod tests {
 		let control_type = KnownCameraControl::Pan;
 		let value = ConValueBoolean::from(true);
 		let default = true;
-		let control = BooleanControl::new(control_type, value, default);
+		let control =
+			BooleanControl::new(control_type, value, default, Vec::new());
 		super::super::tests::display_with_different_formats(
 			"BooleanControl",
 			&control,

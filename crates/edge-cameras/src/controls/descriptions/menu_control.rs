@@ -3,7 +3,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,6 +16,7 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlItems,
 		ControlValue as _,
 	},
@@ -41,6 +45,8 @@ pub struct MenuControl {
 	value: ConValueMenu,
 	default: ConValueMenuType,
 	items: ConTypeItems,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl MenuControl {
@@ -50,12 +56,14 @@ impl MenuControl {
 		value: ConValueMenu,
 		default: ConValueMenuType,
 		items: ConTypeItems,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
 			items,
+			flags,
 		}
 	}
 }
@@ -108,6 +116,12 @@ impl ControlItems for MenuControl {
 	}
 }
 
+impl ControlFlags for MenuControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for MenuControl {
 	fn fmt(
 		&self,
@@ -118,14 +132,16 @@ impl fmt::Display for MenuControl {
 				f,
 				"{} {} *{} {}",
 				self.control_type, self.value, self.default, self.items
-			)
+			)?;
 		} else {
 			write!(
 				f,
 				"type: '{}' value: '{}' default: '{}' items: '{}'",
 				self.control_type, self.value, self.default, self.items
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -146,7 +162,13 @@ mod tests {
 		let default = 0;
 		let possible =
 			ConTypeItems::from(vec![MenuEntry::new(0, MenuItem::Value(0)); 5]);
-		let control = MenuControl::new(control_type, value, default, possible);
+		let control = MenuControl::new(
+			control_type,
+			value,
+			default,
+			possible,
+			Vec::new(),
+		);
 		super::super::tests::display_with_different_formats(
 			"MenuControl",
 			&control,

@@ -2,7 +2,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -12,6 +15,7 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 	},
 	types::ConTypeKeyValue,
 	values::{
@@ -26,11 +30,13 @@ use crate::error::EdgeCamerasResult;
 /// Maps to [`ControlValueDescription::KeyValuePair`].
 ///
 /// [`ControlValueDescription::KeyValuePair`]: nokhwa::utils::ControlValueDescription::KeyValuePair
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KeyValuePairControl {
 	control_type: KnownCameraControl,
 	value: ConValueKeyValue,
 	default: ConValueKeyValueType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl KeyValuePairControl {
@@ -39,11 +45,13 @@ impl KeyValuePairControl {
 		control_type: KnownCameraControl,
 		value: ConValueKeyValue,
 		default: ConValueKeyValueType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
+			flags,
 		}
 	}
 }
@@ -77,6 +85,12 @@ impl ControlDefault for KeyValuePairControl {
 	}
 }
 
+impl ControlFlags for KeyValuePairControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for KeyValuePairControl {
 	fn fmt(
 		&self,
@@ -87,14 +101,16 @@ impl fmt::Display for KeyValuePairControl {
 				f,
 				"{} {{{}}} *{}",
 				self.control_type, self.value, self.default
-			)
+			)?;
 		} else {
 			write!(
 				f,
 				"type: '{}' value: '{}' default: '{}'",
 				self.control_type, self.value, self.default
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -108,7 +124,8 @@ mod tests {
 		let control_type = KnownCameraControl::Pan;
 		let value = ConValueKeyValue::from((0, 0));
 		let default = ConTypeKeyValue::from((0, 0));
-		let control = KeyValuePairControl::new(control_type, value, default);
+		let control =
+			KeyValuePairControl::new(control_type, value, default, Vec::new());
 		super::super::tests::display_with_different_formats(
 			"KeyValuePairControl",
 			&control,

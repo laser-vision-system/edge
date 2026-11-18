@@ -3,7 +3,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,6 +16,7 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlMax,
 		ControlValue as _,
 	},
@@ -34,12 +38,14 @@ use crate::error::{
 /// Maps to [`ControlValueDescription::RGB`].
 ///
 /// [`ControlValueDescription::RGB`]: nokhwa::utils::ControlValueDescription::RGB
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RGBControl {
 	control_type: KnownCameraControl,
 	value: ConValueRGB,
 	default: ConValueRGBType,
 	max: ConValueRGBType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl RGBControl {
@@ -49,12 +55,14 @@ impl RGBControl {
 		value: ConValueRGB,
 		default: ConValueRGBType,
 		max: ConValueRGBType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
 			value,
 			default,
 			max,
+			flags,
 		}
 	}
 }
@@ -100,6 +108,12 @@ impl ControlMax for RGBControl {
 	}
 }
 
+impl ControlFlags for RGBControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for RGBControl {
 	fn fmt(
 		&self,
@@ -110,14 +124,16 @@ impl fmt::Display for RGBControl {
 				f,
 				"{} {} *{} <{}",
 				self.control_type, self.value, self.default, self.max
-			)
+			)?;
 		} else {
 			write!(
 				f,
 				"type: '{}' value: '{}' default: '{}' max: '{}'",
 				self.control_type, self.value, self.default, self.max
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -132,7 +148,8 @@ mod tests {
 		let value = ConValueRGB::from((0.0, 0.0, 0.0));
 		let default = ConTypeRGB::from((0.0, 0.0, 0.0));
 		let max = ConTypeRGB::from((0.0, 0.0, 0.0));
-		let control = RGBControl::new(control_type, value, default, max);
+		let control =
+			RGBControl::new(control_type, value, default, max, Vec::new());
 		super::super::tests::display_with_different_formats(
 			"RGBControl",
 			&control,

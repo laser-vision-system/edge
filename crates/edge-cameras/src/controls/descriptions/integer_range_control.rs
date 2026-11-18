@@ -3,7 +3,10 @@
 
 use std::fmt;
 
-use nokhwa::utils::KnownCameraControl;
+use nokhwa::utils::{
+	KnownCameraControl,
+	KnownCameraControlFlag,
+};
 use serde::{
 	Deserialize,
 	Serialize,
@@ -13,6 +16,7 @@ use super::super::{
 	traits::{
 		ControlDefault,
 		ControlDescription,
+		ControlFlags,
 		ControlMax,
 		ControlMin,
 		ControlStep,
@@ -35,7 +39,7 @@ use crate::error::{
 /// Maps to [`ControlValueDescription::IntegerRange`].
 ///
 /// [`ControlValueDescription::IntegerRange`]: nokhwa::utils::ControlValueDescription::IntegerRange
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IntegerRangeControl {
 	control_type: KnownCameraControl,
 	value: ConValueInteger,
@@ -43,6 +47,8 @@ pub struct IntegerRangeControl {
 	step: ConValueIntegerType,
 	min: ConValueIntegerType,
 	max: ConValueIntegerType,
+	#[serde(default, skip_serializing_if = "Vec::is_empty")]
+	flags: Vec<KnownCameraControlFlag>,
 }
 
 impl IntegerRangeControl {
@@ -54,6 +60,7 @@ impl IntegerRangeControl {
 		step: ConValueIntegerType,
 		min: ConValueIntegerType,
 		max: ConValueIntegerType,
+		flags: Vec<KnownCameraControlFlag>,
 	) -> Self {
 		Self {
 			control_type,
@@ -62,6 +69,7 @@ impl IntegerRangeControl {
 			step,
 			min,
 			max,
+			flags,
 		}
 	}
 }
@@ -137,6 +145,12 @@ impl ControlMax for IntegerRangeControl {
 	}
 }
 
+impl ControlFlags for IntegerRangeControl {
+	fn control_flags(&self) -> &[KnownCameraControlFlag] {
+		&self.flags
+	}
+}
+
 impl fmt::Display for IntegerRangeControl {
 	fn fmt(
 		&self,
@@ -152,7 +166,7 @@ impl fmt::Display for IntegerRangeControl {
 				self.min,
 				self.max,
 				self.step
-			)
+			)?;
 		} else {
 			write!(
 				f,
@@ -163,8 +177,10 @@ impl fmt::Display for IntegerRangeControl {
 				self.min,
 				self.max,
 				self.step
-			)
+			)?;
 		}
+		super::write_flags(f, &self.flags)?;
+		Ok(())
 	}
 }
 
@@ -188,6 +204,7 @@ mod tests {
 			step,
 			min,
 			max,
+			Vec::new(),
 		);
 		super::super::tests::display_with_different_formats(
 			"IntegerRangeControl",
