@@ -27,7 +27,6 @@ use self::model::{
 };
 use crate::{
 	batch_item::BatchItem,
-	error::EdgeVisionResult,
 	session::SessionToken,
 	vision_interface::VisionInterface,
 	vision_state::VisionState,
@@ -45,10 +44,9 @@ pub enum CnnError {
 	/// When a model fails to load.
 	#[error("failed to load CNN model from {path}: {source}")]
 	ModelLoad {
-		/// The path to the model file. Not relevant if using an embedded
-		/// model.
+		/// The path to the model file.
 		path: PathBuf,
-		/// The source error from [`BurnpackStore`](burn_store::BurnpackStore).
+		/// The source error from [`ModuleRecord`](burn::store::ModuleRecord).
 		#[source]
 		source: RecordError,
 	},
@@ -96,7 +94,7 @@ impl Cnn {
 	/// # Errors
 	///
 	/// If the model could not be loaded correctly.
-	pub fn new() -> EdgeVisionResult<Self> {
+	pub fn new() -> Result<Self, CnnError> {
 		let device = Device::default();
 		let path = config::model_path();
 		let model_config = LaserModelConfig::new();
