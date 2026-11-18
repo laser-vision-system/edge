@@ -178,6 +178,14 @@ impl ControlMap {
 	/// - [`KnownCameraControl::Gamma`]
 	#[must_use]
 	pub fn to_stripped(self) -> Self {
+		let retained = [
+			KnownCameraControl::Brightness,
+			KnownCameraControl::Contrast,
+			KnownCameraControl::Saturation,
+			KnownCameraControl::Hue,
+			KnownCameraControl::Gain,
+			KnownCameraControl::Gamma,
+		];
 		let inner = self
 			.inner
 			.into_iter()
