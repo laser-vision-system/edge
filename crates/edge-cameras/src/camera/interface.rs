@@ -179,7 +179,10 @@ mod tests {
 			&self,
 			id: KnownCameraControl,
 		) -> EdgeCamerasResult<CamControl> {
-			Err(EdgeCamerasError::GetControl(id))
+			Err(EdgeCamerasError::GetControl(
+				id,
+				String::from("fake camera has no controls"),
+			))
 		}
 
 		fn set_control(

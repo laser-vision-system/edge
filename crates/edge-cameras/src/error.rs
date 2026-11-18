@@ -91,8 +91,8 @@ pub enum EdgeCamerasError {
 	#[error("{0}")]
 	CannotGetControls(#[source] NokhwaError),
 	/// Unable to get a camera control with the provided ID.
-	#[error("Unable to get control of type '{0}'")]
-	GetControl(KnownCameraControl),
+	#[error("Unable to get control of type '{0}': {1}")]
+	GetControl(KnownCameraControl, String),
 	/// A control description type is not currently supported.
 	#[error("Attempting to get a control of an unsupported type: {0}")]
 	GetControlType(KnownCameraControl),

@@ -2,6 +2,7 @@
 
 use std::fmt;
 
+use edge_core::logger::logger;
 use nokhwa::utils::{
 	CameraIndex,
 	CameraInfo,
@@ -129,7 +130,10 @@ pub fn probe_dependent_control(
 	};
 	let automatic_before = match camera.get_control(auto_id) {
 		Ok(control) => Some(control),
-		Err(EdgeCamerasError::GetControl(_)) => None,
+		Err(error @ EdgeCamerasError::GetControl(..)) => {
+			logger().log_error(&error);
+			None
+		},
 		Err(error) => return Err(error),
 	};
 
@@ -253,7 +257,7 @@ mod tests {
 	#[ignore = "IO bound; for manual inspection"]
 	fn display_all_available_controls() -> EdgeCamerasResult {
 		for diagnostic in inspect_connected_cameras()? {
-			println!("{:?}", diagnostic.controls);
+			println!("{:#?}", diagnostic.controls);
 		}
 		Ok(())
 	}

@@ -1,6 +1,9 @@
 //! Physical device control actions.
 
-use edge_core::image::FrameBuffer;
+use edge_core::{
+	image::FrameBuffer,
+	logger::logger,
+};
 use nokhwa::utils::{
 	CameraIndex,
 	CameraInfo,
@@ -101,7 +104,10 @@ impl CameraDevice {
 	) -> EdgeCamerasResult<Option<ControlValueSetter>> {
 		let control = match self.get_control(id) {
 			Ok(control) => control,
-			Err(EdgeCamerasError::GetControl(_)) => return Ok(None),
+			Err(error @ EdgeCamerasError::GetControl(..)) => {
+				logger().log_error(&error);
+				return Ok(None);
+			},
 			Err(error) => return Err(error),
 		};
 		let previous = control
@@ -288,12 +294,19 @@ impl CameraLike for CameraDevice {
 		id: KnownCameraControl,
 	) -> EdgeCamerasResult<CamControl> {
 		let controls = self.read_controls()?;
-		let control = controls
-			.get(&id)
-			.cloned()
-			.ok_or(EdgeCamerasError::GetControl(id))?;
+		let control =
+			controls
+				.get(&id)
+				.cloned()
+				.ok_or(EdgeCamerasError::GetControl(
+					id,
+					String::from("control not found"),
+				))?;
 		if !control.is_readable() {
-			return Err(EdgeCamerasError::GetControl(id));
+			return Err(EdgeCamerasError::GetControl(
+				id,
+				String::from("control not readable"),
+			));
 		}
 		Ok(control)
 	}
